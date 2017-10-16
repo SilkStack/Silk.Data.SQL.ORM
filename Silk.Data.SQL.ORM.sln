@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Silk.Data.SQL.ORM.Tests", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Silk.Data.SQL.Base", "..\Silk.Data.SQL.Base\Silk.Data.SQL.Base\Silk.Data.SQL.Base.csproj", "{E1AA9D75-989C-4BA5-99BB-446EEBC5E5BE}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Silk.Data.Modelling", "..\Silk.Data.Modelling\Silk.Data.Modelling\Silk.Data.Modelling.csproj", "{FD81850B-29C2-4AC3-9890-63A77DED30FA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{E1AA9D75-989C-4BA5-99BB-446EEBC5E5BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E1AA9D75-989C-4BA5-99BB-446EEBC5E5BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E1AA9D75-989C-4BA5-99BB-446EEBC5E5BE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FD81850B-29C2-4AC3-9890-63A77DED30FA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD81850B-29C2-4AC3-9890-63A77DED30FA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD81850B-29C2-4AC3-9890-63A77DED30FA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD81850B-29C2-4AC3-9890-63A77DED30FA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
