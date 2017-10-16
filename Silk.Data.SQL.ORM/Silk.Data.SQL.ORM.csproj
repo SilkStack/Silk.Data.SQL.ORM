@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Silk.Data.SQL.Base\Silk.Data.SQL.Base\Silk.Data.SQL.Base.csproj" />
+  </ItemGroup>
+
+</Project>
