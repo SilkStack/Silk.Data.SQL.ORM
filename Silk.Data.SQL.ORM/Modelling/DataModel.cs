@@ -54,19 +54,46 @@ namespace Silk.Data.SQL.ORM.Modelling
 			var columns = Fields.Where(
 				dataField => !dataField.Storage.IsAutoIncrement
 				).ToArray();
-			var values = new List<QueryExpression[]>();
 
 			GenerateIds(sources);
 
 			var views = this.MapToViewAsync(sources).ConfigureAwait(false)
 				.GetAwaiter().GetResult();
 
+			var autoIncField = Fields.FirstOrDefault(q => q.Storage.IsAutoIncrement);
+
+			if (autoIncField == null)
+			{
+				queries.Add(BulkInsertExpression(views, columns, table));
+				dataProvider.ExecuteNonQuery(QueryExpression.Transaction(queries));
+				return;
+			}
+
+			var viewContainer = new ObjectContainer<TView>(Model, this);
+			foreach (var view in views)
+			{
+				viewContainer.Instance = view;
+				var expressionTuple = InsertAndGetIdExpression(columns, table, viewContainer);
+				queries.Add(expressionTuple.insert);
+				queries.Add(expressionTuple.getId);
+			}
+		}
+
+		private (QueryExpression insert, QueryExpression getId) InsertAndGetIdExpression(DataField[] columns,
+			TableSchema table, ObjectContainer<TView> viewContainer)
+		{
+
+		}
+
+		private QueryExpression BulkInsertExpression(TView[] views, DataField[] columns, TableSchema table)
+		{
+			var values = new List<QueryExpression[]>();
 			var viewContainer = new ObjectContainer<TView>(Model, this);
 			foreach (var view in views)
 			{
 				viewContainer.Instance = view;
 				var row = new QueryExpression[columns.Length];
-				for(var i = 0; i < columns.Length; i++)
+				for (var i = 0; i < columns.Length; i++)
 				{
 					row[i] = QueryExpression.Value(viewContainer.GetValue(
 						columns[i].ModelBinding.ViewFieldPath
@@ -74,15 +101,12 @@ namespace Silk.Data.SQL.ORM.Modelling
 				}
 				values.Add(row);
 			}
-
-			queries.Add(QueryExpression.Insert(table.TableName,
-				columns.Select(
-					dataField => dataField.Name
-				).ToArray(),
-				values.ToArray()
-				));
-
-			dataProvider.ExecuteNonQuery(QueryExpression.Transaction(queries));
+			return QueryExpression.Insert(table.TableName,
+					columns.Select(
+						dataField => dataField.Name
+					).ToArray(),
+					values.ToArray()
+					);
 		}
 
 		private void GenerateIds(TSource[] sources)
