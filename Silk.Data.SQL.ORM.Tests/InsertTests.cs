@@ -31,6 +31,10 @@ namespace Silk.Data.SQL.ORM.Tests
 			};
 			dataModel.Insert(TestDb.Provider, sourceInstances);
 
+			Assert.AreNotEqual(sourceInstances[0], Guid.Empty);
+			Assert.AreNotEqual(sourceInstances[1], Guid.Empty);
+			Assert.AreNotEqual(sourceInstances[2], Guid.Empty);
+
 			using (var queryResult = TestDb.Provider.ExecuteReader(
 				QueryExpression.Select(
 					new[] { QueryExpression.All() },
