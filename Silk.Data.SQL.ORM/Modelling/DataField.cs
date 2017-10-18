@@ -2,6 +2,7 @@
 using Silk.Data.Modelling;
 using Silk.Data.Modelling.Bindings;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Modelling
 {
@@ -21,9 +22,12 @@ namespace Silk.Data.SQL.ORM.Modelling
 			Metadata = metadata;
 			ModelBinding = modelBinding;
 
-			//  todo: search metadata for primary key/index/autoincrement attributes
+			//  todo: search metadata for index definitions?
 			Storage = new DataStorage(Name, GetSqlDataType(),
-				tableSchema);
+				tableSchema,
+				metadata.OfType<PrimaryKeyAttribute>().Any(),
+				metadata.OfType<AutoIncrementAttribute>().Any(),
+				metadata.OfType<AutoGenerateIdAttribute>().Any());
 		}
 
 		private SqlDataType GetSqlDataType()

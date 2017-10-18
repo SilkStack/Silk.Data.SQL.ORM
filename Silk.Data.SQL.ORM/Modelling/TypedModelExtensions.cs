@@ -9,7 +9,8 @@ namespace Silk.Data.SQL.ORM.Modelling
 	{
 		private static ViewConvention[] _defaultViewConventions = new ViewConvention[]
 		{
-			new CopySupportedSQLTypesConvention()
+			new CopySupportedSQLTypesConvention(),
+			new IdIsPrimaryKeyConvention()
 		};
 
 		public static DataModel<TSource,TView> CreateDataModel<TSource, TView>(this TypedModel<TSource> model,

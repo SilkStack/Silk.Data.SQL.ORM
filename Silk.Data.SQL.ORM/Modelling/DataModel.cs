@@ -1,5 +1,6 @@
 ﻿using Silk.Data.Modelling;
 using Silk.Data.Modelling.ResourceLoaders;
+using Silk.Data.SQL.Expressions;
 
 namespace Silk.Data.SQL.ORM.Modelling
 {
@@ -33,6 +34,11 @@ namespace Silk.Data.SQL.ORM.Modelling
 			: base(name, model, fields, resourceLoaders)
 		{
 			Model = model;
+		}
+
+		public QueryExpression Insert(TSource source)
+		{
+			return null;
 		}
 	}
 }

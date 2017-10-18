@@ -7,13 +7,18 @@
 		public TableSchema Table { get; }
 		public bool IsAutoIncrement { get; }
 		public bool IsPrimaryKey { get; }
+		public bool IsAutoGenerate { get; }
 
 		public DataStorage(string columnName, SqlDataType dataType,
-			TableSchema table)
+			TableSchema table, bool isPrimaryKey, bool isAutoIncrement,
+			bool isAutoGenerate)
 		{
 			ColumnName = columnName;
 			DataType = dataType;
 			Table = table;
+			IsPrimaryKey = isPrimaryKey;
+			IsAutoIncrement = isAutoIncrement;
+			IsAutoGenerate = isAutoGenerate;
 		}
 	}
 }
