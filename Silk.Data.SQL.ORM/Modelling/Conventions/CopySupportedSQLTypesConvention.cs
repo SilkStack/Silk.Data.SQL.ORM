@@ -24,12 +24,14 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 			if (bindingDirection == BindingDirection.None)
 				return;
 
-			viewDefinition.FieldDefinitions.Add(
-				new ViewFieldDefinition(field.Name,
+			var fieldDefinition = new ViewFieldDefinition(field.Name,
 					new AssignmentBinding(bindingDirection, new[] { bindField.Name }, new[] { field.Name }))
-				{
-					DataType = field.DataType
-				});
+			{
+				DataType = field.DataType
+			};
+			viewDefinition.GetDefaultTableDefinition()
+				.Fields.Add(fieldDefinition);
+			viewDefinition.FieldDefinitions.Add(fieldDefinition);
 		}
 
 		private static bool IsSimpleType(Type type)

@@ -2,6 +2,7 @@
 using Silk.Data.Modelling;
 using Silk.Data.SQL.ORM.Modelling;
 using System;
+using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Tests
 {
@@ -18,6 +19,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			Assert.AreEqual(11, dataModel.Fields.Length);
 			foreach (var field in dataModel.Fields)
 			{
+				Assert.IsTrue(field.Storage.Table.DataFields.Contains(field));
 				switch (field.Name)
 				{
 					case "Bit":

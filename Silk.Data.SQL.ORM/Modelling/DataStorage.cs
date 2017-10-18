@@ -4,11 +4,14 @@
 	{
 		public string ColumnName { get; }
 		public SqlDataType DataType { get; }
+		public TableSchema Table { get; }
 
-		public DataStorage(string columnName, SqlDataType dataType)
+		public DataStorage(string columnName, SqlDataType dataType,
+			TableSchema table)
 		{
 			ColumnName = columnName;
 			DataType = dataType;
+			Table = table;
 		}
 	}
 }

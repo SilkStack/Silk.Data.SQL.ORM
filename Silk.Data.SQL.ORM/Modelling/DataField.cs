@@ -15,14 +15,15 @@ namespace Silk.Data.SQL.ORM.Modelling
 		public DataStorage Storage { get; }
 
 		public DataField(string name, Type dataType, object[] metadata,
-			ModelBinding modelBinding)
+			ModelBinding modelBinding, TableSchema tableSchema)
 		{
 			Name = name;
 			DataType = dataType;
 			Metadata = metadata;
 			ModelBinding = modelBinding;
 
-			Storage = new DataStorage(Name, GetSqlDataType());
+			Storage = new DataStorage(Name, GetSqlDataType(),
+				tableSchema);
 		}
 
 		private SqlDataType GetSqlDataType()
@@ -84,15 +85,42 @@ namespace Silk.Data.SQL.ORM.Modelling
 			throw new NotSupportedException($"Data type {DataType.FullName} not supported.");
 		}
 
-		public static DataField FromDefinition(ViewFieldDefinition definition)
+		public static DataField FromDefinition(ViewFieldDefinition definition, TableSchema tableSchema)
 		{
 			return new DataField(definition.Name, definition.DataType, definition.Metadata.ToArray(),
-				definition.ModelBinding);
+				definition.ModelBinding, tableSchema);
 		}
 
-		public static IEnumerable<DataField> FromDefinitions(IEnumerable<ViewFieldDefinition> definitions)
+		public static IEnumerable<DataField> FromDefinitions(IEnumerable<TableDefinition> tableDefinitions,
+			IEnumerable<ViewFieldDefinition> definitions)
 		{
-			return definitions.Select(q => FromDefinition(q));
+			var fieldsToTableDictionary = new Dictionary<ViewFieldDefinition, TableSchema>();
+			var fieldsToTableDefDictionary = new Dictionary<ViewFieldDefinition, TableDefinition>();
+			var tableToFieldsDictionary = new Dictionary<TableDefinition, List<DataField>>();
+			var dataFields = new List<DataField>();
+
+			foreach (var tableDefinition in tableDefinitions)
+			{
+				var table = new TableSchema(tableDefinition.TableName, new Lazy<DataField[]>(
+					() => tableToFieldsDictionary[tableDefinition].ToArray()
+					));
+				tableToFieldsDictionary.Add(tableDefinition, new List<DataField>());
+				foreach (var fieldDefinition in tableDefinition.Fields)
+				{
+					fieldsToTableDictionary.Add(fieldDefinition, table);
+					fieldsToTableDefDictionary.Add(fieldDefinition, tableDefinition);
+				}
+			}
+
+			foreach (var viewDef in definitions)
+			{
+				var dataField = FromDefinition(viewDef, fieldsToTableDictionary[viewDef]);
+				var tableDef = fieldsToTableDefDictionary[viewDef];
+				tableToFieldsDictionary[tableDef].Add(dataField);
+				dataFields.Add(dataField);
+			}
+
+			return dataFields;
 		}
 	}
 }

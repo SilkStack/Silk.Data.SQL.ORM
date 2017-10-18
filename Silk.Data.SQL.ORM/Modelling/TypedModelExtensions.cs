@@ -18,9 +18,9 @@ namespace Silk.Data.SQL.ORM.Modelling
 			if (viewConventions == null || viewConventions.Length == 0)
 				viewConventions = _defaultViewConventions;
 			return model.CreateView(viewDefinition => new DataModel<TSource,TView>(viewDefinition.Name,
-					model, DataField.FromDefinitions(viewDefinition.FieldDefinitions).ToArray(),
+					model, DataField.FromDefinitions(viewDefinition.UserData.OfType<TableDefinition>(), viewDefinition.FieldDefinitions).ToArray(),
 					viewDefinition.ResourceLoaders.ToArray()),
-				viewConventions);
+				typeof(TView), viewConventions);
 		}
 
 		public static DataModel<TSource, TView> CreateDataModel<TSource, TView>(
