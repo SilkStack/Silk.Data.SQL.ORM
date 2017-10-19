@@ -13,6 +13,17 @@ namespace Silk.Data.SQL.ORM.Modelling
 			new IdIsPrimaryKeyConvention()
 		};
 
+		public static DataModel<TSource> CreateDataModel<TSource>(this TypedModel<TSource> model,
+			params ViewConvention[] viewConventions)
+			where TSource : new()
+		{
+			if (viewConventions == null || viewConventions.Length == 0)
+				viewConventions = _defaultViewConventions;
+			return model.CreateView(viewDefinition => new DataModel<TSource>(viewDefinition.Name,
+					model, DataField.FromDefinitions(viewDefinition.UserData.OfType<TableDefinition>(), viewDefinition.FieldDefinitions).ToArray(),
+					viewDefinition.ResourceLoaders.ToArray()), viewConventions);
+		}
+
 		public static DataModel<TSource,TView> CreateDataModel<TSource, TView>(this TypedModel<TSource> model,
 			params ViewConvention[] viewConventions)
 			where TSource : new()
