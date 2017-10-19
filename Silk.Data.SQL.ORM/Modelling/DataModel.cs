@@ -35,9 +35,8 @@ namespace Silk.Data.SQL.ORM.Modelling
 		}
 	}
 
-	public class DataModel<TSource, TView> : DataModel, IView<DataField, TSource, TView>
+	public class DataModel<TSource> : DataModel, IView<DataField, TSource>
 		where TSource : new()
-		where TView: new()
 	{
 		public new TypedModel<TSource> Model { get; }
 
@@ -56,24 +55,25 @@ namespace Silk.Data.SQL.ORM.Modelling
 				dataField => !dataField.Storage.IsAutoIncrement
 				).ToArray();
 
-			GenerateIds(sources);
+			var modelReaders = sources.Select(source => new ObjectReadWriter(typeof(TSource), Model, source)).ToArray();
+			var viewContainers = sources.Select(source => new InsertContainer(Model, this)).ToArray();
 
-			var views = this.MapToViewAsync(sources).ConfigureAwait(false)
-				.GetAwaiter().GetResult();
+			GenerateIds(modelReaders);
+
+			this.MapToViewAsync(modelReaders, viewContainers)
+				.ConfigureAwait(false).GetAwaiter().GetResult();
 
 			var autoIncField = Fields.FirstOrDefault(q => q.Storage.IsAutoIncrement);
 
 			if (autoIncField == null)
 			{
-				queries.Add(BulkInsertExpression(views, columns, table));
+				queries.Add(BulkInsertExpression(columns, table, viewContainers));
 				dataProvider.ExecuteNonQuery(QueryExpression.Transaction(queries));
 				return;
 			}
 
-			var viewContainer = new ObjectContainer<TView>(Model, this);
-			foreach (var view in views)
+			foreach (var viewContainer in viewContainers)
 			{
-				viewContainer.Instance = view;
 				var expressionTuple = InsertAndGetIdExpression(columns, table, viewContainer);
 				queries.Add(expressionTuple.insert);
 				queries.Add(expressionTuple.getId);
@@ -85,11 +85,16 @@ namespace Silk.Data.SQL.ORM.Modelling
 				{
 					if (queryResult.Read())
 					{
-						ids.Add(queryResult.GetInt32(0));
+						if (autoIncField.DataType == typeof(short))
+							ids.Add(queryResult.GetInt16(0));
+						else if (autoIncField.DataType == typeof(long))
+							ids.Add(queryResult.GetInt64(0));
+						else
+							ids.Add(queryResult.GetInt32(0));
 					}
 				}
 			}
-			AssignIds(sources, ids, autoIncField);
+			AssignIds(modelReaders, ids, autoIncField);
 		}
 
 		public async Task InsertAsync(IDataProvider dataProvider, params TSource[] sources)
@@ -101,25 +106,26 @@ namespace Silk.Data.SQL.ORM.Modelling
 				dataField => !dataField.Storage.IsAutoIncrement
 				).ToArray();
 
-			GenerateIds(sources);
+			var modelReaders = sources.Select(source => new ObjectReadWriter(typeof(TSource), Model, source)).ToArray();
+			var viewContainers = sources.Select(source => new InsertContainer(Model, this)).ToArray();
 
-			var views = await this.MapToViewAsync(sources)
+			GenerateIds(modelReaders);
+
+			await this.MapToViewAsync(modelReaders, viewContainers)
 				.ConfigureAwait(false);
 
 			var autoIncField = Fields.FirstOrDefault(q => q.Storage.IsAutoIncrement);
 
 			if (autoIncField == null)
 			{
-				queries.Add(BulkInsertExpression(views, columns, table));
+				queries.Add(BulkInsertExpression(columns, table, viewContainers));
 				await dataProvider.ExecuteNonQueryAsync(QueryExpression.Transaction(queries))
 					.ConfigureAwait(false);
 				return;
 			}
 
-			var viewContainer = new ObjectContainer<TView>(Model, this);
-			foreach (var view in views)
+			foreach (var viewContainer in viewContainers)
 			{
-				viewContainer.Instance = view;
 				var expressionTuple = InsertAndGetIdExpression(columns, table, viewContainer);
 				queries.Add(expressionTuple.insert);
 				queries.Add(expressionTuple.getId);
@@ -128,26 +134,31 @@ namespace Silk.Data.SQL.ORM.Modelling
 			using (var queryResult = await dataProvider.ExecuteReaderAsync(QueryExpression.Transaction(queries))
 				.ConfigureAwait(false))
 			{
-				while (queryResult.NextResult())
+				while (await queryResult.NextResultAsync()
+					.ConfigureAwait(false))
 				{
-					if (queryResult.Read())
+					if (await queryResult.ReadAsync()
+						.ConfigureAwait(false))
 					{
-						ids.Add(queryResult.GetInt32(0));
+						if (autoIncField.DataType == typeof(short))
+							ids.Add(queryResult.GetInt16(0));
+						else if (autoIncField.DataType == typeof(long))
+							ids.Add(queryResult.GetInt64(0));
+						else
+							ids.Add(queryResult.GetInt32(0));
 					}
 				}
 			}
-			AssignIds(sources, ids, autoIncField);
+			AssignIds(modelReaders, ids, autoIncField);
 		}
 
 		private (QueryExpression insert, QueryExpression getId) InsertAndGetIdExpression(DataField[] columns,
-			TableSchema table, ObjectContainer<TView> viewContainer)
+			TableSchema table, InsertContainer viewContainer)
 		{
 			var row = new QueryExpression[columns.Length];
 			for (var i = 0; i < columns.Length; i++)
 			{
-				row[i] = QueryExpression.Value(viewContainer.GetValue(
-					columns[i].ModelBinding.ViewFieldPath
-					));
+				row[i] = viewContainer.ColumnValues[columns[i].Name];
 			}
 
 			return (QueryExpression.Insert(table.TableName,
@@ -161,19 +172,16 @@ namespace Silk.Data.SQL.ORM.Modelling
 					}));
 		}
 
-		private QueryExpression BulkInsertExpression(TView[] views, DataField[] columns, TableSchema table)
+		private QueryExpression BulkInsertExpression(DataField[] columns, TableSchema table,
+			InsertContainer[] insertContainers)
 		{
 			var values = new List<QueryExpression[]>();
-			var viewContainer = new ObjectContainer<TView>(Model, this);
-			foreach (var view in views)
+			foreach (var container in insertContainers)
 			{
-				viewContainer.Instance = view;
 				var row = new QueryExpression[columns.Length];
 				for (var i = 0; i < columns.Length; i++)
 				{
-					row[i] = QueryExpression.Value(viewContainer.GetValue(
-						columns[i].ModelBinding.ViewFieldPath
-						));
+					row[i] = container.ColumnValues[columns[i].Name];
 				}
 				values.Add(row);
 			}
@@ -185,19 +193,18 @@ namespace Silk.Data.SQL.ORM.Modelling
 					);
 		}
 
-		private void AssignIds(TSource[] sources, List<object> ids, DataField autoIncField)
+		private void AssignIds(IModelReadWriter[] modelReaders, List<object> ids, DataField autoIncField)
 		{
 			var autoIncModelField = Model.GetField(autoIncField.ModelBinding.ModelFieldPath);
 			var modelWriter = new ObjectReadWriter(typeof(TSource), Model, null);
 
-			for(var i = 0; i < sources.Length; i++)
+			for (var i = 0; i < modelReaders.Length; i++)
 			{
-				modelWriter.Value = sources[i];
-				modelWriter.GetField(autoIncModelField).Value = ids[i];
+				modelReaders[i].GetField(autoIncModelField).Value = ids[i];
 			}
 		}
 
-		private void GenerateIds(TSource[] sources)
+		private void GenerateIds(IModelReadWriter[] modelReaders)
 		{
 			var autoGenerateField = Fields.FirstOrDefault(q => q.Storage.IsAutoGenerate &&
 				q.DataType == typeof(Guid));
@@ -205,14 +212,22 @@ namespace Silk.Data.SQL.ORM.Modelling
 			if (autoGenerateField != null)
 			{
 				var autoGenerateModelField = Model.GetField(autoGenerateField.ModelBinding.ModelFieldPath);
-				var modelWriter = new ObjectReadWriter(typeof(TSource), Model, null);
 
-				foreach (var source in sources)
+				foreach (var modelReader in modelReaders)
 				{
-					modelWriter.Value = source;
-					modelWriter.GetField(autoGenerateModelField).Value = Guid.NewGuid();
+					modelReader.GetField(autoGenerateModelField).Value = Guid.NewGuid();
 				}
 			}
+		}
+	}
+
+	public class DataModel<TSource, TView> : DataModel<TSource>, IView<DataField, TSource, TView>
+		where TSource : new()
+		where TView: new()
+	{
+		public DataModel(string name, TypedModel<TSource> model, DataField[] fields, IResourceLoader[] resourceLoaders)
+			: base(name, model, fields, resourceLoaders)
+		{
 		}
 	}
 }
