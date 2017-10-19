@@ -77,12 +77,40 @@ namespace Silk.Data.SQL.ORM.Modelling
 				queries.Add(expressionTuple.insert);
 				queries.Add(expressionTuple.getId);
 			}
+			var ids = new List<object>();
+			using (var queryResult = dataProvider.ExecuteReader(QueryExpression.Transaction(queries)))
+			{
+				while (queryResult.NextResult())
+				{
+					if (queryResult.Read())
+					{
+						ids.Add(queryResult.GetInt32(0));
+					}
+				}
+			}
+			AssignIds(sources, ids, autoIncField);
 		}
 
 		private (QueryExpression insert, QueryExpression getId) InsertAndGetIdExpression(DataField[] columns,
 			TableSchema table, ObjectContainer<TView> viewContainer)
 		{
+			var row = new QueryExpression[columns.Length];
+			for (var i = 0; i < columns.Length; i++)
+			{
+				row[i] = QueryExpression.Value(viewContainer.GetValue(
+					columns[i].ModelBinding.ViewFieldPath
+					));
+			}
 
+			return (QueryExpression.Insert(table.TableName,
+					columns.Select(
+						dataField => dataField.Name
+					).ToArray(),
+					row
+					),
+					QueryExpression.Select(new[] {
+						QueryExpression.LastInsertIdFunction()
+					}));
 		}
 
 		private QueryExpression BulkInsertExpression(TView[] views, DataField[] columns, TableSchema table)
@@ -107,6 +135,18 @@ namespace Silk.Data.SQL.ORM.Modelling
 					).ToArray(),
 					values.ToArray()
 					);
+		}
+
+		private void AssignIds(TSource[] sources, List<object> ids, DataField autoIncField)
+		{
+			var autoIncModelField = Model.GetField(autoIncField.ModelBinding.ModelFieldPath);
+			var modelWriter = new ObjectReadWriter(typeof(TSource), Model, null);
+
+			for(var i = 0; i < sources.Length; i++)
+			{
+				modelWriter.Value = sources[i];
+				modelWriter.GetField(autoIncModelField).Value = ids[i];
+			}
 		}
 
 		private void GenerateIds(TSource[] sources)
