@@ -61,6 +61,57 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 		}
 
+		[TestMethod]
+		public void BasicSqlTypesWithoutView()
+		{
+			var model = TypeModeller.GetModelOf<BasicSqlTypesModel>();
+			var dataModel = model.CreateDataModel();
+
+			Assert.AreEqual(11, dataModel.Fields.Length);
+			foreach (var field in dataModel.Fields)
+			{
+				Assert.IsTrue(field.Storage.Table.DataFields.Contains(field));
+				switch (field.Name)
+				{
+					case "Bit":
+						Assert.AreEqual(SqlBaseType.Bit, field.Storage.DataType.BaseType);
+						break;
+					case "TinyInt":
+						Assert.AreEqual(SqlBaseType.TinyInt, field.Storage.DataType.BaseType);
+						break;
+					case "SmallInt":
+						Assert.AreEqual(SqlBaseType.SmallInt, field.Storage.DataType.BaseType);
+						break;
+					case "Int":
+						Assert.AreEqual(SqlBaseType.Int, field.Storage.DataType.BaseType);
+						break;
+					case "BigInt":
+						Assert.AreEqual(SqlBaseType.BigInt, field.Storage.DataType.BaseType);
+						break;
+					case "Float":
+						Assert.AreEqual(SqlBaseType.Float, field.Storage.DataType.BaseType);
+						Assert.AreEqual(SqlDataType.FLOAT_MAX_PRECISION, field.Storage.DataType.Parameters[0]);
+						break;
+					case "Double":
+						Assert.AreEqual(SqlBaseType.Float, field.Storage.DataType.BaseType);
+						Assert.AreEqual(SqlDataType.DOUBLE_MAX_PRECISION, field.Storage.DataType.Parameters[0]);
+						break;
+					case "Decimal":
+						Assert.AreEqual(SqlBaseType.Decimal, field.Storage.DataType.BaseType);
+						break;
+					case "Text":
+						Assert.AreEqual(SqlBaseType.Text, field.Storage.DataType.BaseType);
+						break;
+					case "Guid":
+						Assert.AreEqual(SqlBaseType.Guid, field.Storage.DataType.BaseType);
+						break;
+					case "DateTime":
+						Assert.AreEqual(SqlBaseType.DateTime, field.Storage.DataType.BaseType);
+						break;
+				}
+			}
+		}
+
 		private class BasicSqlTypesModel
 		{
 			public bool Bit { get; set; }
