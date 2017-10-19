@@ -5,6 +5,7 @@ using Silk.Data.SQL.Providers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Silk.Data.SQL.ORM.Modelling
 {
@@ -79,6 +80,53 @@ namespace Silk.Data.SQL.ORM.Modelling
 			}
 			var ids = new List<object>();
 			using (var queryResult = dataProvider.ExecuteReader(QueryExpression.Transaction(queries)))
+			{
+				while (queryResult.NextResult())
+				{
+					if (queryResult.Read())
+					{
+						ids.Add(queryResult.GetInt32(0));
+					}
+				}
+			}
+			AssignIds(sources, ids, autoIncField);
+		}
+
+		public async Task InsertAsync(IDataProvider dataProvider, params TSource[] sources)
+		{
+			//  todo: update this to work with datamodels that span multiple tables
+			var table = Fields.First().Storage.Table;
+			var queries = new List<QueryExpression>();
+			var columns = Fields.Where(
+				dataField => !dataField.Storage.IsAutoIncrement
+				).ToArray();
+
+			GenerateIds(sources);
+
+			var views = await this.MapToViewAsync(sources)
+				.ConfigureAwait(false);
+
+			var autoIncField = Fields.FirstOrDefault(q => q.Storage.IsAutoIncrement);
+
+			if (autoIncField == null)
+			{
+				queries.Add(BulkInsertExpression(views, columns, table));
+				await dataProvider.ExecuteNonQueryAsync(QueryExpression.Transaction(queries))
+					.ConfigureAwait(false);
+				return;
+			}
+
+			var viewContainer = new ObjectContainer<TView>(Model, this);
+			foreach (var view in views)
+			{
+				viewContainer.Instance = view;
+				var expressionTuple = InsertAndGetIdExpression(columns, table, viewContainer);
+				queries.Add(expressionTuple.insert);
+				queries.Add(expressionTuple.getId);
+			}
+			var ids = new List<object>();
+			using (var queryResult = await dataProvider.ExecuteReaderAsync(QueryExpression.Transaction(queries))
+				.ConfigureAwait(false))
 			{
 				while (queryResult.NextResult())
 				{
