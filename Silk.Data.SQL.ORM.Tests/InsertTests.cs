@@ -1,7 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Silk.Data.Modelling;
 using Silk.Data.SQL.Expressions;
-using Silk.Data.SQL.ORM.Modelling;
 using System;
 using System.Linq;
 
@@ -60,6 +58,11 @@ namespace Silk.Data.SQL.ORM.Tests
 				Assert.AreEqual(sourceInstances[2].Id, queryResult.GetGuid(0));
 				Assert.AreEqual(sourceInstances[2].Data, queryResult.GetString(1));
 			}
+
+			foreach (var table in dataModel.Tables)
+			{
+				table.Drop(TestDb.Provider);
+			}
 		}
 
 		[TestMethod]
@@ -111,6 +114,11 @@ namespace Silk.Data.SQL.ORM.Tests
 				Assert.IsTrue(queryResult.Read());
 				Assert.AreEqual(sourceInstances[2].Id, queryResult.GetInt32(0));
 				Assert.AreEqual(sourceInstances[2].Data, queryResult.GetString(1));
+			}
+
+			foreach (var table in dataModel.Tables)
+			{
+				table.Drop(TestDb.Provider);
 			}
 		}
 

@@ -25,6 +25,8 @@ namespace Silk.Data.SQL.ORM.Modelling
 
 		public DataDomain Domain { get; }
 
+		public DataField[] PrimaryKeyFields { get; }
+
 		public DataModel(string name, Model model, DataField[] fields,
 			IResourceLoader[] resourceLoaders, DataDomain domain)
 		{
@@ -35,6 +37,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 			Tables = Fields.Select(q => q.Storage.Table).GroupBy(q => q)
 				.Select(q => q.First()).ToArray();
 			Domain = domain;
+			PrimaryKeyFields = Fields.Where(q => q.Storage.IsPrimaryKey).ToArray();
 		}
 	}
 
@@ -156,13 +159,105 @@ namespace Silk.Data.SQL.ORM.Modelling
 			AssignIds(modelReaders, ids, autoIncField);
 		}
 
+		public void Update(IDataProvider dataProvider, params TSource[] sources)
+		{
+			if (PrimaryKeyFields == null ||
+				PrimaryKeyFields.Length == 0)
+				throw new InvalidOperationException("A primary key is required.");
+
+			//  todo: update this to work with datamodels that span multiple tables
+			var table = Fields.First().Storage.Table;
+			var tableExpression = QueryExpression.Table(table.TableName);
+			var queries = new List<QueryExpression>();
+			var columns = Fields.Where(
+				dataField => !dataField.Storage.IsPrimaryKey
+				).ToArray();
+
+			var modelReaders = sources.Select(source => new ObjectReadWriter(typeof(TSource), Model, source)).ToArray();
+			var viewContainers = sources.Select(source => new UpdateContainer(Model, this)).ToArray();
+
+			this.MapToViewAsync(modelReaders, viewContainers)
+				.ConfigureAwait(false).GetAwaiter().GetResult();
+
+			foreach (var view in viewContainers)
+			{
+				queries.Add(QueryExpression.Update(
+					tableExpression,
+					BuildPrimaryKeyWhereClause(view),
+					columns.Select(q => view.AssignExpressions[q.Name]).ToArray()
+					));
+			}
+
+			dataProvider.ExecuteNonQuery(QueryExpression.Transaction(queries));
+		}
+
+		public async Task UpdateAsync(IDataProvider dataProvider, params TSource[] sources)
+		{
+			if (PrimaryKeyFields == null ||
+				PrimaryKeyFields.Length == 0)
+				throw new InvalidOperationException("A primary key is required.");
+
+			//  todo: update this to work with datamodels that span multiple tables
+			var table = Fields.First().Storage.Table;
+			var tableExpression = QueryExpression.Table(table.TableName);
+			var queries = new List<QueryExpression>();
+			var columns = Fields.Where(
+				dataField => !dataField.Storage.IsPrimaryKey
+				).ToArray();
+
+			var modelReaders = sources.Select(source => new ObjectReadWriter(typeof(TSource), Model, source)).ToArray();
+			var viewContainers = sources.Select(source => new UpdateContainer(Model, this)).ToArray();
+
+			await this.MapToViewAsync(modelReaders, viewContainers)
+				.ConfigureAwait(false);
+
+			foreach (var view in viewContainers)
+			{
+				queries.Add(QueryExpression.Update(
+					tableExpression,
+					BuildPrimaryKeyWhereClause(view),
+					columns.Select(q => view.AssignExpressions[q.Name]).ToArray()
+					));
+			}
+
+			await dataProvider.ExecuteNonQueryAsync(QueryExpression.Transaction(queries))
+				.ConfigureAwait(false);
+		}
+
+		private QueryExpression BuildPrimaryKeyWhereClause(IContainer container)
+		{
+			if (PrimaryKeyFields == null ||
+				PrimaryKeyFields.Length == 0)
+				throw new InvalidOperationException("A primary key is required.");
+
+			QueryExpression where = null;
+			foreach (var field in PrimaryKeyFields)
+			{
+				var comparison = QueryExpression.Compare(
+						QueryExpression.Column(field.Storage.ColumnName),
+						ComparisonOperator.AreEqual,
+						QueryExpression.Value(
+							container.GetValue(field.ModelBinding.ViewFieldPath)
+							));
+				if (where == null)
+				{
+					where = comparison;
+				}
+				else
+				{
+					where = QueryExpression.AndAlso(where, comparison);
+				}
+			}
+			return where;
+		}
+
 		private (QueryExpression insert, QueryExpression getId) InsertAndGetIdExpression(DataField[] columns,
 			TableSchema table, InsertContainer viewContainer)
 		{
 			var row = new QueryExpression[columns.Length];
 			for (var i = 0; i < columns.Length; i++)
 			{
-				row[i] = viewContainer.ColumnValues[columns[i].Name];
+				row[i] = viewContainer.ColumnValues[columns[i].Storage.ColumnName];
 			}
 
 			return (QueryExpression.Insert(table.TableName,
@@ -185,7 +280,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 				var row = new QueryExpression[columns.Length];
 				for (var i = 0; i < columns.Length; i++)
 				{
-					row[i] = container.ColumnValues[columns[i].Name];
+					row[i] = container.ColumnValues[columns[i].Storage.ColumnName];
 				}
 				values.Add(row);
 			}
