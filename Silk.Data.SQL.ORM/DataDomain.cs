@@ -42,9 +42,14 @@ namespace Silk.Data.SQL.ORM
 			where TSource : new()
 		{
 			var model = TypeModeller.GetModelOf<TSource>();
-			var dataModel = model.CreateView(viewDefinition => new DataModel<TSource>(viewDefinition.Name,
-					model, DataField.FromDefinitions(viewDefinition.UserData.OfType<TableDefinition>(), viewDefinition.FieldDefinitions).ToArray(),
-					viewDefinition.ResourceLoaders.ToArray(), this), ViewConventions);
+			var dataModel = model.CreateView(viewDefinition =>
+			{
+				viewDefinition.UserData.Add(this);
+				return new DataModel<TSource>(
+					viewDefinition.Name, model,
+					DataField.FromDefinitions(viewDefinition.UserData.OfType<TableDefinition>(), viewDefinition.FieldDefinitions).ToArray(),
+					viewDefinition.ResourceLoaders.ToArray(), this);
+				}, ViewConventions);
 			_dataModels.Add(dataModel);
 			return dataModel;
 		}
@@ -59,10 +64,14 @@ namespace Silk.Data.SQL.ORM
 			where TView : new()
 		{
 			var model = TypeModeller.GetModelOf<TSource>();
-			var dataModel = model.CreateView(viewDefinition => new DataModel<TSource, TView>(viewDefinition.Name,
-					model, DataField.FromDefinitions(viewDefinition.UserData.OfType<TableDefinition>(), viewDefinition.FieldDefinitions).ToArray(),
-					viewDefinition.ResourceLoaders.ToArray(), this),
-				typeof(TView), ViewConventions);
+			var dataModel = model.CreateView(viewDefinition =>
+			{
+				viewDefinition.UserData.Add(this);
+				return new DataModel<TSource, TView>(
+					viewDefinition.Name, model,
+					DataField.FromDefinitions(viewDefinition.UserData.OfType<TableDefinition>(), viewDefinition.FieldDefinitions).ToArray(),
+					viewDefinition.ResourceLoaders.ToArray(), this);
+			}, typeof(TView), ViewConventions);
 			_dataModels.Add(dataModel);
 			return dataModel;
 		}
