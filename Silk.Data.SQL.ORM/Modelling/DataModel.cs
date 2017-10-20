@@ -23,8 +23,10 @@ namespace Silk.Data.SQL.ORM.Modelling
 
 		public TableSchema[] Tables { get; }
 
+		public DataDomain Domain { get; }
+
 		public DataModel(string name, Model model, DataField[] fields,
-			IResourceLoader[] resourceLoaders)
+			IResourceLoader[] resourceLoaders, DataDomain domain)
 		{
 			Name = name;
 			Model = model;
@@ -32,6 +34,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 			ResourceLoaders = resourceLoaders;
 			Tables = Fields.Select(q => q.Storage.Table).GroupBy(q => q)
 				.Select(q => q.First()).ToArray();
+			Domain = domain;
 		}
 	}
 
@@ -40,8 +43,9 @@ namespace Silk.Data.SQL.ORM.Modelling
 	{
 		public new TypedModel<TSource> Model { get; }
 
-		public DataModel(string name, TypedModel<TSource> model, DataField[] fields, IResourceLoader[] resourceLoaders)
-			: base(name, model, fields, resourceLoaders)
+		public DataModel(string name, TypedModel<TSource> model, DataField[] fields,
+			IResourceLoader[] resourceLoaders, DataDomain domain)
+			: base(name, model, fields, resourceLoaders, domain)
 		{
 			Model = model;
 		}
@@ -225,8 +229,9 @@ namespace Silk.Data.SQL.ORM.Modelling
 		where TSource : new()
 		where TView: new()
 	{
-		public DataModel(string name, TypedModel<TSource> model, DataField[] fields, IResourceLoader[] resourceLoaders)
-			: base(name, model, fields, resourceLoaders)
+		public DataModel(string name, TypedModel<TSource> model, DataField[] fields,
+			IResourceLoader[] resourceLoaders, DataDomain domain)
+			: base(name, model, fields, resourceLoaders, domain)
 		{
 		}
 	}

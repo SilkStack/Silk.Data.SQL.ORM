@@ -13,9 +13,8 @@ namespace Silk.Data.SQL.ORM.Tests
 		[TestMethod]
 		public void InsertGuidSimpleModel()
 		{
-			var model = TypeModeller.GetModelOf<BasicPocoWithGuidId>();
-			var dataModel = model.GetModeller<BasicPocoWithGuidId>()
-				.CreateDataModel();
+			var domain = new DataDomain();
+			var dataModel = domain.CreateDataModel<BasicPocoWithGuidId>();
 
 			foreach (var table in dataModel.Tables)
 			{
@@ -66,9 +65,8 @@ namespace Silk.Data.SQL.ORM.Tests
 		[TestMethod]
 		public void InsertIntSimpleModel()
 		{
-			var model = TypeModeller.GetModelOf<BasicPocoWithIntId>();
-			var dataModel = model.GetModeller<BasicPocoWithIntId>()
-				.CreateDataModel();
+			var domain = new DataDomain();
+			var dataModel = domain.CreateDataModel<BasicPocoWithIntId>();
 
 			foreach (var table in dataModel.Tables)
 			{

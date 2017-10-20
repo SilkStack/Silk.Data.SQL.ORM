@@ -2,6 +2,7 @@
 using Silk.Data.Modelling.Conventions;
 using Silk.Data.SQL.ORM.Modelling;
 using Silk.Data.SQL.ORM.Modelling.Conventions;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Silk.Data.SQL.ORM
@@ -17,7 +18,10 @@ namespace Silk.Data.SQL.ORM
 			new IdIsPrimaryKeyConvention()
 		};
 
+		private readonly List<DataModel> _dataModels = new List<DataModel>();
+
 		public ViewConvention[] ViewConventions { get; }
+		public IReadOnlyCollection<DataModel> DataModels => _dataModels;
 
 		public DataDomain() :
 			this(_defaultViewConventions)
@@ -38,9 +42,11 @@ namespace Silk.Data.SQL.ORM
 			where TSource : new()
 		{
 			var model = TypeModeller.GetModelOf<TSource>();
-			return model.CreateView(viewDefinition => new DataModel<TSource>(viewDefinition.Name,
+			var dataModel = model.CreateView(viewDefinition => new DataModel<TSource>(viewDefinition.Name,
 					model, DataField.FromDefinitions(viewDefinition.UserData.OfType<TableDefinition>(), viewDefinition.FieldDefinitions).ToArray(),
-					viewDefinition.ResourceLoaders.ToArray()), ViewConventions);
+					viewDefinition.ResourceLoaders.ToArray(), this), ViewConventions);
+			_dataModels.Add(dataModel);
+			return dataModel;
 		}
 
 		/// <summary>
@@ -53,10 +59,12 @@ namespace Silk.Data.SQL.ORM
 			where TView : new()
 		{
 			var model = TypeModeller.GetModelOf<TSource>();
-			return model.CreateView(viewDefinition => new DataModel<TSource, TView>(viewDefinition.Name,
+			var dataModel = model.CreateView(viewDefinition => new DataModel<TSource, TView>(viewDefinition.Name,
 					model, DataField.FromDefinitions(viewDefinition.UserData.OfType<TableDefinition>(), viewDefinition.FieldDefinitions).ToArray(),
-					viewDefinition.ResourceLoaders.ToArray()),
+					viewDefinition.ResourceLoaders.ToArray(), this),
 				typeof(TView), ViewConventions);
+			_dataModels.Add(dataModel);
+			return dataModel;
 		}
 	}
 }

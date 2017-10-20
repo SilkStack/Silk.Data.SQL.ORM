@@ -1,5 +1,4 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Silk.Data.Modelling;
 using Silk.Data.SQL.ORM.Modelling;
 using System;
 using System.Linq;
@@ -9,10 +8,8 @@ namespace Silk.Data.SQL.ORM.Tests
 	[TestClass]
 	public class TableSQLTests
 	{
-		private DataModel<BasicSqlTypesModel, BasicSqlTypesModel>
-			_simpleDataModel = TypeModeller.GetModelOf<BasicSqlTypesModel>()
-				.GetModeller<BasicSqlTypesModel>()
-				.CreateDataModel();
+		private DataModel<BasicSqlTypesModel>
+			_simpleDataModel = new DataDomain().CreateDataModel<BasicSqlTypesModel>();
 
 
 		[TestMethod]

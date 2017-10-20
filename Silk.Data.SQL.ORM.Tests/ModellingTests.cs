@@ -12,9 +12,8 @@ namespace Silk.Data.SQL.ORM.Tests
 		[TestMethod]
 		public void BasicSqlTypes()
 		{
-			var model = TypeModeller.GetModelOf<BasicSqlTypesModel>();
-			var dataModel = model.GetModeller<BasicSqlTypesModel>()
-				.CreateDataModel();
+			var domain = new DataDomain();
+			var dataModel = domain.CreateDataModel<BasicSqlTypesModel,BasicSqlTypesModel>();
 
 			Assert.AreEqual(11, dataModel.Fields.Length);
 			foreach (var field in dataModel.Fields)
@@ -64,8 +63,8 @@ namespace Silk.Data.SQL.ORM.Tests
 		[TestMethod]
 		public void BasicSqlTypesWithoutView()
 		{
-			var model = TypeModeller.GetModelOf<BasicSqlTypesModel>();
-			var dataModel = model.CreateDataModel();
+			var domain = new DataDomain();
+			var dataModel = domain.CreateDataModel<BasicSqlTypesModel>();
 
 			Assert.AreEqual(11, dataModel.Fields.Length);
 			foreach (var field in dataModel.Fields)
