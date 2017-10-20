@@ -19,9 +19,11 @@ namespace Silk.Data.SQL.ORM
 		};
 
 		private readonly List<DataModel> _dataModels = new List<DataModel>();
+		private readonly List<TableSchema> _tables = new List<TableSchema>();
 
 		public ViewConvention[] ViewConventions { get; }
 		public IReadOnlyCollection<DataModel> DataModels => _dataModels;
+		public IReadOnlyCollection<TableSchema> Tables => _tables;
 
 		public DataDomain() :
 			this(_defaultViewConventions)
@@ -31,6 +33,17 @@ namespace Silk.Data.SQL.ORM
 		public DataDomain(ViewConvention[] viewConventions)
 		{
 			ViewConventions = viewConventions;
+		}
+
+		private void AddTables(DataModel model)
+		{
+			foreach (var table in model.Tables)
+			{
+				if (!_tables.Contains(table))
+				{
+					_tables.Add(table);
+				}
+			}
 		}
 
 		/// <summary>
@@ -51,6 +64,7 @@ namespace Silk.Data.SQL.ORM
 					viewDefinition.ResourceLoaders.ToArray(), this);
 				}, ViewConventions);
 			_dataModels.Add(dataModel);
+			AddTables(dataModel);
 			return dataModel;
 		}
 
@@ -73,6 +87,7 @@ namespace Silk.Data.SQL.ORM
 					viewDefinition.ResourceLoaders.ToArray(), this);
 			}, typeof(TView), ViewConventions);
 			_dataModels.Add(dataModel);
+			AddTables(dataModel);
 			return dataModel;
 		}
 	}
