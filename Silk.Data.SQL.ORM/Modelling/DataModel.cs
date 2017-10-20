@@ -224,6 +224,71 @@ namespace Silk.Data.SQL.ORM.Modelling
 				.ConfigureAwait(false);
 		}
 
+		public void Delete(IDataProvider dataProvider, params TSource[] sources)
+		{
+			if (PrimaryKeyFields == null ||
+				PrimaryKeyFields.Length == 0)
+				throw new InvalidOperationException("A primary key is required.");
+
+			//  todo: update this to work with datamodels that span multiple tables
+			var table = Fields.First().Storage.Table;
+			var tableExpression = QueryExpression.Table(table.TableName);
+			var queries = new List<QueryExpression>();
+			var columns = Fields.Where(
+				dataField => !dataField.Storage.IsPrimaryKey
+				).ToArray();
+
+			var modelReaders = sources.Select(source => new ObjectReadWriter(typeof(TSource), Model, source)).ToArray();
+			var viewContainers = sources.Select(source => new UpdateContainer(Model, this)).ToArray();
+
+			//  todo: consider reading primary key fields directly from TSource instead of mapping
+			this.MapToViewAsync(modelReaders, viewContainers)
+				.ConfigureAwait(false).GetAwaiter().GetResult();
+
+			foreach (var view in viewContainers)
+			{
+				queries.Add(QueryExpression.Delete(
+					tableExpression,
+					BuildPrimaryKeyWhereClause(view)
+					));
+			}
+
+			dataProvider.ExecuteNonQuery(QueryExpression.Transaction(queries));
+		}
+
+		public async Task DeleteAsync(IDataProvider dataProvider, params TSource[] sources)
+		{
+			if (PrimaryKeyFields == null ||
+				PrimaryKeyFields.Length == 0)
+				throw new InvalidOperationException("A primary key is required.");
+
+			//  todo: update this to work with datamodels that span multiple tables
+			var table = Fields.First().Storage.Table;
+			var tableExpression = QueryExpression.Table(table.TableName);
+			var queries = new List<QueryExpression>();
+			var columns = Fields.Where(
+				dataField => !dataField.Storage.IsPrimaryKey
+				).ToArray();
+
+			var modelReaders = sources.Select(source => new ObjectReadWriter(typeof(TSource), Model, source)).ToArray();
+			var viewContainers = sources.Select(source => new UpdateContainer(Model, this)).ToArray();
+
+			//  todo: consider reading primary key fields directly from TSource instead of mapping
+			await this.MapToViewAsync(modelReaders, viewContainers)
+				.ConfigureAwait(false);
+
+			foreach (var view in viewContainers)
+			{
+				queries.Add(QueryExpression.Delete(
+					tableExpression,
+					BuildPrimaryKeyWhereClause(view)
+					));
+			}
+
+			await dataProvider.ExecuteNonQueryAsync(QueryExpression.Transaction(queries))
+				.ConfigureAwait(false);
+		}
+
 		private QueryExpression BuildPrimaryKeyWhereClause(IContainer container)
 		{
 			if (PrimaryKeyFields == null ||
