@@ -1,10 +1,12 @@
 ﻿using Silk.Data.Modelling;
 using Silk.Data.Modelling.ResourceLoaders;
 using Silk.Data.SQL.Expressions;
+using Silk.Data.SQL.ORM.Expressions;
 using Silk.Data.SQL.Providers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 
 namespace Silk.Data.SQL.ORM.Modelling
@@ -55,7 +57,10 @@ namespace Silk.Data.SQL.ORM.Modelling
 			Model = model;
 		}
 
-		public IReadOnlyCollection<TSource> Select(IDataProvider dataProvider)
+		public IReadOnlyCollection<TSource> Select(IDataProvider dataProvider,
+			QueryExpression where = null,
+			int? offset = null,
+			int? limit = null)
 		{
 			//  todo: update this to work with datamodels that span multiple tables
 			var table = Fields.First().Storage.Table;
@@ -63,9 +68,17 @@ namespace Silk.Data.SQL.ORM.Modelling
 			var resultWriters = new List<IModelReadWriter>();
 			var rows = new List<IContainer>();
 
+			if (where is Expressions.ConditionExpression conditionExpr)
+				where = conditionExpr.Expression;
+
 			using (var queryResult = dataProvider.ExecuteReader(
-				QueryExpression.Select(new[] { QueryExpression.All() }, from: QueryExpression.Table(table.TableName))
-				))
+				QueryExpression.Select(
+					new[] { QueryExpression.All() },
+					from: QueryExpression.Table(table.TableName),
+					where: where,
+					offset: offset != null ? QueryExpression.Value(offset.Value) : null,
+					limit: limit != null ? QueryExpression.Value(limit.Value) : null
+				)))
 			{
 				if (!queryResult.HasRows)
 					return _noResults;
@@ -428,6 +441,11 @@ namespace Silk.Data.SQL.ORM.Modelling
 			IResourceLoader[] resourceLoaders, DataDomain domain)
 			: base(name, model, fields, resourceLoaders, domain)
 		{
+		}
+
+		public ConditionExpression<TSource, TView> Where(Expression<Func<TView, bool>> expression)
+		{
+			return new ConditionExpression<TSource, TView>(this, expression);
 		}
 	}
 }
