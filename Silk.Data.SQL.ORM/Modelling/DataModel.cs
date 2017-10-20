@@ -44,6 +44,8 @@ namespace Silk.Data.SQL.ORM.Modelling
 	public class DataModel<TSource> : DataModel, IView<DataField, TSource>
 		where TSource : new()
 	{
+		private static readonly TSource[] _noResults = new TSource[0];
+
 		public new TypedModel<TSource> Model { get; }
 
 		public DataModel(string name, TypedModel<TSource> model, DataField[] fields,
@@ -51,6 +53,39 @@ namespace Silk.Data.SQL.ORM.Modelling
 			: base(name, model, fields, resourceLoaders, domain)
 		{
 			Model = model;
+		}
+
+		public IReadOnlyCollection<TSource> Select(IDataProvider dataProvider)
+		{
+			//  todo: update this to work with datamodels that span multiple tables
+			var table = Fields.First().Storage.Table;
+			var results = new List<TSource>();
+			var resultWriters = new List<IModelReadWriter>();
+			var rows = new List<IContainer>();
+
+			using (var queryResult = dataProvider.ExecuteReader(
+				QueryExpression.Select(new[] { QueryExpression.All() }, from: QueryExpression.Table(table.TableName))
+				))
+			{
+				if (!queryResult.HasRows)
+					return _noResults;
+
+				while (queryResult.Read())
+				{
+					var result = new TSource();
+					var container = new RowContainer(Model, this);
+					container.ReadRow(queryResult);
+					rows.Add(container);
+					resultWriters.Add(new ObjectReadWriter(typeof(TSource), Model, result));
+					results.Add(result);
+				}
+			}
+
+			this.MapToModelAsync(resultWriters, rows)
+				.ConfigureAwait(false)
+				.GetAwaiter().GetResult();
+
+			return results;
 		}
 
 		public void Insert(IDataProvider dataProvider, params TSource[] sources)
