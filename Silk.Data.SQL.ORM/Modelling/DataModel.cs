@@ -414,7 +414,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 			var row = new QueryExpression[columns.Length];
 			for (var i = 0; i < columns.Length; i++)
 			{
-				row[i] = viewContainer.ColumnValues[columns[i].Storage.ColumnName];
+				viewContainer.ColumnValues.TryGetValue(columns[i].Storage.ColumnName, out row[i]);
 			}
 
 			return (QueryExpression.Insert(table.TableName,
@@ -437,7 +437,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 				var row = new QueryExpression[columns.Length];
 				for (var i = 0; i < columns.Length; i++)
 				{
-					row[i] = container.ColumnValues[columns[i].Storage.ColumnName];
+					container.ColumnValues.TryGetValue(columns[i].Storage.ColumnName, out row[i]);
 				}
 				values.Add(row);
 			}
