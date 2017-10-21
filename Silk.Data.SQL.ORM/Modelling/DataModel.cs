@@ -101,6 +101,50 @@ namespace Silk.Data.SQL.ORM.Modelling
 			return results;
 		}
 
+		public async Task<IReadOnlyCollection<TSource>> SelectAsync(IDataProvider dataProvider,
+			QueryExpression where = null,
+			int? offset = null,
+			int? limit = null)
+		{
+			//  todo: update this to work with datamodels that span multiple tables
+			var table = Fields.First().Storage.Table;
+			var results = new List<TSource>();
+			var resultWriters = new List<IModelReadWriter>();
+			var rows = new List<IContainer>();
+
+			if (where is Expressions.ConditionExpression conditionExpr)
+				where = conditionExpr.Expression;
+
+			using (var queryResult = await dataProvider.ExecuteReaderAsync(
+				QueryExpression.Select(
+					new[] { QueryExpression.All() },
+					from: QueryExpression.Table(table.TableName),
+					where: where,
+					offset: offset != null ? QueryExpression.Value(offset.Value) : null,
+					limit: limit != null ? QueryExpression.Value(limit.Value) : null
+				)).ConfigureAwait(false))
+			{
+				if (!queryResult.HasRows)
+					return _noResults;
+
+				while (await queryResult.ReadAsync()
+					.ConfigureAwait(false))
+				{
+					var result = new TSource();
+					var container = new RowContainer(Model, this);
+					container.ReadRow(queryResult);
+					rows.Add(container);
+					resultWriters.Add(new ObjectReadWriter(typeof(TSource), Model, result));
+					results.Add(result);
+				}
+			}
+
+			await this.MapToModelAsync(resultWriters, rows)
+				.ConfigureAwait(false);
+
+			return results;
+		}
+
 		public void Insert(IDataProvider dataProvider, params TSource[] sources)
 		{
 			//  todo: update this to work with datamodels that span multiple tables
