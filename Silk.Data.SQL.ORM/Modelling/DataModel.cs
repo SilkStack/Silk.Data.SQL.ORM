@@ -308,7 +308,12 @@ namespace Silk.Data.SQL.ORM.Modelling
 				queries.Add(QueryExpression.Update(
 					tableExpression,
 					BuildPrimaryKeyWhereClause(view),
-					columns.Select(q => view.AssignExpressions[q.Name]).ToArray()
+					columns.Select(q =>
+					{
+						if (view.AssignExpressions.TryGetValue(q.Name, out var val))
+							return val;
+						return null;
+					}).ToArray()
 					));
 			}
 
