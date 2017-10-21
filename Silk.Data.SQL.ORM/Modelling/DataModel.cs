@@ -276,7 +276,12 @@ namespace Silk.Data.SQL.ORM.Modelling
 				queries.Add(QueryExpression.Update(
 					tableExpression,
 					BuildPrimaryKeyWhereClause(view),
-					columns.Select(q => view.AssignExpressions[q.Name]).ToArray()
+					columns.Select(q =>
+					{
+						if (view.AssignExpressions.TryGetValue(q.Name, out var val))
+							return val;
+						return QueryExpression.Assign(QueryExpression.Column(q.Storage.ColumnName), QueryExpression.Value(null));
+					}).ToArray()
 					));
 			}
 
@@ -312,7 +317,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 					{
 						if (view.AssignExpressions.TryGetValue(q.Name, out var val))
 							return val;
-						return null;
+						return QueryExpression.Assign(QueryExpression.Column(q.Storage.ColumnName), QueryExpression.Value(null));
 					}).ToArray()
 					));
 			}
@@ -419,7 +424,10 @@ namespace Silk.Data.SQL.ORM.Modelling
 			var row = new QueryExpression[columns.Length];
 			for (var i = 0; i < columns.Length; i++)
 			{
-				viewContainer.ColumnValues.TryGetValue(columns[i].Storage.ColumnName, out row[i]);
+				if (!viewContainer.ColumnValues.TryGetValue(columns[i].Storage.ColumnName, out row[i]))
+				{
+					row[i] = QueryExpression.Value(null);
+				}
 			}
 
 			return (QueryExpression.Insert(table.TableName,
@@ -442,7 +450,10 @@ namespace Silk.Data.SQL.ORM.Modelling
 				var row = new QueryExpression[columns.Length];
 				for (var i = 0; i < columns.Length; i++)
 				{
-					container.ColumnValues.TryGetValue(columns[i].Storage.ColumnName, out row[i]);
+					if (!container.ColumnValues.TryGetValue(columns[i].Storage.ColumnName, out row[i]))
+					{
+						row[i] = QueryExpression.Value(null);
+					}
 				}
 				values.Add(row);
 			}

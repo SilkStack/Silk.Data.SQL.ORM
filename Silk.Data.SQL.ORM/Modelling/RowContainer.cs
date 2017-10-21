@@ -44,7 +44,10 @@ namespace Silk.Data.SQL.ORM.Modelling
 
 				var ord = queryResult.GetOrdinal(field.Storage.ColumnName);
 
-				_row[field.Name] = readFunc(queryResult, ord);
+				if (queryResult.IsDBNull(ord))
+					_row[field.Name] = null;
+				else
+					_row[field.Name] = readFunc(queryResult, ord);
 			}
 		}
 
