@@ -118,5 +118,17 @@ namespace Silk.Data.SQL.ORM.Queries
 			var queries = Queries.Concat(new InsertQueryBuilder<TSource>(DataModel).CreateQuery(sources));
 			return new ModelBoundExecutableQueryCollection<TSource>(DataModel, queries);
 		}
+
+		public ModelBoundExecutableQueryCollection<TSource> Update(params TSource[] sources)
+		{
+			var queries = Queries.Concat(new UpdateQueryBuilder<TSource>(DataModel).CreateQuery(sources));
+			return new ModelBoundExecutableQueryCollection<TSource>(DataModel, queries);
+		}
+
+		public ModelBoundExecutableQueryCollection<TSource> Delete(params TSource[] sources)
+		{
+			var queries = Queries.Concat(new DeleteQueryBuilder<TSource>(DataModel).CreateQuery(sources));
+			return new ModelBoundExecutableQueryCollection<TSource>(DataModel, queries);
+		}
 	}
 }

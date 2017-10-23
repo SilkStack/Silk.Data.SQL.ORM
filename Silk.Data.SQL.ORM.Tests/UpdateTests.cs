@@ -33,7 +33,8 @@ namespace Silk.Data.SQL.ORM.Tests
 			sourceInstances[1].Data = "Hello World 5";
 			sourceInstances[2].Data = "Hello World 6";
 
-			dataModel.Update(TestDb.Provider, sourceInstances);
+			dataModel.Update(sourceInstances)
+				.Execute(TestDb.Provider);
 
 			using (var queryResult = TestDb.Provider.ExecuteReader(
 				QueryExpression.Select(

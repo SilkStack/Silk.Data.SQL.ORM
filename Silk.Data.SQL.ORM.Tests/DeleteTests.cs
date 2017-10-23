@@ -28,7 +28,8 @@ namespace Silk.Data.SQL.ORM.Tests
 			};
 			dataModel.Insert(sourceInstances)
 				.Execute(TestDb.Provider);
-			dataModel.Delete(TestDb.Provider, sourceInstances);
+			dataModel.Delete(sourceInstances)
+				.Execute(TestDb.Provider); ;
 
 			using (var queryResult = TestDb.Provider.ExecuteReader(
 				QueryExpression.Select(
