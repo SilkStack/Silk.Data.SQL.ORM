@@ -35,6 +35,11 @@ namespace Silk.Data.SQL.ORM.Tests
 			{
 				Assert.IsTrue(queriedInstances.Any(q => q.Id == sourceInstance.Id && q.Data == sourceInstance.Data));
 			}
+
+			foreach (var table in dataModel.Tables)
+			{
+				table.Drop(TestDb.Provider);
+			}
 		}
 
 		[TestMethod]
@@ -67,6 +72,11 @@ namespace Silk.Data.SQL.ORM.Tests
 			Assert.AreEqual(1, lastResults.Count);
 			Assert.AreEqual(sourceInstances[0].Data, firstResults.First().Data);
 			Assert.AreEqual(sourceInstances[2].Data, lastResults.First().Data);
+
+			foreach (var table in dataModel.Tables)
+			{
+				table.Drop(TestDb.Provider);
+			}
 		}
 
 		private class BasicPocoWithGuidId
