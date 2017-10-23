@@ -21,8 +21,11 @@ namespace Silk.Data.SQL.ORM.Expressions
 		where TSource : new()
 		where TView : new()
 	{
+		private readonly ExpressionConverter<TSource, TView> _converter;
+
 		public ConditionExpression(DataModel<TSource, TView> dataModel, Expression<Func<TView, bool>> expression)
 		{
+			_converter = new ExpressionConverter<TSource, TView>(dataModel);
 			Expression = ConvertToQueryExpression(expression);
 		}
 
@@ -40,7 +43,7 @@ namespace Silk.Data.SQL.ORM.Expressions
 
 		private QueryExpression ConvertToQueryExpression(Expression<Func<TView, bool>> expression)
 		{
-			return null;
+			return _converter.ConvertToCondition(expression);
 		}
 	}
 }

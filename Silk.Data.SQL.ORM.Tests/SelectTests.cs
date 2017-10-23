@@ -46,7 +46,7 @@ namespace Silk.Data.SQL.ORM.Tests
 		public void MultipleSelectGuidSimpleModel()
 		{
 			var domain = new DataDomain();
-			var dataModel = domain.CreateDataModel<BasicPocoWithGuidId>();
+			var dataModel = domain.CreateDataModel<BasicPocoWithGuidId, BasicPocoWithGuidId>();
 
 			foreach (var table in dataModel.Tables)
 			{
@@ -63,8 +63,8 @@ namespace Silk.Data.SQL.ORM.Tests
 
 			var (firstResults, lastResults) = dataModel
 				.Insert(sourceInstances)
-				.Select(limit: 1, offset: 0)
-				.Select(limit: 1, offset: 2)
+				.Select(where: dataModel.Where(q => q.Id == sourceInstances[0].Id))
+				.Select(where: dataModel.Where(q => q.Id == sourceInstances[2].Id))
 				.AsTransaction()
 				.Execute(TestDb.Provider);
 
