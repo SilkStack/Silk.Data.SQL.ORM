@@ -29,18 +29,13 @@ namespace Silk.Data.SQL.ORM.Tests
 			dataModel.Insert(sourceInstances)
 				.Execute(TestDb.Provider);
 			dataModel.Delete(sourceInstances)
-				.Execute(TestDb.Provider); ;
+				.Execute(TestDb.Provider);
 
 			using (var queryResult = TestDb.Provider.ExecuteReader(
 				QueryExpression.Select(
 					new[] { QueryExpression.All() },
 					from: QueryExpression.Table(dataModel.Tables.First().TableName),
-					where: QueryExpression.Compare(QueryExpression.Column("Id"), ComparisonOperator.None, QueryExpression.InFunction(sourceInstances.Select(q => (object)q.Id).ToArray())),
-					orderBy: new[] {
-						QueryExpression.Descending(QueryExpression.Compare(QueryExpression.Column("Id"), ComparisonOperator.AreEqual, QueryExpression.Value(sourceInstances[0].Id))),
-						QueryExpression.Descending(QueryExpression.Compare(QueryExpression.Column("Id"), ComparisonOperator.AreEqual, QueryExpression.Value(sourceInstances[1].Id))),
-						QueryExpression.Descending(QueryExpression.Compare(QueryExpression.Column("Id"), ComparisonOperator.AreEqual, QueryExpression.Value(sourceInstances[2].Id)))
-					}
+					where: QueryExpression.Compare(QueryExpression.Column("Id"), ComparisonOperator.None, QueryExpression.InFunction(sourceInstances.Select(q => (object)q.Id).ToArray()))
 				)))
 			{
 				Assert.IsFalse(queryResult.HasRows);

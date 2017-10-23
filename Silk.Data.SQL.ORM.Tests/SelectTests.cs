@@ -8,7 +8,7 @@ namespace Silk.Data.SQL.ORM.Tests
 	public class SelectTests
 	{
 		[TestMethod]
-		public void InsertGuidSimpleModel()
+		public void SelectGuidSimpleModel()
 		{
 			var domain = new DataDomain();
 			var dataModel = domain.CreateDataModel<BasicPocoWithGuidId>();
@@ -28,7 +28,8 @@ namespace Silk.Data.SQL.ORM.Tests
 			dataModel.Insert(sourceInstances)
 				.Execute(TestDb.Provider);
 
-			var queriedInstances = dataModel.Select(TestDb.Provider);
+			var queriedInstances = dataModel.Select()
+				.Execute(TestDb.Provider);
 			Assert.AreEqual(sourceInstances.Length, queriedInstances.Count);
 			foreach (var sourceInstance in sourceInstances)
 			{

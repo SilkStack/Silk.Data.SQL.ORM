@@ -5,11 +5,16 @@ using System.Linq.Expressions;
 
 namespace Silk.Data.SQL.ORM.Expressions
 {
-	public abstract class ConditionExpression : QueryExpression
+	public abstract class ConditionExpression : QueryExpression, IExtensionExpression
 	{
 		public QueryExpression Expression { get; protected set; }
 
-		public override ExpressionNodeType NodeType => throw new NotImplementedException();
+		public override ExpressionNodeType NodeType => ExpressionNodeType.Extension;
+
+		public void Visit(QueryExpressionVisitor visitor)
+		{
+			visitor.Visit(Expression);
+		}
 	}
 
 	public class ConditionExpression<TSource, TView> : ConditionExpression

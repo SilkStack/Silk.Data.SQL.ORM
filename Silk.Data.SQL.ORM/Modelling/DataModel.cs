@@ -3,12 +3,10 @@ using Silk.Data.Modelling.ResourceLoaders;
 using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Expressions;
 using Silk.Data.SQL.ORM.Queries;
-using Silk.Data.SQL.Providers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Threading.Tasks;
 
 namespace Silk.Data.SQL.ORM.Modelling
 {
@@ -47,8 +45,6 @@ namespace Silk.Data.SQL.ORM.Modelling
 	public class DataModel<TSource> : DataModel, IView<DataField, TSource>
 		where TSource : new()
 	{
-		private static readonly TSource[] _noResults = new TSource[0];
-
 		public new TypedModel<TSource> Model { get; }
 
 		public DataModel(string name, TypedModel<TSource> model, DataField[] fields,
@@ -68,92 +64,12 @@ namespace Silk.Data.SQL.ORM.Modelling
 				.GetResult();
 		}
 
-		public IReadOnlyCollection<TSource> Select(IDataProvider dataProvider,
-			QueryExpression where = null,
+		public ModelBoundExecutableQueryCollection<TSource, TSource> Select(QueryExpression where = null,
 			int? offset = null,
 			int? limit = null)
 		{
-			//  todo: update this to work with datamodels that span multiple tables
-			var table = Fields.First().Storage.Table;
-			var results = new List<TSource>();
-			var resultWriters = new List<IModelReadWriter>();
-			var rows = new List<IContainer>();
-
-			if (where is Expressions.ConditionExpression conditionExpr)
-				where = conditionExpr.Expression;
-
-			using (var queryResult = dataProvider.ExecuteReader(
-				QueryExpression.Select(
-					new[] { QueryExpression.All() },
-					from: QueryExpression.Table(table.TableName),
-					where: where,
-					offset: offset != null ? QueryExpression.Value(offset.Value) : null,
-					limit: limit != null ? QueryExpression.Value(limit.Value) : null
-				)))
-			{
-				if (!queryResult.HasRows)
-					return _noResults;
-
-				while (queryResult.Read())
-				{
-					var result = new TSource();
-					var container = new RowContainer(Model, this);
-					container.ReadRow(queryResult);
-					rows.Add(container);
-					resultWriters.Add(new ObjectReadWriter(typeof(TSource), Model, result));
-					results.Add(result);
-				}
-			}
-
-			this.MapToModelAsync(resultWriters, rows)
-				.ConfigureAwait(false)
-				.GetAwaiter().GetResult();
-
-			return results;
-		}
-
-		public async Task<IReadOnlyCollection<TSource>> SelectAsync(IDataProvider dataProvider,
-			QueryExpression where = null,
-			int? offset = null,
-			int? limit = null)
-		{
-			//  todo: update this to work with datamodels that span multiple tables
-			var table = Fields.First().Storage.Table;
-			var results = new List<TSource>();
-			var resultWriters = new List<IModelReadWriter>();
-			var rows = new List<IContainer>();
-
-			if (where is Expressions.ConditionExpression conditionExpr)
-				where = conditionExpr.Expression;
-
-			using (var queryResult = await dataProvider.ExecuteReaderAsync(
-				QueryExpression.Select(
-					new[] { QueryExpression.All() },
-					from: QueryExpression.Table(table.TableName),
-					where: where,
-					offset: offset != null ? QueryExpression.Value(offset.Value) : null,
-					limit: limit != null ? QueryExpression.Value(limit.Value) : null
-				)).ConfigureAwait(false))
-			{
-				if (!queryResult.HasRows)
-					return _noResults;
-
-				while (await queryResult.ReadAsync()
-					.ConfigureAwait(false))
-				{
-					var result = new TSource();
-					var container = new RowContainer(Model, this);
-					container.ReadRow(queryResult);
-					rows.Add(container);
-					resultWriters.Add(new ObjectReadWriter(typeof(TSource), Model, result));
-					results.Add(result);
-				}
-			}
-
-			await this.MapToModelAsync(resultWriters, rows)
-				.ConfigureAwait(false);
-
-			return results;
+			return new ModelBoundExecutableQueryCollection<TSource>(this)
+				.Select<TSource>(where, offset, limit);
 		}
 
 		public ModelBoundExecutableQueryCollection<TSource> Insert(params TSource[] sources)

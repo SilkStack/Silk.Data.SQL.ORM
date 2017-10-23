@@ -1,5 +1,4 @@
-﻿using Silk.Data.Modelling;
-using Silk.Data.SQL.Expressions;
+﻿using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Modelling;
 using Silk.Data.SQL.Providers;
 using System;
@@ -38,7 +37,7 @@ namespace Silk.Data.SQL.ORM.Queries
 						{
 							if (!queryResult.NextResult())
 								throw new Exception("Failed to move to query result.");
-							query.Delegate(queryResult);
+							query.Delegate?.Invoke(queryResult);
 						}
 					}
 				},
@@ -50,7 +49,8 @@ namespace Silk.Data.SQL.ORM.Queries
 						{
 							if (!await queryResult.NextResultAsync().ConfigureAwait(false))
 								throw new Exception("Failed to move to query result.");
-							await query.AsyncDelegate(queryResult).ConfigureAwait(false);
+							if (query.AsyncDelegate != null)
+								await query.AsyncDelegate(queryResult).ConfigureAwait(false);
 						}
 					}
 				}));
@@ -129,6 +129,95 @@ namespace Silk.Data.SQL.ORM.Queries
 		{
 			var queries = Queries.Concat(new DeleteQueryBuilder<TSource>(DataModel).CreateQuery(sources));
 			return new ModelBoundExecutableQueryCollection<TSource>(DataModel, queries);
+		}
+
+		public ModelBoundExecutableQueryCollection<TSource, TQueryResult> Select<TQueryResult>(QueryExpression where = null,
+			int? offset = null,
+			int? limit = null)
+			where TQueryResult : new()
+		{
+			var queries = Queries.Concat(new SelectQueryBuilder<TSource>(DataModel).CreateQuery(
+				where, offset, limit
+				));
+			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult>(DataModel, queries);
+		}
+	}
+
+	public class ModelBoundExecutableQueryCollection<TSource, TQueryResult> : ModelBoundExecutableQueryCollection<TSource>
+		where TSource : new()
+		where TQueryResult : new()
+	{
+		public ModelBoundExecutableQueryCollection(DataModel<TSource> dataModel, params QueryWithDelegate[] queryExpressions)
+			: base(dataModel, queryExpressions)
+		{
+		}
+
+		public ModelBoundExecutableQueryCollection(DataModel<TSource> dataModel, IEnumerable<QueryWithDelegate> queryExpressions)
+			: base(dataModel, queryExpressions)
+		{
+		}
+
+		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult> Insert(params TSource[] sources)
+		{
+			var queries = Queries.Concat(new InsertQueryBuilder<TSource>(DataModel).CreateQuery(sources));
+			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult>(DataModel, queries);
+		}
+
+		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult> Update(params TSource[] sources)
+		{
+			var queries = Queries.Concat(new UpdateQueryBuilder<TSource>(DataModel).CreateQuery(sources));
+			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult>(DataModel, queries);
+		}
+
+		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult> Delete(params TSource[] sources)
+		{
+			var queries = Queries.Concat(new DeleteQueryBuilder<TSource>(DataModel).CreateQuery(sources));
+			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult>(DataModel, queries);
+		}
+
+		public new ICollection<TQueryResult> Execute(IDataProvider dataProvider)
+		{
+			ICollection<TQueryResult> ret = null;
+			foreach (var query in Queries)
+			{
+				if (query.Delegate == null)
+				{
+					dataProvider.ExecuteNonQuery(query.Query);
+				}
+				else
+				{
+					using (var queryResult = dataProvider.ExecuteReader(query.Query))
+					{
+						query.Delegate(queryResult);
+						ret = query.Results as ICollection<TQueryResult>;
+					}
+				}
+			}
+			return ret;
+		}
+
+		public new async Task<ICollection<TQueryResult>> ExecuteAsync(IDataProvider dataProvider)
+		{
+			ICollection<TQueryResult> ret = null;
+			foreach (var query in Queries)
+			{
+				if (query.Delegate == null)
+				{
+					await dataProvider.ExecuteNonQueryAsync(query.Query)
+						.ConfigureAwait(false);
+				}
+				else
+				{
+					using (var queryResult = await dataProvider.ExecuteReaderAsync(query.Query)
+						.ConfigureAwait(false))
+					{
+						await query.AsyncDelegate(queryResult)
+							.ConfigureAwait(false);
+						ret = query.Results as ICollection<TQueryResult>;
+					}
+				}
+			}
+			return ret;
 		}
 	}
 }
