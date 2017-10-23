@@ -69,7 +69,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 			int? limit = null)
 		{
 			return new ModelBoundExecutableQueryCollection<TSource>(this)
-				.Select<TSource>(where, offset, limit);
+				.Select(where, offset, limit);
 		}
 
 		public ModelBoundExecutableQueryCollection<TSource> Insert(params TSource[] sources)

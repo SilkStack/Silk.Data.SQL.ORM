@@ -131,15 +131,14 @@ namespace Silk.Data.SQL.ORM.Queries
 			return new ModelBoundExecutableQueryCollection<TSource>(DataModel, queries);
 		}
 
-		public ModelBoundExecutableQueryCollection<TSource, TQueryResult> Select<TQueryResult>(QueryExpression where = null,
+		public ModelBoundExecutableQueryCollection<TSource, TSource> Select(QueryExpression where = null,
 			int? offset = null,
 			int? limit = null)
-			where TQueryResult : new()
 		{
 			var queries = Queries.Concat(new SelectQueryBuilder<TSource>(DataModel).CreateQuery(
 				where, offset, limit
 				));
-			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult>(DataModel, queries);
+			return new ModelBoundExecutableQueryCollection<TSource, TSource>(DataModel, queries);
 		}
 	}
 
@@ -173,6 +172,16 @@ namespace Silk.Data.SQL.ORM.Queries
 		{
 			var queries = Queries.Concat(new DeleteQueryBuilder<TSource>(DataModel).CreateQuery(sources));
 			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult>(DataModel, queries);
+		}
+
+		public new ModelBoundExecutableQueryCollection<TSource, TSource, TSource> Select(QueryExpression where = null,
+			int? offset = null,
+			int? limit = null)
+		{
+			var queries = Queries.Concat(new SelectQueryBuilder<TSource>(DataModel).CreateQuery(
+				where, offset, limit
+				));
+			return new ModelBoundExecutableQueryCollection<TSource, TSource, TSource>(DataModel, queries);
 		}
 
 		public new ICollection<TQueryResult> Execute(IDataProvider dataProvider)
@@ -218,6 +227,93 @@ namespace Silk.Data.SQL.ORM.Queries
 				}
 			}
 			return ret;
+		}
+	}
+
+	public class ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2> : ModelBoundExecutableQueryCollection<TSource>
+		where TSource : new()
+		where TQueryResult1 : new()
+		where TQueryResult2 : new()
+	{
+		public ModelBoundExecutableQueryCollection(DataModel<TSource> dataModel, params QueryWithDelegate[] queryExpressions)
+			: base(dataModel, queryExpressions)
+		{
+		}
+
+		public ModelBoundExecutableQueryCollection(DataModel<TSource> dataModel, IEnumerable<QueryWithDelegate> queryExpressions)
+			: base(dataModel, queryExpressions)
+		{
+		}
+
+		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2> Insert(params TSource[] sources)
+		{
+			var queries = Queries.Concat(new InsertQueryBuilder<TSource>(DataModel).CreateQuery(sources));
+			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2>(DataModel, queries);
+		}
+
+		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2> Update(params TSource[] sources)
+		{
+			var queries = Queries.Concat(new UpdateQueryBuilder<TSource>(DataModel).CreateQuery(sources));
+			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2>(DataModel, queries);
+		}
+
+		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2> Delete(params TSource[] sources)
+		{
+			var queries = Queries.Concat(new DeleteQueryBuilder<TSource>(DataModel).CreateQuery(sources));
+			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2>(DataModel, queries);
+		}
+
+		public new (ICollection<TQueryResult1> Result1, ICollection<TQueryResult2> Result2) Execute(IDataProvider dataProvider)
+		{
+			ICollection<TQueryResult1> result1 = null;
+			ICollection<TQueryResult2> result2 = null;
+			foreach (var query in Queries)
+			{
+				if (query.Delegate == null)
+				{
+					dataProvider.ExecuteNonQuery(query.Query);
+				}
+				else
+				{
+					using (var queryResult = dataProvider.ExecuteReader(query.Query))
+					{
+						query.Delegate(queryResult);
+						if (result1 == null)
+							result1 = query.Results as ICollection<TQueryResult1>;
+						else if (result2 == null)
+							result2 = query.Results as ICollection<TQueryResult2>;
+					}
+				}
+			}
+			return (result1, result2);
+		}
+
+		public new async Task<(ICollection<TQueryResult1> Result1, ICollection<TQueryResult2> Result2)> ExecuteAsync(IDataProvider dataProvider)
+		{
+			ICollection<TQueryResult1> result1 = null;
+			ICollection<TQueryResult2> result2 = null;
+			foreach (var query in Queries)
+			{
+				if (query.Delegate == null)
+				{
+					await dataProvider.ExecuteNonQueryAsync(query.Query)
+						.ConfigureAwait(false);
+				}
+				else
+				{
+					using (var queryResult = await dataProvider.ExecuteReaderAsync(query.Query)
+						.ConfigureAwait(false))
+					{
+						await query.AsyncDelegate(queryResult)
+							.ConfigureAwait(false);
+						if (result1 == null)
+							result1 = query.Results as ICollection<TQueryResult1>;
+						else if (result2 == null)
+							result2 = query.Results as ICollection<TQueryResult2>;
+					}
+				}
+			}
+			return (result1, result2);
 		}
 	}
 }
