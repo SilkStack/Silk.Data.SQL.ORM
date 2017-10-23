@@ -11,6 +11,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		public Action<QueryResult> Delegate { get; }
 		public Func<QueryResult, Task> AsyncDelegate { get; }
 		public object Results => _lazyResults?.Value;
+		public bool AssignsResults => _lazyResults != null;
 
 		private readonly Lazy<object> _lazyResults;
 
