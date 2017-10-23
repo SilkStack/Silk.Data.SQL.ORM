@@ -60,6 +60,7 @@ namespace Silk.Data.SQL.ORM.Tests
 				.Insert(sourceInstances)
 				.Select(limit: 1, offset: 0)
 				.Select(limit: 1, offset: 2)
+				.AsTransaction()
 				.Execute(TestDb.Provider);
 
 			Assert.AreEqual(1, firstResults.Count);

@@ -142,6 +142,139 @@ namespace Silk.Data.SQL.ORM.Queries
 		}
 	}
 
+	public class TransactionQueryCollection<TSource, TQueryResult> : ExecutableQueryCollection
+		where TSource : new()
+		where TQueryResult : new()
+	{
+		public TransactionQueryCollection(params QueryWithDelegate[] queryExpressions)
+			: base(queryExpressions)
+		{
+		}
+
+		public TransactionQueryCollection(IEnumerable<QueryWithDelegate> queryExpressions)
+			: base(queryExpressions)
+		{
+		}
+
+		public new ICollection<TQueryResult> Execute(IDataProvider dataProvider)
+		{
+			ICollection<TQueryResult> ret = null;
+
+			using (var queryResult = dataProvider
+				.ExecuteReader(QueryExpression.Transaction(Queries.Select(q => q.Query))))
+			{
+				foreach (var query in Queries)
+				{
+					if (query.Query is SelectExpression)
+					{
+						if (!queryResult.NextResult())
+							throw new Exception("Failed to move to query result.");
+						query.Delegate?.Invoke(queryResult);
+						ret = query.Results as ICollection<TQueryResult>;
+					}
+				}
+			}
+
+			return ret;
+		}
+
+		public new async Task<ICollection<TQueryResult>> ExecuteAsync(IDataProvider dataProvider)
+		{
+			ICollection<TQueryResult> ret = null;
+
+			using (var queryResult = await dataProvider
+				.ExecuteReaderAsync(QueryExpression.Transaction(Queries.Select(q => q.Query)))
+				.ConfigureAwait(false))
+			{
+				foreach (var query in Queries)
+				{
+					if (query.Query is SelectExpression)
+					{
+						if (!await queryResult.NextResultAsync()
+							.ConfigureAwait(false))
+							throw new Exception("Failed to move to query result.");
+						if (query.AsyncDelegate != null)
+							await query.AsyncDelegate(queryResult).ConfigureAwait(false);
+						ret = query.Results as ICollection<TQueryResult>;
+					}
+				}
+			}
+
+			return ret;
+		}
+	}
+
+	public class TransactionQueryCollection<TSource, TQueryResult1, TQueryResult2> : ExecutableQueryCollection
+		where TSource : new()
+		where TQueryResult1 : new()
+		where TQueryResult2 : new()
+	{
+		public TransactionQueryCollection(params QueryWithDelegate[] queryExpressions)
+			: base(queryExpressions)
+		{
+		}
+
+		public TransactionQueryCollection(IEnumerable<QueryWithDelegate> queryExpressions)
+			: base(queryExpressions)
+		{
+		}
+
+		public new(ICollection<TQueryResult1> Result1, ICollection<TQueryResult2> Result2) Execute(IDataProvider dataProvider)
+		{
+			ICollection<TQueryResult1> result1 = null;
+			ICollection<TQueryResult2> result2 = null;
+
+			using (var queryResult = dataProvider
+				.ExecuteReader(QueryExpression.Transaction(Queries.Select(q => q.Query))))
+			{
+				foreach (var query in Queries)
+				{
+					if (query.Query is SelectExpression)
+					{
+						if (!queryResult.NextResult())
+							throw new Exception("Failed to move to query result.");
+						query.Delegate?.Invoke(queryResult);
+						if (result1 == null)
+							result1 = query.Results as ICollection<TQueryResult1>;
+						else if (result2 == null)
+							result2 = query.Results as ICollection<TQueryResult2>;
+					}
+				}
+			}
+
+			return (result1, result2);
+		}
+
+		public new async Task<(ICollection<TQueryResult1> Result1, ICollection<TQueryResult2> Result2)> ExecuteAsync(IDataProvider dataProvider)
+		{
+			ICollection<TQueryResult1> result1 = null;
+			ICollection<TQueryResult2> result2 = null;
+
+			using (var queryResult = await dataProvider
+				.ExecuteReaderAsync(QueryExpression.Transaction(Queries.Select(q => q.Query)))
+				.ConfigureAwait(false))
+			{
+				foreach (var query in Queries)
+				{
+					if (query.Query is SelectExpression)
+					{
+						if (!await queryResult.NextResultAsync()
+							.ConfigureAwait(false))
+							throw new Exception("Failed to move to query result.");
+						if (query.AsyncDelegate != null)
+							await query.AsyncDelegate(queryResult).ConfigureAwait(false);
+						if (result1 == null)
+							result1 = query.Results as ICollection<TQueryResult1>;
+						else if (result2 == null)
+							result2 = query.Results as ICollection<TQueryResult2>;
+					}
+				}
+			}
+
+			return (result1, result2);
+		}
+	}
+
 	public class ModelBoundExecutableQueryCollection<TSource, TQueryResult> : ModelBoundExecutableQueryCollection<TSource>
 		where TSource : new()
 		where TQueryResult : new()
@@ -182,6 +315,13 @@ namespace Silk.Data.SQL.ORM.Queries
 				where, offset, limit
 				));
 			return new ModelBoundExecutableQueryCollection<TSource, TSource, TSource>(DataModel, queries);
+		}
+
+		public new TransactionQueryCollection<TSource, TQueryResult> AsTransaction()
+		{
+			return new TransactionQueryCollection<TSource, TQueryResult>(
+				Queries.ToArray()
+				);
 		}
 
 		public new ICollection<TQueryResult> Execute(IDataProvider dataProvider)
@@ -263,6 +403,13 @@ namespace Silk.Data.SQL.ORM.Queries
 		{
 			var queries = Queries.Concat(new DeleteQueryBuilder<TSource>(DataModel).CreateQuery(sources));
 			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2>(DataModel, queries);
+		}
+
+		public new TransactionQueryCollection<TSource, TQueryResult1, TQueryResult2> AsTransaction()
+		{
+			return new TransactionQueryCollection<TSource, TQueryResult1, TQueryResult2>(
+				Queries.ToArray()
+				);
 		}
 
 		public new (ICollection<TQueryResult1> Result1, ICollection<TQueryResult2> Result2) Execute(IDataProvider dataProvider)
