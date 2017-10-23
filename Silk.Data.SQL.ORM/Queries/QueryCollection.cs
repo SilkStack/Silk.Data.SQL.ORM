@@ -34,7 +34,7 @@ namespace Silk.Data.SQL.ORM.Queries
 				{
 					foreach (var query in Queries)
 					{
-						if (query.Delegate != null)
+						if (query.Query is SelectExpression)
 						{
 							if (!queryResult.NextResult())
 								throw new Exception("Failed to move to query result.");
@@ -46,7 +46,7 @@ namespace Silk.Data.SQL.ORM.Queries
 				{
 					foreach (var query in Queries)
 					{
-						if (query.AsyncDelegate != null)
+						if (query.Query is SelectExpression)
 						{
 							if (!await queryResult.NextResultAsync().ConfigureAwait(false))
 								throw new Exception("Failed to move to query result.");
