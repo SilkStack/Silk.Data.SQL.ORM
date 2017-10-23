@@ -2,6 +2,7 @@
 using Silk.Data.SQL.ORM.Modelling;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 
 namespace Silk.Data.SQL.ORM.Expressions
@@ -11,11 +12,12 @@ namespace Silk.Data.SQL.ORM.Expressions
 		where TView : new()
 	{
 		public DataModel<TSource, TView> DataModel { get; }
-		private ConverterVisitor _converterVisitor = new ConverterVisitor();
+		private ConverterVisitor _converterVisitor;
 
 		public ExpressionConverter(DataModel<TSource, TView> dataModel)
 		{
 			DataModel = dataModel;
+			_converterVisitor = new ConverterVisitor(dataModel);
 		}
 
 		public QueryExpression ConvertToCondition(Expression<Func<TView, bool>> expression)
@@ -30,6 +32,12 @@ namespace Silk.Data.SQL.ORM.Expressions
 		{
 			private string _parameterName;
 			private readonly Stack<QueryExpression> _expressionStack = new Stack<QueryExpression>();
+			private readonly DataModel<TSource, TView> _dataModel;
+
+			public ConverterVisitor(DataModel<TSource, TView> dataModel)
+			{
+				_dataModel = dataModel;
+			}
 
 			public void Setup(string parameterName)
 			{
@@ -68,7 +76,10 @@ namespace Silk.Data.SQL.ORM.Expressions
 				if (expressionParameter != null)
 				{
 					//  member is based from a parameter to a lambda expression
-					PushOntoStack(QueryExpression.Column(node.Member.Name));
+					PushOntoStack(QueryExpression.Column(
+						_dataModel.Fields.First(q => q.Name == node.Member.Name)
+							.Storage.ColumnName
+						));
 				}
 				else
 				{
