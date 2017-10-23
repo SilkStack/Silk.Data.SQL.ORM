@@ -34,12 +34,7 @@ namespace Silk.Data.SQL.ORM.Queries
 
 			GenerateIds(modelReaders);
 
-			//  todo: replace this with a non-async map method built for datamodels specifically
-			//		this will NOT support loading resources when mapping TO views
-			DataModel.MapToViewAsync(modelReaders, viewContainers)
-				.ConfigureAwait(false)
-				.GetAwaiter()
-				.GetResult();
+			DataModel.MapToView(modelReaders, viewContainers);
 
 			var autoIncField = DataModel.Fields.FirstOrDefault(q => q.Storage.IsAutoIncrement);
 

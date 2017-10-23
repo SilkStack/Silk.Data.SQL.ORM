@@ -58,6 +58,16 @@ namespace Silk.Data.SQL.ORM.Modelling
 			Model = model;
 		}
 
+		public void MapToView(ICollection<IModelReadWriter> modelReadWriters, ICollection<IContainer> viewContainers)
+		{
+			//  todo: replace this with a non-async map method built for datamodels specifically
+			//		this will NOT support loading resources when mapping TO views
+			this.MapToViewAsync(modelReadWriters, viewContainers)
+				.ConfigureAwait(false)
+				.GetAwaiter()
+				.GetResult();
+		}
+
 		public IReadOnlyCollection<TSource> Select(IDataProvider dataProvider,
 			QueryExpression where = null,
 			int? offset = null,
