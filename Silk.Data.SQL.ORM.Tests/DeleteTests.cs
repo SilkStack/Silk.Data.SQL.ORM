@@ -26,7 +26,8 @@ namespace Silk.Data.SQL.ORM.Tests
 				new BasicPocoWithGuidId { Data = "Hello World 2" },
 				new BasicPocoWithGuidId { Data = "Hello World 3" }
 			};
-			dataModel.Insert(TestDb.Provider, sourceInstances);
+			dataModel.Insert(sourceInstances)
+				.Execute(TestDb.Provider);
 			dataModel.Delete(TestDb.Provider, sourceInstances);
 
 			using (var queryResult = TestDb.Provider.ExecuteReader(

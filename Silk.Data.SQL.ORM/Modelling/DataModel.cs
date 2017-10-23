@@ -2,6 +2,7 @@
 using Silk.Data.Modelling.ResourceLoaders;
 using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Expressions;
+using Silk.Data.SQL.ORM.Queries;
 using Silk.Data.SQL.Providers;
 using System;
 using System.Collections.Generic;
@@ -145,110 +146,10 @@ namespace Silk.Data.SQL.ORM.Modelling
 			return results;
 		}
 
-		public void Insert(IDataProvider dataProvider, params TSource[] sources)
+		public ModelBoundExecutableQueryCollection<TSource> Insert(params TSource[] sources)
 		{
-			//  todo: update this to work with datamodels that span multiple tables
-			var table = Fields.First().Storage.Table;
-			var queries = new List<QueryExpression>();
-			var columns = Fields.Where(
-				dataField => !dataField.Storage.IsAutoIncrement
-				).ToArray();
-
-			var modelReaders = sources.Select(source => new ObjectReadWriter(typeof(TSource), Model, source)).ToArray();
-			var viewContainers = sources.Select(source => new InsertContainer(Model, this)).ToArray();
-
-			GenerateIds(modelReaders);
-
-			this.MapToViewAsync(modelReaders, viewContainers)
-				.ConfigureAwait(false).GetAwaiter().GetResult();
-
-			var autoIncField = Fields.FirstOrDefault(q => q.Storage.IsAutoIncrement);
-
-			if (autoIncField == null)
-			{
-				queries.Add(BulkInsertExpression(columns, table, viewContainers));
-				dataProvider.ExecuteNonQuery(QueryExpression.Transaction(queries));
-				return;
-			}
-
-			foreach (var viewContainer in viewContainers)
-			{
-				var expressionTuple = InsertAndGetIdExpression(columns, table, viewContainer);
-				queries.Add(expressionTuple.insert);
-				queries.Add(expressionTuple.getId);
-			}
-			var ids = new List<object>();
-			using (var queryResult = dataProvider.ExecuteReader(QueryExpression.Transaction(queries)))
-			{
-				while (queryResult.NextResult())
-				{
-					if (queryResult.Read())
-					{
-						if (autoIncField.DataType == typeof(short))
-							ids.Add(queryResult.GetInt16(0));
-						else if (autoIncField.DataType == typeof(long))
-							ids.Add(queryResult.GetInt64(0));
-						else
-							ids.Add(queryResult.GetInt32(0));
-					}
-				}
-			}
-			AssignIds(modelReaders, ids, autoIncField);
-		}
-
-		public async Task InsertAsync(IDataProvider dataProvider, params TSource[] sources)
-		{
-			//  todo: update this to work with datamodels that span multiple tables
-			var table = Fields.First().Storage.Table;
-			var queries = new List<QueryExpression>();
-			var columns = Fields.Where(
-				dataField => !dataField.Storage.IsAutoIncrement
-				).ToArray();
-
-			var modelReaders = sources.Select(source => new ObjectReadWriter(typeof(TSource), Model, source)).ToArray();
-			var viewContainers = sources.Select(source => new InsertContainer(Model, this)).ToArray();
-
-			GenerateIds(modelReaders);
-
-			await this.MapToViewAsync(modelReaders, viewContainers)
-				.ConfigureAwait(false);
-
-			var autoIncField = Fields.FirstOrDefault(q => q.Storage.IsAutoIncrement);
-
-			if (autoIncField == null)
-			{
-				queries.Add(BulkInsertExpression(columns, table, viewContainers));
-				await dataProvider.ExecuteNonQueryAsync(QueryExpression.Transaction(queries))
-					.ConfigureAwait(false);
-				return;
-			}
-
-			foreach (var viewContainer in viewContainers)
-			{
-				var expressionTuple = InsertAndGetIdExpression(columns, table, viewContainer);
-				queries.Add(expressionTuple.insert);
-				queries.Add(expressionTuple.getId);
-			}
-			var ids = new List<object>();
-			using (var queryResult = await dataProvider.ExecuteReaderAsync(QueryExpression.Transaction(queries))
-				.ConfigureAwait(false))
-			{
-				while (await queryResult.NextResultAsync()
-					.ConfigureAwait(false))
-				{
-					if (await queryResult.ReadAsync()
-						.ConfigureAwait(false))
-					{
-						if (autoIncField.DataType == typeof(short))
-							ids.Add(queryResult.GetInt16(0));
-						else if (autoIncField.DataType == typeof(long))
-							ids.Add(queryResult.GetInt64(0));
-						else
-							ids.Add(queryResult.GetInt32(0));
-					}
-				}
-			}
-			AssignIds(modelReaders, ids, autoIncField);
+			return new ModelBoundExecutableQueryCollection<TSource>(this)
+				.Insert(sources);
 		}
 
 		public void Update(IDataProvider dataProvider, params TSource[] sources)
