@@ -198,7 +198,8 @@ namespace Silk.Data.SQL.ORM.Queries
 					using (var queryResult = dataProvider.ExecuteReader(query.Query))
 					{
 						query.Delegate(queryResult);
-						ret = query.Results as ICollection<TQueryResult>;
+						if (query.Query is SelectExpression)
+							ret = query.Results as ICollection<TQueryResult>;
 					}
 				}
 			}
@@ -222,7 +223,8 @@ namespace Silk.Data.SQL.ORM.Queries
 					{
 						await query.AsyncDelegate(queryResult)
 							.ConfigureAwait(false);
-						ret = query.Results as ICollection<TQueryResult>;
+						if (query.Query is SelectExpression)
+							ret = query.Results as ICollection<TQueryResult>;
 					}
 				}
 			}
@@ -278,10 +280,13 @@ namespace Silk.Data.SQL.ORM.Queries
 					using (var queryResult = dataProvider.ExecuteReader(query.Query))
 					{
 						query.Delegate(queryResult);
-						if (result1 == null)
-							result1 = query.Results as ICollection<TQueryResult1>;
-						else if (result2 == null)
-							result2 = query.Results as ICollection<TQueryResult2>;
+						if (query.Query is SelectExpression)
+						{
+							if (result1 == null)
+								result1 = query.Results as ICollection<TQueryResult1>;
+							else if (result2 == null)
+								result2 = query.Results as ICollection<TQueryResult2>;
+						}
 					}
 				}
 			}
@@ -306,10 +311,13 @@ namespace Silk.Data.SQL.ORM.Queries
 					{
 						await query.AsyncDelegate(queryResult)
 							.ConfigureAwait(false);
-						if (result1 == null)
-							result1 = query.Results as ICollection<TQueryResult1>;
-						else if (result2 == null)
-							result2 = query.Results as ICollection<TQueryResult2>;
+						if (query.Query is SelectExpression)
+						{
+							if (result1 == null)
+								result1 = query.Results as ICollection<TQueryResult1>;
+							else if (result2 == null)
+								result2 = query.Results as ICollection<TQueryResult2>;
+						}
 					}
 				}
 			}
