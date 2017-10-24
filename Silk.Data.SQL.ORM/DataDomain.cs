@@ -35,15 +35,9 @@ namespace Silk.Data.SQL.ORM
 			ViewConventions = viewConventions;
 		}
 
-		private void AddTables(DataModel model)
+		public void AddSchema(TableSchema tableSchema)
 		{
-			foreach (var table in model.Tables)
-			{
-				if (!_tables.Contains(table))
-				{
-					_tables.Add(table);
-				}
-			}
+			_tables.Add(tableSchema);
 		}
 
 		/// <summary>
@@ -64,7 +58,6 @@ namespace Silk.Data.SQL.ORM
 					viewDefinition.ResourceLoaders.ToArray(), this);
 				}, ViewConventions);
 			_dataModels.Add(dataModel);
-			AddTables(dataModel);
 			return dataModel;
 		}
 
@@ -87,7 +80,6 @@ namespace Silk.Data.SQL.ORM
 					viewDefinition.ResourceLoaders.ToArray(), this);
 			}, typeof(TView), ViewConventions);
 			_dataModels.Add(dataModel);
-			AddTables(dataModel);
 			return dataModel;
 		}
 	}
