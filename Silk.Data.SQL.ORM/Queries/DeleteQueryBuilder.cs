@@ -48,6 +48,24 @@ namespace Silk.Data.SQL.ORM.Queries
 			return queries;
 		}
 
+		public ICollection<QueryWithDelegate> CreateQuery(
+			QueryExpression where = null
+			)
+		{
+			//  todo: update this to work with datamodels that span multiple tables
+			var table = DataModel.Fields.First().Storage.Table;
+			var tableExpression = QueryExpression.Table(table.TableName);
+			var queries = new List<QueryWithDelegate>
+			{
+				new QueryWithDelegate(QueryExpression.Delete(
+					tableExpression,
+					where
+				))
+			};
+
+			return queries;
+		}
+
 		private QueryExpression BuildPrimaryKeyWhereClause(IContainer container)
 		{
 			if (DataModel.PrimaryKeyFields == null ||

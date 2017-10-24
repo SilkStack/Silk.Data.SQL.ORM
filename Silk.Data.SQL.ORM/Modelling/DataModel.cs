@@ -89,6 +89,12 @@ namespace Silk.Data.SQL.ORM.Modelling
 			return new ModelBoundExecutableQueryCollection<TSource>(this)
 				.Delete(sources);
 		}
+
+		public ModelBoundExecutableQueryCollection<TSource> Delete(QueryExpression where = null)
+		{
+			return new ModelBoundExecutableQueryCollection<TSource>(this)
+				.Delete(where: where);
+		}
 	}
 
 	public class DataModel<TSource, TView> : DataModel<TSource>, IView<DataField, TSource, TView>

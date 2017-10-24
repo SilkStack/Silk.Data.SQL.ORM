@@ -42,6 +42,12 @@ namespace Silk.Data.SQL.ORM.Queries
 			return new ModelBoundExecutableQueryCollection<TSource>(DataModel, queries);
 		}
 
+		public ModelBoundExecutableQueryCollection<TSource> Delete(QueryExpression where = null)
+		{
+			var queries = Queries.Concat(new DeleteQueryBuilder<TSource>(DataModel).CreateQuery(where: where));
+			return new ModelBoundExecutableQueryCollection<TSource>(DataModel, queries);
+		}
+
 		public ModelBoundExecutableQueryCollection<TSource, TSource> Select(QueryExpression where = null,
 			int? offset = null,
 			int? limit = null)
@@ -82,6 +88,12 @@ namespace Silk.Data.SQL.ORM.Queries
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult> Delete(params TSource[] sources)
 		{
 			var queries = Queries.Concat(new DeleteQueryBuilder<TSource>(DataModel).CreateQuery(sources));
+			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult>(DataModel, queries);
+		}
+
+		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult> Delete(QueryExpression where = null)
+		{
+			var queries = Queries.Concat(new DeleteQueryBuilder<TSource>(DataModel).CreateQuery(where: where));
 			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult>(DataModel, queries);
 		}
 
@@ -180,6 +192,12 @@ namespace Silk.Data.SQL.ORM.Queries
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2> Delete(params TSource[] sources)
 		{
 			var queries = Queries.Concat(new DeleteQueryBuilder<TSource>(DataModel).CreateQuery(sources));
+			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2>(DataModel, queries);
+		}
+
+		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2> Delete(QueryExpression where = null)
+		{
+			var queries = Queries.Concat(new DeleteQueryBuilder<TSource>(DataModel).CreateQuery(where: where));
 			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2>(DataModel, queries);
 		}
 
