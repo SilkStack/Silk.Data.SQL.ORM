@@ -29,6 +29,7 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 			{
 				DataType = field.DataType
 			};
+			fieldDefinition.Metadata.AddRange(field.Metadata);
 			viewDefinition.GetDefaultTableDefinition()
 				.Fields.Add(fieldDefinition);
 			viewDefinition.FieldDefinitions.Add(fieldDefinition);

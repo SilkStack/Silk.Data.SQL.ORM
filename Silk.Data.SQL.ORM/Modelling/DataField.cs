@@ -35,7 +35,9 @@ namespace Silk.Data.SQL.ORM.Modelling
 			//  todo: allow override with an attribute
 			if (DataType == typeof(string))
 			{
-				//  todo: switch to max length text type when a size attribute is present
+				var lengthAttribute = Metadata.OfType<DataLengthAttribute>().FirstOrDefault();
+				if (lengthAttribute != null)
+					return SqlDataType.Text(lengthAttribute.DataLength);
 				return SqlDataType.Text();
 			}
 			else if (DataType == typeof(bool))
@@ -77,9 +79,10 @@ namespace Silk.Data.SQL.ORM.Modelling
 			}
 			else if (DataType == typeof(byte[]))
 			{
-				//  todo: read size from an attribute
-				var size = 0;
-				return SqlDataType.Binary(size);
+				var lengthAttribute = Metadata.OfType<DataLengthAttribute>().FirstOrDefault();
+				if (lengthAttribute == null)
+					throw new InvalidOperationException("A DataLength attribute is required on binary storage types.");
+				return SqlDataType.Binary(lengthAttribute.DataLength);
 			}
 			else if (DataType == typeof(DateTime))
 			{
