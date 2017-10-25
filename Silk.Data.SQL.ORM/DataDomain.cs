@@ -14,6 +14,7 @@ namespace Silk.Data.SQL.ORM
 	{
 		private static ViewConvention[] _defaultViewConventions = new ViewConvention[]
 		{
+			new CleanModelNameConvention(),
 			new CopySupportedSQLTypesConvention(),
 			new IdIsPrimaryKeyConvention()
 		};
