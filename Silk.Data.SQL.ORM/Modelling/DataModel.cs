@@ -105,12 +105,29 @@ namespace Silk.Data.SQL.ORM.Modelling
 				.GetResult();
 		}
 
-		public ModelBoundExecutableQueryCollection<TSource, TSource> Select(QueryExpression where = null,
+		public ModelBoundExecutableQueryCollection<TSource, TSource> Select(
+			QueryExpression where = null,
+			QueryExpression having = null,
+			QueryExpression[] orderBy = null,
+			QueryExpression[] groupBy = null,
 			int? offset = null,
 			int? limit = null)
 		{
 			return new ModelBoundExecutableQueryCollection<TSource>(this)
-				.Select(where, offset, limit);
+				.Select(where, having, orderBy, groupBy, offset, limit);
+		}
+
+		public ModelBoundExecutableQueryCollection<TSource, TView> Select<TView>(
+			QueryExpression where = null,
+			QueryExpression having = null,
+			QueryExpression[] orderBy = null,
+			QueryExpression[] groupBy = null,
+			int? offset = null,
+			int? limit = null)
+			where TView : new()
+		{
+			return new ModelBoundExecutableQueryCollection<TSource>(this)
+				.Select<TView>(where, having, orderBy, groupBy, offset, limit);
 		}
 
 		public ModelBoundExecutableQueryCollection<TSource> Insert(params TSource[] sources)

@@ -16,7 +16,11 @@ namespace Silk.Data.SQL.ORM.Queries
 			DataModel = dataModel;
 		}
 
-		public ICollection<QueryWithDelegate> CreateQuery<TView>(QueryExpression where = null,
+		public ICollection<QueryWithDelegate> CreateQuery<TView>(
+			QueryExpression where = null,
+			QueryExpression having = null,
+			QueryExpression[] orderBy = null,
+			QueryExpression[] groupBy = null,
 			int? offset = null,
 			int? limit = null)
 			where TView : new()
@@ -39,6 +43,9 @@ namespace Silk.Data.SQL.ORM.Queries
 					dataModel.Fields.Select(q => QueryExpression.Column(q.Storage.ColumnName)).ToArray(),
 					from: QueryExpression.Table(table.TableName),
 					where: where,
+					having: having,
+					orderBy: orderBy,
+					groupBy: groupBy,
 					offset: offset != null ? QueryExpression.Value(offset.Value) : null,
 					limit: limit != null ? QueryExpression.Value(limit.Value) : null
 				),
