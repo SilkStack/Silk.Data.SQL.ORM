@@ -16,20 +16,27 @@ namespace Silk.Data.SQL.ORM.Queries
 			DataModel = dataModel;
 		}
 
-		public ICollection<QueryWithDelegate> CreateQuery(QueryExpression where = null,
+		public ICollection<QueryWithDelegate> CreateQuery<TView>(QueryExpression where = null,
 			int? offset = null,
 			int? limit = null)
+			where TView : new()
 		{
+			var dataModel = DataModel;
+			if (typeof(TView) != typeof(TSource))
+			{
+				dataModel = DataModel.GetSubView<TView>();
+			}
+
 			//  todo: update this to work with datamodels that span multiple tables
-			var table = DataModel.Fields.First().Storage.Table;
-			var results = new List<TSource>();
+			var table = dataModel.Fields.First().Storage.Table;
+			var results = new List<TView>();
 			var resultWriters = new List<IModelReadWriter>();
 			var rows = new List<IContainer>();
 
 			var queries = new List<QueryWithDelegate>();
 
 			queries.Add(new QueryWithDelegate(QueryExpression.Select(
-					new[] { QueryExpression.All() },
+					dataModel.Fields.Select(q => QueryExpression.Column(q.Storage.ColumnName)).ToArray(),
 					from: QueryExpression.Table(table.TableName),
 					where: where,
 					offset: offset != null ? QueryExpression.Value(offset.Value) : null,
@@ -42,14 +49,14 @@ namespace Silk.Data.SQL.ORM.Queries
 
 					while (queryResult.Read())
 					{
-						var result = new TSource();
-						var container = new RowContainer(DataModel.Model, DataModel);
+						var result = new TView();
+						var container = new RowContainer(dataModel.Model, dataModel);
 						container.ReadRow(queryResult);
 						rows.Add(container);
-						resultWriters.Add(new ObjectReadWriter(typeof(TSource), DataModel.Model, result));
+						resultWriters.Add(new ObjectReadWriter(typeof(TView), dataModel.Model, result));
 						results.Add(result);
 					}
-					DataModel.MapToModelAsync(resultWriters, rows)
+					dataModel.MapToModelAsync(resultWriters, rows)
 							.ConfigureAwait(false)
 							.GetAwaiter().GetResult();
 				},
@@ -61,15 +68,15 @@ namespace Silk.Data.SQL.ORM.Queries
 					while (await queryResult.ReadAsync()
 						.ConfigureAwait(false))
 					{
-						var result = new TSource();
-						var container = new RowContainer(DataModel.Model, DataModel);
+						var result = new TView();
+						var container = new RowContainer(dataModel.Model, dataModel);
 						container.ReadRow(queryResult);
 						rows.Add(container);
-						resultWriters.Add(new ObjectReadWriter(typeof(TSource), DataModel.Model, result));
+						resultWriters.Add(new ObjectReadWriter(typeof(TView), dataModel.Model, result));
 						results.Add(result);
 					}
 
-					await DataModel.MapToModelAsync(resultWriters, rows)
+					await dataModel.MapToModelAsync(resultWriters, rows)
 							.ConfigureAwait(false);
 				}, new System.Lazy<object>(() => results)));
 

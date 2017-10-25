@@ -52,10 +52,21 @@ namespace Silk.Data.SQL.ORM.Queries
 			int? offset = null,
 			int? limit = null)
 		{
-			var queries = Queries.Concat(new SelectQueryBuilder<TSource>(DataModel).CreateQuery(
+			var queries = Queries.Concat(new SelectQueryBuilder<TSource>(DataModel).CreateQuery<TSource>(
 				where, offset, limit
 				));
 			return new ModelBoundExecutableQueryCollection<TSource, TSource>(DataModel, queries);
+		}
+
+		public ModelBoundExecutableQueryCollection<TSource, TView> Select<TView>(QueryExpression where = null,
+			int? offset = null,
+			int? limit = null)
+			where TView : new()
+		{
+			var queries = Queries.Concat(new SelectQueryBuilder<TSource>(DataModel).CreateQuery<TView>(
+				where, offset, limit
+				));
+			return new ModelBoundExecutableQueryCollection<TSource, TView>(DataModel, queries);
 		}
 	}
 
@@ -97,14 +108,25 @@ namespace Silk.Data.SQL.ORM.Queries
 			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult>(DataModel, queries);
 		}
 
-		public new ModelBoundExecutableQueryCollection<TSource, TSource, TSource> Select(QueryExpression where = null,
+		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult, TSource> Select(QueryExpression where = null,
 			int? offset = null,
 			int? limit = null)
 		{
-			var queries = Queries.Concat(new SelectQueryBuilder<TSource>(DataModel).CreateQuery(
+			var queries = Queries.Concat(new SelectQueryBuilder<TSource>(DataModel).CreateQuery<TSource>(
 				where, offset, limit
 				));
-			return new ModelBoundExecutableQueryCollection<TSource, TSource, TSource>(DataModel, queries);
+			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult, TSource>(DataModel, queries);
+		}
+
+		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult, TView> Select<TView>(QueryExpression where = null,
+			int? offset = null,
+			int? limit = null)
+			where TView : new()
+		{
+			var queries = Queries.Concat(new SelectQueryBuilder<TSource>(DataModel).CreateQuery<TView>(
+				where, offset, limit
+				));
+			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult, TView>(DataModel, queries);
 		}
 
 		public new TransactionQueryCollection<TQueryResult> AsTransaction()

@@ -79,9 +79,51 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 		}
 
+		[TestMethod]
+		public void SimpleViewProjection()
+		{
+			var domain = new DataDomain();
+			var dataModel = domain.CreateDataModel<BasicPocoWithGuidId, BasicPocoWithGuidId>();
+
+			foreach (var table in dataModel.Tables)
+			{
+				if (!table.Exists(TestDb.Provider))
+					table.Create(TestDb.Provider);
+			}
+
+			var sourceInstances = new[]
+			{
+				new BasicPocoWithGuidId { Data = "Hello World 1" },
+				new BasicPocoWithGuidId { Data = "Hello World 2" },
+				new BasicPocoWithGuidId { Data = "Hello World 3" }
+			};
+
+			var dataResults = dataModel
+				.Insert(sourceInstances)
+				.Select<BasicPocoView>()
+				.AsTransaction()
+				.Execute(TestDb.Provider);
+
+			Assert.AreEqual(sourceInstances.Length, dataResults.Count);
+			foreach (var sourceInstance in sourceInstances)
+			{
+				Assert.IsTrue(dataResults.Any(q => q.Data == sourceInstance.Data));
+			}
+
+			foreach (var table in dataModel.Tables)
+			{
+				table.Drop(TestDb.Provider);
+			}
+		}
+
 		private class BasicPocoWithGuidId
 		{
 			public Guid Id { get; private set; }
+			public string Data { get; set; }
+		}
+
+		private class BasicPocoView
+		{
 			public string Data { get; set; }
 		}
 	}

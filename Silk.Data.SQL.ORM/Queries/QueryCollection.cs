@@ -1,8 +1,5 @@
-﻿using Silk.Data.SQL.Expressions;
-using Silk.Data.SQL.ORM.Modelling;
-using Silk.Data.SQL.Providers;
+﻿using Silk.Data.SQL.Providers;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Silk.Data.SQL.ORM.Queries

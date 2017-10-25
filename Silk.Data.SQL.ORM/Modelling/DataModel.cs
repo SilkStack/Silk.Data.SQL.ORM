@@ -54,6 +54,29 @@ namespace Silk.Data.SQL.ORM.Modelling
 			Model = model;
 		}
 
+		public DataModel<TSource, TView> GetSubView<TView>()
+			where TView : new()
+		{
+			var compareDataModel = Domain.CreateDataModel<TSource, TView>();
+			//  scan through the compare model and get all the fields bound on TSource's model
+			var modelFields = compareDataModel.Fields
+				.Select(compareSourceField => new {
+					Binding = compareSourceField.ModelBinding,
+					Field = Model.GetField(compareSourceField.ModelBinding.ModelFieldPath)
+				})
+				.Where(modelField => modelField.Field != null)
+				.ToArray();
+			//  then get the bound field's binding from THIS model
+			var storageFields = Fields.Where(q =>
+				modelFields.Select(q2 => q2.Binding.ModelFieldPath).Any(q2 => q2.SequenceEqual(q.ModelBinding.ModelFieldPath)) &&
+				modelFields.Select(q2 => q2.Binding.ViewFieldPath).Any(q2 => q2.SequenceEqual(q.ModelBinding.ViewFieldPath)))
+				.ToArray();
+			//  and project that onto a new DataModel
+			//  todo: support the needed resource loaders
+			return new DataModel<TSource, TView>(nameof(TView), Model, storageFields, new IResourceLoader[0],
+				Domain);
+		}
+
 		public void MapToView(ICollection<IModelReadWriter> modelReadWriters, ICollection<IContainer> viewContainers)
 		{
 			//  todo: replace this with a non-async map method built for datamodels specifically
