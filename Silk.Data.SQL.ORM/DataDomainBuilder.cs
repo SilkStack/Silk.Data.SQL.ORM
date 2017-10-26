@@ -1,4 +1,5 @@
-﻿using Silk.Data.SQL.ORM.Modelling;
+﻿using Silk.Data.Modelling;
+using Silk.Data.SQL.ORM.Modelling;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,10 +31,22 @@ namespace Silk.Data.SQL.ORM
 			var domain = new DataDomain();
 
 			//  add knowledge of how complex types are mapped/loaded etc.
+			foreach (var dataModelBuilder in _dataModelBuilders)
+			{
+				var viewDefinition = dataModelBuilder.BuildViewDefinition(domain);
+				var entityTable = viewDefinition.UserData.OfType<TableDefinition>()
+					.FirstOrDefault(q => q.IsEntityTable);
+				if (entityTable != null)
+				{
+					domain.DeclareSchema(dataModelBuilder.ModelType, entityTable);
+				}
+			}
 
 			//  now make data models
 			foreach (var dataModelBuilder in _dataModelBuilders)
+			{
 				dataModelBuilder.BuildDataModel(domain);
+			}
 
 			//  add all the unique schemas
 			foreach (var tableSchema in domain.DataModels
@@ -48,7 +61,9 @@ namespace Silk.Data.SQL.ORM
 
 		private abstract class DataModelBuilder
 		{
+			public abstract Type ModelType { get; }
 			public abstract void BuildDataModel(DataDomain domain);
+			public abstract ViewDefinition BuildViewDefinition(DataDomain domain);
 		}
 
 		private class DataModelBuilder<TSource> : DataModelBuilder
@@ -61,11 +76,25 @@ namespace Silk.Data.SQL.ORM
 				_builtDelegate = builtDelegate;
 			}
 
+			public override Type ModelType => typeof(TSource);
+
 			public override void BuildDataModel(DataDomain domain)
 			{
 				var model = domain.CreateDataModel<TSource>();
 				domain.AddModel(model);
 				_builtDelegate?.Invoke(model);
+			}
+
+			public override ViewDefinition BuildViewDefinition(DataDomain domain)
+			{
+				ViewDefinition viewDefinition = null;
+				var model = TypeModeller.GetModelOf<TSource>();
+				model.CreateView(createdViewDefinition =>
+				{
+					viewDefinition = createdViewDefinition;
+					return (DataModel)null;
+				}, new object[] { domain }, domain.ViewConventions);
+				return viewDefinition;
 			}
 		}
 
@@ -73,6 +102,8 @@ namespace Silk.Data.SQL.ORM
 			where TSource : new()
 			where TView : new()
 		{
+			public override Type ModelType => typeof(TSource);
+
 			private readonly Action<DataModel<TSource, TView>> _builtDelegate;
 
 			public DataModelBuilder(Action<DataModel<TSource, TView>> builtDelegate)
@@ -85,6 +116,18 @@ namespace Silk.Data.SQL.ORM
 				var model = domain.CreateDataModel<TSource, TView>();
 				domain.AddModel(model);
 				_builtDelegate?.Invoke(model);
+			}
+
+			public override ViewDefinition BuildViewDefinition(DataDomain domain)
+			{
+				ViewDefinition viewDefinition = null;
+				var model = TypeModeller.GetModelOf<TSource>();
+				model.CreateView(createdViewDefinition =>
+				{
+					viewDefinition = createdViewDefinition;
+					return (DataModel)null;
+				}, typeof(TView), new object[] { domain }, domain.ViewConventions);
+				return viewDefinition;
 			}
 		}
 	}

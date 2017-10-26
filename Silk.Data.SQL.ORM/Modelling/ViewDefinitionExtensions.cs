@@ -18,7 +18,8 @@ namespace Silk.Data.SQL.ORM.Modelling
 			{
 				tableDefinition = new TableDefinition
 				{
-					TableName = viewDefinition.Name
+					TableName = viewDefinition.Name,
+					IsEntityTable = true
 				};
 				viewDefinition.UserData.Add(tableDefinition);
 			}

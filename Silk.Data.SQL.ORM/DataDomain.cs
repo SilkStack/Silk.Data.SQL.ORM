@@ -2,6 +2,7 @@
 using Silk.Data.Modelling.Conventions;
 using Silk.Data.SQL.ORM.Modelling;
 using Silk.Data.SQL.ORM.Modelling.Conventions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -16,11 +17,13 @@ namespace Silk.Data.SQL.ORM
 		{
 			new CleanModelNameConvention(),
 			new CopySupportedSQLTypesConvention(),
-			new IdIsPrimaryKeyConvention()
+			new IdIsPrimaryKeyConvention(),
+			new CopyPrimaryKeyOfTypesWithSchemaConvention()
 		};
 
 		private readonly List<DataModel> _dataModels = new List<DataModel>();
 		private readonly List<TableSchema> _tables = new List<TableSchema>();
+		private readonly Dictionary<Type, TableDefinition> _entitySchemas = new Dictionary<Type, TableDefinition>();
 
 		public ViewConvention[] ViewConventions { get; }
 		public IReadOnlyCollection<DataModel> DataModels => _dataModels;
@@ -34,6 +37,17 @@ namespace Silk.Data.SQL.ORM
 		public DataDomain(ViewConvention[] viewConventions)
 		{
 			ViewConventions = viewConventions;
+		}
+
+		public void DeclareSchema(Type type, TableDefinition tableDefinition)
+		{
+			_entitySchemas.Add(type, tableDefinition);
+		}
+
+		public TableDefinition GetDeclaredSchema(Type type)
+		{
+			_entitySchemas.TryGetValue(type, out var tableDefinition);
+			return tableDefinition;
 		}
 
 		public void AddSchema(TableSchema tableSchema)
@@ -57,12 +71,11 @@ namespace Silk.Data.SQL.ORM
 			var model = TypeModeller.GetModelOf<TSource>();
 			var dataModel = model.CreateView(viewDefinition =>
 			{
-				viewDefinition.UserData.Add(this);
 				return new DataModel<TSource>(
 					viewDefinition.Name, model,
 					DataField.FromDefinitions(viewDefinition.UserData.OfType<TableDefinition>(), viewDefinition.FieldDefinitions).ToArray(),
 					viewDefinition.ResourceLoaders.ToArray(), this);
-				}, ViewConventions);
+			}, new object[] { this }, ViewConventions);
 			return dataModel;
 		}
 
@@ -78,12 +91,11 @@ namespace Silk.Data.SQL.ORM
 			var model = TypeModeller.GetModelOf<TSource>();
 			var dataModel = model.CreateView(viewDefinition =>
 			{
-				viewDefinition.UserData.Add(this);
 				return new DataModel<TSource, TView>(
 					viewDefinition.Name, model,
 					DataField.FromDefinitions(viewDefinition.UserData.OfType<TableDefinition>(), viewDefinition.FieldDefinitions).ToArray(),
 					viewDefinition.ResourceLoaders.ToArray(), this);
-			}, typeof(TView), ViewConventions);
+			}, typeof(TView), new object[] { this }, ViewConventions);
 			return dataModel;
 		}
 	}
