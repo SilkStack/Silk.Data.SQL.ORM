@@ -125,7 +125,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 
 			foreach (var tableDefinition in tableDefinitions)
 			{
-				var table = new TableSchema(tableDefinition.TableName, new Lazy<DataField[]>(
+				var table = new TableSchema(tableDefinition.TableName, tableDefinition.IsEntityTable, new Lazy<DataField[]>(
 					() => tableToFieldsDictionary[tableDefinition].ToArray()
 					));
 				tableToFieldsDictionary.Add(tableDefinition, new List<DataField>());

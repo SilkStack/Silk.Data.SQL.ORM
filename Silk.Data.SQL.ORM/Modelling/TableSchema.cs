@@ -11,11 +11,13 @@ namespace Silk.Data.SQL.ORM.Modelling
 		private Lazy<DataField[]> _lazyDataFields;
 
 		public string TableName { get; }
+		public bool IsEntityTable { get; }
 		public DataField[] DataFields => _lazyDataFields.Value;
 
-		public TableSchema(string tableName, Lazy<DataField[]> lazyDataFields)
+		public TableSchema(string tableName, bool isEntityTable, Lazy<DataField[]> lazyDataFields)
 		{
 			TableName = tableName;
+			IsEntityTable = isEntityTable;
 			_lazyDataFields = lazyDataFields;
 		}
 

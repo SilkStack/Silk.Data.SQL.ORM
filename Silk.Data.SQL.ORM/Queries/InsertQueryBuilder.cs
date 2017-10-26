@@ -23,7 +23,7 @@ namespace Silk.Data.SQL.ORM.Queries
 				throw new ArgumentOutOfRangeException(nameof(sources), "Must provide at least 1 source.");
 
 			//  todo: update this to work with datamodels that span multiple tables
-			var table = DataModel.Fields.First().Storage.Table;
+			var table = DataModel.Tables.First(q => q.IsEntityTable);
 			var queries = new List<QueryWithDelegate>();
 			var columns = DataModel.Fields.Where(
 				dataField => !dataField.Storage.IsAutoIncrement
