@@ -45,6 +45,7 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 						DataType = primaryKey.DataType
 					};
 					fieldDefinition.Metadata.AddRange(field.Metadata);
+					fieldDefinition.Metadata.Add(new IsNullableAttribute(true));
 					viewDefinition.GetDefaultTableDefinition()
 						.Fields.Add(fieldDefinition);
 					viewDefinition.FieldDefinitions.Add(fieldDefinition);

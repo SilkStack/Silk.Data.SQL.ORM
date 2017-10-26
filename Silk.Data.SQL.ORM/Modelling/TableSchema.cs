@@ -25,14 +25,9 @@ namespace Silk.Data.SQL.ORM.Modelling
 			return QueryExpression.CreateTable(TableName,
 				DataFields.Select(dataField =>
 				{
-					var isNullable = !dataField.DataType.IsValueType;
-					if (!isNullable)
-					{
-						isNullable = dataField.DataType.IsGenericType &&
-							dataField.DataType.GetGenericTypeDefinition() == typeof(Nullable<>);
-					}
 					return new ColumnDefinitionExpression(dataField.Name, dataField.Storage.DataType,
-						isNullable, dataField.Storage.IsAutoIncrement, dataField.Storage.IsPrimaryKey);
+						dataField.Storage.IsNullable, dataField.Storage.IsAutoIncrement,
+						dataField.Storage.IsPrimaryKey);
 				}));
 		}
 

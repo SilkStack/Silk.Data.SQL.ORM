@@ -22,12 +22,29 @@ namespace Silk.Data.SQL.ORM.Modelling
 			Metadata = metadata;
 			ModelBinding = modelBinding;
 
+			var isNullable = false;
+			var nullableAttr = metadata.OfType<IsNullableAttribute>().FirstOrDefault();
+			if (nullableAttr != null)
+			{
+				isNullable = nullableAttr.IsNullable;
+			}
+			else
+			{
+				isNullable = !dataType.IsValueType;
+				if (!isNullable)
+				{
+					isNullable = dataType.IsGenericType &&
+						dataType.GetGenericTypeDefinition() == typeof(Nullable<>);
+				}
+			}
+
 			//  todo: search metadata for index definitions?
 			Storage = new DataStorage(Name, GetSqlDataType(),
 				tableSchema,
 				metadata.OfType<PrimaryKeyAttribute>().Any(),
 				metadata.OfType<AutoIncrementAttribute>().Any(),
-				metadata.OfType<AutoGenerateIdAttribute>().Any());
+				metadata.OfType<AutoGenerateIdAttribute>().Any(),
+				isNullable);
 		}
 
 		private SqlDataType GetSqlDataType()

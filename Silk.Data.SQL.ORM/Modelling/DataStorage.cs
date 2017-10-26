@@ -8,10 +8,11 @@
 		public bool IsAutoIncrement { get; }
 		public bool IsPrimaryKey { get; }
 		public bool IsAutoGenerate { get; }
+		public bool IsNullable { get; }
 
 		public DataStorage(string columnName, SqlDataType dataType,
 			TableSchema table, bool isPrimaryKey, bool isAutoIncrement,
-			bool isAutoGenerate)
+			bool isAutoGenerate, bool isNullable)
 		{
 			ColumnName = columnName;
 			DataType = dataType;
@@ -19,6 +20,7 @@
 			IsPrimaryKey = isPrimaryKey;
 			IsAutoIncrement = isAutoIncrement;
 			IsAutoGenerate = isAutoGenerate;
+			IsNullable = isNullable;
 		}
 	}
 }
