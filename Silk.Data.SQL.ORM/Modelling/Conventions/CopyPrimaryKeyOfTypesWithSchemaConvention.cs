@@ -10,7 +10,7 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 	{
 		public override void MakeModelFields(Model model, TypedModelField field, ViewDefinition viewDefinition)
 		{
-			if (model == field.ParentModel && !IsSimpleType(field.DataType))
+			if (model == field.ParentModel && !IsSQLType(field.DataType))
 			{
 				//  creating a view without domain model class
 				//  attempt to locate the primary key of the type stored in field
@@ -34,17 +34,13 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 					if (viewDefinition.FieldDefinitions.Any(q => q.Name == fieldName))
 						continue;
 
-					var bindingDirection = BindingDirection.None;
-					if (field.CanWrite)
-						bindingDirection |= BindingDirection.ViewToModel;
-					if (field.CanRead)
-						bindingDirection |= BindingDirection.ModelToView;
-					if (bindingDirection != BindingDirection.Bidirectional)  //  makes no sense to persist data that can't be loaded again, right?
+					if (!field.CanRead || !field.CanWrite)  //  makes no sense to persist data that can't be loaded again, right?
 						return;
 
+					//  todo: create a foreign key constraint on this field
 					//  todo: replace with a primary key binding
 					var fieldDefinition = new ViewFieldDefinition(fieldName,
-					new AssignmentBinding(bindingDirection, new[] { field.Name, primaryKey.Name }, new[] { fieldName }))
+					new AssignmentBinding(BindingDirection.Bidirectional, new[] { field.Name, primaryKey.Name }, new[] { fieldName }))
 					{
 						DataType = primaryKey.DataType
 					};
@@ -56,7 +52,7 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 			}
 		}
 
-		private static bool IsSimpleType(Type type)
+		private static bool IsSQLType(Type type)
 		{
 			return
 				type == typeof(bool) ||
