@@ -41,6 +41,11 @@ namespace Silk.Data.SQL.ORM
 			_tables.Add(tableSchema);
 		}
 
+		public void AddModel(DataModel dataModel)
+		{
+			_dataModels.Add(dataModel);
+		}
+
 		/// <summary>
 		/// Creates a data model using knowledge from the data domain.
 		/// </summary>
@@ -58,7 +63,6 @@ namespace Silk.Data.SQL.ORM
 					DataField.FromDefinitions(viewDefinition.UserData.OfType<TableDefinition>(), viewDefinition.FieldDefinitions).ToArray(),
 					viewDefinition.ResourceLoaders.ToArray(), this);
 				}, ViewConventions);
-			_dataModels.Add(dataModel);
 			return dataModel;
 		}
 
@@ -80,7 +84,6 @@ namespace Silk.Data.SQL.ORM
 					DataField.FromDefinitions(viewDefinition.UserData.OfType<TableDefinition>(), viewDefinition.FieldDefinitions).ToArray(),
 					viewDefinition.ResourceLoaders.ToArray(), this);
 			}, typeof(TView), ViewConventions);
-			_dataModels.Add(dataModel);
 			return dataModel;
 		}
 	}
