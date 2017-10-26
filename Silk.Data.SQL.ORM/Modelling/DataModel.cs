@@ -12,6 +12,8 @@ namespace Silk.Data.SQL.ORM.Modelling
 {
 	public abstract class DataModel : IView<DataField>
 	{
+		public abstract Type EntityType { get; }
+
 		public DataField[] Fields { get; }
 
 		public string Name { get; }
@@ -49,6 +51,8 @@ namespace Silk.Data.SQL.ORM.Modelling
 			= new Dictionary<Type, DataModel<TSource>>();
 
 		public new TypedModel<TSource> Model { get; }
+
+		public override Type EntityType => typeof(TSource);
 
 		public DataModel(string name, TypedModel<TSource> model, DataField[] fields,
 			IResourceLoader[] resourceLoaders, DataDomain domain)

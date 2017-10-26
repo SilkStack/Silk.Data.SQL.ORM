@@ -13,14 +13,16 @@ namespace Silk.Data.SQL.ORM.Modelling
 		public object[] Metadata { get; }
 		public ModelBinding ModelBinding { get; }
 		public DataStorage Storage { get; }
+		public DataRelationship Relationship { get; }
 
 		public DataField(string name, Type dataType, object[] metadata,
-			ModelBinding modelBinding, TableSchema tableSchema)
+			ModelBinding modelBinding, TableSchema tableSchema, DataRelationship relationship)
 		{
 			Name = name;
 			DataType = dataType;
 			Metadata = metadata;
 			ModelBinding = modelBinding;
+			Relationship = relationship;
 
 			var isNullable = false;
 			var nullableAttr = metadata.OfType<IsNullableAttribute>().FirstOrDefault();
@@ -111,8 +113,25 @@ namespace Silk.Data.SQL.ORM.Modelling
 
 		public static DataField FromDefinition(ViewFieldDefinition definition, TableSchema tableSchema)
 		{
+			var relationshipDefinition = definition.Metadata.OfType<RelationshipDefinition>().FirstOrDefault();
+			DataRelationship dataRelationship = null;
+			if (relationshipDefinition != null)
+			{
+				dataRelationship = new DataRelationship(
+					new Lazy<DataField>(() =>
+					{
+						return relationshipDefinition.Domain.DataModels
+							.FirstOrDefault(q => q.EntityType == relationshipDefinition.EntityType)
+							?.Fields.FirstOrDefault(q => q.Name == relationshipDefinition.RelationshipField);
+					}),
+					new Lazy<DataModel>(() =>
+					{
+						return relationshipDefinition.Domain.DataModels
+							.FirstOrDefault(q => q.EntityType == relationshipDefinition.EntityType);
+					}));
+			}
 			return new DataField(definition.Name, definition.DataType, definition.Metadata.ToArray(),
-				definition.ModelBinding, tableSchema);
+				definition.ModelBinding, tableSchema, dataRelationship);
 		}
 
 		public static IEnumerable<DataField> FromDefinitions(IEnumerable<TableDefinition> tableDefinitions,
