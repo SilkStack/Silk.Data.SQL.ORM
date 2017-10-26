@@ -1,6 +1,7 @@
 ﻿using Silk.Data.Modelling;
 using Silk.Data.Modelling.Bindings;
 using Silk.Data.Modelling.Conventions;
+using Silk.Data.SQL.ORM.Modelling.Bindings;
 using System;
 using System.Linq;
 
@@ -38,9 +39,8 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 						return;
 
 					//  todo: create a foreign key constraint on this field
-					//  todo: replace with a primary key binding
 					var fieldDefinition = new ViewFieldDefinition(fieldName,
-					new AssignmentBinding(BindingDirection.Bidirectional, new[] { field.Name, primaryKey.Name }, new[] { fieldName }))
+					new PrimaryKeyBinding(BindingDirection.Bidirectional, new[] { field.Name, primaryKey.Name }, new[] { fieldName }))
 					{
 						DataType = primaryKey.DataType
 					};
