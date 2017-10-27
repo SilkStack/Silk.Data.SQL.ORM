@@ -98,7 +98,7 @@ namespace Silk.Data.SQL.ORM.Queries
 
 			return (QueryExpression.Insert(table.TableName,
 					columns.Select(
-						dataField => dataField.Name
+						dataField => dataField.Storage.ColumnName
 					).ToArray(),
 					row
 					),
@@ -125,7 +125,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			}
 			return QueryExpression.Insert(table.TableName,
 					columns.Select(
-						dataField => dataField.Name
+						dataField => dataField.Storage.ColumnName
 					).ToArray(),
 					values.ToArray()
 					);

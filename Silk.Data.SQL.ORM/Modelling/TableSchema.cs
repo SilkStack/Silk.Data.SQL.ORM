@@ -27,7 +27,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 			return QueryExpression.CreateTable(TableName,
 				DataFields.Select(dataField =>
 				{
-					return new ColumnDefinitionExpression(dataField.Name, dataField.Storage.DataType,
+					return new ColumnDefinitionExpression(dataField.Storage.ColumnName, dataField.Storage.DataType,
 						dataField.Storage.IsNullable, dataField.Storage.IsAutoIncrement,
 						dataField.Storage.IsPrimaryKey);
 				}));

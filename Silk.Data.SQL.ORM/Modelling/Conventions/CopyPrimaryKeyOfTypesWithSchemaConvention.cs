@@ -40,7 +40,8 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 
 					//  todo: create a foreign key constraint on this field
 					var fieldDefinition = new ViewFieldDefinition(fieldName,
-					new PrimaryKeyBinding(BindingDirection.Bidirectional, new[] { field.Name, primaryKey.Name }, new[] { fieldName }))
+						new PrimaryKeyBinding(BindingDirection.Bidirectional, new[] { field.Name, primaryKey.Name }, new[] { fieldName }),
+						field.Name)
 					{
 						DataType = primaryKey.DataType
 					};

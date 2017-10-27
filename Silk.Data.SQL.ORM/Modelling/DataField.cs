@@ -15,10 +15,14 @@ namespace Silk.Data.SQL.ORM.Modelling
 		public DataStorage Storage { get; }
 		public DataRelationship Relationship { get; }
 
-		public DataField(string name, Type dataType, object[] metadata,
-			ModelBinding modelBinding, TableSchema tableSchema, DataRelationship relationship)
+		public DataField(string storageName, Type dataType, object[] metadata,
+			ModelBinding modelBinding, TableSchema tableSchema, DataRelationship relationship,
+			string fieldName = null)
 		{
-			Name = name;
+			if (!string.IsNullOrEmpty(fieldName))
+				Name = fieldName;
+			else
+				Name = storageName;
 			DataType = dataType;
 			Metadata = metadata;
 			ModelBinding = modelBinding;
@@ -41,7 +45,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 			}
 
 			//  todo: search metadata for index definitions?
-			Storage = new DataStorage(Name, GetSqlDataType(),
+			Storage = new DataStorage(storageName, GetSqlDataType(),
 				tableSchema,
 				metadata.OfType<PrimaryKeyAttribute>().Any(),
 				metadata.OfType<AutoIncrementAttribute>().Any(),
@@ -131,7 +135,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 					}));
 			}
 			return new DataField(definition.Name, definition.DataType, definition.Metadata.ToArray(),
-				definition.ModelBinding, tableSchema, dataRelationship);
+				definition.ModelBinding, tableSchema, dataRelationship, definition.ModelFieldName);
 		}
 
 		public static IEnumerable<DataField> FromDefinitions(IEnumerable<TableDefinition> tableDefinitions,
