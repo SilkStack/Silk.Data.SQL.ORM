@@ -78,7 +78,7 @@ namespace Silk.Data.SQL.ORM.Expressions
 					//  member is based from a parameter to a lambda expression
 					PushOntoStack(QueryExpression.Column(
 						_dataModel.Fields.First(q => q.Name == node.Member.Name)
-							.Storage.ColumnName
+							.Storage.ColumnName, QueryExpression.Table(_dataModel.Tables.First(q => q.IsEntityTable).TableName)
 						));
 				}
 				else
