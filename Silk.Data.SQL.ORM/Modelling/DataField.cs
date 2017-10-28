@@ -121,18 +121,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 			DataRelationship dataRelationship = null;
 			if (relationshipDefinition != null)
 			{
-				dataRelationship = new DataRelationship(
-					new Lazy<DataField>(() =>
-					{
-						return relationshipDefinition.Domain.DataModels
-							.FirstOrDefault(q => q.EntityType == relationshipDefinition.EntityType)
-							?.Fields.FirstOrDefault(q => q.Name == relationshipDefinition.RelationshipField);
-					}),
-					new Lazy<DataModel>(() =>
-					{
-						return relationshipDefinition.Domain.DataModels
-							.FirstOrDefault(q => q.EntityType == relationshipDefinition.EntityType);
-					}));
+				dataRelationship = new DataRelationship(relationshipDefinition, relationshipDefinition.Domain);
 			}
 			return new DataField(definition.Name, definition.DataType, definition.Metadata.ToArray(),
 				definition.ModelBinding, tableSchema, dataRelationship, definition.ModelFieldName);

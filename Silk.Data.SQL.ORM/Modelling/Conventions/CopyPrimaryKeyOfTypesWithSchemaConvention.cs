@@ -42,7 +42,7 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 				//  todo: create a foreign key constraint on this field
 				var mappingLoader = GetSubMapper(viewDefinition, dataDomain);
 				var mapping = mappingLoader.GetMapping(bindField.DataType);
-				mapping.AddField(bindField.Name);
+				mapping.AddField(bindField.Name, field.DataType);
 				var fieldDefinition = new ViewFieldDefinition(fieldName,
 					new PrimaryKeyBinding(BindingDirection.Bidirectional, new[] { bindField.Name, primaryKey.Name },
 						new[] { fieldName }, bindField.Name, new[] { mappingLoader }),
@@ -56,6 +56,7 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 				{
 					Domain = dataDomain,
 					EntityType = bindField.DataType,
+					ProjectionType = field.DataType,
 					RelationshipField = primaryKey.Name
 				});
 				viewDefinition.GetDefaultTableDefinition()

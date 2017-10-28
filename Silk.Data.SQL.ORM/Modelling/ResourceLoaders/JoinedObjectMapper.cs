@@ -46,7 +46,8 @@ namespace Silk.Data.SQL.ORM.Modelling.ResourceLoaders
 
 		public class Mapping
 		{
-			private readonly List<string> _fields = new List<string>();
+			private readonly List<(string FieldName, Type ProjectedType)> _fields
+				= new List<(string FieldName, Type ProjectedType)>();
 			private DataModel _dataModel;
 
 			public Type Type { get; }
@@ -61,9 +62,9 @@ namespace Silk.Data.SQL.ORM.Modelling.ResourceLoaders
 				ParentModel = model;
 			}
 
-			public void AddField(string fieldName)
+			public void AddField(string fieldName, Type projectedType)
 			{
-				_fields.Add(fieldName);
+				_fields.Add((fieldName, projectedType));
 			}
 
 			public async Task PerformMapping(ICollection<IContainer> containers, MappingContext mappingContext)
@@ -78,12 +79,14 @@ namespace Silk.Data.SQL.ORM.Modelling.ResourceLoaders
 				var entityContainers = new List<IContainer>();
 				foreach (var container in containers)
 				{
-					foreach (var field in _fields)
+					foreach (var fieldTuple in _fields)
 					{
+						var field = fieldTuple.FieldName;
+						var type = fieldTuple.ProjectedType;
 						//  todo: don't use Activator, use a compiled expression
-						var result = Activator.CreateInstance(Type);
+						var result = Activator.CreateInstance(type);
 						readWriters.Add(
-							new ObjectReadWriter(Type, _dataModel.Model, result)
+							new ObjectReadWriter(type, _dataModel.Model, result)
 							);
 						entityContainers.Add(
 							new ProxyContainer(_dataModel.Model as TypedModel, _dataModel,
@@ -97,8 +100,9 @@ namespace Silk.Data.SQL.ORM.Modelling.ResourceLoaders
 
 				foreach (var container in containers)
 				{
-					foreach (var field in _fields)
+					foreach (var fieldTuple in _fields)
 					{
+						var field = fieldTuple.FieldName;
 						var entityContainer = entityContainers
 							.OfType<ProxyContainer>()
 							.FirstOrDefault(q => q.Prefix == $"{field}_" && q.BaseContainer == container);

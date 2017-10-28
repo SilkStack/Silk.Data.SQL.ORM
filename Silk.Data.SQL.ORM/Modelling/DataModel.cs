@@ -79,17 +79,36 @@ namespace Silk.Data.SQL.ORM.Modelling
 				var compareDataModel = Domain.CreateDataModel<TSource, TView>();
 				//  scan through the compare model and get all the fields bound on TSource's model
 				var modelFields = compareDataModel.Fields
-					.Select(compareSourceField => new {
+					.Select(compareSourceField => new
+					{
 						Binding = compareSourceField.ModelBinding,
 						Field = Model.GetField(compareSourceField.ModelBinding.ModelFieldPath)
 					})
 					.Where(modelField => modelField.Field != null)
 					.ToArray();
-				//  then get the bound field's binding from THIS model
+				//  then get the bound field's binding
 				var storageFields = Fields.Where(q =>
 					modelFields.Select(q2 => q2.Binding.ModelFieldPath).Any(q2 => q2.SequenceEqual(q.ModelBinding.ModelFieldPath)) &&
 					modelFields.Select(q2 => q2.Binding.ViewFieldPath).Any(q2 => q2.SequenceEqual(q.ModelBinding.ViewFieldPath)))
 					.ToArray();
+
+				//  replace any fields with relationships with relationships from compareDataModel
+				for (var i = 0; i < storageFields.Length; i++)
+				{
+					if (storageFields[i].Relationship != null)
+					{
+						var storageField = storageFields[i];
+						var compareField = compareDataModel.Fields.FirstOrDefault(q => q.Name == storageField.Name);
+						if (compareField != null)
+						{
+							storageFields[i] = new DataField(
+								storageField.Storage.ColumnName, storageField.DataType, storageField.Metadata, compareField.ModelBinding,
+								storageField.Storage.Table, compareField.Relationship, storageField.Name
+								);
+						}
+					}
+				}
+
 				//  and project that onto a new DataModel
 				var resourceLoaders = storageFields
 					.Where(q => q.ModelBinding.ResourceLoaders != null)
