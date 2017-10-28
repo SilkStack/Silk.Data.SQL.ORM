@@ -2,6 +2,7 @@
 using Silk.Data.Modelling.Bindings;
 using Silk.Data.Modelling.Conventions;
 using Silk.Data.SQL.ORM.Modelling.Bindings;
+using Silk.Data.SQL.ORM.Modelling.ResourceLoaders;
 using System;
 using System.Linq;
 
@@ -39,8 +40,12 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 						return;
 
 					//  todo: create a foreign key constraint on this field
+					var mappingLoader = GetSubMapper(viewDefinition, dataDomain);
+					var mapping = mappingLoader.GetMapping(field.DataType);
+					mapping.AddField(field.Name);
 					var fieldDefinition = new ViewFieldDefinition(fieldName,
-						new PrimaryKeyBinding(BindingDirection.Bidirectional, new[] { field.Name, primaryKey.Name }, new[] { fieldName }),
+						new PrimaryKeyBinding(BindingDirection.Bidirectional, new[] { field.Name, primaryKey.Name },
+							new[] { fieldName }, field.Name),
 						field.Name)
 					{
 						DataType = primaryKey.DataType
@@ -58,6 +63,19 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 					viewDefinition.FieldDefinitions.Add(fieldDefinition);
 				}
 			}
+		}
+
+		private JoinedObjectMapper GetSubMapper(ViewDefinition viewDefinition, DataDomain dataDomain)
+		{
+			var subMapper = viewDefinition.ResourceLoaders
+				.OfType<JoinedObjectMapper>()
+				.FirstOrDefault();
+			if (subMapper == null)
+			{
+				subMapper = new JoinedObjectMapper(viewDefinition.SourceModel, dataDomain);
+				viewDefinition.ResourceLoaders.Add(subMapper);
+			}
+			return subMapper;
 		}
 
 		private static bool IsSQLType(Type type)

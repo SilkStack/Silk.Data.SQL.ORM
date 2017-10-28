@@ -2,6 +2,7 @@
 using Silk.Data.SQL.Queries;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Modelling
 {
@@ -37,17 +38,37 @@ namespace Silk.Data.SQL.ORM.Modelling
 
 		public void ReadRow(QueryResult queryResult)
 		{
-			foreach (var field in _view.Fields)
+			foreach (var field in _view.Fields.Where(q => q.Storage.Table.IsEntityTable &&
+				q.Relationship == null))
 			{
 				if (!_typeReaders.TryGetValue(field.DataType, out var readFunc))
 					throw new InvalidOperationException("Unsupported data type.");
 
-				var ord = queryResult.GetOrdinal(field.Storage.ColumnName);
+				var ord = queryResult.GetOrdinal(field.Name);
 
 				if (queryResult.IsDBNull(ord))
 					_row[field.Name] = null;
 				else
 					_row[field.Name] = readFunc(queryResult, ord);
+			}
+
+			foreach (var foreignField in _view.Fields
+				.Where(q => q.Relationship != null))
+			{
+				foreach (var foreignObjField in foreignField.Relationship.ForeignModel.Fields)
+				{
+					if (!_typeReaders.TryGetValue(foreignObjField.DataType, out var readFunc))
+						throw new InvalidOperationException("Unsupported data type.");
+
+					var fieldName = $"{foreignField.Name}_{foreignObjField.Name}";
+
+					var ord = queryResult.GetOrdinal(fieldName);
+
+					if (queryResult.IsDBNull(ord))
+						_row[fieldName] = null;
+					else
+						_row[fieldName] = readFunc(queryResult, ord);
+				}
 			}
 		}
 
@@ -55,12 +76,13 @@ namespace Silk.Data.SQL.ORM.Modelling
 		{
 			if (fieldPath.Length != 1)
 				throw new ArgumentOutOfRangeException(nameof(fieldPath), "Field path must have a length of 1.");
-			return _row[fieldPath[0]];
+			_row.TryGetValue(fieldPath[0], out var ret);
+			return ret;
 		}
 
 		public void SetValue(string[] fieldPath, object value)
 		{
-			throw new System.NotImplementedException();
+			throw new NotSupportedException();
 		}
 	}
 }
