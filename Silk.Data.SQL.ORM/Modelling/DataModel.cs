@@ -91,8 +91,13 @@ namespace Silk.Data.SQL.ORM.Modelling
 					modelFields.Select(q2 => q2.Binding.ViewFieldPath).Any(q2 => q2.SequenceEqual(q.ModelBinding.ViewFieldPath)))
 					.ToArray();
 				//  and project that onto a new DataModel
-				//  todo: support the needed resource loaders
-				var ret = new DataModel<TSource, TView>(nameof(TView), Model, storageFields, new IResourceLoader[0],
+				var resourceLoaders = storageFields
+					.Where(q => q.ModelBinding.ResourceLoaders != null)
+					.SelectMany(q => q.ModelBinding.ResourceLoaders)
+					.GroupBy(q => q)
+					.Select(q => q.First())
+					.ToArray();
+				var ret = new DataModel<TSource, TView>(nameof(TView), Model, storageFields, resourceLoaders,
 					Domain);
 				_cachedSubViews.Add(typeof(TView), ret);
 				return ret;

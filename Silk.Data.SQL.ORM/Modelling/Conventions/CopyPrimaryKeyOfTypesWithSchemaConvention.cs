@@ -12,56 +12,51 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 	{
 		public override void MakeModelFields(Model model, TypedModelField field, ViewDefinition viewDefinition)
 		{
-			if (model == field.ParentModel && !IsSQLType(field.DataType))
+			if (IsSQLType(field.DataType))
+				return;
+
+			var dataDomain = viewDefinition.UserData.OfType<DataDomain>()
+				.FirstOrDefault();
+			if (dataDomain == null)
+				return;
+			var declaredSchema = dataDomain.GetDeclaredSchema(field.DataType);
+			if (declaredSchema == null)
+				return;
+
+			var primaryKeys = declaredSchema.Fields
+				.Where(fieldDefinition => fieldDefinition.Metadata.OfType<PrimaryKeyAttribute>().Any())
+				.ToArray();
+			foreach (var primaryKey in primaryKeys)
 			{
-				//  creating a view without domain model class
-				//  attempt to locate the primary key of the type stored in field
-				//  if found create a storage field on the view definition
-				//  and a binding that will store the primary key to the created view
-				//  and describes how the field on the model actual should be loaded from a db query
-				var dataDomain = viewDefinition.UserData.OfType<DataDomain>()
-					.FirstOrDefault();
-				if (dataDomain == null)
-					return;
-				var declaredSchema = dataDomain.GetDeclaredSchema(field.DataType);
-				if (declaredSchema == null)
+				var fieldName = $"{field.Name}{primaryKey.Name}";
+				if (viewDefinition.FieldDefinitions.Any(q => q.Name == fieldName))
+					continue;
+
+				if (!field.CanRead || !field.CanWrite)  //  makes no sense to persist data that can't be loaded again, right?
 					return;
 
-				var primaryKeys = declaredSchema.Fields
-					.Where(fieldDefinition => fieldDefinition.Metadata.OfType<PrimaryKeyAttribute>().Any())
-					.ToArray();
-				foreach (var primaryKey in primaryKeys)
+				//  todo: create a foreign key constraint on this field
+				var mappingLoader = GetSubMapper(viewDefinition, dataDomain);
+				var mapping = mappingLoader.GetMapping(field.DataType);
+				mapping.AddField(field.Name);
+				var fieldDefinition = new ViewFieldDefinition(fieldName,
+					new PrimaryKeyBinding(BindingDirection.Bidirectional, new[] { field.Name, primaryKey.Name },
+						new[] { fieldName }, field.Name, new[] { mappingLoader }),
+					field.Name)
 				{
-					var fieldName = $"{field.Name}{primaryKey.Name}";
-					if (viewDefinition.FieldDefinitions.Any(q => q.Name == fieldName))
-						continue;
-
-					if (!field.CanRead || !field.CanWrite)  //  makes no sense to persist data that can't be loaded again, right?
-						return;
-
-					//  todo: create a foreign key constraint on this field
-					var mappingLoader = GetSubMapper(viewDefinition, dataDomain);
-					var mapping = mappingLoader.GetMapping(field.DataType);
-					mapping.AddField(field.Name);
-					var fieldDefinition = new ViewFieldDefinition(fieldName,
-						new PrimaryKeyBinding(BindingDirection.Bidirectional, new[] { field.Name, primaryKey.Name },
-							new[] { fieldName }, field.Name),
-						field.Name)
-					{
-						DataType = primaryKey.DataType
-					};
-					fieldDefinition.Metadata.AddRange(field.Metadata);
-					fieldDefinition.Metadata.Add(new IsNullableAttribute(true));
-					fieldDefinition.Metadata.Add(new RelationshipDefinition
-					{
-						Domain = dataDomain,
-						EntityType = field.DataType,
-						RelationshipField = primaryKey.Name
-					});
-					viewDefinition.GetDefaultTableDefinition()
-						.Fields.Add(fieldDefinition);
-					viewDefinition.FieldDefinitions.Add(fieldDefinition);
-				}
+					DataType = primaryKey.DataType
+				};
+				fieldDefinition.Metadata.AddRange(field.Metadata);
+				fieldDefinition.Metadata.Add(new IsNullableAttribute(true));
+				fieldDefinition.Metadata.Add(new RelationshipDefinition
+				{
+					Domain = dataDomain,
+					EntityType = field.DataType,
+					RelationshipField = primaryKey.Name
+				});
+				viewDefinition.GetDefaultTableDefinition()
+					.Fields.Add(fieldDefinition);
+				viewDefinition.FieldDefinitions.Add(fieldDefinition);
 			}
 		}
 

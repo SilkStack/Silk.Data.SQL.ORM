@@ -1,5 +1,6 @@
 ﻿using Silk.Data.Modelling;
 using Silk.Data.Modelling.Bindings;
+using Silk.Data.Modelling.ResourceLoaders;
 using System;
 using System.Linq;
 
@@ -8,7 +9,8 @@ namespace Silk.Data.SQL.ORM.Modelling.Bindings
 	public class PrimaryKeyBinding : ModelBinding
 	{
 		public PrimaryKeyBinding(BindingDirection bindingDirection, string[] modelFieldPath,
-			string[] viewFieldPath, string fieldName) : base(modelFieldPath, viewFieldPath)
+			string[] viewFieldPath, string fieldName, IResourceLoader[] resourceLoaders)
+			: base(modelFieldPath, viewFieldPath, resourceLoaders)
 		{
 			Direction = bindingDirection;
 			FieldName = fieldName;
