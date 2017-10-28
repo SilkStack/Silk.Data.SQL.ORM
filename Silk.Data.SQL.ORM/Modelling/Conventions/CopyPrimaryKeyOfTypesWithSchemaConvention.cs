@@ -15,11 +15,15 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 			if (IsSQLType(field.DataType))
 				return;
 
+			var bindField = model.Fields.FirstOrDefault(q => q.Name == field.Name);
+			if (bindField == null)
+				return;
+
 			var dataDomain = viewDefinition.UserData.OfType<DataDomain>()
 				.FirstOrDefault();
 			if (dataDomain == null)
 				return;
-			var declaredSchema = dataDomain.GetDeclaredSchema(field.DataType);
+			var declaredSchema = dataDomain.GetDeclaredSchema(bindField.DataType);
 			if (declaredSchema == null)
 				return;
 
@@ -28,30 +32,30 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 				.ToArray();
 			foreach (var primaryKey in primaryKeys)
 			{
-				var fieldName = $"{field.Name}{primaryKey.Name}";
+				var fieldName = $"{bindField.Name}{primaryKey.Name}";
 				if (viewDefinition.FieldDefinitions.Any(q => q.Name == fieldName))
 					continue;
 
-				if (!field.CanRead || !field.CanWrite)  //  makes no sense to persist data that can't be loaded again, right?
+				if (!bindField.CanRead || !bindField.CanWrite)  //  makes no sense to persist data that can't be loaded again, right?
 					return;
 
 				//  todo: create a foreign key constraint on this field
 				var mappingLoader = GetSubMapper(viewDefinition, dataDomain);
-				var mapping = mappingLoader.GetMapping(field.DataType);
-				mapping.AddField(field.Name);
+				var mapping = mappingLoader.GetMapping(bindField.DataType);
+				mapping.AddField(bindField.Name);
 				var fieldDefinition = new ViewFieldDefinition(fieldName,
-					new PrimaryKeyBinding(BindingDirection.Bidirectional, new[] { field.Name, primaryKey.Name },
-						new[] { fieldName }, field.Name, new[] { mappingLoader }),
-					field.Name)
+					new PrimaryKeyBinding(BindingDirection.Bidirectional, new[] { bindField.Name, primaryKey.Name },
+						new[] { fieldName }, bindField.Name, new[] { mappingLoader }),
+					bindField.Name)
 				{
 					DataType = primaryKey.DataType
 				};
-				fieldDefinition.Metadata.AddRange(field.Metadata);
+				fieldDefinition.Metadata.AddRange(bindField.Metadata);
 				fieldDefinition.Metadata.Add(new IsNullableAttribute(true));
 				fieldDefinition.Metadata.Add(new RelationshipDefinition
 				{
 					Domain = dataDomain,
-					EntityType = field.DataType,
+					EntityType = bindField.DataType,
 					RelationshipField = primaryKey.Name
 				});
 				viewDefinition.GetDefaultTableDefinition()
