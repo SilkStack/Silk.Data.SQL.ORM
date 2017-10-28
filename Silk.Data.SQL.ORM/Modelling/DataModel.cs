@@ -1,4 +1,5 @@
 ﻿using Silk.Data.Modelling;
+using Silk.Data.Modelling.Bindings;
 using Silk.Data.Modelling.ResourceLoaders;
 using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Expressions;
@@ -109,12 +110,31 @@ namespace Silk.Data.SQL.ORM.Modelling
 
 		public void MapToView(ICollection<IModelReadWriter> modelReadWriters, ICollection<IContainer> viewContainers)
 		{
-			//  todo: replace this with a non-async map method built for datamodels specifically
-			//		this will NOT support loading resources when mapping TO views
-			this.MapToViewAsync(modelReadWriters, viewContainers)
-				.ConfigureAwait(false)
-				.GetAwaiter()
-				.GetResult();
+			using (var readWriterEnum = modelReadWriters.GetEnumerator())
+			using (var containerEnum = viewContainers.GetEnumerator())
+			{
+				var mappingContext = new MappingContext(BindingDirection.ModelToView);
+
+				while (readWriterEnum.MoveNext() &&
+					containerEnum.MoveNext())
+				{
+					var modelReadWriter = readWriterEnum.Current;
+					var viewContainer = containerEnum.Current;
+					foreach (var viewField in Fields)
+					{
+						if ((viewField.ModelBinding.Direction & BindingDirection.ModelToView) == BindingDirection.ModelToView)
+						{
+							var value = viewField.ModelBinding.ReadFromModel(modelReadWriter, mappingContext);
+							if (value != null)
+							{
+								viewField.ModelBinding.WriteToContainer(viewContainer,
+									value,
+									mappingContext);
+							}
+						}
+					}
+				}
+			}
 		}
 
 		public ModelBoundExecutableQueryCollection<TSource, TSource> Select(
