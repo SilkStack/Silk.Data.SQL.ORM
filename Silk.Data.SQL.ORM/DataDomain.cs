@@ -18,7 +18,8 @@ namespace Silk.Data.SQL.ORM
 			new CleanModelNameConvention(),
 			new CopySupportedSQLTypesConvention(),
 			new IdIsPrimaryKeyConvention(),
-			new CopyPrimaryKeyOfTypesWithSchemaConvention()
+			new CopyPrimaryKeyOfTypesWithSchemaConvention(),
+			new ProjectReferenceKeysConvention()
 		};
 
 		private readonly List<DataModel> _dataModels = new List<DataModel>();

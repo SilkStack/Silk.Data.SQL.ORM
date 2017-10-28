@@ -12,7 +12,7 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 	{
 		public override void MakeModelFields(Model model, TypedModelField field, ViewDefinition viewDefinition)
 		{
-			if (IsSQLType(field.DataType))
+			if (IsSQLType(field.DataType) || viewDefinition.FieldDefinitions.Any(q => q.Name == field.Name))
 				return;
 
 			var bindField = model.Fields.FirstOrDefault(q => q.Name == field.Name);

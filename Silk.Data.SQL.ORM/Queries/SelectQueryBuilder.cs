@@ -107,9 +107,10 @@ namespace Silk.Data.SQL.ORM.Queries
 						var container = new RowContainer(dataModel.Model, dataModel);
 						container.ReadRow(queryResult);
 						rows.Add(container);
-						resultWriters.Add(new ObjectReadWriter(typeof(TView), dataModel.Model, result));
+						resultWriters.Add(new ObjectReadWriter(typeof(TView), TypeModeller.GetModelOf<TView>(), result));
 						results.Add(result);
 					}
+
 					dataModel.MapToModelAsync(resultWriters, rows)
 							.ConfigureAwait(false)
 							.GetAwaiter().GetResult();
@@ -126,7 +127,7 @@ namespace Silk.Data.SQL.ORM.Queries
 						var container = new RowContainer(dataModel.Model, dataModel);
 						container.ReadRow(queryResult);
 						rows.Add(container);
-						resultWriters.Add(new ObjectReadWriter(typeof(TView), dataModel.Model, result));
+						resultWriters.Add(new ObjectReadWriter(typeof(TView), TypeModeller.GetModelOf<TView>(), result));
 						results.Add(result);
 					}
 
