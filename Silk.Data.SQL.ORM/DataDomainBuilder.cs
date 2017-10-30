@@ -13,13 +13,13 @@ namespace Silk.Data.SQL.ORM
 	{
 		private readonly List<DataModelBuilder> _dataModelBuilders = new List<DataModelBuilder>();
 
-		public void AddDataModel<TSource>(Action<DataModel<TSource>> builtDelegate = null)
+		public void AddDataModel<TSource>(Action<EntityModel<TSource>> builtDelegate = null)
 			where TSource : new()
 		{
 			_dataModelBuilders.Add(new DataModelBuilder<TSource>(builtDelegate));
 		}
 
-		public void AddDataModel<TSource, TView>(Action<DataModel<TSource, TView>> builtDelegate = null)
+		public void AddDataModel<TSource, TView>(Action<EntityModel<TSource, TView>> builtDelegate = null)
 			where TSource : new()
 			where TView : new()
 		{
@@ -69,9 +69,9 @@ namespace Silk.Data.SQL.ORM
 		private class DataModelBuilder<TSource> : DataModelBuilder
 			where TSource : new()
 		{
-			private readonly Action<DataModel<TSource>> _builtDelegate;
+			private readonly Action<EntityModel<TSource>> _builtDelegate;
 
-			public DataModelBuilder(Action<DataModel<TSource>> builtDelegate)
+			public DataModelBuilder(Action<EntityModel<TSource>> builtDelegate)
 			{
 				_builtDelegate = builtDelegate;
 			}
@@ -92,7 +92,7 @@ namespace Silk.Data.SQL.ORM
 				model.CreateView(createdViewDefinition =>
 				{
 					viewDefinition = createdViewDefinition;
-					return (DataModel)null;
+					return (EntityModel)null;
 				}, new object[] { domain }, domain.ViewConventions);
 				return viewDefinition;
 			}
@@ -104,9 +104,9 @@ namespace Silk.Data.SQL.ORM
 		{
 			public override Type ModelType => typeof(TSource);
 
-			private readonly Action<DataModel<TSource, TView>> _builtDelegate;
+			private readonly Action<EntityModel<TSource, TView>> _builtDelegate;
 
-			public DataModelBuilder(Action<DataModel<TSource, TView>> builtDelegate)
+			public DataModelBuilder(Action<EntityModel<TSource, TView>> builtDelegate)
 			{
 				_builtDelegate = builtDelegate;
 			}
@@ -125,7 +125,7 @@ namespace Silk.Data.SQL.ORM
 				model.CreateView(createdViewDefinition =>
 				{
 					viewDefinition = createdViewDefinition;
-					return (DataModel)null;
+					return (EntityModel)null;
 				}, typeof(TView), new object[] { domain }, domain.ViewConventions);
 				return viewDefinition;
 			}

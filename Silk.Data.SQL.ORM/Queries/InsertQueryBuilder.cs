@@ -10,9 +10,9 @@ namespace Silk.Data.SQL.ORM.Queries
 	public class InsertQueryBuilder<TSource>
 		where TSource : new()
 	{
-		public DataModel<TSource> DataModel { get; }
+		public EntityModel<TSource> DataModel { get; }
 
-		public InsertQueryBuilder(DataModel<TSource> dataModel)
+		public InsertQueryBuilder(EntityModel<TSource> dataModel)
 		{
 			DataModel = dataModel;
 		}

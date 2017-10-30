@@ -9,9 +9,9 @@ namespace Silk.Data.SQL.ORM.Queries
 	public class SelectQueryBuilder<TSource>
 		where TSource : new()
 	{
-		public DataModel<TSource> DataModel { get; }
+		public EntityModel<TSource> DataModel { get; }
 
-		public SelectQueryBuilder(DataModel<TSource> dataModel)
+		public SelectQueryBuilder(EntityModel<TSource> dataModel)
 		{
 			DataModel = dataModel;
 		}

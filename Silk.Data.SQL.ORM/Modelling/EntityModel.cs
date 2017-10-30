@@ -11,7 +11,7 @@ using System.Linq.Expressions;
 
 namespace Silk.Data.SQL.ORM.Modelling
 {
-	public abstract class DataModel : IView<DataField>
+	public abstract class EntityModel : IView<DataField>
 	{
 		public abstract Type EntityType { get; }
 
@@ -31,7 +31,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 
 		public DataField[] PrimaryKeyFields { get; }
 
-		public DataModel(string name, Model model, DataField[] fields,
+		public EntityModel(string name, Model model, DataField[] fields,
 			IResourceLoader[] resourceLoaders, DataDomain domain)
 		{
 			Name = name;
@@ -45,36 +45,36 @@ namespace Silk.Data.SQL.ORM.Modelling
 		}
 	}
 
-	public class DataModel<TSource> : DataModel, IView<DataField, TSource>
+	public class EntityModel<TSource> : EntityModel, IView<DataField, TSource>
 		where TSource : new()
 	{
-		private readonly Dictionary<Type, DataModel<TSource>> _cachedSubViews
-			= new Dictionary<Type, DataModel<TSource>>();
+		private readonly Dictionary<Type, EntityModel<TSource>> _cachedSubViews
+			= new Dictionary<Type, EntityModel<TSource>>();
 
 		public new TypedModel<TSource> Model { get; }
 
 		public override Type EntityType => typeof(TSource);
 
-		public DataModel(string name, TypedModel<TSource> model, DataField[] fields,
+		public EntityModel(string name, TypedModel<TSource> model, DataField[] fields,
 			IResourceLoader[] resourceLoaders, DataDomain domain)
 			: base(name, model, fields, resourceLoaders, domain)
 		{
 			Model = model;
 		}
 
-		public DataModel<TSource, TView> GetSubView<TView>()
+		public EntityModel<TSource, TView> GetSubView<TView>()
 			where TView : new()
 		{
 			if (_cachedSubViews.TryGetValue(typeof(TView), out var subView))
 			{
-				return subView as DataModel<TSource, TView>;
+				return subView as EntityModel<TSource, TView>;
 			}
 
 			lock (_cachedSubViews)
 			{
 				if (_cachedSubViews.TryGetValue(typeof(TView), out subView))
 				{
-					return subView as DataModel<TSource, TView>;
+					return subView as EntityModel<TSource, TView>;
 				}
 
 				var compareDataModel = Domain.CreateDataModel<TSource, TView>();
@@ -101,7 +101,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 					.GroupBy(q => q)
 					.Select(q => q.First())
 					.ToArray();
-				var ret = new DataModel<TSource, TView>(typeof(TView).Name, Model, subViewFields.ToArray(), resourceLoaders,
+				var ret = new EntityModel<TSource, TView>(typeof(TView).Name, Model, subViewFields.ToArray(), resourceLoaders,
 					Domain);
 				_cachedSubViews.Add(typeof(TView), ret);
 				return ret;
@@ -187,11 +187,11 @@ namespace Silk.Data.SQL.ORM.Modelling
 		}
 	}
 
-	public class DataModel<TSource, TView> : DataModel<TSource>, IView<DataField, TSource, TView>
+	public class EntityModel<TSource, TView> : EntityModel<TSource>, IView<DataField, TSource, TView>
 		where TSource : new()
 		where TView: new()
 	{
-		public DataModel(string name, TypedModel<TSource> model, DataField[] fields,
+		public EntityModel(string name, TypedModel<TSource> model, DataField[] fields,
 			IResourceLoader[] resourceLoaders, DataDomain domain)
 			: base(name, model, fields, resourceLoaders, domain)
 		{

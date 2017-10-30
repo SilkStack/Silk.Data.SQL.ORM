@@ -11,10 +11,10 @@ namespace Silk.Data.SQL.ORM.Expressions
 		where TSource : new()
 		where TView : new()
 	{
-		public DataModel<TSource, TView> DataModel { get; }
+		public EntityModel<TSource, TView> DataModel { get; }
 		private ConverterVisitor _converterVisitor;
 
-		public ExpressionConverter(DataModel<TSource, TView> dataModel)
+		public ExpressionConverter(EntityModel<TSource, TView> dataModel)
 		{
 			DataModel = dataModel;
 			_converterVisitor = new ConverterVisitor(dataModel);
@@ -32,9 +32,9 @@ namespace Silk.Data.SQL.ORM.Expressions
 		{
 			private string _parameterName;
 			private readonly Stack<QueryExpression> _expressionStack = new Stack<QueryExpression>();
-			private readonly DataModel<TSource, TView> _dataModel;
+			private readonly EntityModel<TSource, TView> _dataModel;
 
-			public ConverterVisitor(DataModel<TSource, TView> dataModel)
+			public ConverterVisitor(EntityModel<TSource, TView> dataModel)
 			{
 				_dataModel = dataModel;
 			}

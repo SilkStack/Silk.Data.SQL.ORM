@@ -27,10 +27,10 @@ namespace Silk.Data.SQL.ORM.Modelling
 		public TypedModel Model { get; }
 		public IView View => _view;
 
-		private DataModel _view;
+		private EntityModel _view;
 		private Dictionary<string, object> _row = new Dictionary<string, object>();
 
-		public RowContainer(TypedModel model, DataModel view)
+		public RowContainer(TypedModel model, EntityModel view)
 		{
 			Model = model;
 			_view = view;

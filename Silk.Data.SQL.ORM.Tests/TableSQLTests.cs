@@ -8,7 +8,7 @@ namespace Silk.Data.SQL.ORM.Tests
 	[TestClass]
 	public class TableSQLTests
 	{
-		private DataModel<BasicSqlTypesModel>
+		private EntityModel<BasicSqlTypesModel>
 			_simpleDataModel = new DataDomain().CreateDataModel<BasicSqlTypesModel>();
 
 

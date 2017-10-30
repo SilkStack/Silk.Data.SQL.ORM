@@ -10,15 +10,15 @@ namespace Silk.Data.SQL.ORM.Queries
 	public class ModelBoundExecutableQueryCollection<TSource> : ExecutableQueryCollection
 		where TSource : new()
 	{
-		public DataModel<TSource> DataModel { get; }
+		public EntityModel<TSource> DataModel { get; }
 
-		public ModelBoundExecutableQueryCollection(DataModel<TSource> dataModel, params QueryWithDelegate[] queryExpressions)
+		public ModelBoundExecutableQueryCollection(EntityModel<TSource> dataModel, params QueryWithDelegate[] queryExpressions)
 			: base(queryExpressions)
 		{
 			DataModel = dataModel;
 		}
 
-		public ModelBoundExecutableQueryCollection(DataModel<TSource> dataModel, IEnumerable<QueryWithDelegate> queryExpressions)
+		public ModelBoundExecutableQueryCollection(EntityModel<TSource> dataModel, IEnumerable<QueryWithDelegate> queryExpressions)
 			: base(queryExpressions)
 		{
 			DataModel = dataModel;
@@ -82,12 +82,12 @@ namespace Silk.Data.SQL.ORM.Queries
 		where TSource : new()
 		where TQueryResult : new()
 	{
-		public ModelBoundExecutableQueryCollection(DataModel<TSource> dataModel, params QueryWithDelegate[] queryExpressions)
+		public ModelBoundExecutableQueryCollection(EntityModel<TSource> dataModel, params QueryWithDelegate[] queryExpressions)
 			: base(dataModel, queryExpressions)
 		{
 		}
 
-		public ModelBoundExecutableQueryCollection(DataModel<TSource> dataModel, IEnumerable<QueryWithDelegate> queryExpressions)
+		public ModelBoundExecutableQueryCollection(EntityModel<TSource> dataModel, IEnumerable<QueryWithDelegate> queryExpressions)
 			: base(dataModel, queryExpressions)
 		{
 		}
@@ -205,12 +205,12 @@ namespace Silk.Data.SQL.ORM.Queries
 		where TQueryResult1 : new()
 		where TQueryResult2 : new()
 	{
-		public ModelBoundExecutableQueryCollection(DataModel<TSource> dataModel, params QueryWithDelegate[] queryExpressions)
+		public ModelBoundExecutableQueryCollection(EntityModel<TSource> dataModel, params QueryWithDelegate[] queryExpressions)
 			: base(dataModel, queryExpressions)
 		{
 		}
 
-		public ModelBoundExecutableQueryCollection(DataModel<TSource> dataModel, IEnumerable<QueryWithDelegate> queryExpressions)
+		public ModelBoundExecutableQueryCollection(EntityModel<TSource> dataModel, IEnumerable<QueryWithDelegate> queryExpressions)
 			: base(dataModel, queryExpressions)
 		{
 		}

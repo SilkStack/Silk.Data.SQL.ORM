@@ -10,9 +10,9 @@ namespace Silk.Data.SQL.ORM.Queries
 	public class UpdateQueryBuilder<TSource>
 		where TSource : new()
 	{
-		public DataModel<TSource> DataModel { get; }
+		public EntityModel<TSource> DataModel { get; }
 
-		public UpdateQueryBuilder(DataModel<TSource> dataModel)
+		public UpdateQueryBuilder(EntityModel<TSource> dataModel)
 		{
 			DataModel = dataModel;
 		}

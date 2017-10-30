@@ -10,9 +10,9 @@ namespace Silk.Data.SQL.ORM.Queries
 	public class DeleteQueryBuilder<TSource>
 		where TSource : new()
 	{
-		public DataModel<TSource> DataModel { get; }
+		public EntityModel<TSource> DataModel { get; }
 
-		public DeleteQueryBuilder(DataModel<TSource> dataModel)
+		public DeleteQueryBuilder(EntityModel<TSource> dataModel)
 		{
 			DataModel = dataModel;
 		}

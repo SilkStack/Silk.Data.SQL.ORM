@@ -48,7 +48,7 @@ namespace Silk.Data.SQL.ORM.Modelling.ResourceLoaders
 		{
 			private readonly List<(string FieldName, Type ProjectedType)> _fields
 				= new List<(string FieldName, Type ProjectedType)>();
-			private DataModel _dataModel;
+			private EntityModel _dataModel;
 
 			public Type Type { get; }
 			public DataDomain Domain { get; }

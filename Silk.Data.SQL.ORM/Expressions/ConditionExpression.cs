@@ -23,7 +23,7 @@ namespace Silk.Data.SQL.ORM.Expressions
 	{
 		private readonly ExpressionConverter<TSource, TView> _converter;
 
-		public ConditionExpression(DataModel<TSource, TView> dataModel, Expression<Func<TView, bool>> expression)
+		public ConditionExpression(EntityModel<TSource, TView> dataModel, Expression<Func<TView, bool>> expression)
 		{
 			_converter = new ExpressionConverter<TSource, TView>(dataModel);
 			Expression = ConvertToQueryExpression(expression);

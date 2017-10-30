@@ -22,12 +22,12 @@ namespace Silk.Data.SQL.ORM
 			new ProjectReferenceKeysConvention()
 		};
 
-		private readonly List<DataModel> _dataModels = new List<DataModel>();
+		private readonly List<EntityModel> _dataModels = new List<EntityModel>();
 		private readonly List<TableSchema> _tables = new List<TableSchema>();
 		private readonly Dictionary<Type, TableDefinition> _entitySchemas = new Dictionary<Type, TableDefinition>();
 
 		public ViewConvention[] ViewConventions { get; }
-		public IReadOnlyCollection<DataModel> DataModels => _dataModels;
+		public IReadOnlyCollection<EntityModel> DataModels => _dataModels;
 		public IReadOnlyCollection<TableSchema> Tables => _tables;
 
 		public DataDomain() :
@@ -56,7 +56,7 @@ namespace Silk.Data.SQL.ORM
 			_tables.Add(tableSchema);
 		}
 
-		public void AddModel(DataModel dataModel)
+		public void AddModel(EntityModel dataModel)
 		{
 			_dataModels.Add(dataModel);
 		}
@@ -66,13 +66,13 @@ namespace Silk.Data.SQL.ORM
 		/// </summary>
 		/// <typeparam name="TSource"></typeparam>
 		/// <returns></returns>
-		public DataModel<TSource> CreateDataModel<TSource>()
+		public EntityModel<TSource> CreateDataModel<TSource>()
 			where TSource : new()
 		{
 			var model = TypeModeller.GetModelOf<TSource>();
 			var dataModel = model.CreateView(viewDefinition =>
 			{
-				return new DataModel<TSource>(
+				return new EntityModel<TSource>(
 					viewDefinition.Name, model,
 					DataField.FromDefinitions(viewDefinition.UserData.OfType<TableDefinition>(), viewDefinition.FieldDefinitions).ToArray(),
 					viewDefinition.ResourceLoaders.ToArray(), this);
@@ -85,14 +85,14 @@ namespace Silk.Data.SQL.ORM
 		/// </summary>
 		/// <typeparam name="TSource"></typeparam>
 		/// <returns></returns>
-		public DataModel<TSource, TView> CreateDataModel<TSource, TView>()
+		public EntityModel<TSource, TView> CreateDataModel<TSource, TView>()
 			where TSource : new()
 			where TView : new()
 		{
 			var model = TypeModeller.GetModelOf<TSource>();
 			var dataModel = model.CreateView(viewDefinition =>
 			{
-				return new DataModel<TSource, TView>(
+				return new EntityModel<TSource, TView>(
 					viewDefinition.Name, model,
 					DataField.FromDefinitions(viewDefinition.UserData.OfType<TableDefinition>(), viewDefinition.FieldDefinitions).ToArray(),
 					viewDefinition.ResourceLoaders.ToArray(), this);
