@@ -97,7 +97,7 @@ namespace Silk.Data.SQL.ORM
 				}
 			}
 
-			builtDomain = DataDomain.CreateFromDefinition(_domainDefinition);
+			builtDomain = DataDomain.CreateFromDefinition(_domainDefinition, _viewConventions);
 			return builtDomain;
 		}
 

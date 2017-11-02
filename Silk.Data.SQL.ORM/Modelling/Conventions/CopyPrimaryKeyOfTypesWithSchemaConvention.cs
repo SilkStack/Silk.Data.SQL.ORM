@@ -61,8 +61,9 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 					ProjectionType = field.DataType,
 					RelationshipField = primaryKey.Name
 				});
-				viewDefinition.GetEntityTableDefinition()
-					.Fields.Add(fieldDefinition);
+				if (!viewDefinition.UserData.OfType<DomainDefinition>().First().IsReadOnly)
+					viewDefinition.GetEntityTableDefinition()
+						.Fields.Add(fieldDefinition);
 				viewDefinition.FieldDefinitions.Add(fieldDefinition);
 			}
 		}

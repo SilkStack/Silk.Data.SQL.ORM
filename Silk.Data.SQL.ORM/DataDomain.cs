@@ -1,7 +1,6 @@
 ﻿using Silk.Data.Modelling;
 using Silk.Data.Modelling.Conventions;
 using Silk.Data.SQL.ORM.Modelling;
-using Silk.Data.SQL.ORM.Modelling.Conventions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,16 +12,10 @@ namespace Silk.Data.SQL.ORM
 	/// </summary>
 	public class DataDomain
 	{
-		private static ViewConvention[] _defaultViewConventions = new ViewConvention[]
-		{
-			new CleanModelNameConvention(),
-			new CopySupportedSQLTypesConvention(),
-			new IdIsPrimaryKeyConvention(),
-			new CopyPrimaryKeyOfTypesWithSchemaConvention(),
-			new ProjectReferenceKeysConvention()
-		};
+		private static EnumerableConversionsConvention _bindEnumerableConversions = new EnumerableConversionsConvention();
 
-		public static DataDomain CreateFromDefinition(DomainDefinition domainDefinition)
+		public static DataDomain CreateFromDefinition(DomainDefinition domainDefinition,
+			IEnumerable<ViewConvention> viewConventions)
 		{
 			DataDomain builtDomain = null;
 			var lazyDomainAccessor = new Lazy<DataDomain>(() => builtDomain);
@@ -49,11 +42,11 @@ namespace Silk.Data.SQL.ORM
 					var table = new Table();
 					var fields = new List<DataField>();
 
-					foreach (var viewDefinition in tableDefinition.Fields)
+					foreach (var fieldDefinition in tableDefinition.Fields)
 					{
-						var field = new DataField(viewDefinition.Name, viewDefinition.DataType,
-							viewDefinition.Metadata.ToArray(), viewDefinition.ModelBinding, table,
-							null, viewDefinition.ModelFieldName);
+						var field = new DataField(fieldDefinition.Name, fieldDefinition.DataType,
+							fieldDefinition.Metadata.ToArray(), fieldDefinition.ModelBinding, table,
+							null, fieldDefinition.ModelFieldName);
 
 						fields.Add(field);
 					}
@@ -113,24 +106,28 @@ namespace Silk.Data.SQL.ORM
 				}
 			}
 
-			builtDomain = new DataDomain(schemas, entityModels);
+			builtDomain = new DataDomain(schemas, entityModels, viewConventions, domainDefinition);
 			return builtDomain;
 		}
 
 		private readonly EntitySchema[] _entitySchemas;
 		private readonly EntityModel[] _entityModels;
-		private readonly List<Table> _tables = new List<Table>();
-
+		private readonly ViewConvention[] _viewConventions;
+		private readonly DomainDefinition _domainDefinition;
 		private readonly Dictionary<Type, TableDefinition> _entitySchemaDefinitions = new Dictionary<Type, TableDefinition>();
+		private readonly Dictionary<string, EntityModel> _projectionModelCache = new Dictionary<string, EntityModel>();
 
-		public ViewConvention[] ViewConventions { get; }
 		public IReadOnlyCollection<EntityModel> DataModels => _entityModels;
-		public IReadOnlyCollection<Table> Tables => _tables;
 
-		public DataDomain(IEnumerable<EntitySchema> entitySchemas, IEnumerable<EntityModel> entityModels)
+		public DataDomain(IEnumerable<EntitySchema> entitySchemas, IEnumerable<EntityModel> entityModels,
+			IEnumerable<ViewConvention> viewConventions, DomainDefinition domainDefinition)
 		{
+			domainDefinition.IsReadOnly = true;
+
 			_entitySchemas = entitySchemas.ToArray();
 			_entityModels = entityModels.ToArray();
+			_viewConventions = viewConventions.ToArray();
+			_domainDefinition = domainDefinition;
 		}
 
 		public EntityModel<TSource> GetEntityModel<TSource>()
@@ -143,7 +140,62 @@ namespace Silk.Data.SQL.ORM
 			where TSource : new()
 			where TView : new()
 		{
-			return null;
+			var entityModel = GetEntityModel<TSource>();
+			if (entityModel == null)
+				throw new InvalidOperationException("Entity type not present in data domain.");
+
+			var cacheKey = $"{typeof(TSource).FullName} to {typeof(TView).FullName}";
+			if (_projectionModelCache.TryGetValue(cacheKey, out var ret))
+				return ret as EntityModel<TSource,TView>;
+
+			lock (_projectionModelCache)
+			{
+				if (_projectionModelCache.TryGetValue(cacheKey, out ret))
+					return ret as EntityModel<TSource, TView>;
+
+				var lazyDomainAccessor = new Lazy<DataDomain>(() => this);
+				var modelOfViewType = TypeModeller.GetModelOf<TView>();
+
+				var viewDefinition = new ViewDefinition(entityModel.Model, modelOfViewType, _viewConventions);
+				viewDefinition.UserData.Add(_domainDefinition);
+				viewDefinition.UserData.Add(typeof(TSource));
+				viewDefinition.UserData.Add(typeof(TView));
+				viewDefinition.UserData.Add(lazyDomainAccessor);
+
+				foreach (var field in viewDefinition.TargetModel.Fields)
+				{
+					foreach (var viewConvention in _viewConventions)
+					{
+						viewConvention.MakeModelFields(viewDefinition.SourceModel,
+							field, viewDefinition);
+					}
+				}
+
+				_bindEnumerableConversions.FinalizeModel(viewDefinition);
+
+				foreach (var viewConvention in _viewConventions)
+				{
+					viewConvention.FinalizeModel(viewDefinition);
+				}
+
+				var fields = new List<DataField>();
+				foreach (var fieldDefinition in viewDefinition.FieldDefinitions)
+				{
+					var source = entityModel.Fields.FirstOrDefault(q =>
+						q.DataType == fieldDefinition.DataType &&
+						q.ModelBinding.ModelFieldPath.SequenceEqual(fieldDefinition.ModelBinding.ModelFieldPath)
+						);
+					if (source != null)
+						fields.Add(source);
+				}
+
+				ret = new EntityModel<TSource, TView>(viewDefinition.Name, entityModel.Model,
+					entityModel.Schema, fields.ToArray(), lazyDomainAccessor);
+
+				_projectionModelCache.Add(cacheKey, ret);
+
+				return ret as EntityModel<TSource, TView>;
+			}
 		}
 
 		public EntitySchema GetSchema<TSource>()
@@ -156,46 +208,5 @@ namespace Silk.Data.SQL.ORM
 		{
 			return _entitySchemas.FirstOrDefault(q => q.EntityModel.EntityType == entityType);
 		}
-
-		//  OLD API
-
-		/// <summary>
-		/// Creates a data model using knowledge from the data domain.
-		/// </summary>
-		/// <typeparam name="TSource"></typeparam>
-		/// <returns></returns>
-		//public EntityModel<TSource> CreateDataModel<TSource>()
-		//	where TSource : new()
-		//{
-		//	var model = TypeModeller.GetModelOf<TSource>();
-		//	var dataModel = model.CreateView(viewDefinition =>
-		//	{
-		//		return new EntityModel<TSource>(
-		//			viewDefinition.Name, model, null,
-		//			DataField.FromDefinitions(viewDefinition.UserData.OfType<TableDefinition>(), viewDefinition.FieldDefinitions).ToArray(),
-		//			viewDefinition.ResourceLoaders.ToArray(), this);
-		//	}, new object[] { this }, ViewConventions);
-		//	return dataModel;
-		//}
-
-		/// <summary>
-		/// Creates a data model using knowledge from the data domain.
-		/// </summary>
-		/// <typeparam name="TSource"></typeparam>
-		/// <returns></returns>
-		//public EntityModel<TSource, TView> CreateDataModel<TSource, TView>()
-		//	where TSource : new()
-		//	where TView : new()
-		//{
-		//	var model = TypeModeller.GetModelOf<TSource>();
-		//	var dataModel = model.CreateView(viewDefinition =>
-		//	{
-		//		return new EntityModel<TSource, TView>(
-		//			viewDefinition.Name, model, null,
-		//			DataField.FromDefinitions(viewDefinition.UserData.OfType<TableDefinition>(), viewDefinition.FieldDefinitions).ToArray(),
-		//			viewDefinition.ResourceLoaders.ToArray(), this);
-		//	}, typeof(TView), new object[] { this }, ViewConventions);
-		//	return dataModel;
-		//}
 	}
 }

@@ -104,48 +104,6 @@ namespace Silk.Data.SQL.ORM.Modelling
 			where TView : new()
 		{
 			return Domain.GetProjectionModel<TSource, TView>();
-
-			//if (_cachedSubViews.TryGetValue(typeof(TView), out var subView))
-			//{
-			//	return subView as EntityModel<TSource, TView>;
-			//}
-
-			//lock (_cachedSubViews)
-			//{
-			//	if (_cachedSubViews.TryGetValue(typeof(TView), out subView))
-			//	{
-			//		return subView as EntityModel<TSource, TView>;
-			//	}
-
-			//	var compareDataModel = Domain.CreateDataModel<TSource, TView>();
-			//	var subViewFields = new List<DataField>();
-
-			//	foreach (var compareField in compareDataModel.Fields)
-			//	{
-			//		var matchedField = Fields.FirstOrDefault(
-			//			realField => realField.ModelBinding.ModelFieldPath.SequenceEqual(compareField.ModelBinding.ModelFieldPath) &&
-			//				realField.ModelBinding.ViewFieldPath.SequenceEqual(compareField.ModelBinding.ViewFieldPath)
-			//			);
-			//		if (matchedField == null)
-			//			continue;
-
-			//		subViewFields.Add(new DataField(
-			//			compareField.Storage.ColumnName, compareField.DataType, compareField.Metadata,
-			//			compareField.ModelBinding, matchedField.Storage.Table, compareField.Relationship, compareField.Name
-			//			));
-			//	}
-
-			//	var resourceLoaders = subViewFields
-			//		.Where(q => q.ModelBinding.ResourceLoaders != null)
-			//		.SelectMany(q => q.ModelBinding.ResourceLoaders)
-			//		.GroupBy(q => q)
-			//		.Select(q => q.First())
-			//		.ToArray();
-			//	var ret = new EntityModel<TSource, TView>(typeof(TView).Name, Model, null, subViewFields.ToArray(), resourceLoaders,
-			//		Domain);
-			//	_cachedSubViews.Add(typeof(TView), ret);
-			//	return ret;
-			//}
 		}
 
 		public void MapToView(ICollection<IModelReadWriter> modelReadWriters, ICollection<IContainer> viewContainers)
