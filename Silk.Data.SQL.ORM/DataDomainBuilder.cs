@@ -141,7 +141,8 @@ namespace Silk.Data.SQL.ORM
 
 			public override void CallBuiltDelegate(DataDomain dataDomain)
 			{
-				_builtDelegate(dataDomain.GetEntityModel<TSource>());
+				if (_builtDelegate != null)
+					_builtDelegate(dataDomain.GetEntityModel<TSource>());
 			}
 		}
 
@@ -170,7 +171,8 @@ namespace Silk.Data.SQL.ORM
 
 			public override void CallBuiltDelegate(DataDomain dataDomain)
 			{
-				_builtDelegate(dataDomain.GetEntityModel<TSource>() as EntityModel<TSource, TView>);
+				if (_builtDelegate != null)
+					_builtDelegate(dataDomain.GetEntityModel<TSource>() as EntityModel<TSource, TView>);
 			}
 		}
 	}
