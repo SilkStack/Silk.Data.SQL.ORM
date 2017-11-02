@@ -98,6 +98,12 @@ namespace Silk.Data.SQL.ORM
 			}
 
 			builtDomain = DataDomain.CreateFromDefinition(_domainDefinition, _viewConventions);
+
+			foreach (var entityModelBuilder in _entityModelBuilders)
+			{
+				entityModelBuilder.CallBuiltDelegate(builtDomain);
+			}
+
 			return builtDomain;
 		}
 
@@ -107,6 +113,8 @@ namespace Silk.Data.SQL.ORM
 			public abstract Type Projectiontype { get; }
 			public ViewDefinition ViewDefinition { get; protected set; }
 			public DomainDefinition DomainDefinition { get; protected set; }
+
+			public abstract void CallBuiltDelegate(DataDomain dataDomain);
 		}
 
 		private class EntityModelBuilder<TSource> : EntityModelBuilder
@@ -129,6 +137,11 @@ namespace Silk.Data.SQL.ORM
 				);
 				ViewDefinition.UserData.Add(domainDefinition);
 				ViewDefinition.UserData.Add(typeof(TSource));
+			}
+
+			public override void CallBuiltDelegate(DataDomain dataDomain)
+			{
+				_builtDelegate(dataDomain.GetEntityModel<TSource>());
 			}
 		}
 
@@ -153,6 +166,11 @@ namespace Silk.Data.SQL.ORM
 				ViewDefinition.UserData.Add(domainDefinition);
 				ViewDefinition.UserData.Add(typeof(TSource));
 				ViewDefinition.UserData.Add(typeof(TView));
+			}
+
+			public override void CallBuiltDelegate(DataDomain dataDomain)
+			{
+				_builtDelegate(dataDomain.GetEntityModel<TSource>() as EntityModel<TSource, TView>);
 			}
 		}
 	}
