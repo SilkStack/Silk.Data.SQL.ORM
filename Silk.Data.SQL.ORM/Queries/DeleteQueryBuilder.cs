@@ -24,7 +24,7 @@ namespace Silk.Data.SQL.ORM.Queries
 				throw new InvalidOperationException("A primary key is required.");
 
 			//  todo: update this to work with datamodels that span multiple tables
-			var table = DataModel.Tables.First(q => q.IsEntityTable);
+			var table = DataModel.Schema.Tables.First(q => q.IsEntityTable);
 			var tableExpression = QueryExpression.Table(table.TableName);
 			var queries = new List<QueryWithDelegate>();
 			var columns = DataModel.Fields.Where(
@@ -53,7 +53,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			)
 		{
 			//  todo: update this to work with datamodels that span multiple tables
-			var table = DataModel.Tables.First(q => q.IsEntityTable);
+			var table = DataModel.Schema.Tables.First(q => q.IsEntityTable);
 			var tableExpression = QueryExpression.Table(table.TableName);
 			var queries = new List<QueryWithDelegate>
 			{

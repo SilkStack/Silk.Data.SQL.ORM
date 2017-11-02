@@ -5,39 +5,13 @@ namespace Silk.Data.SQL.ORM.Modelling
 {
 	public class DataRelationship
     {
-		private readonly Lazy<DataField> _lazyForeignField;
-		private readonly Lazy<EntityModel> _lazyForeignModel;
-		private readonly RelationshipDefinition _relationshipDefinition;
-		private readonly DataDomain _dataDomain;
+		public DataField ForeignField { get; }
+		public EntityModel ForeignModel { get; }
 
-		public DataField ForeignField => _lazyForeignField.Value;
-		public EntityModel ForeignModel => _lazyForeignModel.Value;
-
-		public DataRelationship(RelationshipDefinition relationshipDefinition, DataDomain domain)
+		public DataRelationship(DataField foreignField, EntityModel foreignModel)
 		{
-			_relationshipDefinition = relationshipDefinition;
-			_dataDomain = domain;
-
-			_lazyForeignField = new Lazy<DataField>(() =>
-			{
-				return relationshipDefinition.Domain.DataModels
-					.FirstOrDefault(q => q.EntityType == _relationshipDefinition.EntityType)
-					?.Fields.FirstOrDefault(q => q.Name == _relationshipDefinition.RelationshipField);
-			});
-
-			_lazyForeignModel = new Lazy<EntityModel>(() =>
-			{
-				var dataModel = _relationshipDefinition.Domain.DataModels
-					.FirstOrDefault(q => q.EntityType == _relationshipDefinition.EntityType);
-				if (_relationshipDefinition.EntityType != _relationshipDefinition.ProjectionType)
-				{
-					dataModel = dataModel.GetType()
-						.GetMethod(nameof(EntityModel<object>.GetSubView))
-						.MakeGenericMethod(_relationshipDefinition.ProjectionType)
-						.Invoke(dataModel, new object[0]) as EntityModel;
-				}
-				return dataModel;
-			});
+			ForeignField = foreignField;
+			ForeignModel = foreignModel;
 		}
     }
 }

@@ -4,14 +4,14 @@
 	{
 		public string ColumnName { get; }
 		public SqlDataType DataType { get; }
-		public TableSchema Table { get; }
+		public Table Table { get; }
 		public bool IsAutoIncrement { get; }
 		public bool IsPrimaryKey { get; }
 		public bool IsAutoGenerate { get; }
 		public bool IsNullable { get; }
 
 		public DataStorage(string columnName, SqlDataType dataType,
-			TableSchema table, bool isPrimaryKey, bool isAutoIncrement,
+			Table table, bool isPrimaryKey, bool isAutoIncrement,
 			bool isAutoGenerate, bool isNullable)
 		{
 			ColumnName = columnName;

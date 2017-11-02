@@ -9,11 +9,11 @@ namespace Silk.Data.SQL.ORM.Modelling.ResourceLoaders
 {
 	public class JoinedObjectMapper : IResourceLoader
 	{
-		private readonly DataDomain _domain;
+		private readonly Lazy<DataDomain> _domain;
 		private readonly Model _model;
 		private readonly List<Mapping> _mappings = new List<Mapping>();
 
-		public JoinedObjectMapper(Model model, DataDomain domain)
+		public JoinedObjectMapper(Model model, Lazy<DataDomain> domain)
 		{
 			_model = model;
 			_domain = domain;
@@ -51,11 +51,11 @@ namespace Silk.Data.SQL.ORM.Modelling.ResourceLoaders
 			private EntityModel _dataModel;
 
 			public Type Type { get; }
-			public DataDomain Domain { get; }
+			public Lazy<DataDomain> Domain { get; }
 			public Model ParentModel { get; }
 
 			public Mapping(Type type,
-				Model model, DataDomain domain)
+				Model model, Lazy<DataDomain> domain)
 			{
 				Type = type;
 				Domain = domain;
@@ -70,7 +70,7 @@ namespace Silk.Data.SQL.ORM.Modelling.ResourceLoaders
 			public async Task PerformMapping(ICollection<IContainer> containers, MappingContext mappingContext)
 			{
 				if (_dataModel == null)
-					_dataModel = Domain.DataModels.FirstOrDefault(q => q.EntityType == Type);
+					_dataModel = Domain.Value.DataModels.FirstOrDefault(q => q.EntityType == Type);
 				if (_dataModel == null)
 					throw new InvalidOperationException($"No data model in domain for type {Type.FullName}.");
 

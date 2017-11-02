@@ -1,7 +1,6 @@
 ﻿using System;
 using Silk.Data.Modelling;
 using Silk.Data.Modelling.Bindings;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Modelling
@@ -13,10 +12,10 @@ namespace Silk.Data.SQL.ORM.Modelling
 		public object[] Metadata { get; }
 		public ModelBinding ModelBinding { get; }
 		public DataStorage Storage { get; }
-		public DataRelationship Relationship { get; }
+		public DataRelationship Relationship { get; private set; }
 
 		public DataField(string storageName, Type dataType, object[] metadata,
-			ModelBinding modelBinding, TableSchema tableSchema, DataRelationship relationship,
+			ModelBinding modelBinding, Table tableSchema, DataRelationship relationship,
 			string fieldName = null)
 		{
 			if (!string.IsNullOrEmpty(fieldName))
@@ -51,6 +50,11 @@ namespace Silk.Data.SQL.ORM.Modelling
 				metadata.OfType<AutoIncrementAttribute>().Any(),
 				metadata.OfType<AutoGenerateIdAttribute>().Any(),
 				isNullable);
+		}
+
+		internal void SetRelationship(DataRelationship dataRelationship)
+		{
+			Relationship = dataRelationship;
 		}
 
 		private SqlDataType GetSqlDataType()
@@ -113,50 +117,6 @@ namespace Silk.Data.SQL.ORM.Modelling
 			}
 
 			throw new NotSupportedException($"Data type {DataType.FullName} not supported.");
-		}
-
-		public static DataField FromDefinition(ViewFieldDefinition definition, TableSchema tableSchema)
-		{
-			var relationshipDefinition = definition.Metadata.OfType<RelationshipDefinition>().FirstOrDefault();
-			DataRelationship dataRelationship = null;
-			if (relationshipDefinition != null)
-			{
-				dataRelationship = new DataRelationship(relationshipDefinition, relationshipDefinition.Domain);
-			}
-			return new DataField(definition.Name, definition.DataType, definition.Metadata.ToArray(),
-				definition.ModelBinding, tableSchema, dataRelationship, definition.ModelFieldName);
-		}
-
-		public static IEnumerable<DataField> FromDefinitions(IEnumerable<TableDefinition> tableDefinitions,
-			IEnumerable<ViewFieldDefinition> definitions)
-		{
-			var fieldsToTableDictionary = new Dictionary<ViewFieldDefinition, TableSchema>();
-			var fieldsToTableDefDictionary = new Dictionary<ViewFieldDefinition, TableDefinition>();
-			var tableToFieldsDictionary = new Dictionary<TableDefinition, List<DataField>>();
-			var dataFields = new List<DataField>();
-
-			foreach (var tableDefinition in tableDefinitions)
-			{
-				var table = new TableSchema(tableDefinition.TableName, tableDefinition.IsEntityTable, new Lazy<DataField[]>(
-					() => tableToFieldsDictionary[tableDefinition].ToArray()
-					));
-				tableToFieldsDictionary.Add(tableDefinition, new List<DataField>());
-				foreach (var fieldDefinition in tableDefinition.Fields)
-				{
-					fieldsToTableDictionary.Add(fieldDefinition, table);
-					fieldsToTableDefDictionary.Add(fieldDefinition, tableDefinition);
-				}
-			}
-
-			foreach (var viewDef in definitions)
-			{
-				var dataField = FromDefinition(viewDef, fieldsToTableDictionary[viewDef]);
-				var tableDef = fieldsToTableDefDictionary[viewDef];
-				tableToFieldsDictionary[tableDef].Add(dataField);
-				dataFields.Add(dataField);
-			}
-
-			return dataFields;
 		}
 	}
 }

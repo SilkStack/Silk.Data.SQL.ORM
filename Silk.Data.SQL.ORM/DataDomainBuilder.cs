@@ -1,5 +1,7 @@
 ﻿using Silk.Data.Modelling;
+using Silk.Data.Modelling.Conventions;
 using Silk.Data.SQL.ORM.Modelling;
+using Silk.Data.SQL.ORM.Modelling.Conventions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,123 +13,146 @@ namespace Silk.Data.SQL.ORM
 	/// </summary>
 	public class DataDomainBuilder
 	{
-		private readonly List<DataModelBuilder> _dataModelBuilders = new List<DataModelBuilder>();
-
-		public void AddDataModel<TSource>(Action<EntityModel<TSource>> builtDelegate = null)
-			where TSource : new()
+		private static ViewConvention[] _defaultViewConventions = new ViewConvention[]
 		{
-			_dataModelBuilders.Add(new DataModelBuilder<TSource>(builtDelegate));
+			new CleanModelNameConvention(),
+			new CopySupportedSQLTypesConvention(),
+			new IdIsPrimaryKeyConvention(),
+			new CopyPrimaryKeyOfTypesWithSchemaConvention(),
+			new ProjectReferenceKeysConvention()
+		};
+		private static EnumerableConversionsConvention _bindEnumerableConversions = new EnumerableConversionsConvention();
+
+		private readonly List<EntityModelBuilder> _entityModelBuilders = new List<EntityModelBuilder>();
+		private readonly ViewConvention[] _viewConventions;
+		private readonly DomainDefinition _domainDefinition = new DomainDefinition();
+
+		public DataDomainBuilder() : this(_defaultViewConventions)
+		{
 		}
 
-		public void AddDataModel<TSource, TView>(Action<EntityModel<TSource, TView>> builtDelegate = null)
+		public DataDomainBuilder(IEnumerable<ViewConvention> viewConventions)
+		{
+			_viewConventions = viewConventions.ToArray();
+		}
+
+		public void AddDataEntity<TSource>(Action<EntityModel<TSource>> builtDelegate = null)
+			where TSource : new()
+		{
+			_entityModelBuilders.Add(new EntityModelBuilder<TSource>(
+				builtDelegate, _viewConventions, _domainDefinition
+				));
+		}
+
+		public void AddDataEntity<TSource, TView>(Action<EntityModel<TSource, TView>> builtDelegate = null)
 			where TSource : new()
 			where TView : new()
 		{
-			_dataModelBuilders.Add(new DataModelBuilder<TSource, TView>(builtDelegate));
+			_entityModelBuilders.Add(new EntityModelBuilder<TSource, TView>(
+				builtDelegate, _viewConventions, _domainDefinition
+				));
 		}
 
 		public DataDomain Build()
 		{
-			var domain = new DataDomain();
+			var viewDefinitionFieldCounts = new Dictionary<ViewDefinition,int>();
+			var currentViewDefinitionFieldCounts = new Dictionary<ViewDefinition, int>();
+			DataDomain builtDomain = null;
+			var lazyDomainAccessor = new Lazy<DataDomain>(() => builtDomain);
 
-			//  add knowledge of how complex types are mapped/loaded etc.
-			foreach (var dataModelBuilder in _dataModelBuilders)
+			foreach (var entityModelBuilder in _entityModelBuilders)
 			{
-				var viewDefinition = dataModelBuilder.BuildViewDefinition(domain);
-				var entityTable = viewDefinition.UserData.OfType<TableDefinition>()
-					.FirstOrDefault(q => q.IsEntityTable);
-				if (entityTable != null)
+				entityModelBuilder.ViewDefinition.UserData.Add(lazyDomainAccessor);
+				viewDefinitionFieldCounts.Add(entityModelBuilder.ViewDefinition, 0);
+			}
+
+			var fieldsChanged = true;
+			while (fieldsChanged)
+			{
+				fieldsChanged = false;
+
+				foreach (var entityModelBuilder in _entityModelBuilders)
 				{
-					domain.DeclareSchema(dataModelBuilder.ModelType, entityTable);
+					foreach (var field in entityModelBuilder.ViewDefinition.TargetModel.Fields)
+					{
+						foreach (var viewConvention in _viewConventions)
+						{
+							viewConvention.MakeModelFields(entityModelBuilder.ViewDefinition.SourceModel,
+								field, entityModelBuilder.ViewDefinition);
+						}
+					}
+
+					_bindEnumerableConversions.FinalizeModel(entityModelBuilder.ViewDefinition);
+
+					foreach (var viewConvention in _viewConventions)
+					{
+						viewConvention.FinalizeModel(entityModelBuilder.ViewDefinition);
+					}
+
+					currentViewDefinitionFieldCounts[entityModelBuilder.ViewDefinition] = entityModelBuilder.ViewDefinition.FieldDefinitions.Count;
+					if (currentViewDefinitionFieldCounts[entityModelBuilder.ViewDefinition] !=
+						viewDefinitionFieldCounts[entityModelBuilder.ViewDefinition])
+						fieldsChanged = true;
+					viewDefinitionFieldCounts[entityModelBuilder.ViewDefinition] = entityModelBuilder.ViewDefinition.FieldDefinitions.Count;
 				}
 			}
 
-			//  now make data models
-			foreach (var dataModelBuilder in _dataModelBuilders)
-			{
-				dataModelBuilder.BuildDataModel(domain);
-			}
-
-			//  add all the unique schemas
-			foreach (var tableSchema in domain.DataModels
-				.SelectMany(model => model.Tables).GroupBy(table => table)
-				.Select(tableGroup => tableGroup.First()))
-			{
-				domain.AddSchema(tableSchema);
-			}
-
-			return domain;
+			builtDomain = DataDomain.CreateFromDefinition(_domainDefinition);
+			return builtDomain;
 		}
 
-		private abstract class DataModelBuilder
+		private abstract class EntityModelBuilder
 		{
 			public abstract Type ModelType { get; }
-			public abstract void BuildDataModel(DataDomain domain);
-			public abstract ViewDefinition BuildViewDefinition(DataDomain domain);
+			public abstract Type Projectiontype { get; }
+			public ViewDefinition ViewDefinition { get; protected set; }
+			public DomainDefinition DomainDefinition { get; protected set; }
 		}
 
-		private class DataModelBuilder<TSource> : DataModelBuilder
+		private class EntityModelBuilder<TSource> : EntityModelBuilder
 			where TSource : new()
 		{
 			private readonly Action<EntityModel<TSource>> _builtDelegate;
 
-			public DataModelBuilder(Action<EntityModel<TSource>> builtDelegate)
-			{
-				_builtDelegate = builtDelegate;
-			}
-
 			public override Type ModelType => typeof(TSource);
 
-			public override void BuildDataModel(DataDomain domain)
-			{
-				var model = domain.CreateDataModel<TSource>();
-				domain.AddModel(model);
-				_builtDelegate?.Invoke(model);
-			}
+			public override Type Projectiontype => null;
 
-			public override ViewDefinition BuildViewDefinition(DataDomain domain)
+			public EntityModelBuilder(Action<EntityModel<TSource>> builtDelegate,
+				ViewConvention[] viewConventions, DomainDefinition domainDefinition)
 			{
-				ViewDefinition viewDefinition = null;
-				var model = TypeModeller.GetModelOf<TSource>();
-				model.CreateView(createdViewDefinition =>
-				{
-					viewDefinition = createdViewDefinition;
-					return (EntityModel)null;
-				}, new object[] { domain }, domain.ViewConventions);
-				return viewDefinition;
+				_builtDelegate = builtDelegate;
+				ViewDefinition = new ViewDefinition(
+					TypeModeller.GetModelOf<TSource>(),
+					TypeModeller.GetModelOf<TSource>(),
+					viewConventions
+				);
+				ViewDefinition.UserData.Add(domainDefinition);
+				ViewDefinition.UserData.Add(typeof(TSource));
 			}
 		}
 
-		private class DataModelBuilder<TSource,TView> : DataModelBuilder
+		private class EntityModelBuilder<TSource,TView> : EntityModelBuilder
 			where TSource : new()
 			where TView : new()
 		{
-			public override Type ModelType => typeof(TSource);
-
 			private readonly Action<EntityModel<TSource, TView>> _builtDelegate;
 
-			public DataModelBuilder(Action<EntityModel<TSource, TView>> builtDelegate)
+			public override Type ModelType => typeof(TSource);
+			public override Type Projectiontype => typeof(TView);
+
+			public EntityModelBuilder(Action<EntityModel<TSource, TView>> builtDelegate,
+				ViewConvention[] viewConventions, DomainDefinition domainDefinition)
 			{
 				_builtDelegate = builtDelegate;
-			}
-
-			public override void BuildDataModel(DataDomain domain)
-			{
-				var model = domain.CreateDataModel<TSource, TView>();
-				domain.AddModel(model);
-				_builtDelegate?.Invoke(model);
-			}
-
-			public override ViewDefinition BuildViewDefinition(DataDomain domain)
-			{
-				ViewDefinition viewDefinition = null;
-				var model = TypeModeller.GetModelOf<TSource>();
-				model.CreateView(createdViewDefinition =>
-				{
-					viewDefinition = createdViewDefinition;
-					return (EntityModel)null;
-				}, typeof(TView), new object[] { domain }, domain.ViewConventions);
-				return viewDefinition;
+				ViewDefinition = new ViewDefinition(
+					TypeModeller.GetModelOf<TSource>(),
+					TypeModeller.GetModelOf<TView>(),
+					viewConventions
+				);
+				ViewDefinition.UserData.Add(domainDefinition);
+				ViewDefinition.UserData.Add(typeof(TSource));
+				ViewDefinition.UserData.Add(typeof(TView));
 			}
 		}
 	}

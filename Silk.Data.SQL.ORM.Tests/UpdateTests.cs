@@ -11,10 +11,9 @@ namespace Silk.Data.SQL.ORM.Tests
 		[TestMethod]
 		public void UpdateSimpleModel()
 		{
-			var domain = new DataDomain();
-			var dataModel = domain.CreateDataModel<BasicPocoWithGuidId>();
+			var dataModel = TestDb.CreateDomainAndModel<BasicPocoWithGuidId>();
 
-			foreach (var table in dataModel.Tables)
+			foreach (var table in dataModel.Schema.Tables)
 			{
 				if (!table.Exists(TestDb.Provider))
 					table.Create(TestDb.Provider);
@@ -39,7 +38,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			using (var queryResult = TestDb.Provider.ExecuteReader(
 				QueryExpression.Select(
 					new[] { QueryExpression.All() },
-					from: QueryExpression.Table(dataModel.Tables.First().TableName),
+					from: QueryExpression.Table(dataModel.Schema.Tables.First().TableName),
 					where: QueryExpression.Compare(QueryExpression.Column("Id"), ComparisonOperator.None, QueryExpression.InFunction(sourceInstances.Select(q => (object)q.Id).ToArray())),
 					orderBy: new[] {
 						QueryExpression.Descending(QueryExpression.Compare(QueryExpression.Column("Id"), ComparisonOperator.AreEqual, QueryExpression.Value(sourceInstances[0].Id))),
@@ -63,7 +62,7 @@ namespace Silk.Data.SQL.ORM.Tests
 				Assert.AreEqual(sourceInstances[2].Data, queryResult.GetString(1));
 			}
 
-			foreach (var table in dataModel.Tables)
+			foreach (var table in dataModel.Schema.Tables)
 			{
 				table.Drop(TestDb.Provider);
 			}

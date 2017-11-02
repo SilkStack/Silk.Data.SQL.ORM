@@ -6,19 +6,28 @@ using System.Threading.Tasks;
 
 namespace Silk.Data.SQL.ORM.Modelling
 {
-	public class TableSchema
+	public class Table
 	{
-		private Lazy<DataField[]> _lazyDataFields;
+		public string TableName { get; private set; }
+		public bool IsEntityTable { get; private set; }
+		public DataField[] DataFields { get; private set; }
 
-		public string TableName { get; }
-		public bool IsEntityTable { get; }
-		public DataField[] DataFields => _lazyDataFields.Value;
+		internal Table()
+		{
+		}
 
-		public TableSchema(string tableName, bool isEntityTable, Lazy<DataField[]> lazyDataFields)
+		public Table(string tableName, bool isEntityTable, DataField[] dataFields)
 		{
 			TableName = tableName;
 			IsEntityTable = isEntityTable;
-			_lazyDataFields = lazyDataFields;
+			DataFields = dataFields;
+		}
+
+		internal void Initialize(string tableName, bool isEntityTable, DataField[] dataFields)
+		{
+			TableName = tableName;
+			IsEntityTable = isEntityTable;
+			DataFields = dataFields;
 		}
 
 		private CreateTableExpression CreateTableExpression()

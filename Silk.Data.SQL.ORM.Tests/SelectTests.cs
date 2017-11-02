@@ -10,10 +10,9 @@ namespace Silk.Data.SQL.ORM.Tests
 		[TestMethod]
 		public void SelectGuidSimpleModel()
 		{
-			var domain = new DataDomain();
-			var dataModel = domain.CreateDataModel<BasicPocoWithGuidId>();
+			var dataModel = TestDb.CreateDomainAndModel<BasicPocoWithGuidId>();
 
-			foreach (var table in dataModel.Tables)
+			foreach (var table in dataModel.Schema.Tables)
 			{
 				if (!table.Exists(TestDb.Provider))
 					table.Create(TestDb.Provider);
@@ -36,7 +35,7 @@ namespace Silk.Data.SQL.ORM.Tests
 				Assert.IsTrue(queriedInstances.Any(q => q.Id == sourceInstance.Id && q.Data == sourceInstance.Data));
 			}
 
-			foreach (var table in dataModel.Tables)
+			foreach (var table in dataModel.Schema.Tables)
 			{
 				table.Drop(TestDb.Provider);
 			}
@@ -45,10 +44,9 @@ namespace Silk.Data.SQL.ORM.Tests
 		[TestMethod]
 		public void MultipleSelectGuidSimpleModel()
 		{
-			var domain = new DataDomain();
-			var dataModel = domain.CreateDataModel<BasicPocoWithGuidId, BasicPocoWithGuidId>();
+			var dataModel = TestDb.CreateDomainAndModel<BasicPocoWithGuidId, BasicPocoWithGuidId>();
 
-			foreach (var table in dataModel.Tables)
+			foreach (var table in dataModel.Schema.Tables)
 			{
 				if (!table.Exists(TestDb.Provider))
 					table.Create(TestDb.Provider);
@@ -73,7 +71,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			Assert.AreEqual(sourceInstances[0].Data, firstResults.First().Data);
 			Assert.AreEqual(sourceInstances[2].Data, lastResults.First().Data);
 
-			foreach (var table in dataModel.Tables)
+			foreach (var table in dataModel.Schema.Tables)
 			{
 				table.Drop(TestDb.Provider);
 			}
@@ -82,10 +80,9 @@ namespace Silk.Data.SQL.ORM.Tests
 		[TestMethod]
 		public void SimpleViewProjection()
 		{
-			var domain = new DataDomain();
-			var dataModel = domain.CreateDataModel<BasicPocoWithGuidId, BasicPocoWithGuidId>();
+			var dataModel = TestDb.CreateDomainAndModel<BasicPocoWithGuidId, BasicPocoWithGuidId>();
 
-			foreach (var table in dataModel.Tables)
+			foreach (var table in dataModel.Schema.Tables)
 			{
 				if (!table.Exists(TestDb.Provider))
 					table.Create(TestDb.Provider);
@@ -110,7 +107,7 @@ namespace Silk.Data.SQL.ORM.Tests
 				Assert.IsTrue(dataResults.Any(q => q.Data == sourceInstance.Data));
 			}
 
-			foreach (var table in dataModel.Tables)
+			foreach (var table in dataModel.Schema.Tables)
 			{
 				table.Drop(TestDb.Provider);
 			}

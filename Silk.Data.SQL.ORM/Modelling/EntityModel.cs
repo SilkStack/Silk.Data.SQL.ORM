@@ -13,36 +13,65 @@ namespace Silk.Data.SQL.ORM.Modelling
 {
 	public abstract class EntityModel : IView<DataField>
 	{
+		private Lazy<DataDomain> _domain;
+
 		public abstract Type EntityType { get; }
 
-		public DataField[] Fields { get; }
+		public DataField[] Fields { get; private set; }
 
-		public string Name { get; }
+		public string Name { get; private set; }
 
-		public Model Model { get; }
+		public Model Model { get; protected set; }
 
-		public IResourceLoader[] ResourceLoaders { get; }
+		public IResourceLoader[] ResourceLoaders { get; private set; }
 
 		IViewField[] IView.Fields => Fields;
 
-		public TableSchema[] Tables { get; }
+		public EntitySchema Schema { get; private set; }
 
-		public DataDomain Domain { get; }
+		public DataDomain Domain => _domain.Value;
 
-		public DataField[] PrimaryKeyFields { get; }
+		public DataField[] PrimaryKeyFields { get; private set; }
 
-		public EntityModel(string name, Model model, DataField[] fields,
-			IResourceLoader[] resourceLoaders, DataDomain domain)
+		protected EntityModel() { }
+
+		public EntityModel(string name, Model model,
+			EntitySchema schema, DataField[] fields,
+			Lazy<DataDomain> domain)
 		{
 			Name = name;
 			Model = model;
 			Fields = fields;
-			ResourceLoaders = resourceLoaders;
-			Tables = Fields.Select(q => q.Storage.Table).GroupBy(q => q)
-				.Select(q => q.First()).ToArray();
-			Domain = domain;
+			ResourceLoaders = fields
+				.Where(q => q.ModelBinding.ResourceLoaders != null)
+				.SelectMany(q => q.ModelBinding.ResourceLoaders)
+				.GroupBy(q => q)
+				.Select(q => q.First())
+				.ToArray();
+			Schema = schema;
+			PrimaryKeyFields = Fields.Where(q => q.Storage.IsPrimaryKey).ToArray();
+			_domain = domain;
+		}
+
+		internal void Initalize(string name, Model model,
+			EntitySchema schema, IEnumerable<DataField> fields,
+			Lazy<DataDomain> domain)
+		{
+			Name = name;
+			Model = model;
+			Fields = fields.ToArray();
+			ResourceLoaders = fields
+				.Where(q => q.ModelBinding.ResourceLoaders != null)
+				.SelectMany(q => q.ModelBinding.ResourceLoaders)
+				.GroupBy(q => q)
+				.Select(q => q.First())
+				.ToArray();
+			Schema = schema;
+			_domain = domain;
 			PrimaryKeyFields = Fields.Where(q => q.Storage.IsPrimaryKey).ToArray();
 		}
+
+		public abstract void SetModel(Model model);
 	}
 
 	public class EntityModel<TSource> : EntityModel, IView<DataField, TSource>
@@ -51,61 +80,72 @@ namespace Silk.Data.SQL.ORM.Modelling
 		private readonly Dictionary<Type, EntityModel<TSource>> _cachedSubViews
 			= new Dictionary<Type, EntityModel<TSource>>();
 
-		public new TypedModel<TSource> Model { get; }
+		public new TypedModel<TSource> Model { get; private set; }
 
 		public override Type EntityType => typeof(TSource);
 
-		public EntityModel(string name, TypedModel<TSource> model, DataField[] fields,
-			IResourceLoader[] resourceLoaders, DataDomain domain)
-			: base(name, model, fields, resourceLoaders, domain)
+		internal EntityModel() { }
+
+		public EntityModel(string name, TypedModel<TSource> model,
+			EntitySchema schema, DataField[] fields,
+			Lazy<DataDomain> domain)
+			: base(name, model, schema, fields, domain)
 		{
 			Model = model;
+		}
+
+		public override void SetModel(Model model)
+		{
+			Model = model as TypedModel<TSource>;
+			base.Model = model;
 		}
 
 		public EntityModel<TSource, TView> GetSubView<TView>()
 			where TView : new()
 		{
-			if (_cachedSubViews.TryGetValue(typeof(TView), out var subView))
-			{
-				return subView as EntityModel<TSource, TView>;
-			}
+			return Domain.GetProjectionModel<TSource, TView>();
 
-			lock (_cachedSubViews)
-			{
-				if (_cachedSubViews.TryGetValue(typeof(TView), out subView))
-				{
-					return subView as EntityModel<TSource, TView>;
-				}
+			//if (_cachedSubViews.TryGetValue(typeof(TView), out var subView))
+			//{
+			//	return subView as EntityModel<TSource, TView>;
+			//}
 
-				var compareDataModel = Domain.CreateDataModel<TSource, TView>();
-				var subViewFields = new List<DataField>();
+			//lock (_cachedSubViews)
+			//{
+			//	if (_cachedSubViews.TryGetValue(typeof(TView), out subView))
+			//	{
+			//		return subView as EntityModel<TSource, TView>;
+			//	}
 
-				foreach (var compareField in compareDataModel.Fields)
-				{
-					var matchedField = Fields.FirstOrDefault(
-						realField => realField.ModelBinding.ModelFieldPath.SequenceEqual(compareField.ModelBinding.ModelFieldPath) &&
-							realField.ModelBinding.ViewFieldPath.SequenceEqual(compareField.ModelBinding.ViewFieldPath)
-						);
-					if (matchedField == null)
-						continue;
+			//	var compareDataModel = Domain.CreateDataModel<TSource, TView>();
+			//	var subViewFields = new List<DataField>();
 
-					subViewFields.Add(new DataField(
-						compareField.Storage.ColumnName, compareField.DataType, compareField.Metadata,
-						compareField.ModelBinding, matchedField.Storage.Table, compareField.Relationship, compareField.Name
-						));
-				}
+			//	foreach (var compareField in compareDataModel.Fields)
+			//	{
+			//		var matchedField = Fields.FirstOrDefault(
+			//			realField => realField.ModelBinding.ModelFieldPath.SequenceEqual(compareField.ModelBinding.ModelFieldPath) &&
+			//				realField.ModelBinding.ViewFieldPath.SequenceEqual(compareField.ModelBinding.ViewFieldPath)
+			//			);
+			//		if (matchedField == null)
+			//			continue;
 
-				var resourceLoaders = subViewFields
-					.Where(q => q.ModelBinding.ResourceLoaders != null)
-					.SelectMany(q => q.ModelBinding.ResourceLoaders)
-					.GroupBy(q => q)
-					.Select(q => q.First())
-					.ToArray();
-				var ret = new EntityModel<TSource, TView>(typeof(TView).Name, Model, subViewFields.ToArray(), resourceLoaders,
-					Domain);
-				_cachedSubViews.Add(typeof(TView), ret);
-				return ret;
-			}
+			//		subViewFields.Add(new DataField(
+			//			compareField.Storage.ColumnName, compareField.DataType, compareField.Metadata,
+			//			compareField.ModelBinding, matchedField.Storage.Table, compareField.Relationship, compareField.Name
+			//			));
+			//	}
+
+			//	var resourceLoaders = subViewFields
+			//		.Where(q => q.ModelBinding.ResourceLoaders != null)
+			//		.SelectMany(q => q.ModelBinding.ResourceLoaders)
+			//		.GroupBy(q => q)
+			//		.Select(q => q.First())
+			//		.ToArray();
+			//	var ret = new EntityModel<TSource, TView>(typeof(TView).Name, Model, null, subViewFields.ToArray(), resourceLoaders,
+			//		Domain);
+			//	_cachedSubViews.Add(typeof(TView), ret);
+			//	return ret;
+			//}
 		}
 
 		public void MapToView(ICollection<IModelReadWriter> modelReadWriters, ICollection<IContainer> viewContainers)
@@ -191,9 +231,12 @@ namespace Silk.Data.SQL.ORM.Modelling
 		where TSource : new()
 		where TView: new()
 	{
-		public EntityModel(string name, TypedModel<TSource> model, DataField[] fields,
-			IResourceLoader[] resourceLoaders, DataDomain domain)
-			: base(name, model, fields, resourceLoaders, domain)
+		internal EntityModel() { }
+
+		public EntityModel(string name, TypedModel<TSource> model,
+			EntitySchema schema, DataField[] fields,
+			Lazy<DataDomain> domain)
+			: base(name, model, schema, fields, domain)
 		{
 		}
 

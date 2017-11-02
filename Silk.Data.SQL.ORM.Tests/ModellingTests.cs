@@ -12,8 +12,7 @@ namespace Silk.Data.SQL.ORM.Tests
 		[TestMethod]
 		public void BasicSqlTypes()
 		{
-			var domain = new DataDomain();
-			var dataModel = domain.CreateDataModel<BasicSqlTypesModel,BasicSqlTypesModel>();
+			var dataModel = TestDb.CreateDomainAndModel<BasicSqlTypesModel,BasicSqlTypesModel>();
 
 			Assert.AreEqual(11, dataModel.Fields.Length);
 			foreach (var field in dataModel.Fields)
@@ -63,8 +62,7 @@ namespace Silk.Data.SQL.ORM.Tests
 		[TestMethod]
 		public void BasicSqlTypesWithoutView()
 		{
-			var domain = new DataDomain();
-			var dataModel = domain.CreateDataModel<BasicSqlTypesModel>();
+			var dataModel = TestDb.CreateDomainAndModel<BasicSqlTypesModel>();
 
 			Assert.AreEqual(11, dataModel.Fields.Length);
 			foreach (var field in dataModel.Fields)

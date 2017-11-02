@@ -23,7 +23,7 @@ namespace Silk.Data.SQL.ORM.Queries
 				throw new ArgumentOutOfRangeException(nameof(sources), "Must provide at least 1 source.");
 
 			//  todo: update this to work with datamodels that span multiple tables
-			var table = DataModel.Tables.First(q => q.IsEntityTable);
+			var table = DataModel.Schema.Tables.First(q => q.IsEntityTable);
 			var queries = new List<QueryWithDelegate>();
 			var columns = DataModel.Fields.Where(
 				dataField => !dataField.Storage.IsAutoIncrement
@@ -85,7 +85,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		}
 
 		private (QueryExpression insert, QueryExpression getId) InsertAndGetIdExpression(DataField[] columns,
-			TableSchema table, InsertContainer viewContainer)
+			Table table, InsertContainer viewContainer)
 		{
 			var row = new QueryExpression[columns.Length];
 			for (var i = 0; i < columns.Length; i++)
@@ -107,7 +107,7 @@ namespace Silk.Data.SQL.ORM.Queries
 					}));
 		}
 
-		private QueryExpression BulkInsertExpression(DataField[] columns, TableSchema table,
+		private QueryExpression BulkInsertExpression(DataField[] columns, Table table,
 			InsertContainer[] insertContainers)
 		{
 			var values = new List<QueryExpression[]>();

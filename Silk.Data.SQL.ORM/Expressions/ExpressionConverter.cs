@@ -76,9 +76,10 @@ namespace Silk.Data.SQL.ORM.Expressions
 				if (expressionParameter != null)
 				{
 					//  member is based from a parameter to a lambda expression
+					//  todo: support fields that are declared on tables that aren't the main entity table
 					PushOntoStack(QueryExpression.Column(
 						_dataModel.Fields.First(q => q.Name == node.Member.Name)
-							.Storage.ColumnName, QueryExpression.Table(_dataModel.Tables.First(q => q.IsEntityTable).TableName)
+							.Storage.ColumnName, QueryExpression.Table(_dataModel.Schema.Tables.First(q => q.IsEntityTable).TableName)
 						));
 				}
 				else

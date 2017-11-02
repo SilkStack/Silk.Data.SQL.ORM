@@ -19,15 +19,18 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 			if (bindField == null)
 				return;
 
-			var dataDomain = viewDefinition.UserData.OfType<DataDomain>()
+			var bindToEntityTable = viewDefinition.UserData.OfType<DomainDefinition>()
+				.First().SchemaDefinitions.FirstOrDefault(q => q.EntityType == bindField.DataType)
+				?.TableDefinitions.FirstOrDefault(q => q.IsEntityTable);
+			if (bindToEntityTable == null)
+				return;
+
+			var dataDomain = viewDefinition.UserData.OfType<Lazy<DataDomain>>()
 				.FirstOrDefault();
 			if (dataDomain == null)
 				return;
-			var declaredSchema = dataDomain.GetDeclaredSchema(bindField.DataType);
-			if (declaredSchema == null)
-				return;
 
-			var primaryKeys = declaredSchema.Fields
+			var primaryKeys = bindToEntityTable.Fields
 				.Where(fieldDefinition => fieldDefinition.Metadata.OfType<PrimaryKeyAttribute>().Any())
 				.ToArray();
 			foreach (var primaryKey in primaryKeys)
@@ -54,18 +57,17 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 				fieldDefinition.Metadata.Add(new IsNullableAttribute(true));
 				fieldDefinition.Metadata.Add(new RelationshipDefinition
 				{
-					Domain = dataDomain,
 					EntityType = bindField.DataType,
 					ProjectionType = field.DataType,
 					RelationshipField = primaryKey.Name
 				});
-				viewDefinition.GetDefaultTableDefinition()
+				viewDefinition.GetEntityTableDefinition()
 					.Fields.Add(fieldDefinition);
 				viewDefinition.FieldDefinitions.Add(fieldDefinition);
 			}
 		}
 
-		private JoinedObjectMapper GetSubMapper(ViewDefinition viewDefinition, DataDomain dataDomain)
+		private JoinedObjectMapper GetSubMapper(ViewDefinition viewDefinition, Lazy<DataDomain> dataDomain)
 		{
 			var subMapper = viewDefinition.ResourceLoaders
 				.OfType<JoinedObjectMapper>()

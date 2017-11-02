@@ -32,7 +32,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			}
 
 			//  todo: update this to work with datamodels that span multiple tables
-			var entityTable = dataModel.Tables.First(q => q.IsEntityTable);
+			var entityTable = dataModel.Schema.Tables.First(q => q.IsEntityTable);
 			var results = new List<TView>();
 			var resultWriters = new List<IModelReadWriter>();
 			var rows = new List<IContainer>();
