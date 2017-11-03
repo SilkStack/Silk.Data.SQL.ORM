@@ -1,4 +1,5 @@
-﻿using Silk.Data.SQL.Expressions;
+﻿using Silk.Data.Modelling;
+using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Modelling;
 using Silk.Data.SQL.Providers;
 using System.Collections.Generic;
@@ -27,6 +28,18 @@ namespace Silk.Data.SQL.ORM.Queries
 		public ModelBoundExecutableQueryCollection<TSource> Insert(params TSource[] sources)
 		{
 			var queries = Queries.Concat(new InsertQueryBuilder<TSource>(DataModel).CreateQuery(sources));
+			return new ModelBoundExecutableQueryCollection<TSource>(DataModel, queries);
+		}
+
+		public ModelBoundExecutableQueryCollection<TSource> Insert<TView>(params TView[] sources)
+			where TView : new()
+		{
+			var projectionModel = DataModel.Domain.GetProjectionModel<TSource, TView>();
+			var queries = Queries.Concat(
+				new InsertQueryBuilder<TSource>(projectionModel)
+					.CreateQuery(sources.Select(q => new ObjectContainer<TView>(DataModel.Model, DataModel) { Instance = q })
+					.ToArray())
+				);
 			return new ModelBoundExecutableQueryCollection<TSource>(DataModel, queries);
 		}
 

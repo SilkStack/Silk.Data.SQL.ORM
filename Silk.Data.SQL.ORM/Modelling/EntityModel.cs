@@ -166,6 +166,13 @@ namespace Silk.Data.SQL.ORM.Modelling
 				.Insert(sources);
 		}
 
+		public ModelBoundExecutableQueryCollection<TSource> Insert<TView>(params TView[] sources)
+			where TView : new()
+		{
+			return new ModelBoundExecutableQueryCollection<TSource>(this)
+				.Insert(sources);
+		}
+
 		public ModelBoundExecutableQueryCollection<TSource> Update(params TSource[] sources)
 		{
 			return new ModelBoundExecutableQueryCollection<TSource>(this)

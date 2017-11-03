@@ -84,6 +84,67 @@ namespace Silk.Data.SQL.ORM.Queries
 			return queries;
 		}
 
+		public ICollection<QueryWithDelegate> CreateQuery(params IContainer[] sources)
+		{
+			if (sources.Length < 1)
+				throw new ArgumentOutOfRangeException(nameof(sources), "Must provide at least 1 source.");
+
+			var queryList = new List<QueryWithDelegate>();
+
+			foreach (var source in sources)
+			{
+				var tableRows = new Dictionary<Table, List<AssignColumnExpression>>();
+				QueryExpression selectExpression = null;
+				foreach (var dataField in DataModel.Fields)
+				{
+					var table = dataField.Storage.Table;
+					if (!tableRows.ContainsKey(table))
+						tableRows[table] = new List<AssignColumnExpression>();
+
+					var row = tableRows[table];
+
+					if (dataField.Storage.IsAutoGenerate)
+					{
+						if (dataField.Storage.IsAutoIncrement)
+						{
+							//  todo: generate a SELECT for the newly created ID
+						}
+						else if (dataField.DataType == typeof(Guid))
+						{
+							var newId = Guid.NewGuid();
+							row.Add(QueryExpression.Assign(dataField.Storage.ColumnName,
+								newId));
+							source.SetValue(dataField.ModelBinding.ModelFieldPath, newId);
+						}
+						else
+						{
+							throw new InvalidOperationException("Unsupported primary key configuration.");
+						}
+					}
+					else
+					{
+						//  ViewFieldPath here doesn't work for all View->View mapping, ex. ViewFieldPath can be "OwnerId" for an "Owner"."Id" property
+						//  ModelFieldPath isn't correct because this Insert overload is expecting a view to be passed in
+						//  todo: resolve this conflict somehow
+						row.Add(QueryExpression.Assign(dataField.Storage.ColumnName,
+							source.GetValue(dataField.ModelBinding.ModelFieldPath)));
+					}
+				}
+
+				foreach (var kvp in tableRows)
+				{
+					queryList.Add(new QueryWithDelegate(
+						QueryExpression.Insert(
+							QueryExpression.Table(kvp.Key.TableName),
+							kvp.Value.Select(q => q.Column).ToArray(),
+							kvp.Value.Select(q => ((ValueExpression)q.Expression).Value).ToArray()
+						)));
+				}
+			}
+
+			return queryList;
+		}
+
 		private (QueryExpression insert, QueryExpression getId) InsertAndGetIdExpression(DataField[] columns,
 			Table table, InsertContainer viewContainer)
 		{
