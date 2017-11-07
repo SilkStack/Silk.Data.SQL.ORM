@@ -18,6 +18,8 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 			var bindField = model.Fields.FirstOrDefault(q => q.Name == field.Name);
 			if (bindField == null)
 				return;
+			if (bindField.IsEnumerable) //  only support a many-to-one type relationship for now
+				return;
 
 			var bindToEntityTable = viewDefinition.UserData.OfType<DomainDefinition>()
 				.First().SchemaDefinitions.FirstOrDefault(q => q.EntityType == bindField.DataType)
