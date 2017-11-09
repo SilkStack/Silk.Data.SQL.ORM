@@ -100,7 +100,8 @@ namespace Silk.Data.SQL.ORM
 						if (joinedDataField == null)
 							continue;
 
-						var relationship = new DataRelationship(joinedDataField, joinSchema.EntityModel);
+						var relationship = new DataRelationship(joinedDataField, joinSchema.EntityModel,
+							relationshipDefinition.RelationshipType);
 						viewField.SetRelationship(relationship);
 					}
 				}

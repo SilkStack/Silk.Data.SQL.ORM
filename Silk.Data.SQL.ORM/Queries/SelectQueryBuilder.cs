@@ -57,7 +57,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			}
 
 			foreach (var foreignField in dataModel.Fields
-				.Where(q => q.Relationship != null))
+				.Where(q => q.Relationship != null && q.Relationship.RelationshipType == RelationshipType.ManyToOne))
 			{
 				var joinTable = QueryExpression.Alias(
 					QueryExpression.Table(foreignField.Relationship.ForeignField.Storage.Table.TableName),

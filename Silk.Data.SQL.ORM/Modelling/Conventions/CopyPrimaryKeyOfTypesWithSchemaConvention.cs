@@ -18,8 +18,6 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 			var bindField = model.Fields.FirstOrDefault(q => q.Name == field.Name);
 			if (bindField == null)
 				return;
-			if (bindField.IsEnumerable) //  only support a many-to-one type relationship for now
-				return;
 
 			var bindToEntityTable = viewDefinition.UserData.OfType<DomainDefinition>()
 				.First().SchemaDefinitions.FirstOrDefault(q => q.EntityType == bindField.DataType)
@@ -35,6 +33,16 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 			var primaryKeys = bindToEntityTable.Fields
 				.Where(fieldDefinition => fieldDefinition.Metadata.OfType<PrimaryKeyAttribute>().Any())
 				.ToArray();
+
+			if (bindField.IsEnumerable)
+			{
+				//  if the foreign datatype has fields that reference this datatype then it's a one-to-many relationship
+				//  ie. all fields of local datatype on the foreign datatype/model populate `field`
+				//  if the foreign datatype doesn't reference local datatype, or references as an enumerable
+				//  create a centralized many-to-many relationship
+				return;
+			}
+
 			foreach (var primaryKey in primaryKeys)
 			{
 				var fieldName = $"{bindField.Name}{primaryKey.Name}";
@@ -61,7 +69,8 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 				{
 					EntityType = bindField.DataType,
 					ProjectionType = field.DataType,
-					RelationshipField = primaryKey.Name
+					RelationshipField = primaryKey.Name,
+					RelationshipType = RelationshipType.ManyToOne
 				});
 				if (!viewDefinition.UserData.OfType<DomainDefinition>().First().IsReadOnly)
 					viewDefinition.GetEntityTableDefinition()
