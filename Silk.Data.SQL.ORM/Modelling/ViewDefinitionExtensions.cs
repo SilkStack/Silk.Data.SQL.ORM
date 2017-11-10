@@ -1,4 +1,6 @@
 ﻿using Silk.Data.Modelling;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Modelling
@@ -18,15 +20,33 @@ namespace Silk.Data.SQL.ORM.Modelling
 			return ret;
 		}
 
-		public static TableDefinition GetTableDefinition(this ViewDefinition viewDefinition, string tableName)
+		public static SchemaDefinition GetSchemaDefinitionFor(this ViewDefinition viewDefinition, Type entityType)
+		{
+			var domain = viewDefinition.UserData.OfType<DomainDefinition>().First();
+			return domain
+				.SchemaDefinitions.FirstOrDefault(q => q.EntityType == entityType);
+		}
+
+		public static IEnumerable<TableDefinition> GetTableDefinitions(this ViewDefinition viewDefinition)
 		{
 			return viewDefinition.GetSchemaDefinition()
-				?.TableDefinitions.FirstOrDefault(q => q.IsEntityTable);
+				?.TableDefinitions;
+		}
+
+		public static TableDefinition GetTableDefinition(this ViewDefinition viewDefinition, string tableName, bool isEntityTable = false)
+		{
+			return viewDefinition.GetSchemaDefinition()
+				?.TableDefinitions.FirstOrDefault(q => q.IsEntityTable == isEntityTable && q.TableName == tableName);
+		}
+
+		public static void AddTableDefinition(this ViewDefinition viewDefinition, TableDefinition tableDefinition)
+		{
+			viewDefinition.GetSchemaDefinition(true).TableDefinitions.Add(tableDefinition);
 		}
 
 		public static TableDefinition GetEntityTableDefinition(this ViewDefinition viewDefinition)
 		{
-			var tableDefinition = viewDefinition.GetTableDefinition(viewDefinition.Name);
+			var tableDefinition = viewDefinition.GetTableDefinition(viewDefinition.Name, true);
 			if (tableDefinition == null)
 			{
 				tableDefinition = new TableDefinition
