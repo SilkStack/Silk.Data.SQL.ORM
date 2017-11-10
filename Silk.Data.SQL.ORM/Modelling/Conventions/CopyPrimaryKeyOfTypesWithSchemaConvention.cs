@@ -65,8 +65,9 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 				if (!viewDefinition.UserData.OfType<DomainDefinition>().First().IsReadOnly)
 					viewDefinition.AddTableDefinition(relationshipTableDefinition);
 			}
-			if (foreignSchema != null && !foreignSchema.TableDefinitions.Contains(relationshipTableDefinition))
-				foreignSchema.TableDefinitions.Add(relationshipTableDefinition);
+			//  todo: re-enable this once I figure out how to handle the relationship from the foreign table side
+			//if (foreignSchema != null && !foreignSchema.TableDefinitions.Contains(relationshipTableDefinition))
+			//	foreignSchema.TableDefinitions.Add(relationshipTableDefinition);
 
 			var localPrimaryKeys = localTableDefinition.Fields
 				.Where(fieldDefinition => fieldDefinition.Metadata.OfType<PrimaryKeyAttribute>().Any())
@@ -92,7 +93,7 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 				var fieldDefinition = new ViewFieldDefinition(fieldName,
 					new PrimaryKeyBinding(BindingDirection.Bidirectional, new[] { bindField.Name, primaryKey.Name },
 						new[] { relationshipTableName, fieldName }, null, new[] { mappingLoader }),
-					bindField.Name)
+					$"{relationshipTableName}.{fieldName}")
 				{
 					DataType = primaryKey.DataType
 				};
@@ -126,7 +127,7 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 				var fieldDefinition = new ViewFieldDefinition(fieldName,
 					new PrimaryKeyBinding(BindingDirection.Bidirectional, new[] { bindField.Name, primaryKey.Name },
 						new[] { relationshipTableName, fieldName }, null, new[] { mappingLoader }),
-					bindField.Name)
+					$"{relationshipTableName}.{fieldName}")
 				{
 					DataType = primaryKey.DataType
 				};
