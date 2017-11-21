@@ -1,7 +1,6 @@
 ﻿using Silk.Data.Modelling;
 using Silk.Data.Modelling.Conventions;
 using Silk.Data.SQL.ORM.Modelling;
-using Silk.Data.SQL.ORM.Modelling.Conventions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,34 +12,36 @@ namespace Silk.Data.SQL.ORM
 	/// </summary>
 	public class DataDomainBuilder
 	{
-		private static ViewConvention[] _defaultViewConventions = new ViewConvention[]
-		{
-			new CleanModelNameConvention(),
-			new CopySupportedSQLTypesConvention(),
-			new IdIsPrimaryKeyConvention(),
-			new CopyPrimaryKeyOfTypesWithSchemaConvention(),
-			new ProjectReferenceKeysConvention()
-		};
+		private static ViewConvention<DataViewBuilder>[] _dataViewConventions
+			= new ViewConvention<DataViewBuilder>[]
+			{
+				//new CleanModelNameConvention(),
+				//new CopySupportedSQLTypesConvention(),
+				//new IdIsPrimaryKeyConvention(),
+				//new CopyPrimaryKeyOfTypesWithSchemaConvention(),
+				//new ProjectReferenceKeysConvention()
+			};
+		private static ViewConvention<ViewBuilder>[] _standardViewConventions
+			= new ViewConvention<ViewBuilder>[]
+			{
+				new CopySimpleTypesConvention()
+			};
 		private static EnumerableConversionsConvention _bindEnumerableConversions = new EnumerableConversionsConvention();
 
 		private readonly List<EntityModelBuilder> _entityModelBuilders = new List<EntityModelBuilder>();
-		private readonly ViewConvention[] _viewConventions;
 		private readonly DomainDefinition _domainDefinition = new DomainDefinition();
+		private readonly ViewConvention[] _allViewConventions = _standardViewConventions
+			.Concat<ViewConvention>(_dataViewConventions).ToArray();
 
-		public DataDomainBuilder() : this(_defaultViewConventions)
+		public DataDomainBuilder()
 		{
-		}
-
-		public DataDomainBuilder(IEnumerable<ViewConvention> viewConventions)
-		{
-			_viewConventions = viewConventions.ToArray();
 		}
 
 		public void AddDataEntity<TSource>(Action<EntityModel<TSource>> builtDelegate = null)
 			where TSource : new()
 		{
 			_entityModelBuilders.Add(new EntityModelBuilder<TSource>(
-				builtDelegate, _viewConventions, _domainDefinition
+				builtDelegate, _allViewConventions, _domainDefinition
 				));
 		}
 
@@ -49,24 +50,24 @@ namespace Silk.Data.SQL.ORM
 			where TView : new()
 		{
 			_entityModelBuilders.Add(new EntityModelBuilder<TSource, TView>(
-				builtDelegate, _viewConventions, _domainDefinition
+				builtDelegate, _allViewConventions, _domainDefinition
 				));
 		}
 
 		public DataDomain Build()
 		{
-			var viewDefinitionFieldCounts = new Dictionary<ViewDefinition,int>();
+			var viewDefinitionFieldCounts = new Dictionary<ViewDefinition, int>();
 			var currentViewDefinitionFieldCounts = new Dictionary<ViewDefinition, int>();
 			DataDomain builtDomain = null;
 			var lazyDomainAccessor = new Lazy<DataDomain>(() => builtDomain);
 
 			foreach (var entityModelBuilder in _entityModelBuilders)
 			{
-				entityModelBuilder.ViewDefinition.UserData.Add(lazyDomainAccessor);
 				viewDefinitionFieldCounts.Add(entityModelBuilder.ViewDefinition, 0);
 			}
 
 			var fieldsChanged = true;
+			var firstPass = true;
 			while (fieldsChanged)
 			{
 				fieldsChanged = false;
@@ -75,18 +76,43 @@ namespace Silk.Data.SQL.ORM
 				{
 					foreach (var field in entityModelBuilder.ViewDefinition.TargetModel.Fields)
 					{
-						foreach (var viewConvention in _viewConventions)
+						foreach (var viewConvention in _standardViewConventions)
 						{
-							viewConvention.MakeModelFields(entityModelBuilder.ViewDefinition.SourceModel,
-								field, entityModelBuilder.ViewDefinition);
+							if (!firstPass && !viewConvention.PerformMultiplePasses)
+								continue;
+							if (!viewConvention.SupportedViewTypes.HasFlag(entityModelBuilder.ViewBuilder.Mode))
+								continue;
+							if (viewConvention.SkipIfFieldDefined &&
+								entityModelBuilder.ViewDefinition.FieldDefinitions.Any(q => q.Name == field.Name))
+								continue;
+							viewConvention.MakeModelField(entityModelBuilder.ViewBuilder, field);
+						}
+						foreach (var viewConvention in _dataViewConventions)
+						{
+							if (!firstPass && !viewConvention.PerformMultiplePasses)
+								continue;
+							if (!viewConvention.SupportedViewTypes.HasFlag(entityModelBuilder.ViewBuilder.Mode))
+								continue;
+							if (viewConvention.SkipIfFieldDefined &&
+								entityModelBuilder.ViewDefinition.FieldDefinitions.Any(q => q.Name == field.Name))
+								continue;
+							viewConvention.MakeModelField(entityModelBuilder.ViewBuilder, field);
 						}
 					}
 
-					_bindEnumerableConversions.FinalizeModel(entityModelBuilder.ViewDefinition);
+					_bindEnumerableConversions.FinalizeModel(entityModelBuilder.ViewBuilder);
 
-					foreach (var viewConvention in _viewConventions)
+					foreach (var viewConvention in _standardViewConventions)
 					{
-						viewConvention.FinalizeModel(entityModelBuilder.ViewDefinition);
+						if (!firstPass && !viewConvention.PerformMultiplePasses)
+							continue;
+						viewConvention.FinalizeModel(entityModelBuilder.ViewBuilder);
+					}
+					foreach (var viewConvention in _dataViewConventions)
+					{
+						if (!firstPass && !viewConvention.PerformMultiplePasses)
+							continue;
+						viewConvention.FinalizeModel(entityModelBuilder.ViewBuilder);
 					}
 
 					currentViewDefinitionFieldCounts[entityModelBuilder.ViewDefinition] = entityModelBuilder.ViewDefinition.FieldDefinitions.Count;
@@ -95,22 +121,25 @@ namespace Silk.Data.SQL.ORM
 						fieldsChanged = true;
 					viewDefinitionFieldCounts[entityModelBuilder.ViewDefinition] = entityModelBuilder.ViewDefinition.FieldDefinitions.Count;
 				}
+
+				firstPass = false;
 			}
 
-			builtDomain = DataDomain.CreateFromDefinition(_domainDefinition, _viewConventions);
+			//builtDomain = DataDomain.CreateFromDefinition(_domainDefinition, _viewConventions);
 
-			foreach (var entityModelBuilder in _entityModelBuilders)
-			{
-				entityModelBuilder.CallBuiltDelegate(builtDomain);
-			}
+			//foreach (var entityModelBuilder in _entityModelBuilders)
+			//{
+			//	entityModelBuilder.CallBuiltDelegate(builtDomain);
+			//}
 
 			return builtDomain;
 		}
 
 		private abstract class EntityModelBuilder
 		{
+			public abstract DataViewBuilder ViewBuilder { get; }
 			public abstract Type ModelType { get; }
-			public abstract Type Projectiontype { get; }
+			public abstract Type ProjectionType { get; }
 			public ViewDefinition ViewDefinition { get; protected set; }
 			public DomainDefinition DomainDefinition { get; protected set; }
 
@@ -123,20 +152,19 @@ namespace Silk.Data.SQL.ORM
 			private readonly Action<EntityModel<TSource>> _builtDelegate;
 
 			public override Type ModelType => typeof(TSource);
-
-			public override Type Projectiontype => null;
+			public override Type ProjectionType => null;
+			public override DataViewBuilder ViewBuilder { get; }
 
 			public EntityModelBuilder(Action<EntityModel<TSource>> builtDelegate,
 				ViewConvention[] viewConventions, DomainDefinition domainDefinition)
 			{
+				ViewBuilder = new DataViewBuilder(
+					TypeModeller.GetModelOf<TSource>(), null,
+					viewConventions, domainDefinition
+					);
+
 				_builtDelegate = builtDelegate;
-				ViewDefinition = new ViewDefinition(
-					TypeModeller.GetModelOf<TSource>(),
-					TypeModeller.GetModelOf<TSource>(),
-					viewConventions
-				);
-				ViewDefinition.UserData.Add(domainDefinition);
-				ViewDefinition.UserData.Add(typeof(TSource));
+				ViewDefinition = ViewBuilder.ViewDefinition;
 			}
 
 			public override void CallBuiltDelegate(DataDomain dataDomain)
@@ -153,20 +181,19 @@ namespace Silk.Data.SQL.ORM
 			private readonly Action<EntityModel<TSource, TView>> _builtDelegate;
 
 			public override Type ModelType => typeof(TSource);
-			public override Type Projectiontype => typeof(TView);
+			public override Type ProjectionType => typeof(TView);
+			public override DataViewBuilder ViewBuilder { get; }
 
 			public EntityModelBuilder(Action<EntityModel<TSource, TView>> builtDelegate,
 				ViewConvention[] viewConventions, DomainDefinition domainDefinition)
 			{
+				ViewBuilder = new DataViewBuilder(
+					TypeModeller.GetModelOf<TSource>(), null,
+					viewConventions, domainDefinition
+					);
+
 				_builtDelegate = builtDelegate;
-				ViewDefinition = new ViewDefinition(
-					TypeModeller.GetModelOf<TSource>(),
-					TypeModeller.GetModelOf<TView>(),
-					viewConventions
-				);
-				ViewDefinition.UserData.Add(domainDefinition);
-				ViewDefinition.UserData.Add(typeof(TSource));
-				ViewDefinition.UserData.Add(typeof(TView));
+				ViewDefinition = ViewBuilder.ViewDefinition;
 			}
 
 			public override void CallBuiltDelegate(DataDomain dataDomain)

@@ -141,62 +141,63 @@ namespace Silk.Data.SQL.ORM
 			where TSource : new()
 			where TView : new()
 		{
-			var entityModel = GetEntityModel<TSource>();
-			if (entityModel == null)
-				throw new InvalidOperationException("Entity type not present in data domain.");
+			return null;
+			//var entityModel = GetEntityModel<TSource>();
+			//if (entityModel == null)
+			//	throw new InvalidOperationException("Entity type not present in data domain.");
 
-			var cacheKey = $"{typeof(TSource).FullName} to {typeof(TView).FullName}";
-			if (_projectionModelCache.TryGetValue(cacheKey, out var ret))
-				return ret as EntityModel<TSource,TView>;
+			//var cacheKey = $"{typeof(TSource).FullName} to {typeof(TView).FullName}";
+			//if (_projectionModelCache.TryGetValue(cacheKey, out var ret))
+			//	return ret as EntityModel<TSource,TView>;
 
-			lock (_projectionModelCache)
-			{
-				if (_projectionModelCache.TryGetValue(cacheKey, out ret))
-					return ret as EntityModel<TSource, TView>;
+			//lock (_projectionModelCache)
+			//{
+			//	if (_projectionModelCache.TryGetValue(cacheKey, out ret))
+			//		return ret as EntityModel<TSource, TView>;
 
-				var lazyDomainAccessor = new Lazy<DataDomain>(() => this);
-				var modelOfViewType = TypeModeller.GetModelOf<TView>();
+			//	var lazyDomainAccessor = new Lazy<DataDomain>(() => this);
+			//	var modelOfViewType = TypeModeller.GetModelOf<TView>();
 
-				var viewDefinition = new ViewDefinition(entityModel.Model, modelOfViewType, _viewConventions);
-				viewDefinition.UserData.Add(_domainDefinition);
-				viewDefinition.UserData.Add(typeof(TSource));
-				viewDefinition.UserData.Add(typeof(TView));
-				viewDefinition.UserData.Add(lazyDomainAccessor);
+			//	var viewDefinition = new ViewDefinition(entityModel.Model, modelOfViewType, _viewConventions);
+			//	viewDefinition.UserData.Add(_domainDefinition);
+			//	viewDefinition.UserData.Add(typeof(TSource));
+			//	viewDefinition.UserData.Add(typeof(TView));
+			//	viewDefinition.UserData.Add(lazyDomainAccessor);
 
-				foreach (var field in viewDefinition.TargetModel.Fields)
-				{
-					foreach (var viewConvention in _viewConventions)
-					{
-						viewConvention.MakeModelFields(viewDefinition.SourceModel,
-							field, viewDefinition);
-					}
-				}
+			//	foreach (var field in viewDefinition.TargetModel.Fields)
+			//	{
+			//		foreach (var viewConvention in _viewConventions)
+			//		{
+			//			viewConvention.MakeModelFields(viewDefinition.SourceModel,
+			//				field, viewDefinition);
+			//		}
+			//	}
 
-				_bindEnumerableConversions.FinalizeModel(viewDefinition);
+			//	_bindEnumerableConversions.FinalizeModel(viewDefinition);
 
-				foreach (var viewConvention in _viewConventions)
-				{
-					viewConvention.FinalizeModel(viewDefinition);
-				}
+			//	foreach (var viewConvention in _viewConventions)
+			//	{
+			//		viewConvention.FinalizeModel(viewDefinition);
+			//	}
 
-				var fields = new List<DataField>();
-				foreach (var fieldDefinition in viewDefinition.FieldDefinitions)
-				{
-					var source = entityModel.Fields.FirstOrDefault(q =>
-						q.DataType == fieldDefinition.DataType &&
-						q.ModelBinding.ModelFieldPath.SequenceEqual(fieldDefinition.ModelBinding.ModelFieldPath)
-						);
-					if (source != null)
-						fields.Add(source);
-				}
+			//	var fields = new List<DataField>();
+			//	foreach (var fieldDefinition in viewDefinition.FieldDefinitions)
+			//	{
+			//		var source = entityModel.Fields.FirstOrDefault(q =>
+			//			q.DataType == fieldDefinition.DataType &&
+			//			q.ModelBinding.ModelFieldPath.SequenceEqual(fieldDefinition.ModelBinding.ModelFieldPath)
+			//			);
+			//		if (source != null)
+			//			fields.Add(source);
+			//	}
 
-				ret = new EntityModel<TSource, TView>(viewDefinition.Name, entityModel.Model,
-					entityModel.Schema, fields.ToArray(), lazyDomainAccessor);
+			//	ret = new EntityModel<TSource, TView>(viewDefinition.Name, entityModel.Model,
+			//		entityModel.Schema, fields.ToArray(), lazyDomainAccessor);
 
-				_projectionModelCache.Add(cacheKey, ret);
+			//	_projectionModelCache.Add(cacheKey, ret);
 
-				return ret as EntityModel<TSource, TView>;
-			}
+			//	return ret as EntityModel<TSource, TView>;
+			//}
 		}
 
 		public EntitySchema GetSchema<TSource>()

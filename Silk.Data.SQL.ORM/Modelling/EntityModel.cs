@@ -106,10 +106,10 @@ namespace Silk.Data.SQL.ORM.Modelling
 			return Domain.GetProjectionModel<TSource, TView>();
 		}
 
-		public void MapToView(ICollection<IModelReadWriter> modelReadWriters, ICollection<IContainer> viewContainers)
+		public void MapToView(ICollection<ModelReadWriter> modelReadWriters, ICollection<ViewReadWriter> viewReadWriters)
 		{
 			using (var readWriterEnum = modelReadWriters.GetEnumerator())
-			using (var containerEnum = viewContainers.GetEnumerator())
+			using (var containerEnum = viewReadWriters.GetEnumerator())
 			{
 				var mappingContext = new MappingContext(BindingDirection.ModelToView);
 
@@ -117,18 +117,13 @@ namespace Silk.Data.SQL.ORM.Modelling
 					containerEnum.MoveNext())
 				{
 					var modelReadWriter = readWriterEnum.Current;
-					var viewContainer = containerEnum.Current;
+					var viewReadWriter = containerEnum.Current;
 					foreach (var viewField in Fields)
 					{
 						if ((viewField.ModelBinding.Direction & BindingDirection.ModelToView) == BindingDirection.ModelToView)
 						{
-							var value = viewField.ModelBinding.ReadFromModel(modelReadWriter, mappingContext);
-							if (value != null)
-							{
-								viewField.ModelBinding.WriteToContainer(viewContainer,
-									value,
-									mappingContext);
-							}
+							viewField.ModelBinding
+								.CopyBindingValue(modelReadWriter, viewReadWriter, mappingContext);
 						}
 					}
 				}

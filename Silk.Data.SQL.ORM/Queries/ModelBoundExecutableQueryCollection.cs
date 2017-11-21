@@ -27,38 +27,29 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public ModelBoundExecutableQueryCollection<TSource> Insert(params TSource[] sources)
 		{
-			var queries = Queries.Concat(new InsertQueryBuilder<TSource>(DataModel).CreateQuery(sources));
-			return new ModelBoundExecutableQueryCollection<TSource>(DataModel, queries);
+			return null;
 		}
 
 		public ModelBoundExecutableQueryCollection<TSource> Insert<TView>(params TView[] sources)
 			where TView : new()
 		{
 			var projectionModel = DataModel.Domain.GetProjectionModel<TSource, TView>();
-			var queries = Queries.Concat(
-				new InsertQueryBuilder<TSource>(projectionModel)
-					.CreateQuery(sources.Select(q => new ObjectContainer<TView>(DataModel.Model, DataModel) { Instance = q })
-					.ToArray())
-				);
-			return new ModelBoundExecutableQueryCollection<TSource>(DataModel, queries);
+			return null;
 		}
 
 		public ModelBoundExecutableQueryCollection<TSource> Update(params TSource[] sources)
 		{
-			var queries = Queries.Concat(new UpdateQueryBuilder<TSource>(DataModel).CreateQuery(sources));
-			return new ModelBoundExecutableQueryCollection<TSource>(DataModel, queries);
+			return null;
 		}
 
 		public ModelBoundExecutableQueryCollection<TSource> Delete(params TSource[] sources)
 		{
-			var queries = Queries.Concat(new DeleteQueryBuilder<TSource>(DataModel).CreateQuery(sources));
-			return new ModelBoundExecutableQueryCollection<TSource>(DataModel, queries);
+			return null;
 		}
 
 		public ModelBoundExecutableQueryCollection<TSource> Delete(QueryExpression where = null)
 		{
-			var queries = Queries.Concat(new DeleteQueryBuilder<TSource>(DataModel).CreateQuery(where: where));
-			return new ModelBoundExecutableQueryCollection<TSource>(DataModel, queries);
+			return null;
 		}
 
 		public ModelBoundExecutableQueryCollection<TSource, TSource> Select(
@@ -69,10 +60,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			int? offset = null,
 			int? limit = null)
 		{
-			var queries = Queries.Concat(new SelectQueryBuilder<TSource>(DataModel).CreateQuery<TSource>(
-				where, having, orderBy, groupBy, offset, limit
-				));
-			return new ModelBoundExecutableQueryCollection<TSource, TSource>(DataModel, queries);
+			return null;
 		}
 
 		public ModelBoundExecutableQueryCollection<TSource, TView> Select<TView>(
@@ -84,10 +72,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			int? limit = null)
 			where TView : new()
 		{
-			var queries = Queries.Concat(new SelectQueryBuilder<TSource>(DataModel).CreateQuery<TView>(
-				where, having, orderBy, groupBy, offset, limit
-				));
-			return new ModelBoundExecutableQueryCollection<TSource, TView>(DataModel, queries);
+			return null;
 		}
 	}
 
@@ -107,26 +92,22 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult> Insert(params TSource[] sources)
 		{
-			var queries = Queries.Concat(new InsertQueryBuilder<TSource>(DataModel).CreateQuery(sources));
-			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult>(DataModel, queries);
+			return null;
 		}
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult> Update(params TSource[] sources)
 		{
-			var queries = Queries.Concat(new UpdateQueryBuilder<TSource>(DataModel).CreateQuery(sources));
-			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult>(DataModel, queries);
+			return null;
 		}
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult> Delete(params TSource[] sources)
 		{
-			var queries = Queries.Concat(new DeleteQueryBuilder<TSource>(DataModel).CreateQuery(sources));
-			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult>(DataModel, queries);
+			return null;
 		}
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult> Delete(QueryExpression where = null)
 		{
-			var queries = Queries.Concat(new DeleteQueryBuilder<TSource>(DataModel).CreateQuery(where: where));
-			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult>(DataModel, queries);
+			return null;
 		}
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult, TSource> Select(
@@ -137,10 +118,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			int? offset = null,
 			int? limit = null)
 		{
-			var queries = Queries.Concat(new SelectQueryBuilder<TSource>(DataModel).CreateQuery<TSource>(
-				where, having, orderBy, groupBy, offset, limit
-				));
-			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult, TSource>(DataModel, queries);
+			return null;
 		}
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult, TView> Select<TView>(
@@ -152,10 +130,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			int? limit = null)
 			where TView : new()
 		{
-			var queries = Queries.Concat(new SelectQueryBuilder<TSource>(DataModel).CreateQuery<TView>(
-				where, having, orderBy, groupBy, offset, limit
-				));
-			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult, TView>(DataModel, queries);
+			return null;
 		}
 
 		public new TransactionQueryCollection<TQueryResult> AsTransaction()
@@ -230,26 +205,22 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2> Insert(params TSource[] sources)
 		{
-			var queries = Queries.Concat(new InsertQueryBuilder<TSource>(DataModel).CreateQuery(sources));
-			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2>(DataModel, queries);
+			return null;
 		}
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2> Update(params TSource[] sources)
 		{
-			var queries = Queries.Concat(new UpdateQueryBuilder<TSource>(DataModel).CreateQuery(sources));
-			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2>(DataModel, queries);
+			return null;
 		}
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2> Delete(params TSource[] sources)
 		{
-			var queries = Queries.Concat(new DeleteQueryBuilder<TSource>(DataModel).CreateQuery(sources));
-			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2>(DataModel, queries);
+			return null;
 		}
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2> Delete(QueryExpression where = null)
 		{
-			var queries = Queries.Concat(new DeleteQueryBuilder<TSource>(DataModel).CreateQuery(where: where));
-			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2>(DataModel, queries);
+			return null;
 		}
 
 		public new TransactionQueryCollection<TQueryResult1, TQueryResult2> AsTransaction()
