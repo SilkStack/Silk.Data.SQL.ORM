@@ -12,11 +12,27 @@ namespace Silk.Data.SQL.ORM.Modelling
 		public Type ProjectionType { get; }
 		public List<TableDefinition> TableDefinitions { get; } = new List<TableDefinition>();
 
-		public SchemaDefinition(ViewDefinition viewDefinition)
+		public SchemaDefinition(ViewDefinition viewDefinition,
+			Type entityType, Type projectionType)
 		{
 			ViewDefinition = viewDefinition;
-			EntityType = viewDefinition.UserData.OfType<Type>().First();
-			ProjectionType = viewDefinition.UserData.OfType<Type>().Skip(1).FirstOrDefault();
+			EntityType = entityType;
+			ProjectionType = projectionType;
+		}
+
+		public TableDefinition GetEntityTableDefinition(bool autoCreate = false)
+		{
+			var entityTable = TableDefinitions.FirstOrDefault(q => q.IsEntityTable);
+			if (entityTable == null && autoCreate)
+			{
+				entityTable = new TableDefinition
+				{
+					IsEntityTable = true,
+					TableName = ViewDefinition.Name
+				};
+				TableDefinitions.Add(entityTable);
+			}
+			return entityTable;
 		}
 	}
 }

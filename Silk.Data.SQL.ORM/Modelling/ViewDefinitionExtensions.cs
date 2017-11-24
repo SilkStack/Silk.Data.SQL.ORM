@@ -9,15 +9,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 	{
 		public static SchemaDefinition GetSchemaDefinition(this ViewDefinition viewDefinition, bool createIfNotExists = false)
 		{
-			var domain = viewDefinition.UserData.OfType<DomainDefinition>().First();
-			var ret = domain
-				.SchemaDefinitions.FirstOrDefault(q => q.ViewDefinition == viewDefinition);
-			if (ret == null && createIfNotExists)
-			{
-				ret = new SchemaDefinition(viewDefinition);
-				domain.SchemaDefinitions.Add(ret);
-			}
-			return ret;
+			return null;
 		}
 
 		public static SchemaDefinition GetSchemaDefinitionFor(this ViewDefinition viewDefinition, Type entityType)

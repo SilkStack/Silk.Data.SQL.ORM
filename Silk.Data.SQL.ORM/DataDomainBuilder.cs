@@ -1,6 +1,7 @@
 ﻿using Silk.Data.Modelling;
 using Silk.Data.Modelling.Conventions;
 using Silk.Data.SQL.ORM.Modelling;
+using Silk.Data.SQL.ORM.Modelling.Conventions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,6 +25,7 @@ namespace Silk.Data.SQL.ORM
 		private static ViewConvention<ViewBuilder>[] _standardViewConventions
 			= new ViewConvention<ViewBuilder>[]
 			{
+				new CleanModelNameConvention(),
 				new CopySimpleTypesConvention()
 			};
 		private static EnumerableConversionsConvention _bindEnumerableConversions = new EnumerableConversionsConvention();
@@ -125,12 +127,13 @@ namespace Silk.Data.SQL.ORM
 				firstPass = false;
 			}
 
-			//builtDomain = DataDomain.CreateFromDefinition(_domainDefinition, _viewConventions);
+			builtDomain = DataDomain.CreateFromDefinition(_domainDefinition,
+				_standardViewConventions.Concat<ViewConvention>(_dataViewConventions));
 
-			//foreach (var entityModelBuilder in _entityModelBuilders)
-			//{
-			//	entityModelBuilder.CallBuiltDelegate(builtDomain);
-			//}
+			foreach (var entityModelBuilder in _entityModelBuilders)
+			{
+				entityModelBuilder.CallBuiltDelegate(builtDomain);
+			}
 
 			return builtDomain;
 		}
@@ -160,7 +163,8 @@ namespace Silk.Data.SQL.ORM
 			{
 				ViewBuilder = new DataViewBuilder(
 					TypeModeller.GetModelOf<TSource>(), null,
-					viewConventions, domainDefinition
+					viewConventions, domainDefinition,
+					typeof(TSource)
 					);
 
 				_builtDelegate = builtDelegate;
@@ -188,8 +192,10 @@ namespace Silk.Data.SQL.ORM
 				ViewConvention[] viewConventions, DomainDefinition domainDefinition)
 			{
 				ViewBuilder = new DataViewBuilder(
-					TypeModeller.GetModelOf<TSource>(), null,
-					viewConventions, domainDefinition
+					TypeModeller.GetModelOf<TSource>(), 
+					TypeModeller.GetModelOf<TView>(),
+					viewConventions, domainDefinition,
+					typeof(TSource), typeof(TView)
 					);
 
 				_builtDelegate = builtDelegate;
