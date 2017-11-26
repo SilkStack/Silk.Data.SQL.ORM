@@ -1,9 +1,7 @@
-﻿using Silk.Data.Modelling;
-using Silk.Data.SQL.Expressions;
+﻿using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Modelling;
 using Silk.Data.SQL.Providers;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Silk.Data.SQL.ORM.Queries
@@ -13,13 +11,13 @@ namespace Silk.Data.SQL.ORM.Queries
 	{
 		public EntityModel<TSource> DataModel { get; }
 
-		public ModelBoundExecutableQueryCollection(EntityModel<TSource> dataModel, params QueryWithDelegate[] queryExpressions)
+		public ModelBoundExecutableQueryCollection(EntityModel<TSource> dataModel, params ORMQuery[] queryExpressions)
 			: base(queryExpressions)
 		{
 			DataModel = dataModel;
 		}
 
-		public ModelBoundExecutableQueryCollection(EntityModel<TSource> dataModel, IEnumerable<QueryWithDelegate> queryExpressions)
+		public ModelBoundExecutableQueryCollection(EntityModel<TSource> dataModel, IEnumerable<ORMQuery> queryExpressions)
 			: base(queryExpressions)
 		{
 			DataModel = dataModel;
@@ -27,7 +25,9 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public ModelBoundExecutableQueryCollection<TSource> Insert(params TSource[] sources)
 		{
-			return null;
+			var insertBuilder = new InsertQueryBuilder<TSource>(DataModel);
+			Queries.AddRange(insertBuilder.CreateQuery());
+			return this;
 		}
 
 		public ModelBoundExecutableQueryCollection<TSource> Insert<TView>(params TView[] sources)
@@ -80,12 +80,12 @@ namespace Silk.Data.SQL.ORM.Queries
 		where TSource : new()
 		where TQueryResult : new()
 	{
-		public ModelBoundExecutableQueryCollection(EntityModel<TSource> dataModel, params QueryWithDelegate[] queryExpressions)
+		public ModelBoundExecutableQueryCollection(EntityModel<TSource> dataModel, params ORMQuery[] queryExpressions)
 			: base(dataModel, queryExpressions)
 		{
 		}
 
-		public ModelBoundExecutableQueryCollection(EntityModel<TSource> dataModel, IEnumerable<QueryWithDelegate> queryExpressions)
+		public ModelBoundExecutableQueryCollection(EntityModel<TSource> dataModel, IEnumerable<ORMQuery> queryExpressions)
 			: base(dataModel, queryExpressions)
 		{
 		}
@@ -145,7 +145,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			ICollection<TQueryResult> ret = null;
 			foreach (var query in Queries)
 			{
-				if (query.Delegate == null)
+				if (query.MapToType == null)
 				{
 					dataProvider.ExecuteNonQuery(query.Query);
 				}
@@ -153,9 +153,11 @@ namespace Silk.Data.SQL.ORM.Queries
 				{
 					using (var queryResult = dataProvider.ExecuteReader(query.Query))
 					{
-						query.Delegate(queryResult);
-						if (query.Query is SelectExpression && query.AssignsResults)
-							ret = query.Results as ICollection<TQueryResult>;
+						var result = query.MapResult(queryResult);
+						if (query.IsQueryResult)
+						{
+							ret = result as ICollection<TQueryResult>;
+						}
 					}
 				}
 			}
@@ -167,7 +169,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			ICollection<TQueryResult> ret = null;
 			foreach (var query in Queries)
 			{
-				if (query.Delegate == null)
+				if (query.MapToType == null)
 				{
 					await dataProvider.ExecuteNonQueryAsync(query.Query)
 						.ConfigureAwait(false);
@@ -177,10 +179,12 @@ namespace Silk.Data.SQL.ORM.Queries
 					using (var queryResult = await dataProvider.ExecuteReaderAsync(query.Query)
 						.ConfigureAwait(false))
 					{
-						await query.AsyncDelegate(queryResult)
+						var result = await query.MapResultAsync(queryResult)
 							.ConfigureAwait(false);
-						if (query.Query is SelectExpression && query.AssignsResults)
-							ret = query.Results as ICollection<TQueryResult>;
+						if (query.IsQueryResult)
+						{
+							ret = result as ICollection<TQueryResult>;
+						}
 					}
 				}
 			}
@@ -193,12 +197,12 @@ namespace Silk.Data.SQL.ORM.Queries
 		where TQueryResult1 : new()
 		where TQueryResult2 : new()
 	{
-		public ModelBoundExecutableQueryCollection(EntityModel<TSource> dataModel, params QueryWithDelegate[] queryExpressions)
+		public ModelBoundExecutableQueryCollection(EntityModel<TSource> dataModel, params ORMQuery[] queryExpressions)
 			: base(dataModel, queryExpressions)
 		{
 		}
 
-		public ModelBoundExecutableQueryCollection(EntityModel<TSource> dataModel, IEnumerable<QueryWithDelegate> queryExpressions)
+		public ModelBoundExecutableQueryCollection(EntityModel<TSource> dataModel, IEnumerable<ORMQuery> queryExpressions)
 			: base(dataModel, queryExpressions)
 		{
 		}
@@ -236,7 +240,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			ICollection<TQueryResult2> result2 = null;
 			foreach (var query in Queries)
 			{
-				if (query.Delegate == null)
+				if (query.MapToType == null)
 				{
 					dataProvider.ExecuteNonQuery(query.Query);
 				}
@@ -244,13 +248,17 @@ namespace Silk.Data.SQL.ORM.Queries
 				{
 					using (var queryResult = dataProvider.ExecuteReader(query.Query))
 					{
-						query.Delegate(queryResult);
-						if (query.Query is SelectExpression && query.AssignsResults)
+						var result = query.MapResult(queryResult);
+						if (query.IsQueryResult)
 						{
 							if (result1 == null)
-								result1 = query.Results as ICollection<TQueryResult1>;
+							{
+								result1 = result as ICollection<TQueryResult1>;
+							}
 							else if (result2 == null)
-								result2 = query.Results as ICollection<TQueryResult2>;
+							{
+								result2 = result as ICollection<TQueryResult2>;
+							}
 						}
 					}
 				}
@@ -264,7 +272,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			ICollection<TQueryResult2> result2 = null;
 			foreach (var query in Queries)
 			{
-				if (query.Delegate == null)
+				if (query.MapToType == null)
 				{
 					await dataProvider.ExecuteNonQueryAsync(query.Query)
 						.ConfigureAwait(false);
@@ -274,14 +282,18 @@ namespace Silk.Data.SQL.ORM.Queries
 					using (var queryResult = await dataProvider.ExecuteReaderAsync(query.Query)
 						.ConfigureAwait(false))
 					{
-						await query.AsyncDelegate(queryResult)
+						var result = await query.MapResultAsync(queryResult)
 							.ConfigureAwait(false);
-						if (query.Query is SelectExpression && query.AssignsResults)
+						if (query.IsQueryResult)
 						{
 							if (result1 == null)
-								result1 = query.Results as ICollection<TQueryResult1>;
+							{
+								result1 = result as ICollection<TQueryResult1>;
+							}
 							else if (result2 == null)
-								result2 = query.Results as ICollection<TQueryResult2>;
+							{
+								result2 = result as ICollection<TQueryResult2>;
+							}
 						}
 					}
 				}

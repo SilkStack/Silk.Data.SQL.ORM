@@ -1,4 +1,5 @@
 ﻿using Silk.Data.SQL.ORM.Modelling;
+using System.Collections.Generic;
 
 namespace Silk.Data.SQL.ORM.Queries
 {
@@ -10,6 +11,11 @@ namespace Silk.Data.SQL.ORM.Queries
 		public InsertQueryBuilder(EntityModel<TSource> dataModel)
 		{
 			DataModel = dataModel;
+		}
+
+		public ICollection<ORMQuery> CreateQuery(params TSource[] sources)
+		{
+			return new ORMQuery[0];
 		}
 
 		//public ICollection<QueryWithDelegate> CreateQuery(params TSource[] sources)
