@@ -26,6 +26,7 @@ namespace Silk.Data.SQL.ORM.Tests
 				new BasicPocoWithGuidId { Data = "Hello World 3" }
 			};
 			dataModel.Insert(sourceInstances)
+				.AsTransaction()
 				.Execute(TestDb.Provider);
 
 			Assert.AreNotEqual(sourceInstances[0].Id, Guid.Empty);

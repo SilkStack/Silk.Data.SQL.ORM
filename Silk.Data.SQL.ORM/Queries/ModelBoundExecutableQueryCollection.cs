@@ -44,7 +44,9 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public ModelBoundExecutableQueryCollection<TSource> Delete(params TSource[] sources)
 		{
-			return null;
+			var queryuBuilder = new DeleteQueryBuilder<TSource>(DataModel);
+			Queries.AddRange(queryuBuilder.CreateQuery(sources));
+			return this;
 		}
 
 		public ModelBoundExecutableQueryCollection<TSource> Delete(QueryExpression where = null)
@@ -92,7 +94,9 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult> Insert(params TSource[] sources)
 		{
-			return null;
+			var insertBuilder = new InsertQueryBuilder<TSource>(DataModel);
+			Queries.AddRange(insertBuilder.CreateQuery(sources));
+			return this;
 		}
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult> Update(params TSource[] sources)
@@ -102,7 +106,9 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult> Delete(params TSource[] sources)
 		{
-			return null;
+			var queryuBuilder = new DeleteQueryBuilder<TSource>(DataModel);
+			Queries.AddRange(queryuBuilder.CreateQuery(sources));
+			return this;
 		}
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult> Delete(QueryExpression where = null)
@@ -209,7 +215,9 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2> Insert(params TSource[] sources)
 		{
-			return null;
+			var insertBuilder = new InsertQueryBuilder<TSource>(DataModel);
+			Queries.AddRange(insertBuilder.CreateQuery(sources));
+			return this;
 		}
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2> Update(params TSource[] sources)
@@ -219,7 +227,9 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2> Delete(params TSource[] sources)
 		{
-			return null;
+			var queryuBuilder = new DeleteQueryBuilder<TSource>(DataModel);
+			Queries.AddRange(queryuBuilder.CreateQuery(sources));
+			return this;
 		}
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2> Delete(QueryExpression where = null)
