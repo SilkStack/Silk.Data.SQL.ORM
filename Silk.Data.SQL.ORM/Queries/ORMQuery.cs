@@ -29,4 +29,11 @@ namespace Silk.Data.SQL.ORM.Queries
 			return null;
 		}
 	}
+
+	public class NoResultORMQuery : ORMQuery
+	{
+		public NoResultORMQuery(QueryExpression query) : base(query)
+		{
+		}
+	}
 }

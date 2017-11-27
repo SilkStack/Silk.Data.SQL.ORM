@@ -26,7 +26,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		public ModelBoundExecutableQueryCollection<TSource> Insert(params TSource[] sources)
 		{
 			var insertBuilder = new InsertQueryBuilder<TSource>(DataModel);
-			Queries.AddRange(insertBuilder.CreateQuery());
+			Queries.AddRange(insertBuilder.CreateQuery(sources));
 			return this;
 		}
 
