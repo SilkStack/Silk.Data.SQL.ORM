@@ -39,7 +39,9 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public ModelBoundExecutableQueryCollection<TSource> Update(params TSource[] sources)
 		{
-			return null;
+			var queryuBuilder = new UpdateQueryBuilder<TSource>(DataModel);
+			Queries.AddRange(queryuBuilder.CreateQuery(sources));
+			return this;
 		}
 
 		public ModelBoundExecutableQueryCollection<TSource> Delete(params TSource[] sources)
@@ -101,7 +103,9 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult> Update(params TSource[] sources)
 		{
-			return null;
+			var queryuBuilder = new UpdateQueryBuilder<TSource>(DataModel);
+			Queries.AddRange(queryuBuilder.CreateQuery(sources));
+			return this;
 		}
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult> Delete(params TSource[] sources)
@@ -222,7 +226,9 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2> Update(params TSource[] sources)
 		{
-			return null;
+			var queryuBuilder = new UpdateQueryBuilder<TSource>(DataModel);
+			Queries.AddRange(queryuBuilder.CreateQuery(sources));
+			return this;
 		}
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2> Delete(params TSource[] sources)
