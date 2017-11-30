@@ -1,4 +1,7 @@
-﻿using Silk.Data.SQL.ORM.Modelling;
+﻿using Silk.Data.SQL.Expressions;
+using Silk.Data.SQL.ORM.Modelling;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Queries
 {
@@ -10,6 +13,41 @@ namespace Silk.Data.SQL.ORM.Queries
 		public SelectQueryBuilder(EntityModel<TSource> dataModel)
 		{
 			DataModel = dataModel;
+		}
+
+		public ICollection<ORMQuery> CreateQuery(
+				QueryExpression where = null,
+				QueryExpression having = null,
+				QueryExpression[] orderBy = null,
+				QueryExpression[] groupBy = null,
+				int? offset = null,
+				int? limit = null
+			)
+		{
+			var entityTable = DataModel.Schema.Tables.First(q => q.IsEntityTable);
+			var queries = new List<ORMQuery>();
+			var projectedFields = new List<QueryExpression>();
+
+			foreach (var field in entityTable.DataFields)
+			{
+				projectedFields.Add(QueryExpression.Alias(
+						QueryExpression.Column(field.Storage.ColumnName, QueryExpression.Table(entityTable.TableName)),
+						field.Name
+					));
+			}
+
+			queries.Add(new MapResultORMQuery<TSource>(QueryExpression.Select(
+					projectedFields.ToArray(),
+					from: QueryExpression.Table(entityTable.TableName),
+					where: where,
+					having: having,
+					orderBy: orderBy,
+					groupBy: groupBy,
+					offset: offset != null ? QueryExpression.Value(offset.Value) : null,
+					limit: limit != null ? QueryExpression.Value(limit.Value) : null
+				), DataModel));
+
+			return queries;
 		}
 
 		//public ICollection<QueryWithDelegate> CreateQuery<TView>(

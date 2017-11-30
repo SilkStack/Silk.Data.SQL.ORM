@@ -6,6 +6,64 @@ using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Modelling
 {
+	public class RowContainer : ViewReadWriter
+	{
+		private static readonly Dictionary<Type, Func<QueryResult, int, object>> _typeReaders =
+			new Dictionary<Type, Func<QueryResult, int, object>>()
+			{
+				{ typeof(bool), (q,o) => q.GetBoolean(o) },
+				{ typeof(byte), (q,o) => q.GetByte(o) },
+				{ typeof(short), (q,o) => q.GetInt16(o) },
+				{ typeof(int), (q,o) => q.GetInt32(o) },
+				{ typeof(long), (q,o) => q.GetInt64(o) },
+				{ typeof(float), (q,o) => q.GetFloat(o) },
+				{ typeof(double), (q,o) => q.GetDouble(o) },
+				{ typeof(decimal), (q,o) => q.GetDecimal(o) },
+				{ typeof(string), (q,o) => q.GetString(o) },
+				{ typeof(Guid), (q,o) => q.GetGuid(o) },
+				{ typeof(DateTime), (q,o) => q.GetDateTime(o) },
+			};
+
+		private Dictionary<string, object> _row = new Dictionary<string, object>();
+
+		public new EntityModel View { get; }
+
+		public RowContainer(EntityModel view) : base(view)
+		{
+			View = view;
+		}
+
+		public void ReadRow(QueryResult queryResult)
+		{
+			foreach (var field in View.Fields.Where(q => q.Storage.Table.IsEntityTable &&
+				q.Relationship == null))
+			{
+				if (!_typeReaders.TryGetValue(field.DataType, out var readFunc))
+					throw new InvalidOperationException("Unsupported data type.");
+
+				var ord = queryResult.GetOrdinal(field.Name);
+
+				if (queryResult.IsDBNull(ord))
+					_row[field.Name] = null;
+				else
+					_row[field.Name] = readFunc(queryResult, ord);
+			}
+		}
+
+		public override T ReadFromPath<T>(string[] path)
+		{
+			if (path.Length != 1)
+				throw new ArgumentOutOfRangeException(nameof(path), "Field path must have a length of 1.");
+			_row.TryGetValue(path[0], out var ret);
+			return (T)ret;
+		}
+
+		public override void WriteToPath<T>(string[] path, T value)
+		{
+			throw new NotImplementedException();
+		}
+	}
+
 	//public class RowContainer : IContainer
 	//{
 	//	private static readonly Dictionary<Type, Func<QueryResult, int, object>> _typeReaders =

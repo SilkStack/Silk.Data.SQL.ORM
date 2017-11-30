@@ -3,6 +3,8 @@ using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Modelling;
 using Silk.Data.SQL.Queries;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Silk.Data.SQL.ORM.Queries
@@ -82,6 +84,83 @@ namespace Silk.Data.SQL.ORM.Queries
 			else
 				throw new Exception("Failed to get auto generated ID.");
 			return null;
+		}
+	}
+
+	public abstract class MapResultORMQuery : ORMQuery
+	{
+		public MapResultORMQuery(QueryExpression query, Type mapToType)
+			: base(query, mapToType, true)
+		{
+		}
+	}
+
+	public class MapResultORMQuery<TView> : MapResultORMQuery
+		where TView : new()
+	{
+		public EntityModel EntityModel { get; }
+
+		public MapResultORMQuery(QueryExpression query, EntityModel entityModel)
+			: base(query, typeof(TView))
+		{
+			EntityModel = entityModel;
+		}
+
+		public override object MapResult(QueryResult queryResult)
+		{
+			if (!queryResult.HasRows)
+				return null;
+
+			var resultWriters = new List<ModelReadWriter>();
+			var rowReaders = new List<ViewReadWriter>();
+
+			while (queryResult.Read())
+			{
+				var result = new TView();
+				var container = new RowContainer(EntityModel);
+				container.ReadRow(queryResult);
+
+				rowReaders.Add(container);
+				resultWriters.Add(new ObjectModelReadWriter(EntityModel.Model, new TView()));
+			}
+
+			EntityModel.MapToModelAsync(resultWriters, rowReaders)
+					.ConfigureAwait(false)
+					.GetAwaiter().GetResult();
+
+			return resultWriters
+				.OfType<ObjectModelReadWriter>()
+				.Select(q => q.Instance)
+				.OfType<TView>()
+				.ToArray();
+		}
+
+		public override async Task<object> MapResultAsync(QueryResult queryResult)
+		{
+			if (!queryResult.HasRows)
+				return null;
+
+			var resultWriters = new List<ModelReadWriter>();
+			var rowReaders = new List<ViewReadWriter>();
+
+			while (queryResult.Read())
+			{
+				var result = new TView();
+				var container = new RowContainer(EntityModel);
+				container.ReadRow(queryResult);
+
+				rowReaders.Add(container);
+				resultWriters.Add(new ObjectModelReadWriter(EntityModel.Model, new TView()));
+			}
+
+			await EntityModel.MapToModelAsync(resultWriters, rowReaders)
+					.ConfigureAwait(false);
+
+			return resultWriters
+				.OfType<ObjectModelReadWriter>()
+				.Select(q => q.Instance)
+				.OfType<TView>()
+				.ToArray();
 		}
 	}
 }

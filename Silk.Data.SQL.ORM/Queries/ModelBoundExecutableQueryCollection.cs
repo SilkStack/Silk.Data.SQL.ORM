@@ -2,6 +2,7 @@
 using Silk.Data.SQL.ORM.Modelling;
 using Silk.Data.SQL.Providers;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Silk.Data.SQL.ORM.Queries
@@ -64,7 +65,11 @@ namespace Silk.Data.SQL.ORM.Queries
 			int? offset = null,
 			int? limit = null)
 		{
-			return null;
+			var queryBuilder = new SelectQueryBuilder<TSource>(DataModel);
+			return new ModelBoundExecutableQueryCollection<TSource, TSource>(DataModel,
+				Queries.Concat(queryBuilder.CreateQuery(
+					where, having, orderBy, groupBy, offset, limit
+					)).ToArray());
 		}
 
 		public ModelBoundExecutableQueryCollection<TSource, TView> Select<TView>(

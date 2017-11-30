@@ -27,7 +27,7 @@ namespace Silk.Data.SQL.ORM
 			= new ViewConvention<ViewBuilder>[]
 			{
 				new CleanModelNameConvention(),
-				new CopySimpleTypesConvention()
+				new CopyPrimitiveTypesConvention()
 			};
 		private static EnumerableConversionsConvention _bindEnumerableConversions = new EnumerableConversionsConvention();
 
