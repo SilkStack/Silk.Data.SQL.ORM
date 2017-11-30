@@ -133,7 +133,11 @@ namespace Silk.Data.SQL.ORM.Queries
 			int? offset = null,
 			int? limit = null)
 		{
-			return null;
+			var queryBuilder = new SelectQueryBuilder<TSource>(DataModel);
+			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult, TSource>(DataModel,
+				Queries.Concat(queryBuilder.CreateQuery(
+					where, having, orderBy, groupBy, offset, limit
+					)).ToArray());
 		}
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult, TView> Select<TView>(
