@@ -113,26 +113,24 @@ namespace Silk.Data.SQL.ORM.Queries
 
 			var resultWriters = new List<ModelReadWriter>();
 			var rowReaders = new List<ViewReadWriter>();
+			var resultList = new List<TView>();
 
 			while (queryResult.Read())
 			{
 				var result = new TView();
+				resultList.Add(result);
 				var container = new RowContainer(EntityModel);
 				container.ReadRow(queryResult);
 
 				rowReaders.Add(container);
-				resultWriters.Add(new ObjectModelReadWriter(EntityModel.Model, new TView()));
+				resultWriters.Add(new ObjectModelReadWriter(EntityModel.Model, result));
 			}
 
 			EntityModel.MapToModelAsync(resultWriters, rowReaders)
 					.ConfigureAwait(false)
 					.GetAwaiter().GetResult();
 
-			return resultWriters
-				.OfType<ObjectModelReadWriter>()
-				.Select(q => q.Instance)
-				.OfType<TView>()
-				.ToArray();
+			return resultList;
 		}
 
 		public override async Task<object> MapResultAsync(QueryResult queryResult)
@@ -142,25 +140,23 @@ namespace Silk.Data.SQL.ORM.Queries
 
 			var resultWriters = new List<ModelReadWriter>();
 			var rowReaders = new List<ViewReadWriter>();
+			var resultList = new List<TView>();
 
 			while (queryResult.Read())
 			{
 				var result = new TView();
+				resultList.Add(result);
 				var container = new RowContainer(EntityModel);
 				container.ReadRow(queryResult);
 
 				rowReaders.Add(container);
-				resultWriters.Add(new ObjectModelReadWriter(EntityModel.Model, new TView()));
+				resultWriters.Add(new ObjectModelReadWriter(EntityModel.Model, result));
 			}
 
 			await EntityModel.MapToModelAsync(resultWriters, rowReaders)
 					.ConfigureAwait(false);
 
-			return resultWriters
-				.OfType<ObjectModelReadWriter>()
-				.Select(q => q.Instance)
-				.OfType<TView>()
-				.ToArray();
+			return resultList;
 		}
 	}
 }
