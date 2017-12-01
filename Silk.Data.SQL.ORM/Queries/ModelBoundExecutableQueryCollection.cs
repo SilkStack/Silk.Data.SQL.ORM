@@ -81,7 +81,11 @@ namespace Silk.Data.SQL.ORM.Queries
 			int? limit = null)
 			where TView : new()
 		{
-			return null;
+			var queryBuilder = new SelectQueryBuilder<TSource>(DataModel);
+			return new ModelBoundExecutableQueryCollection<TSource, TView>(DataModel,
+				Queries.Concat(queryBuilder.CreateQuery<TView>(
+					where, having, orderBy, groupBy, offset, limit
+					)).ToArray());
 		}
 	}
 
@@ -149,7 +153,11 @@ namespace Silk.Data.SQL.ORM.Queries
 			int? limit = null)
 			where TView : new()
 		{
-			return null;
+			var queryBuilder = new SelectQueryBuilder<TSource>(DataModel);
+			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult, TView>(DataModel,
+				Queries.Concat(queryBuilder.CreateQuery<TView>(
+					where, having, orderBy, groupBy, offset, limit
+					)).ToArray());
 		}
 
 		public new TransactionQueryCollection<TQueryResult> AsTransaction()

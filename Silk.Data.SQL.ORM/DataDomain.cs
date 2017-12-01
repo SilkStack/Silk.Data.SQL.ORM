@@ -141,63 +141,79 @@ namespace Silk.Data.SQL.ORM
 			where TSource : new()
 			where TView : new()
 		{
-			return null;
-			//var entityModel = GetEntityModel<TSource>();
-			//if (entityModel == null)
-			//	throw new InvalidOperationException("Entity type not present in data domain.");
+			var entityModel = GetEntityModel<TSource>();
+			if (entityModel == null)
+				throw new InvalidOperationException("Entity type not present in data domain.");
 
-			//var cacheKey = $"{typeof(TSource).FullName} to {typeof(TView).FullName}";
-			//if (_projectionModelCache.TryGetValue(cacheKey, out var ret))
-			//	return ret as EntityModel<TSource,TView>;
+			var cacheKey = $"{typeof(TSource).FullName} to {typeof(TView).FullName}";
+			if (_projectionModelCache.TryGetValue(cacheKey, out var ret))
+				return ret as EntityModel<TSource, TView>;
 
-			//lock (_projectionModelCache)
-			//{
-			//	if (_projectionModelCache.TryGetValue(cacheKey, out ret))
-			//		return ret as EntityModel<TSource, TView>;
+			lock (_projectionModelCache)
+			{
+				if (_projectionModelCache.TryGetValue(cacheKey, out ret))
+					return ret as EntityModel<TSource, TView>;
+			}
 
-			//	var lazyDomainAccessor = new Lazy<DataDomain>(() => this);
-			//	var modelOfViewType = TypeModeller.GetModelOf<TView>();
+			var modelOfViewType = TypeModeller.GetModelOf<TView>();
+			var viewBuilder = new DataViewBuilder(entityModel.Model, modelOfViewType, _viewConventions,
+				_domainDefinition, typeof(TSource), typeof(TView));
 
-			//	var viewDefinition = new ViewDefinition(entityModel.Model, modelOfViewType, _viewConventions);
-			//	viewDefinition.UserData.Add(_domainDefinition);
-			//	viewDefinition.UserData.Add(typeof(TSource));
-			//	viewDefinition.UserData.Add(typeof(TView));
-			//	viewDefinition.UserData.Add(lazyDomainAccessor);
+			foreach (var viewConvention in _viewConventions.OfType<ViewConvention<ViewBuilder>>())
+			{
+				foreach (var field in modelOfViewType.Fields)
+				{
+					if (!viewConvention.SupportedViewTypes.HasFlag(ViewType.ModelDriven))
+						continue;
+					if (viewConvention.SkipIfFieldDefined &&
+						viewBuilder.ViewDefinition.FieldDefinitions.Any(q => q.Name == field.Name))
+						continue;
+					viewConvention.MakeModelField(viewBuilder, field);
+				}
+			}
+			foreach (var viewConvention in _viewConventions.OfType<ViewConvention<DataViewBuilder>>())
+			{
+				foreach (var field in modelOfViewType.Fields)
+				{
+					if (!viewConvention.SupportedViewTypes.HasFlag(ViewType.ModelDriven))
+						continue;
+					if (viewConvention.SkipIfFieldDefined &&
+						viewBuilder.ViewDefinition.FieldDefinitions.Any(q => q.Name == field.Name))
+						continue;
+					viewConvention.MakeModelField(viewBuilder, field);
+				}
+			}
 
-			//	foreach (var field in viewDefinition.TargetModel.Fields)
-			//	{
-			//		foreach (var viewConvention in _viewConventions)
-			//		{
-			//			viewConvention.MakeModelFields(viewDefinition.SourceModel,
-			//				field, viewDefinition);
-			//		}
-			//	}
+			_bindEnumerableConversions.FinalizeModel(viewBuilder);
+			foreach (var viewConvention in _viewConventions.OfType<ViewConvention<ViewBuilder>>())
+			{
+				if (viewConvention.SupportedViewTypes.HasFlag(ViewType.ModelDriven))
+					viewConvention.FinalizeModel(viewBuilder);
+			}
+			foreach (var viewConvention in _viewConventions.OfType<ViewConvention<DataViewBuilder>>())
+			{
+				if (viewConvention.SupportedViewTypes.HasFlag(ViewType.ModelDriven))
+					viewConvention.FinalizeModel(viewBuilder);
+			}
 
-			//	_bindEnumerableConversions.FinalizeModel(viewDefinition);
+			var fields = new List<DataField>();
+			foreach (var fieldDefinition in viewBuilder.ViewDefinition.FieldDefinitions)
+			{
+				var source = entityModel.Fields.FirstOrDefault(q =>
+					q.DataType == fieldDefinition.DataType &&
+					q.ModelBinding.ModelFieldPath.SequenceEqual(fieldDefinition.ModelBinding.ModelFieldPath)
+					);
+				if (source != null)
+					fields.Add(source);
+			}
 
-			//	foreach (var viewConvention in _viewConventions)
-			//	{
-			//		viewConvention.FinalizeModel(viewDefinition);
-			//	}
+			var lazyDomainAccessor = new Lazy<DataDomain>(() => this);
+			ret = new EntityModel<TSource, TView>(viewBuilder.ViewDefinition.Name, entityModel.Model,
+				entityModel.Schema, fields.ToArray(), lazyDomainAccessor);
 
-			//	var fields = new List<DataField>();
-			//	foreach (var fieldDefinition in viewDefinition.FieldDefinitions)
-			//	{
-			//		var source = entityModel.Fields.FirstOrDefault(q =>
-			//			q.DataType == fieldDefinition.DataType &&
-			//			q.ModelBinding.ModelFieldPath.SequenceEqual(fieldDefinition.ModelBinding.ModelFieldPath)
-			//			);
-			//		if (source != null)
-			//			fields.Add(source);
-			//	}
+			_projectionModelCache.Add(cacheKey, ret);
 
-			//	ret = new EntityModel<TSource, TView>(viewDefinition.Name, entityModel.Model,
-			//		entityModel.Schema, fields.ToArray(), lazyDomainAccessor);
-
-			//	_projectionModelCache.Add(cacheKey, ret);
-
-			//	return ret as EntityModel<TSource, TView>;
-			//}
+			return ret as EntityModel<TSource, TView>;
 		}
 
 		public EntitySchema GetSchema<TSource>()

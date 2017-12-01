@@ -28,10 +28,10 @@ namespace Silk.Data.SQL.ORM.Queries
 			var queries = new List<ORMQuery>();
 			var projectedFields = new List<QueryExpression>();
 
-			foreach (var field in entityTable.DataFields)
+			foreach (var field in DataModel.Fields.Where(q => q.Storage.Table == entityTable))
 			{
 				projectedFields.Add(QueryExpression.Alias(
-						QueryExpression.Column(field.Storage.ColumnName, QueryExpression.Table(entityTable.TableName)),
+						QueryExpression.Column(field.Storage.ColumnName, QueryExpression.Table(field.Storage.Table.TableName)),
 						field.Name
 					));
 			}
@@ -46,6 +46,44 @@ namespace Silk.Data.SQL.ORM.Queries
 					offset: offset != null ? QueryExpression.Value(offset.Value) : null,
 					limit: limit != null ? QueryExpression.Value(limit.Value) : null
 				), DataModel));
+
+			return queries;
+		}
+
+		public ICollection<ORMQuery> CreateQuery<TView>(
+				QueryExpression where = null,
+				QueryExpression having = null,
+				QueryExpression[] orderBy = null,
+				QueryExpression[] groupBy = null,
+				int? offset = null,
+				int? limit = null
+			)
+			where TView : new()
+		{
+			var dataModel = DataModel.Domain.GetProjectionModel<TSource, TView>();
+
+			var entityTable = dataModel.Schema.Tables.First(q => q.IsEntityTable);
+			var queries = new List<ORMQuery>();
+			var projectedFields = new List<QueryExpression>();
+
+			foreach (var field in dataModel.Fields.Where(q => q.Storage.Table == entityTable))
+			{
+				projectedFields.Add(QueryExpression.Alias(
+						QueryExpression.Column(field.Storage.ColumnName, QueryExpression.Table(field.Storage.Table.TableName)),
+						field.Name
+					));
+			}
+
+			queries.Add(new MapResultORMQuery<TView>(QueryExpression.Select(
+					projectedFields.ToArray(),
+					from: QueryExpression.Table(entityTable.TableName),
+					where: where,
+					having: having,
+					orderBy: orderBy,
+					groupBy: groupBy,
+					offset: offset != null ? QueryExpression.Value(offset.Value) : null,
+					limit: limit != null ? QueryExpression.Value(limit.Value) : null
+				), dataModel));
 
 			return queries;
 		}
