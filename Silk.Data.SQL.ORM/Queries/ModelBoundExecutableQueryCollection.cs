@@ -1,5 +1,4 @@
-﻿using Silk.Data.Modelling;
-using Silk.Data.SQL.Expressions;
+﻿using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Modelling;
 using Silk.Data.SQL.Providers;
 using System.Collections.Generic;
@@ -13,13 +12,13 @@ namespace Silk.Data.SQL.ORM.Queries
 	{
 		public EntityModel<TSource> DataModel { get; }
 
-		public ModelBoundExecutableQueryCollection(EntityModel<TSource> dataModel, params QueryWithDelegate[] queryExpressions)
+		public ModelBoundExecutableQueryCollection(EntityModel<TSource> dataModel, params ORMQuery[] queryExpressions)
 			: base(queryExpressions)
 		{
 			DataModel = dataModel;
 		}
 
-		public ModelBoundExecutableQueryCollection(EntityModel<TSource> dataModel, IEnumerable<QueryWithDelegate> queryExpressions)
+		public ModelBoundExecutableQueryCollection(EntityModel<TSource> dataModel, IEnumerable<ORMQuery> queryExpressions)
 			: base(queryExpressions)
 		{
 			DataModel = dataModel;
@@ -27,38 +26,35 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public ModelBoundExecutableQueryCollection<TSource> Insert(params TSource[] sources)
 		{
-			var queries = Queries.Concat(new InsertQueryBuilder<TSource>(DataModel).CreateQuery(sources));
-			return new ModelBoundExecutableQueryCollection<TSource>(DataModel, queries);
+			var insertBuilder = new InsertQueryBuilder<TSource>(DataModel);
+			Queries.AddRange(insertBuilder.CreateQuery(sources));
+			return this;
 		}
 
 		public ModelBoundExecutableQueryCollection<TSource> Insert<TView>(params TView[] sources)
 			where TView : new()
 		{
 			var projectionModel = DataModel.Domain.GetProjectionModel<TSource, TView>();
-			var queries = Queries.Concat(
-				new InsertQueryBuilder<TSource>(projectionModel)
-					.CreateQuery(sources.Select(q => new ObjectContainer<TView>(DataModel.Model, DataModel) { Instance = q })
-					.ToArray())
-				);
-			return new ModelBoundExecutableQueryCollection<TSource>(DataModel, queries);
+			return null;
 		}
 
 		public ModelBoundExecutableQueryCollection<TSource> Update(params TSource[] sources)
 		{
-			var queries = Queries.Concat(new UpdateQueryBuilder<TSource>(DataModel).CreateQuery(sources));
-			return new ModelBoundExecutableQueryCollection<TSource>(DataModel, queries);
+			var queryuBuilder = new UpdateQueryBuilder<TSource>(DataModel);
+			Queries.AddRange(queryuBuilder.CreateQuery(sources));
+			return this;
 		}
 
 		public ModelBoundExecutableQueryCollection<TSource> Delete(params TSource[] sources)
 		{
-			var queries = Queries.Concat(new DeleteQueryBuilder<TSource>(DataModel).CreateQuery(sources));
-			return new ModelBoundExecutableQueryCollection<TSource>(DataModel, queries);
+			var queryuBuilder = new DeleteQueryBuilder<TSource>(DataModel);
+			Queries.AddRange(queryuBuilder.CreateQuery(sources));
+			return this;
 		}
 
 		public ModelBoundExecutableQueryCollection<TSource> Delete(QueryExpression where = null)
 		{
-			var queries = Queries.Concat(new DeleteQueryBuilder<TSource>(DataModel).CreateQuery(where: where));
-			return new ModelBoundExecutableQueryCollection<TSource>(DataModel, queries);
+			return null;
 		}
 
 		public ModelBoundExecutableQueryCollection<TSource, TSource> Select(
@@ -69,10 +65,11 @@ namespace Silk.Data.SQL.ORM.Queries
 			int? offset = null,
 			int? limit = null)
 		{
-			var queries = Queries.Concat(new SelectQueryBuilder<TSource>(DataModel).CreateQuery<TSource>(
-				where, having, orderBy, groupBy, offset, limit
-				));
-			return new ModelBoundExecutableQueryCollection<TSource, TSource>(DataModel, queries);
+			var queryBuilder = new SelectQueryBuilder<TSource>(DataModel);
+			return new ModelBoundExecutableQueryCollection<TSource, TSource>(DataModel,
+				Queries.Concat(queryBuilder.CreateQuery(
+					where, having, orderBy, groupBy, offset, limit
+					)).ToArray());
 		}
 
 		public ModelBoundExecutableQueryCollection<TSource, TView> Select<TView>(
@@ -84,10 +81,11 @@ namespace Silk.Data.SQL.ORM.Queries
 			int? limit = null)
 			where TView : new()
 		{
-			var queries = Queries.Concat(new SelectQueryBuilder<TSource>(DataModel).CreateQuery<TView>(
-				where, having, orderBy, groupBy, offset, limit
-				));
-			return new ModelBoundExecutableQueryCollection<TSource, TView>(DataModel, queries);
+			var queryBuilder = new SelectQueryBuilder<TSource>(DataModel);
+			return new ModelBoundExecutableQueryCollection<TSource, TView>(DataModel,
+				Queries.Concat(queryBuilder.CreateQuery<TView>(
+					where, having, orderBy, groupBy, offset, limit
+					)).ToArray());
 		}
 	}
 
@@ -95,38 +93,40 @@ namespace Silk.Data.SQL.ORM.Queries
 		where TSource : new()
 		where TQueryResult : new()
 	{
-		public ModelBoundExecutableQueryCollection(EntityModel<TSource> dataModel, params QueryWithDelegate[] queryExpressions)
+		public ModelBoundExecutableQueryCollection(EntityModel<TSource> dataModel, params ORMQuery[] queryExpressions)
 			: base(dataModel, queryExpressions)
 		{
 		}
 
-		public ModelBoundExecutableQueryCollection(EntityModel<TSource> dataModel, IEnumerable<QueryWithDelegate> queryExpressions)
+		public ModelBoundExecutableQueryCollection(EntityModel<TSource> dataModel, IEnumerable<ORMQuery> queryExpressions)
 			: base(dataModel, queryExpressions)
 		{
 		}
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult> Insert(params TSource[] sources)
 		{
-			var queries = Queries.Concat(new InsertQueryBuilder<TSource>(DataModel).CreateQuery(sources));
-			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult>(DataModel, queries);
+			var insertBuilder = new InsertQueryBuilder<TSource>(DataModel);
+			Queries.AddRange(insertBuilder.CreateQuery(sources));
+			return this;
 		}
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult> Update(params TSource[] sources)
 		{
-			var queries = Queries.Concat(new UpdateQueryBuilder<TSource>(DataModel).CreateQuery(sources));
-			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult>(DataModel, queries);
+			var queryuBuilder = new UpdateQueryBuilder<TSource>(DataModel);
+			Queries.AddRange(queryuBuilder.CreateQuery(sources));
+			return this;
 		}
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult> Delete(params TSource[] sources)
 		{
-			var queries = Queries.Concat(new DeleteQueryBuilder<TSource>(DataModel).CreateQuery(sources));
-			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult>(DataModel, queries);
+			var queryuBuilder = new DeleteQueryBuilder<TSource>(DataModel);
+			Queries.AddRange(queryuBuilder.CreateQuery(sources));
+			return this;
 		}
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult> Delete(QueryExpression where = null)
 		{
-			var queries = Queries.Concat(new DeleteQueryBuilder<TSource>(DataModel).CreateQuery(where: where));
-			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult>(DataModel, queries);
+			return null;
 		}
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult, TSource> Select(
@@ -137,10 +137,11 @@ namespace Silk.Data.SQL.ORM.Queries
 			int? offset = null,
 			int? limit = null)
 		{
-			var queries = Queries.Concat(new SelectQueryBuilder<TSource>(DataModel).CreateQuery<TSource>(
-				where, having, orderBy, groupBy, offset, limit
-				));
-			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult, TSource>(DataModel, queries);
+			var queryBuilder = new SelectQueryBuilder<TSource>(DataModel);
+			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult, TSource>(DataModel,
+				Queries.Concat(queryBuilder.CreateQuery(
+					where, having, orderBy, groupBy, offset, limit
+					)).ToArray());
 		}
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult, TView> Select<TView>(
@@ -152,10 +153,11 @@ namespace Silk.Data.SQL.ORM.Queries
 			int? limit = null)
 			where TView : new()
 		{
-			var queries = Queries.Concat(new SelectQueryBuilder<TSource>(DataModel).CreateQuery<TView>(
-				where, having, orderBy, groupBy, offset, limit
-				));
-			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult, TView>(DataModel, queries);
+			var queryBuilder = new SelectQueryBuilder<TSource>(DataModel);
+			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult, TView>(DataModel,
+				Queries.Concat(queryBuilder.CreateQuery<TView>(
+					where, having, orderBy, groupBy, offset, limit
+					)).ToArray());
 		}
 
 		public new TransactionQueryCollection<TQueryResult> AsTransaction()
@@ -170,7 +172,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			ICollection<TQueryResult> ret = null;
 			foreach (var query in Queries)
 			{
-				if (query.Delegate == null)
+				if (query.MapToType == null)
 				{
 					dataProvider.ExecuteNonQuery(query.Query);
 				}
@@ -178,9 +180,11 @@ namespace Silk.Data.SQL.ORM.Queries
 				{
 					using (var queryResult = dataProvider.ExecuteReader(query.Query))
 					{
-						query.Delegate(queryResult);
-						if (query.Query is SelectExpression && query.AssignsResults)
-							ret = query.Results as ICollection<TQueryResult>;
+						var result = query.MapResult(queryResult);
+						if (query.IsQueryResult)
+						{
+							ret = result as ICollection<TQueryResult>;
+						}
 					}
 				}
 			}
@@ -192,7 +196,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			ICollection<TQueryResult> ret = null;
 			foreach (var query in Queries)
 			{
-				if (query.Delegate == null)
+				if (query.MapToType == null)
 				{
 					await dataProvider.ExecuteNonQueryAsync(query.Query)
 						.ConfigureAwait(false);
@@ -202,10 +206,12 @@ namespace Silk.Data.SQL.ORM.Queries
 					using (var queryResult = await dataProvider.ExecuteReaderAsync(query.Query)
 						.ConfigureAwait(false))
 					{
-						await query.AsyncDelegate(queryResult)
+						var result = await query.MapResultAsync(queryResult)
 							.ConfigureAwait(false);
-						if (query.Query is SelectExpression && query.AssignsResults)
-							ret = query.Results as ICollection<TQueryResult>;
+						if (query.IsQueryResult)
+						{
+							ret = result as ICollection<TQueryResult>;
+						}
 					}
 				}
 			}
@@ -218,38 +224,40 @@ namespace Silk.Data.SQL.ORM.Queries
 		where TQueryResult1 : new()
 		where TQueryResult2 : new()
 	{
-		public ModelBoundExecutableQueryCollection(EntityModel<TSource> dataModel, params QueryWithDelegate[] queryExpressions)
+		public ModelBoundExecutableQueryCollection(EntityModel<TSource> dataModel, params ORMQuery[] queryExpressions)
 			: base(dataModel, queryExpressions)
 		{
 		}
 
-		public ModelBoundExecutableQueryCollection(EntityModel<TSource> dataModel, IEnumerable<QueryWithDelegate> queryExpressions)
+		public ModelBoundExecutableQueryCollection(EntityModel<TSource> dataModel, IEnumerable<ORMQuery> queryExpressions)
 			: base(dataModel, queryExpressions)
 		{
 		}
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2> Insert(params TSource[] sources)
 		{
-			var queries = Queries.Concat(new InsertQueryBuilder<TSource>(DataModel).CreateQuery(sources));
-			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2>(DataModel, queries);
+			var insertBuilder = new InsertQueryBuilder<TSource>(DataModel);
+			Queries.AddRange(insertBuilder.CreateQuery(sources));
+			return this;
 		}
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2> Update(params TSource[] sources)
 		{
-			var queries = Queries.Concat(new UpdateQueryBuilder<TSource>(DataModel).CreateQuery(sources));
-			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2>(DataModel, queries);
+			var queryuBuilder = new UpdateQueryBuilder<TSource>(DataModel);
+			Queries.AddRange(queryuBuilder.CreateQuery(sources));
+			return this;
 		}
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2> Delete(params TSource[] sources)
 		{
-			var queries = Queries.Concat(new DeleteQueryBuilder<TSource>(DataModel).CreateQuery(sources));
-			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2>(DataModel, queries);
+			var queryuBuilder = new DeleteQueryBuilder<TSource>(DataModel);
+			Queries.AddRange(queryuBuilder.CreateQuery(sources));
+			return this;
 		}
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2> Delete(QueryExpression where = null)
 		{
-			var queries = Queries.Concat(new DeleteQueryBuilder<TSource>(DataModel).CreateQuery(where: where));
-			return new ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2>(DataModel, queries);
+			return null;
 		}
 
 		public new TransactionQueryCollection<TQueryResult1, TQueryResult2> AsTransaction()
@@ -265,7 +273,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			ICollection<TQueryResult2> result2 = null;
 			foreach (var query in Queries)
 			{
-				if (query.Delegate == null)
+				if (query.MapToType == null)
 				{
 					dataProvider.ExecuteNonQuery(query.Query);
 				}
@@ -273,13 +281,17 @@ namespace Silk.Data.SQL.ORM.Queries
 				{
 					using (var queryResult = dataProvider.ExecuteReader(query.Query))
 					{
-						query.Delegate(queryResult);
-						if (query.Query is SelectExpression && query.AssignsResults)
+						var result = query.MapResult(queryResult);
+						if (query.IsQueryResult)
 						{
 							if (result1 == null)
-								result1 = query.Results as ICollection<TQueryResult1>;
+							{
+								result1 = result as ICollection<TQueryResult1>;
+							}
 							else if (result2 == null)
-								result2 = query.Results as ICollection<TQueryResult2>;
+							{
+								result2 = result as ICollection<TQueryResult2>;
+							}
 						}
 					}
 				}
@@ -293,7 +305,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			ICollection<TQueryResult2> result2 = null;
 			foreach (var query in Queries)
 			{
-				if (query.Delegate == null)
+				if (query.MapToType == null)
 				{
 					await dataProvider.ExecuteNonQueryAsync(query.Query)
 						.ConfigureAwait(false);
@@ -303,14 +315,18 @@ namespace Silk.Data.SQL.ORM.Queries
 					using (var queryResult = await dataProvider.ExecuteReaderAsync(query.Query)
 						.ConfigureAwait(false))
 					{
-						await query.AsyncDelegate(queryResult)
+						var result = await query.MapResultAsync(queryResult)
 							.ConfigureAwait(false);
-						if (query.Query is SelectExpression && query.AssignsResults)
+						if (query.IsQueryResult)
 						{
 							if (result1 == null)
-								result1 = query.Results as ICollection<TQueryResult1>;
+							{
+								result1 = result as ICollection<TQueryResult1>;
+							}
 							else if (result2 == null)
-								result2 = query.Results as ICollection<TQueryResult2>;
+							{
+								result2 = result as ICollection<TQueryResult2>;
+							}
 						}
 					}
 				}

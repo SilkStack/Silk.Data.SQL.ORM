@@ -9,12 +9,12 @@ namespace Silk.Data.SQL.ORM.Queries
 {
 	public class TransactionQueryCollection : ExecutableQueryCollection
 	{
-		public TransactionQueryCollection(params QueryWithDelegate[] queryExpressions)
+		public TransactionQueryCollection(params ORMQuery[] queryExpressions)
 			: base(queryExpressions)
 		{
 		}
 
-		public TransactionQueryCollection(IEnumerable<QueryWithDelegate> queryExpressions)
+		public TransactionQueryCollection(IEnumerable<ORMQuery> queryExpressions)
 			: base(queryExpressions)
 		{
 		}
@@ -30,7 +30,8 @@ namespace Silk.Data.SQL.ORM.Queries
 					{
 						if (!queryResult.NextResult())
 							throw new Exception("Failed to move to query result.");
-						query.Delegate?.Invoke(queryResult);
+						if (query.MapToType != null)
+							query.MapResult(queryResult);
 					}
 				}
 			}
@@ -49,8 +50,8 @@ namespace Silk.Data.SQL.ORM.Queries
 						if (!await queryResult.NextResultAsync()
 							.ConfigureAwait(false))
 							throw new Exception("Failed to move to query result.");
-						if (query.AsyncDelegate != null)
-							await query.AsyncDelegate(queryResult).ConfigureAwait(false);
+						if (query.MapToType != null)
+							await query.MapResultAsync(queryResult).ConfigureAwait(false);
 					}
 				}
 			}
@@ -60,12 +61,12 @@ namespace Silk.Data.SQL.ORM.Queries
 	public class TransactionQueryCollection<TQueryResult> : TransactionQueryCollection
 		where TQueryResult : new()
 	{
-		public TransactionQueryCollection(params QueryWithDelegate[] queryExpressions)
+		public TransactionQueryCollection(params ORMQuery[] queryExpressions)
 			: base(queryExpressions)
 		{
 		}
 
-		public TransactionQueryCollection(IEnumerable<QueryWithDelegate> queryExpressions)
+		public TransactionQueryCollection(IEnumerable<ORMQuery> queryExpressions)
 			: base(queryExpressions)
 		{
 		}
@@ -83,9 +84,12 @@ namespace Silk.Data.SQL.ORM.Queries
 					{
 						if (!queryResult.NextResult())
 							throw new Exception("Failed to move to query result.");
-						query.Delegate?.Invoke(queryResult);
-						if (query.AssignsResults)
-							ret = query.Results as ICollection<TQueryResult>;
+						if (query.MapToType != null)
+						{
+							var result = query.MapResult(queryResult);
+							if (query.IsQueryResult)
+								ret = result as ICollection<TQueryResult>;
+						}
 					}
 				}
 			}
@@ -108,10 +112,12 @@ namespace Silk.Data.SQL.ORM.Queries
 						if (!await queryResult.NextResultAsync()
 							.ConfigureAwait(false))
 							throw new Exception("Failed to move to query result.");
-						if (query.AsyncDelegate != null)
-							await query.AsyncDelegate(queryResult).ConfigureAwait(false);
-						if (query.AssignsResults)
-							ret = query.Results as ICollection<TQueryResult>;
+						if (query.MapToType != null)
+						{
+							var result = await query.MapResultAsync(queryResult).ConfigureAwait(false);
+							if (query.IsQueryResult)
+								ret = result as ICollection<TQueryResult>;
+						}
 					}
 				}
 			}
@@ -124,12 +130,12 @@ namespace Silk.Data.SQL.ORM.Queries
 		where TQueryResult1 : new()
 		where TQueryResult2 : new()
 	{
-		public TransactionQueryCollection(params QueryWithDelegate[] queryExpressions)
+		public TransactionQueryCollection(params ORMQuery[] queryExpressions)
 			: base(queryExpressions)
 		{
 		}
 
-		public TransactionQueryCollection(IEnumerable<QueryWithDelegate> queryExpressions)
+		public TransactionQueryCollection(IEnumerable<ORMQuery> queryExpressions)
 			: base(queryExpressions)
 		{
 		}
@@ -148,11 +154,14 @@ namespace Silk.Data.SQL.ORM.Queries
 					{
 						if (!queryResult.NextResult())
 							throw new Exception("Failed to move to query result.");
-						query.Delegate?.Invoke(queryResult);
-						if (result1 == null && query.AssignsResults)
-							result1 = query.Results as ICollection<TQueryResult1>;
-						else if (result2 == null && query.AssignsResults)
-							result2 = query.Results as ICollection<TQueryResult2>;
+						if (query.MapToType != null)
+						{
+							var result = query.MapResult(queryResult);
+							if (result1 == null && query.IsQueryResult)
+								result1 = result as ICollection<TQueryResult1>;
+							else if (result2 == null && query.IsQueryResult)
+								result2 = result as ICollection<TQueryResult2>;
+						}
 					}
 				}
 			}
@@ -176,12 +185,14 @@ namespace Silk.Data.SQL.ORM.Queries
 						if (!await queryResult.NextResultAsync()
 							.ConfigureAwait(false))
 							throw new Exception("Failed to move to query result.");
-						if (query.AsyncDelegate != null)
-							await query.AsyncDelegate(queryResult).ConfigureAwait(false);
-						if (result1 == null && query.AssignsResults)
-							result1 = query.Results as ICollection<TQueryResult1>;
-						else if (result2 == null && query.AssignsResults)
-							result2 = query.Results as ICollection<TQueryResult2>;
+						if (query.MapToType != null)
+						{
+							var result = await query.MapResultAsync(queryResult).ConfigureAwait(false);
+							if (result1 == null && query.IsQueryResult)
+								result1 = result as ICollection<TQueryResult1>;
+							else if (result2 == null && query.IsQueryResult)
+								result2 = result as ICollection<TQueryResult2>;
+						}
 					}
 				}
 			}

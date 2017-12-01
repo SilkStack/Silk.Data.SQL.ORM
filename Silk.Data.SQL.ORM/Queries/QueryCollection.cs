@@ -6,17 +6,17 @@ namespace Silk.Data.SQL.ORM.Queries
 {
 	public abstract class QueryCollection
 	{
-		protected List<QueryWithDelegate> Queries { get; } = new List<QueryWithDelegate>();
+		protected List<ORMQuery> Queries { get; } = new List<ORMQuery>();
 	}
 
 	public class ExecutableQueryCollection : QueryCollection
 	{
-		public ExecutableQueryCollection(IEnumerable<QueryWithDelegate> queryExpressions)
+		public ExecutableQueryCollection(IEnumerable<ORMQuery> queryExpressions)
 		{
 			Queries.AddRange(queryExpressions);
 		}
 
-		public ExecutableQueryCollection(params QueryWithDelegate[] queryExpressions)
+		public ExecutableQueryCollection(params ORMQuery[] queryExpressions)
 		{
 			Queries.AddRange(queryExpressions);
 		}
@@ -30,7 +30,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		{
 			foreach (var query in Queries)
 			{
-				if (query.Delegate == null)
+				if (query.MapToType == null)
 				{
 					dataProvider.ExecuteNonQuery(query.Query);
 				}
@@ -38,7 +38,7 @@ namespace Silk.Data.SQL.ORM.Queries
 				{
 					using (var queryResult = dataProvider.ExecuteReader(query.Query))
 					{
-						query.Delegate(queryResult);
+						query.MapResult(queryResult);
 					}
 				}
 			}
@@ -48,7 +48,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		{
 			foreach (var query in Queries)
 			{
-				if (query.Delegate == null)
+				if (query.MapToType == null)
 				{
 					await dataProvider.ExecuteNonQueryAsync(query.Query)
 						.ConfigureAwait(false);
@@ -58,7 +58,7 @@ namespace Silk.Data.SQL.ORM.Queries
 					using (var queryResult = await dataProvider.ExecuteReaderAsync(query.Query)
 						.ConfigureAwait(false))
 					{
-						await query.AsyncDelegate(queryResult)
+						await query.MapResultAsync(queryResult)
 							.ConfigureAwait(false);
 					}
 				}

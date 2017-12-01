@@ -5,16 +5,20 @@ using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Modelling.Conventions
 {
-	public class IdIsPrimaryKeyConvention : ViewConvention
+	public class IdIsPrimaryKeyConvention : ViewConvention<DataViewBuilder>
 	{
-		public override void FinalizeModel(ViewDefinition viewDefinition)
+		public override ViewType SupportedViewTypes => ViewType.All;
+		public override bool PerformMultiplePasses => true;
+		public override bool SkipIfFieldDefined => false;
+
+		public override void FinalizeModel(DataViewBuilder viewBuilder)
 		{
-			var hasPrimaryKey = viewDefinition.FieldDefinitions.Any(
+			var hasPrimaryKey = viewBuilder.ViewDefinition.FieldDefinitions.Any(
 				fieldDef => fieldDef.Metadata.OfType<PrimaryKeyAttribute>().Any()
 				);
 			if (hasPrimaryKey)
 				return;
-			var idField = viewDefinition.FieldDefinitions.FirstOrDefault(
+			var idField = viewBuilder.ViewDefinition.FieldDefinitions.FirstOrDefault(
 				fieldDef => fieldDef.Name == "Id"
 				);
 			if (idField == null)
