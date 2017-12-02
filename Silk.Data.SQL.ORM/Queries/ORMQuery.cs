@@ -119,8 +119,9 @@ namespace Silk.Data.SQL.ORM.Queries
 			{
 				var result = new TView();
 				resultList.Add(result);
-				var container = new RowContainer(EntityModel);
-				container.ReadRow(queryResult);
+				var container = new MemoryViewReadWriter(EntityModel);
+				var rowReader = new RowReader(container);
+				rowReader.ReadRow(queryResult);
 
 				rowReaders.Add(container);
 				resultWriters.Add(new ObjectModelReadWriter(EntityModel.Model, result));
@@ -142,12 +143,14 @@ namespace Silk.Data.SQL.ORM.Queries
 			var rowReaders = new List<ViewReadWriter>();
 			var resultList = new List<TView>();
 
-			while (queryResult.Read())
+			while (await queryResult.ReadAsync()
+				.ConfigureAwait(false))
 			{
 				var result = new TView();
 				resultList.Add(result);
-				var container = new RowContainer(EntityModel);
-				container.ReadRow(queryResult);
+				var container = new MemoryViewReadWriter(EntityModel);
+				var rowReader = new RowReader(container);
+				rowReader.ReadRow(queryResult);
 
 				rowReaders.Add(container);
 				resultWriters.Add(new ObjectModelReadWriter(EntityModel.Model, result));
@@ -155,6 +158,58 @@ namespace Silk.Data.SQL.ORM.Queries
 
 			await EntityModel.MapToModelAsync(resultWriters, rowReaders)
 					.ConfigureAwait(false);
+
+			return resultList;
+		}
+	}
+
+	public class ViewMapResultORMQuery<TView> : MapResultORMQuery
+		where TView : new()
+	{
+		public EntityModel EntityModel { get; }
+
+		public ViewMapResultORMQuery(QueryExpression query, EntityModel entityModel)
+			: base(query, typeof(TView))
+		{
+			EntityModel = entityModel;
+		}
+
+		public override object MapResult(QueryResult queryResult)
+		{
+			if (!queryResult.HasRows)
+				return null;
+
+			var resultList = new List<TView>();
+
+			while (queryResult.Read())
+			{
+				var result = new TView();
+				resultList.Add(result);
+
+				var container = new ObjectViewReadWriter(EntityModel, result);
+				var rowReader = new RowReader(container);
+				rowReader.ReadRow(queryResult);
+			}
+
+			return resultList;
+		}
+
+		public override async Task<object> MapResultAsync(QueryResult queryResult)
+		{
+			if (!queryResult.HasRows)
+				return null;
+
+			var resultList = new List<TView>();
+
+			while (await queryResult.ReadAsync()
+				.ConfigureAwait(false))
+			{
+				var result = new TView();
+				resultList.Add(result);
+				var container = new ObjectViewReadWriter(EntityModel, result);
+				var rowReader = new RowReader(container);
+				rowReader.ReadRow(queryResult);
+			}
 
 			return resultList;
 		}

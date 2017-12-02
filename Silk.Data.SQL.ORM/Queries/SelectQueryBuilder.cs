@@ -74,7 +74,7 @@ namespace Silk.Data.SQL.ORM.Queries
 					));
 			}
 
-			queries.Add(new MapResultORMQuery<TView>(QueryExpression.Select(
+			queries.Add(new ViewMapResultORMQuery<TView>(QueryExpression.Select(
 					projectedFields.ToArray(),
 					from: QueryExpression.Table(entityTable.TableName),
 					where: where,
