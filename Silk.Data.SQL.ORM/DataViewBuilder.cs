@@ -66,6 +66,7 @@ namespace Silk.Data.SQL.ORM
 			if (_prefixStack.Count > 0)
 			{
 				viewFieldName = $"{string.Join("_", _prefixStack)}_{viewFieldName}";
+				binding.ModelFieldPath = _prefixStack.Concat(binding.ModelFieldPath).ToArray();
 			}
 
 			base.DefineField(viewFieldName, binding, fieldDataType, metadata);
