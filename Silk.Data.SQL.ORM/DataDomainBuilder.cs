@@ -16,7 +16,8 @@ namespace Silk.Data.SQL.ORM
 		private static ViewConvention<DataViewBuilder>[] _dataViewConventions
 			= new ViewConvention<DataViewBuilder>[]
 			{
-				new IdIsPrimaryKeyConvention()
+				new IdIsPrimaryKeyConvention(),
+				new FlattenPocosConvention()
 				//new CleanModelNameConvention(),
 				//new CopySupportedSQLTypesConvention(),
 				//new IdIsPrimaryKeyConvention(),

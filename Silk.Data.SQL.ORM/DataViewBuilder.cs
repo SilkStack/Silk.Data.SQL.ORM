@@ -4,6 +4,7 @@ using Silk.Data.Modelling.Bindings;
 using Silk.Data.Modelling.Conventions;
 using Silk.Data.SQL.ORM.Modelling;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace Silk.Data.SQL.ORM
 {
@@ -36,6 +37,8 @@ namespace Silk.Data.SQL.ORM
 		public Type EntityType { get; }
 		public Type ProjectionType { get; }
 		public bool IsFirstPass { get; set; } = true;
+		private readonly Stack<string> _prefixStack = new Stack<string>();
+		private readonly Stack<Model> _modelStack = new Stack<Model>();
 
 		public DataViewBuilder(Model sourceModel, Model targetModel, ViewConvention[] viewConventions,
 			DomainDefinition domainDefinition, Type entityType, Type projectionType = null)
@@ -46,8 +49,25 @@ namespace Silk.Data.SQL.ORM
 			ProjectionType = projectionType;
 		}
 
+		public void PushModel(string fieldName, Model model)
+		{
+			_prefixStack.Push(fieldName);
+			_modelStack.Push(model);
+		}
+
+		public void PopModel()
+		{
+			_prefixStack.Pop();
+			_modelStack.Pop();
+		}
+
 		public override void DefineField(string viewFieldName, ModelBinding binding, Type fieldDataType, params object[] metadata)
 		{
+			if (_prefixStack.Count > 0)
+			{
+				viewFieldName = $"{string.Join("_", _prefixStack)}_{viewFieldName}";
+			}
+
 			base.DefineField(viewFieldName, binding, fieldDataType, metadata);
 
 			if (!DomainDefinition.IsReadOnly)
@@ -59,6 +79,30 @@ namespace Silk.Data.SQL.ORM
 				var entityTable = schemaDefinition.GetEntityTableDefinition(true);
 				entityTable.Fields.Add(fieldDefinition);
 			}
+		}
+
+		public override bool IsFieldDefined(string viewFieldName)
+		{
+			if (_prefixStack.Count > 0)
+			{
+				viewFieldName = $"{string.Join("_", _prefixStack)}_{viewFieldName}";
+			}
+
+			return base.IsFieldDefined(viewFieldName);
+		}
+
+		public override FieldInfo FindSourceField(ModelField modelField, string name, bool caseSenitive = true, Type dataType = null)
+		{
+			if (_modelStack.Count > 0)
+				return base.FindSourceField(_modelStack.Peek(), modelField, name, caseSenitive, dataType);
+			return base.FindSourceField(modelField, name, caseSenitive, dataType);
+		}
+
+		public override FieldInfo FindSourceField(ModelField modelField, string[] path, bool caseSenitive = true, Type dataType = null)
+		{
+			if (_modelStack.Count > 0)
+				return base.FindSourceField(_modelStack.Peek(), modelField, path, caseSenitive, dataType);
+			return base.FindSourceField(modelField, path, caseSenitive, dataType);
 		}
 
 		public void ProcessModel(Model model)
