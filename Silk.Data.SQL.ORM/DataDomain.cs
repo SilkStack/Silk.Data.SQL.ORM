@@ -159,42 +159,7 @@ namespace Silk.Data.SQL.ORM
 			var viewBuilder = new DataViewBuilder(entityModel.Model, modelOfViewType, _viewConventions,
 				_domainDefinition, typeof(TSource), typeof(TView));
 
-			foreach (var viewConvention in _viewConventions.OfType<ViewConvention<ViewBuilder>>())
-			{
-				foreach (var field in modelOfViewType.Fields)
-				{
-					if (!viewConvention.SupportedViewTypes.HasFlag(ViewType.ModelDriven))
-						continue;
-					if (viewConvention.SkipIfFieldDefined &&
-						viewBuilder.ViewDefinition.FieldDefinitions.Any(q => q.Name == field.Name))
-						continue;
-					viewConvention.MakeModelField(viewBuilder, field);
-				}
-			}
-			foreach (var viewConvention in _viewConventions.OfType<ViewConvention<DataViewBuilder>>())
-			{
-				foreach (var field in modelOfViewType.Fields)
-				{
-					if (!viewConvention.SupportedViewTypes.HasFlag(ViewType.ModelDriven))
-						continue;
-					if (viewConvention.SkipIfFieldDefined &&
-						viewBuilder.ViewDefinition.FieldDefinitions.Any(q => q.Name == field.Name))
-						continue;
-					viewConvention.MakeModelField(viewBuilder, field);
-				}
-			}
-
-			_bindEnumerableConversions.FinalizeModel(viewBuilder);
-			foreach (var viewConvention in _viewConventions.OfType<ViewConvention<ViewBuilder>>())
-			{
-				if (viewConvention.SupportedViewTypes.HasFlag(ViewType.ModelDriven))
-					viewConvention.FinalizeModel(viewBuilder);
-			}
-			foreach (var viewConvention in _viewConventions.OfType<ViewConvention<DataViewBuilder>>())
-			{
-				if (viewConvention.SupportedViewTypes.HasFlag(ViewType.ModelDriven))
-					viewConvention.FinalizeModel(viewBuilder);
-			}
+			viewBuilder.ProcessModel(modelOfViewType);
 
 			var fields = new List<DataField>();
 			foreach (var fieldDefinition in viewBuilder.ViewDefinition.FieldDefinitions)
