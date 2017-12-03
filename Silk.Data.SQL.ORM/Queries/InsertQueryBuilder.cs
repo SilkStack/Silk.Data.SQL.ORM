@@ -62,7 +62,7 @@ namespace Silk.Data.SQL.ORM.Queries
 				{
 					queries.Add(new NoResultORMQuery(
 						QueryExpression.Insert(
-							DataModel.Name,
+							DataModel.Schema.EntityTable.TableName,
 							DataModel.Fields
 								.Where(q => q.Storage.Table.IsEntityTable && !q.Storage.IsAutoIncrement)
 								.Select(q => q.Storage.ColumnName).ToArray(),
@@ -80,7 +80,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			{
 				queries.Add(new NoResultORMQuery(
 					QueryExpression.Insert(
-						DataModel.Name,
+						DataModel.Schema.EntityTable.TableName,
 						DataModel.Fields
 							.Where(q => q.Storage.Table.IsEntityTable)
 							.Select(q => q.Storage.ColumnName).ToArray(),
