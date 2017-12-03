@@ -29,7 +29,6 @@ namespace Silk.Data.SQL.ORM
 				new CleanModelNameConvention(),
 				new CopyPrimitiveTypesConvention()
 			};
-		private static EnumerableConversionsConvention _bindEnumerableConversions = new EnumerableConversionsConvention();
 
 		private readonly List<EntityModelBuilder> _entityModelBuilders = new List<EntityModelBuilder>();
 		private readonly DomainDefinition _domainDefinition = new DomainDefinition();
@@ -70,62 +69,22 @@ namespace Silk.Data.SQL.ORM
 			}
 
 			var fieldsChanged = true;
-			var firstPass = true;
 			while (fieldsChanged)
 			{
 				fieldsChanged = false;
 
 				foreach (var entityModelBuilder in _entityModelBuilders)
 				{
-					foreach (var field in entityModelBuilder.ViewDefinition.TargetModel.Fields)
-					{
-						foreach (var viewConvention in _standardViewConventions)
-						{
-							if (!firstPass && !viewConvention.PerformMultiplePasses)
-								continue;
-							if (!viewConvention.SupportedViewTypes.HasFlag(entityModelBuilder.ViewBuilder.Mode))
-								continue;
-							if (viewConvention.SkipIfFieldDefined &&
-								entityModelBuilder.ViewDefinition.FieldDefinitions.Any(q => q.Name == field.Name))
-								continue;
-							viewConvention.MakeModelField(entityModelBuilder.ViewBuilder, field);
-						}
-						foreach (var viewConvention in _dataViewConventions)
-						{
-							if (!firstPass && !viewConvention.PerformMultiplePasses)
-								continue;
-							if (!viewConvention.SupportedViewTypes.HasFlag(entityModelBuilder.ViewBuilder.Mode))
-								continue;
-							if (viewConvention.SkipIfFieldDefined &&
-								entityModelBuilder.ViewDefinition.FieldDefinitions.Any(q => q.Name == field.Name))
-								continue;
-							viewConvention.MakeModelField(entityModelBuilder.ViewBuilder, field);
-						}
-					}
-
-					_bindEnumerableConversions.FinalizeModel(entityModelBuilder.ViewBuilder);
-
-					foreach (var viewConvention in _standardViewConventions)
-					{
-						if (!firstPass && !viewConvention.PerformMultiplePasses)
-							continue;
-						viewConvention.FinalizeModel(entityModelBuilder.ViewBuilder);
-					}
-					foreach (var viewConvention in _dataViewConventions)
-					{
-						if (!firstPass && !viewConvention.PerformMultiplePasses)
-							continue;
-						viewConvention.FinalizeModel(entityModelBuilder.ViewBuilder);
-					}
+					entityModelBuilder.ViewBuilder.ProcessModel(entityModelBuilder.ViewDefinition.TargetModel);
 
 					currentViewDefinitionFieldCounts[entityModelBuilder.ViewDefinition] = entityModelBuilder.ViewDefinition.FieldDefinitions.Count;
 					if (currentViewDefinitionFieldCounts[entityModelBuilder.ViewDefinition] !=
 						viewDefinitionFieldCounts[entityModelBuilder.ViewDefinition])
 						fieldsChanged = true;
 					viewDefinitionFieldCounts[entityModelBuilder.ViewDefinition] = entityModelBuilder.ViewDefinition.FieldDefinitions.Count;
-				}
 
-				firstPass = false;
+					entityModelBuilder.ViewBuilder.IsFirstPass = false;
+				}
 			}
 
 			builtDomain = DataDomain.CreateFromDefinition(_domainDefinition,

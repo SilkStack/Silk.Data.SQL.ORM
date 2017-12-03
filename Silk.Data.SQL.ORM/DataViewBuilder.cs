@@ -9,9 +9,33 @@ namespace Silk.Data.SQL.ORM
 {
 	public class DataViewBuilder : ViewBuilder
 	{
+		private static Type[] _defaultPrimitiveTypes = new[]
+		{
+			typeof(sbyte),
+			typeof(byte),
+			typeof(short),
+			typeof(ushort),
+			typeof(int),
+			typeof(uint),
+			typeof(long),
+			typeof(ulong),
+			typeof(Single),
+			typeof(Double),
+			typeof(Decimal),
+			typeof(string),
+			typeof(Guid),
+			typeof(char),
+			typeof(bool),
+			typeof(DateTime),
+			typeof(TimeSpan)
+		};
+		private static EnumerableConversionsConvention _bindEnumerableConversions
+			= new EnumerableConversionsConvention();
+
 		public DomainDefinition DomainDefinition { get; }
 		public Type EntityType { get; }
 		public Type ProjectionType { get; }
+		public bool IsFirstPass { get; set; } = true;
 
 		public DataViewBuilder(Model sourceModel, Model targetModel, ViewConvention[] viewConventions,
 			DomainDefinition domainDefinition, Type entityType, Type projectionType = null)
@@ -35,6 +59,59 @@ namespace Silk.Data.SQL.ORM
 				var entityTable = schemaDefinition.GetEntityTableDefinition(true);
 				entityTable.Fields.Add(fieldDefinition);
 			}
+		}
+
+		public void ProcessModel(Model model)
+		{
+			foreach (var field in model.Fields)
+			{
+				foreach (var viewConvention in ViewDefinition.ViewConventions
+					.OfType<ViewConvention<ViewBuilder>>())
+				{
+					if (!IsFirstPass && !viewConvention.PerformMultiplePasses)
+						continue;
+					if (!viewConvention.SupportedViewTypes.HasFlag(Mode))
+						continue;
+					if (viewConvention.SkipIfFieldDefined &&
+						ViewDefinition.FieldDefinitions.Any(q => q.Name == field.Name))
+						continue;
+					viewConvention.MakeModelField(this, field);
+				}
+				foreach (var viewConvention in ViewDefinition.ViewConventions
+					.OfType<ViewConvention<DataViewBuilder>>())
+				{
+					if (!IsFirstPass && !viewConvention.PerformMultiplePasses)
+						continue;
+					if (!viewConvention.SupportedViewTypes.HasFlag(Mode))
+						continue;
+					if (viewConvention.SkipIfFieldDefined &&
+						ViewDefinition.FieldDefinitions.Any(q => q.Name == field.Name))
+						continue;
+					viewConvention.MakeModelField(this, field);
+				}
+			}
+
+			_bindEnumerableConversions.FinalizeModel(this);
+
+			foreach (var viewConvention in ViewDefinition.ViewConventions
+					.OfType<ViewConvention<ViewBuilder>>())
+			{
+				if (!IsFirstPass && !viewConvention.PerformMultiplePasses)
+					continue;
+				viewConvention.FinalizeModel(this);
+			}
+			foreach (var viewConvention in ViewDefinition.ViewConventions
+					.OfType<ViewConvention<DataViewBuilder>>())
+			{
+				if (!IsFirstPass && !viewConvention.PerformMultiplePasses)
+					continue;
+				viewConvention.FinalizeModel(this);
+			}
+		}
+
+		public bool IsPrimitiveType(Type type)
+		{
+			return _defaultPrimitiveTypes.Contains(type);
 		}
 
 		private SchemaDefinition GetSchemaDefinition()
