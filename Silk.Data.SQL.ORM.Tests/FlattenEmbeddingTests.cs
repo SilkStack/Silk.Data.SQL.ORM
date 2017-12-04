@@ -129,6 +129,49 @@ namespace Silk.Data.SQL.ORM.Tests
 		}
 
 		[TestMethod]
+		public async Task InsertViewOfObjectWithRequiredProperties()
+		{
+			var dataModel = _conventionModel;
+
+			foreach (var table in dataModel.Schema.Tables)
+			{
+				await table.CreateAsync(TestDb.Provider);
+			}
+
+			try
+			{
+				var modelInstance = new ViewOfObjectWithRequiredProperties
+				{
+					ModelB1 = new SubModelB { Data = 5 },
+					ModelB2 = new SubModelB { Data = 10 }
+				};
+				await dataModel.Insert(modelInstance)
+					.ExecuteAsync(TestDb.Provider);
+
+				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
+					QueryExpression.Select(
+						new[] { QueryExpression.All() },
+						from: QueryExpression.Table(dataModel.Schema.EntityTable.TableName)
+					)))
+				{
+					Assert.IsTrue(queryResult.HasRows);
+					Assert.IsTrue(await queryResult.ReadAsync());
+
+					Assert.AreEqual(modelInstance.Id, queryResult.GetGuid(queryResult.GetOrdinal(nameof(modelInstance.Id))));
+					Assert.IsTrue(queryResult.IsDBNull(queryResult.GetOrdinal("ModelB1_Data")));
+					Assert.AreEqual(modelInstance.ModelB2.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB2_Data")));
+				}
+			}
+			finally
+			{
+				foreach (var table in dataModel.Schema.Tables)
+				{
+					await table.DropAsync(TestDb.Provider);
+				}
+			}
+		}
+
+		[TestMethod]
 		public async Task UpdateConventionModelWithoutNulls()
 		{
 			var dataModel = _conventionModel;
@@ -523,6 +566,27 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 		}
 
+		[TestMethod]
+		public void FlattenPocoInDataModelWithRequiredProperties()
+		{
+			var dataModel = _conventionModel.Domain
+				.GetProjectionModel<ObjectWithPocoSubModels, ViewOfObjectWithRequiredProperties>();
+
+			Assert.AreEqual(3, dataModel.Fields.Length);
+			Assert.IsTrue(dataModel.Fields.Any(
+				q => q.Name == "Id" && q.DataType == typeof(Guid) &&
+					q.ModelBinding.ModelFieldPath.SequenceEqual(new[] { "Id" })
+				));
+			Assert.IsTrue(dataModel.Fields.Any(
+				q => q.Name == "ModelB1_Data" && q.DataType == typeof(int) &&
+					q.ModelBinding.ModelFieldPath.SequenceEqual(new[] { "ModelB1", "Data" })
+				));
+			Assert.IsTrue(dataModel.Fields.Any(
+				q => q.Name == "ModelB2_Data" && q.DataType == typeof(int) &&
+					q.ModelBinding.ModelFieldPath.SequenceEqual(new[] { "ModelB2", "Data" })
+				));
+		}
+
 		private class ObjectWithPocoSubModels
 		{
 			public Guid Id { get; private set; }
@@ -547,6 +611,13 @@ namespace Silk.Data.SQL.ORM.Tests
 		private class SubModelB
 		{
 			public int Data { get; set; }
+		}
+
+		private class ViewOfObjectWithRequiredProperties
+		{
+			public Guid Id { get; private set; }
+			public SubModelB ModelB1 { get; set; }
+			public SubModelB ModelB2 { get; set; }
 		}
 	}
 }

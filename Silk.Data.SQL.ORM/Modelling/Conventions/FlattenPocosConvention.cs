@@ -1,6 +1,5 @@
 ﻿using Silk.Data.Modelling;
 using Silk.Data.Modelling.Conventions;
-using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Modelling.Conventions
 {
@@ -12,16 +11,29 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 
 		public override void MakeModelField(DataViewBuilder viewBuilder, ModelField field)
 		{
+			if (viewBuilder.DomainDefinition.EntityTypes.Contains(field.DataType))
+				return;
+
 			if (viewBuilder.Mode == ViewType.ConventionDerived)
+			{
 				MakeConventionDerivedModelField(viewBuilder, field);
+			}
 			else if (viewBuilder.Mode == ViewType.ModelDriven)
-				MakeModelDrivenModelField(viewBuilder, field);
+			{
+				if (viewBuilder.IsPrimitiveType(field.DataType))
+				{
+					MakeModelDrivenModelField(viewBuilder, field);
+				}
+				else
+				{
+					MakeConventionDerivedModelField(viewBuilder, field);
+				}
+			}
 		}
 
 		private void MakeConventionDerivedModelField(DataViewBuilder viewBuilder, ModelField field)
 		{
-			if (viewBuilder.IsPrimitiveType(field.DataType) ||
-				viewBuilder.DomainDefinition.EntityTypes.Contains(field.DataType))
+			if (viewBuilder.IsPrimitiveType(field.DataType))
 				return;
 
 			viewBuilder.PushModel(field.Name, field.DataTypeModel);
@@ -37,9 +49,6 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 
 		private void MakeModelDrivenModelField(DataViewBuilder viewBuilder, ModelField field)
 		{
-			if (!viewBuilder.IsPrimitiveType(field.DataType))
-				return;
-
 			var modelBindPath = field.Name.Split('_');
 			var sourceField = viewBuilder.FindSourceField(field, modelBindPath,
 				dataType: field.DataType);
