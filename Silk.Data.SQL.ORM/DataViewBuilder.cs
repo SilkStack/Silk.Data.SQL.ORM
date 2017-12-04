@@ -118,7 +118,7 @@ namespace Silk.Data.SQL.ORM
 					if (!viewConvention.SupportedViewTypes.HasFlag(Mode))
 						continue;
 					if (viewConvention.SkipIfFieldDefined &&
-						ViewDefinition.FieldDefinitions.Any(q => q.Name == field.Name))
+						IsFieldDefined(field.Name))
 						continue;
 					viewConvention.MakeModelField(this, field);
 				}
@@ -130,7 +130,7 @@ namespace Silk.Data.SQL.ORM
 					if (!viewConvention.SupportedViewTypes.HasFlag(Mode))
 						continue;
 					if (viewConvention.SkipIfFieldDefined &&
-						ViewDefinition.FieldDefinitions.Any(q => q.Name == field.Name))
+						IsFieldDefined(field.Name))
 						continue;
 					viewConvention.MakeModelField(this, field);
 				}
