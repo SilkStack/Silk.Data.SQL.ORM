@@ -566,27 +566,6 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 		}
 
-		[TestMethod]
-		public void FlattenPocoInDataModelWithRequiredProperties()
-		{
-			var dataModel = _conventionModel.Domain
-				.GetProjectionModel<ObjectWithPocoSubModels, ViewOfObjectWithRequiredProperties>();
-
-			Assert.AreEqual(3, dataModel.Fields.Length);
-			Assert.IsTrue(dataModel.Fields.Any(
-				q => q.Name == "Id" && q.DataType == typeof(Guid) &&
-					q.ModelBinding.ModelFieldPath.SequenceEqual(new[] { "Id" })
-				));
-			Assert.IsTrue(dataModel.Fields.Any(
-				q => q.Name == "ModelB1_Data" && q.DataType == typeof(int) &&
-					q.ModelBinding.ModelFieldPath.SequenceEqual(new[] { "ModelB1", "Data" })
-				));
-			Assert.IsTrue(dataModel.Fields.Any(
-				q => q.Name == "ModelB2_Data" && q.DataType == typeof(int) &&
-					q.ModelBinding.ModelFieldPath.SequenceEqual(new[] { "ModelB2", "Data" })
-				));
-		}
-
 		private class ObjectWithPocoSubModels
 		{
 			public Guid Id { get; private set; }
