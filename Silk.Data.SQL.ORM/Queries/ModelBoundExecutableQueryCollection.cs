@@ -34,8 +34,9 @@ namespace Silk.Data.SQL.ORM.Queries
 		public ModelBoundExecutableQueryCollection<TSource> Insert<TView>(params TView[] sources)
 			where TView : new()
 		{
-			var projectionModel = DataModel.Domain.GetProjectionModel<TSource, TView>();
-			return null;
+			var insertBuilder = new InsertQueryBuilder<TSource>(DataModel);
+			Queries.AddRange(insertBuilder.CreateQuery<TView>(sources));
+			return this;
 		}
 
 		public ModelBoundExecutableQueryCollection<TSource> Update(params TSource[] sources)
