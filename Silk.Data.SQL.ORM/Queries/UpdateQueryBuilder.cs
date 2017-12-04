@@ -58,7 +58,7 @@ namespace Silk.Data.SQL.ORM.Queries
 
 				queries.Add(new NoResultORMQuery(
 					QueryExpression.Update(
-						QueryExpression.Table(DataModel.Name),
+						QueryExpression.Table(DataModel.Schema.EntityTable.TableName),
 						where: sourceWhere,
 						assignments: row.Select(kvp => QueryExpression.Assign(
 							QueryExpression.Column(kvp.Key.Storage.ColumnName),
