@@ -54,7 +54,9 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public ModelBoundExecutableQueryCollection<TSource> Delete(QueryExpression where = null)
 		{
-			return null;
+			var queryuBuilder = new DeleteQueryBuilder<TSource>(DataModel);
+			Queries.AddRange(queryuBuilder.CreateQuery(where));
+			return this;
 		}
 
 		public ModelBoundExecutableQueryCollection<TSource, TSource> Select(
@@ -126,7 +128,9 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult> Delete(QueryExpression where = null)
 		{
-			return null;
+			var queryuBuilder = new DeleteQueryBuilder<TSource>(DataModel);
+			Queries.AddRange(queryuBuilder.CreateQuery(where));
+			return this;
 		}
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult, TSource> Select(
@@ -257,7 +261,9 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2> Delete(QueryExpression where = null)
 		{
-			return null;
+			var queryuBuilder = new DeleteQueryBuilder<TSource>(DataModel);
+			Queries.AddRange(queryuBuilder.CreateQuery(where));
+			return this;
 		}
 
 		public new TransactionQueryCollection<TQueryResult1, TQueryResult2> AsTransaction()
