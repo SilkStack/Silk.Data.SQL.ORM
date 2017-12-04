@@ -1,5 +1,6 @@
 ﻿using Silk.Data.Modelling;
 using Silk.Data.Modelling.Conventions;
+using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Modelling.Conventions
 {
@@ -19,7 +20,8 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 
 		private void MakeConventionDerivedModelField(DataViewBuilder viewBuilder, ModelField field)
 		{
-			if (viewBuilder.IsPrimitiveType(field.DataType))
+			if (viewBuilder.IsPrimitiveType(field.DataType) ||
+				viewBuilder.DomainDefinition.SchemaDefinitions.Any(q => q.EntityType == field.DataType))
 				return;
 
 			viewBuilder.PushModel(field.Name, field.DataTypeModel);
