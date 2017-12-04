@@ -57,7 +57,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			{
 				new NoResultORMQuery(
 					QueryExpression.Delete(
-						QueryExpression.Table(DataModel.Name),
+						QueryExpression.Table(DataModel.Schema.EntityTable.TableName),
 						whereConditions: whereExpr
 					))
 			};
