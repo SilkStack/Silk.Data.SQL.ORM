@@ -43,6 +43,7 @@ namespace Silk.Data.SQL.ORM
 		public void AddDataEntity<TSource>(Action<EntityModel<TSource>> builtDelegate = null)
 			where TSource : new()
 		{
+			_domainDefinition.EntityTypes.Add(typeof(TSource));
 			_entityModelBuilders.Add(new EntityModelBuilder<TSource>(
 				builtDelegate, _allViewConventions, _domainDefinition
 				));
@@ -52,6 +53,7 @@ namespace Silk.Data.SQL.ORM
 			where TSource : new()
 			where TView : new()
 		{
+			_domainDefinition.EntityTypes.Add(typeof(TSource));
 			_entityModelBuilders.Add(new EntityModelBuilder<TSource, TView>(
 				builtDelegate, _allViewConventions, _domainDefinition
 				));

@@ -21,7 +21,7 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 		private void MakeConventionDerivedModelField(DataViewBuilder viewBuilder, ModelField field)
 		{
 			if (viewBuilder.IsPrimitiveType(field.DataType) ||
-				viewBuilder.DomainDefinition.SchemaDefinitions.Any(q => q.EntityType == field.DataType))
+				viewBuilder.DomainDefinition.EntityTypes.Contains(field.DataType))
 				return;
 
 			viewBuilder.PushModel(field.Name, field.DataTypeModel);
