@@ -53,7 +53,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 			_domain = domain;
 		}
 
-		internal void Initalize(string name, Model model,
+		internal virtual void Initalize(string name, Model model,
 			EntitySchema schema, IEnumerable<DataField> fields,
 			Lazy<DataDomain> domain)
 		{
@@ -79,9 +79,6 @@ namespace Silk.Data.SQL.ORM.Modelling
 	public class EntityModel<TSource> : EntityModel, IView<DataField, TSource>
 		where TSource : new()
 	{
-		private readonly Dictionary<Type, EntityModel<TSource>> _cachedSubViews
-			= new Dictionary<Type, EntityModel<TSource>>();
-
 		public new TypedModel<TSource> Model { get; private set; }
 
 		public override Type EntityType => typeof(TSource);
@@ -94,6 +91,12 @@ namespace Silk.Data.SQL.ORM.Modelling
 			: base(name, model, schema, fields, domain)
 		{
 			Model = model;
+		}
+
+		internal override void Initalize(string name, Model model, EntitySchema schema, IEnumerable<DataField> fields, Lazy<DataDomain> domain)
+		{
+			base.Initalize(name, model, schema, fields, domain);
+			Model = model as TypedModel<TSource>;
 		}
 
 		public override void SetModel(Model model)
@@ -117,12 +120,6 @@ namespace Silk.Data.SQL.ORM.Modelling
 					));
 			}
 			return new Model(Name, fields, Model.Metadata);
-		}
-
-		public EntityModel<TSource, TView> GetSubView<TView>()
-			where TView : new()
-		{
-			return Domain.GetProjectionModel<TSource, TView>();
 		}
 
 		public void MapToView(ICollection<ModelReadWriter> modelReadWriters, ICollection<ViewReadWriter> viewReadWriters)

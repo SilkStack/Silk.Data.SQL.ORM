@@ -34,7 +34,7 @@ namespace Silk.Data.SQL.ORM.Queries
 				rows = new List<QueryExpression[]>();
 
 			var sourceReadWriters = sources
-				.Select(q => new ObjectViewReadWriter(projectionModel, q))
+				.Select(q => new ObjectModelReadWriter(projectionModel.Model, q))
 				.ToArray();
 
 			foreach (var sourceReadWriter in sourceReadWriters)
@@ -54,7 +54,7 @@ namespace Silk.Data.SQL.ORM.Queries
 					}
 
 					row.Add(QueryExpression.Value(
-						sourceReadWriter.ReadFromPath<object>(field.ModelBinding.ModelFieldPath)
+						field.ModelBinding.ReadValue<object>(sourceReadWriter)
 						));
 				}
 

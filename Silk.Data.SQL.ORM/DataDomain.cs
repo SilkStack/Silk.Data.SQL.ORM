@@ -144,7 +144,7 @@ namespace Silk.Data.SQL.ORM
 			return _entityModels.OfType<EntityModel<TSource>>().FirstOrDefault();
 		}
 
-		public EntityModel<TSource,TView> GetProjectionModel<TSource, TView>()
+		public EntityModel<TView> GetProjectionModel<TSource, TView>()
 			where TSource : new()
 			where TView : new()
 		{
@@ -154,12 +154,12 @@ namespace Silk.Data.SQL.ORM
 
 			var cacheKey = $"{typeof(TSource).FullName} to {typeof(TView).FullName}";
 			if (_projectionModelCache.TryGetValue(cacheKey, out var ret))
-				return ret as EntityModel<TSource, TView>;
+				return ret as EntityModel<TView>;
 
 			lock (_projectionModelCache)
 			{
 				if (_projectionModelCache.TryGetValue(cacheKey, out ret))
-					return ret as EntityModel<TSource, TView>;
+					return ret as EntityModel<TView>;
 			}
 
 			var modelOfViewType = TypeModeller.GetModelOf<TView>();
@@ -169,7 +169,7 @@ namespace Silk.Data.SQL.ORM
 				typeof(TSource), typeof(TView));
 			viewBuilder.ProcessModel(targetModel);
 
-			ret = new EntityModel<TSource, TView>();
+			ret = new EntityModel<TView>();
 
 			var fields = new List<DataField>();
 			foreach (var fieldDefinition in viewBuilder.ViewDefinition.FieldDefinitions)
@@ -184,12 +184,12 @@ namespace Silk.Data.SQL.ORM
 			}
 
 			var lazyDomainAccessor = new Lazy<DataDomain>(() => this);
-			ret.Initalize(viewBuilder.ViewDefinition.Name, entityModel.Model,
+			ret.Initalize(viewBuilder.ViewDefinition.Name, TypeModeller.GetModelOf<TView>(),
 				entityModel.Schema, fields.ToArray(), lazyDomainAccessor);
 
 			_projectionModelCache.Add(cacheKey, ret);
 
-			return ret as EntityModel<TSource, TView>;
+			return ret as EntityModel<TView>;
 		}
 
 		public EntitySchema GetSchema<TSource>()
