@@ -72,6 +72,8 @@ namespace Silk.Data.SQL.ORM.Modelling
 		}
 
 		public abstract void SetModel(Model model);
+
+		public abstract Model GetAsModel();
 	}
 
 	public class EntityModel<TSource> : EntityModel, IView<DataField, TSource>
@@ -98,6 +100,23 @@ namespace Silk.Data.SQL.ORM.Modelling
 		{
 			Model = model as TypedModel<TSource>;
 			base.Model = model;
+		}
+
+		public override Model GetAsModel()
+		{
+			var fields = new List<ModelField>();
+			foreach (var field in Fields)
+			{
+				var direction = field.ModelBinding.Direction;
+				var canRead = direction.HasFlag(BindingDirection.ModelToView);
+				var canWrite = direction.HasFlag(BindingDirection.ViewToModel);
+				fields.Add(new ModelField(
+					field.Name, canRead, canWrite,
+					field.Metadata.Concat(new object[] { field.Storage }).ToArray(),
+					field.DataType
+					));
+			}
+			return new Model(Name, fields, Model.Metadata);
 		}
 
 		public EntityModel<TSource, TView> GetSubView<TView>()

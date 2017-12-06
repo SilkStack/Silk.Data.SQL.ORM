@@ -17,7 +17,8 @@ namespace Silk.Data.SQL.ORM
 			= new ViewConvention<DataViewBuilder>[]
 			{
 				new IdIsPrimaryKeyConvention(),
-				new FlattenPocosConvention()
+				new FlattenPocosConvention(),
+				new CopyNonPrimitiveTypesWithViewConvention(),
 				//new CleanModelNameConvention(),
 				//new CopySupportedSQLTypesConvention(),
 				//new IdIsPrimaryKeyConvention(),

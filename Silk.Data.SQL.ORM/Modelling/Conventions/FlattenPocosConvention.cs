@@ -41,14 +41,18 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 			if (!viewBuilder.IsPrimitiveType(field.DataType))
 				return;
 
-			var modelBindPath = field.Name.Split('_');
-			var sourceField = viewBuilder.FindSourceField(field, modelBindPath,
-				dataType: field.DataType);
+			var modelBindPaths = ConventionHelpers.GetPaths(field.Name);
+			foreach (var modelBindPath in modelBindPaths)
+			{
+				var sourceField = viewBuilder.FindSourceField(field, modelBindPath,
+					dataType: field.DataType);
 
-			if (sourceField == null)
+				if (sourceField == null)
+					continue;
+
+				viewBuilder.DefineAssignedViewField(sourceField, modelBindPath, field.Name, field.Metadata);
 				return;
-
-			viewBuilder.DefineAssignedViewField(sourceField, modelBindPath, field.Name, field.Metadata);
+			}
 		}
 	}
 }

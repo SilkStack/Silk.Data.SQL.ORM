@@ -117,6 +117,13 @@ namespace Silk.Data.SQL.ORM
 		private readonly DomainDefinition _domainDefinition;
 		private readonly Dictionary<Type, TableDefinition> _entitySchemaDefinitions = new Dictionary<Type, TableDefinition>();
 		private readonly Dictionary<string, EntityModel> _projectionModelCache = new Dictionary<string, EntityModel>();
+		private readonly ViewConvention[] _projectionConventions = new ViewConvention[]
+		{
+			new CopyPrimitiveTypesConvention(),
+			new FlattenSimpleTypesConvention(),
+			new CopyReferencesConvention(),
+			new MapReferenceTypesConvention()
+		};
 
 		public IReadOnlyCollection<EntityModel> DataModels => _entityModels;
 
@@ -156,24 +163,28 @@ namespace Silk.Data.SQL.ORM
 			}
 
 			var modelOfViewType = TypeModeller.GetModelOf<TView>();
-			var viewBuilder = new DataViewBuilder(entityModel.Model, modelOfViewType, _viewConventions,
-				_domainDefinition, typeof(TSource), typeof(TView));
+			var targetModel = entityModel.GetAsModel();
 
-			viewBuilder.ProcessModel(modelOfViewType);
+			var viewBuilder = new DataViewBuilder(modelOfViewType, targetModel, _projectionConventions, _domainDefinition,
+				typeof(TSource), typeof(TView));
+			viewBuilder.ProcessModel(targetModel);
+
+			ret = new EntityModel<TSource, TView>();
 
 			var fields = new List<DataField>();
 			foreach (var fieldDefinition in viewBuilder.ViewDefinition.FieldDefinitions)
 			{
-				var source = entityModel.Fields.FirstOrDefault(q =>
-					q.DataType == fieldDefinition.DataType &&
-					q.ModelBinding.ModelFieldPath.SequenceEqual(fieldDefinition.ModelBinding.ModelFieldPath)
+				var entityField = entityModel.Fields.First(
+					q => q.ModelBinding.ModelFieldPath.SequenceEqual(fieldDefinition.ModelBinding.ModelFieldPath)
 					);
-				if (source != null)
-					fields.Add(source);
+				fields.Add(
+					new DataField(entityField.Storage.ColumnName, fieldDefinition.DataType, fieldDefinition.Metadata.ToArray(),
+						fieldDefinition.ModelBinding, entityField.Storage.Table, entityField.Relationship, fieldDefinition.Name)
+					);
 			}
 
 			var lazyDomainAccessor = new Lazy<DataDomain>(() => this);
-			ret = new EntityModel<TSource, TView>(viewBuilder.ViewDefinition.Name, entityModel.Model,
+			ret.Initalize(viewBuilder.ViewDefinition.Name, entityModel.Model,
 				entityModel.Schema, fields.ToArray(), lazyDomainAccessor);
 
 			_projectionModelCache.Add(cacheKey, ret);

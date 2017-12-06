@@ -23,10 +23,11 @@ namespace Silk.Data.SQL.ORM.Queries
 			if (sources == null || sources.Length < 1)
 				throw new ArgumentException("At least one source must be provided.", nameof(sources));
 
-			var projectionModel = DataModel.Domain.GetProjectionModel<TSource, TView>();
+			var projectionModel = DataModel.Domain
+				.GetProjectionModel<TSource, TView>();
 
 			var queries = new List<ORMQuery>();
-			var autoIncField = projectionModel.PrimaryKeyFields.FirstOrDefault(q => q.Storage.IsAutoIncrement);
+			var autoIncField = DataModel.PrimaryKeyFields.FirstOrDefault(q => q.Storage.IsAutoIncrement);
 			var isBulkInsert = autoIncField == null;
 			List<QueryExpression[]> rows = null;
 			if (isBulkInsert)
@@ -53,7 +54,7 @@ namespace Silk.Data.SQL.ORM.Queries
 					}
 
 					row.Add(QueryExpression.Value(
-						field.ModelBinding.ReadValue<object>(sourceReadWriter)
+						sourceReadWriter.ReadFromPath<object>(field.ModelBinding.ModelFieldPath)
 						));
 				}
 
@@ -65,7 +66,7 @@ namespace Silk.Data.SQL.ORM.Queries
 				{
 					queries.Add(new NoResultORMQuery(
 						QueryExpression.Insert(
-							projectionModel.Schema.EntityTable.TableName,
+							DataModel.Schema.EntityTable.TableName,
 							projectionModel.Fields
 								.Where(q => q.Storage.Table.IsEntityTable && !q.Storage.IsAutoIncrement)
 								.Select(q => q.Storage.ColumnName).ToArray(),
@@ -83,7 +84,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			{
 				queries.Add(new NoResultORMQuery(
 					QueryExpression.Insert(
-						projectionModel.Schema.EntityTable.TableName,
+						DataModel.Schema.EntityTable.TableName,
 						projectionModel.Fields
 							.Where(q => q.Storage.Table.IsEntityTable)
 							.Select(q => q.Storage.ColumnName).ToArray(),

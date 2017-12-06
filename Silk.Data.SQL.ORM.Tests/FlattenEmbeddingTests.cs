@@ -26,15 +26,15 @@ namespace Silk.Data.SQL.ORM.Tests
 					q.ModelBinding.ModelFieldPath.SequenceEqual(new[] { "Id" })
 				));
 			Assert.IsTrue(dataModel.Fields.Any(
-				q => q.Name == "ModelA_Data" && q.DataType == typeof(string) &&
+				q => q.Name == "ModelAData" && q.DataType == typeof(string) &&
 					q.ModelBinding.ModelFieldPath.SequenceEqual(new[] { "ModelA", "Data" })
 				));
 			Assert.IsTrue(dataModel.Fields.Any(
-				q => q.Name == "ModelB1_Data" && q.DataType == typeof(int) &&
+				q => q.Name == "ModelB1Data" && q.DataType == typeof(int) &&
 					q.ModelBinding.ModelFieldPath.SequenceEqual(new[] { "ModelB1", "Data" })
 				));
 			Assert.IsTrue(dataModel.Fields.Any(
-				q => q.Name == "ModelB2_Data" && q.DataType == typeof(int) &&
+				q => q.Name == "ModelB2Data" && q.DataType == typeof(int) &&
 					q.ModelBinding.ModelFieldPath.SequenceEqual(new[] { "ModelB2", "Data" })
 				));
 		}
@@ -70,9 +70,9 @@ namespace Silk.Data.SQL.ORM.Tests
 					Assert.IsTrue(await queryResult.ReadAsync());
 
 					Assert.AreEqual(modelInstance.Id, queryResult.GetGuid(queryResult.GetOrdinal(nameof(modelInstance.Id))));
-					Assert.AreEqual(modelInstance.ModelA.Data, queryResult.GetString(queryResult.GetOrdinal("ModelA_Data")));
-					Assert.AreEqual(modelInstance.ModelB1.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB1_Data")));
-					Assert.AreEqual(modelInstance.ModelB2.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB2_Data")));
+					Assert.AreEqual(modelInstance.ModelA.Data, queryResult.GetString(queryResult.GetOrdinal("ModelAData")));
+					Assert.AreEqual(modelInstance.ModelB1.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB1Data")));
+					Assert.AreEqual(modelInstance.ModelB2.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB2Data")));
 				}
 			}
 			finally
@@ -114,9 +114,9 @@ namespace Silk.Data.SQL.ORM.Tests
 					Assert.IsTrue(await queryResult.ReadAsync());
 
 					Assert.AreEqual(modelInstance.Id, queryResult.GetGuid(queryResult.GetOrdinal(nameof(modelInstance.Id))));
-					Assert.IsTrue(queryResult.IsDBNull(queryResult.GetOrdinal("ModelA_Data")));
-					Assert.AreEqual(modelInstance.ModelB1.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB1_Data")));
-					Assert.AreEqual(modelInstance.ModelB2.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB2_Data")));
+					Assert.IsTrue(queryResult.IsDBNull(queryResult.GetOrdinal("ModelAData")));
+					Assert.AreEqual(modelInstance.ModelB1.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB1Data")));
+					Assert.AreEqual(modelInstance.ModelB2.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB2Data")));
 				}
 			}
 			finally
@@ -158,8 +158,9 @@ namespace Silk.Data.SQL.ORM.Tests
 					Assert.IsTrue(await queryResult.ReadAsync());
 
 					Assert.AreEqual(modelInstance.Id, queryResult.GetGuid(queryResult.GetOrdinal(nameof(modelInstance.Id))));
-					Assert.IsTrue(queryResult.IsDBNull(queryResult.GetOrdinal("ModelB1_Data")));
-					Assert.AreEqual(modelInstance.ModelB2.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB2_Data")));
+					Assert.IsTrue(queryResult.IsDBNull(queryResult.GetOrdinal("ModelAData")));
+					Assert.AreEqual(modelInstance.ModelB1.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB1Data")));
+					Assert.AreEqual(modelInstance.ModelB2.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB2Data")));
 				}
 			}
 			finally
@@ -207,9 +208,9 @@ namespace Silk.Data.SQL.ORM.Tests
 					Assert.IsTrue(await queryResult.ReadAsync());
 
 					Assert.AreEqual(modelInstance.Id, queryResult.GetGuid(queryResult.GetOrdinal(nameof(modelInstance.Id))));
-					Assert.AreEqual(modelInstance.ModelA.Data, queryResult.GetString(queryResult.GetOrdinal("ModelA_Data")));
-					Assert.AreEqual(modelInstance.ModelB1.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB1_Data")));
-					Assert.AreEqual(modelInstance.ModelB2.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB2_Data")));
+					Assert.AreEqual(modelInstance.ModelA.Data, queryResult.GetString(queryResult.GetOrdinal("ModelAData")));
+					Assert.AreEqual(modelInstance.ModelB1.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB1Data")));
+					Assert.AreEqual(modelInstance.ModelB2.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB2Data")));
 				}
 			}
 			finally
@@ -257,9 +258,9 @@ namespace Silk.Data.SQL.ORM.Tests
 					Assert.IsTrue(await queryResult.ReadAsync());
 
 					Assert.AreEqual(modelInstance.Id, queryResult.GetGuid(queryResult.GetOrdinal(nameof(modelInstance.Id))));
-					Assert.IsTrue(queryResult.IsDBNull(queryResult.GetOrdinal("ModelA_Data")));
-					Assert.AreEqual(modelInstance.ModelB1.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB1_Data")));
-					Assert.AreEqual(modelInstance.ModelB2.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB2_Data")));
+					Assert.IsTrue(queryResult.IsDBNull(queryResult.GetOrdinal("ModelAData")));
+					Assert.AreEqual(modelInstance.ModelB1.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB1Data")));
+					Assert.AreEqual(modelInstance.ModelB2.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB2Data")));
 				}
 			}
 			finally
@@ -323,15 +324,15 @@ namespace Silk.Data.SQL.ORM.Tests
 					q.ModelBinding.ModelFieldPath.SequenceEqual(new[] { "Id" })
 				));
 			Assert.IsTrue(dataModel.Fields.Any(
-				q => q.Name == "ModelA_Data" && q.DataType == typeof(string) &&
+				q => q.Name == "ModelAData" && q.DataType == typeof(string) &&
 					q.ModelBinding.ModelFieldPath.SequenceEqual(new[] { "ModelA", "Data" })
 				));
 			Assert.IsTrue(dataModel.Fields.Any(
-				q => q.Name == "ModelB1_Data" && q.DataType == typeof(int) &&
+				q => q.Name == "ModelB1Data" && q.DataType == typeof(int) &&
 					q.ModelBinding.ModelFieldPath.SequenceEqual(new[] { "ModelB1", "Data" })
 				));
 			Assert.IsTrue(dataModel.Fields.Any(
-				q => q.Name == "ModelB2_Data" && q.DataType == typeof(int) &&
+				q => q.Name == "ModelB2Data" && q.DataType == typeof(int) &&
 					q.ModelBinding.ModelFieldPath.SequenceEqual(new[] { "ModelB2", "Data" })
 				));
 		}
@@ -367,9 +368,9 @@ namespace Silk.Data.SQL.ORM.Tests
 					Assert.IsTrue(await queryResult.ReadAsync());
 
 					Assert.AreEqual(modelInstance.Id, queryResult.GetGuid(queryResult.GetOrdinal(nameof(modelInstance.Id))));
-					Assert.AreEqual(modelInstance.ModelA.Data, queryResult.GetString(queryResult.GetOrdinal("ModelA_Data")));
-					Assert.AreEqual(modelInstance.ModelB1.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB1_Data")));
-					Assert.AreEqual(modelInstance.ModelB2.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB2_Data")));
+					Assert.AreEqual(modelInstance.ModelA.Data, queryResult.GetString(queryResult.GetOrdinal("ModelAData")));
+					Assert.AreEqual(modelInstance.ModelB1.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB1Data")));
+					Assert.AreEqual(modelInstance.ModelB2.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB2Data")));
 				}
 			}
 			finally
@@ -411,9 +412,9 @@ namespace Silk.Data.SQL.ORM.Tests
 					Assert.IsTrue(await queryResult.ReadAsync());
 
 					Assert.AreEqual(modelInstance.Id, queryResult.GetGuid(queryResult.GetOrdinal(nameof(modelInstance.Id))));
-					Assert.IsTrue(queryResult.IsDBNull(queryResult.GetOrdinal("ModelA_Data")));
-					Assert.AreEqual(modelInstance.ModelB1.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB1_Data")));
-					Assert.AreEqual(modelInstance.ModelB2.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB2_Data")));
+					Assert.IsTrue(queryResult.IsDBNull(queryResult.GetOrdinal("ModelAData")));
+					Assert.AreEqual(modelInstance.ModelB1.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB1Data")));
+					Assert.AreEqual(modelInstance.ModelB2.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB2Data")));
 				}
 			}
 			finally
@@ -461,9 +462,9 @@ namespace Silk.Data.SQL.ORM.Tests
 					Assert.IsTrue(await queryResult.ReadAsync());
 
 					Assert.AreEqual(modelInstance.Id, queryResult.GetGuid(queryResult.GetOrdinal(nameof(modelInstance.Id))));
-					Assert.AreEqual(modelInstance.ModelA.Data, queryResult.GetString(queryResult.GetOrdinal("ModelA_Data")));
-					Assert.AreEqual(modelInstance.ModelB1.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB1_Data")));
-					Assert.AreEqual(modelInstance.ModelB2.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB2_Data")));
+					Assert.AreEqual(modelInstance.ModelA.Data, queryResult.GetString(queryResult.GetOrdinal("ModelAData")));
+					Assert.AreEqual(modelInstance.ModelB1.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB1Data")));
+					Assert.AreEqual(modelInstance.ModelB2.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB2Data")));
 				}
 			}
 			finally
@@ -511,9 +512,9 @@ namespace Silk.Data.SQL.ORM.Tests
 					Assert.IsTrue(await queryResult.ReadAsync());
 
 					Assert.AreEqual(modelInstance.Id, queryResult.GetGuid(queryResult.GetOrdinal(nameof(modelInstance.Id))));
-					Assert.IsTrue(queryResult.IsDBNull(queryResult.GetOrdinal("ModelA_Data")));
-					Assert.AreEqual(modelInstance.ModelB1.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB1_Data")));
-					Assert.AreEqual(modelInstance.ModelB2.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB2_Data")));
+					Assert.IsTrue(queryResult.IsDBNull(queryResult.GetOrdinal("ModelAData")));
+					Assert.AreEqual(modelInstance.ModelB1.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB1Data")));
+					Assert.AreEqual(modelInstance.ModelB2.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB2Data")));
 				}
 			}
 			finally
@@ -577,9 +578,9 @@ namespace Silk.Data.SQL.ORM.Tests
 		private class ObjectWithPocoSubModelsView
 		{
 			public Guid Id { get; private set; }
-			public string ModelA_Data { get; set; }
-			public int ModelB1_Data { get; set; }
-			public int ModelB2_Data { get; set; }
+			public string ModelAData { get; set; }
+			public int ModelB1Data { get; set; }
+			public int ModelB2Data { get; set; }
 		}
 
 		private class SubModelA

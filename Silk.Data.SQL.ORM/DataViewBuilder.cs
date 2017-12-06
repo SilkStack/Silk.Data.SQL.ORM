@@ -65,7 +65,7 @@ namespace Silk.Data.SQL.ORM
 		{
 			if (_prefixStack.Count > 0)
 			{
-				viewFieldName = $"{string.Join("_", _prefixStack)}_{viewFieldName}";
+				viewFieldName = $"{string.Join("", _prefixStack)}{viewFieldName}";
 				binding.ModelFieldPath = _prefixStack.Concat(binding.ModelFieldPath).ToArray();
 			}
 
@@ -86,7 +86,7 @@ namespace Silk.Data.SQL.ORM
 		{
 			if (_prefixStack.Count > 0)
 			{
-				viewFieldName = $"{string.Join("_", _prefixStack)}_{viewFieldName}";
+				viewFieldName = $"{string.Join("", _prefixStack)}{viewFieldName}";
 			}
 
 			return base.IsFieldDefined(viewFieldName);
