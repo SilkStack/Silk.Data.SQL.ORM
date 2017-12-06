@@ -173,6 +173,50 @@ namespace Silk.Data.SQL.ORM.Tests
 		}
 
 		[TestMethod]
+		public async Task InsertViewOfObjectWithRequiredPropertiesAsViews()
+		{
+			var dataModel = _conventionModel;
+
+			foreach (var table in dataModel.Schema.Tables)
+			{
+				await table.CreateAsync(TestDb.Provider);
+			}
+
+			try
+			{
+				var modelInstance = new ViewOfObjectWithRequiredPropertiesAsViews
+				{
+					ModelB1 = new SubModelBView { Data = 5 },
+					ModelB2 = new SubModelBView { Data = 10 }
+				};
+				await dataModel.Insert(modelInstance)
+					.ExecuteAsync(TestDb.Provider);
+
+				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
+					QueryExpression.Select(
+						new[] { QueryExpression.All() },
+						from: QueryExpression.Table(dataModel.Schema.EntityTable.TableName)
+					)))
+				{
+					Assert.IsTrue(queryResult.HasRows);
+					Assert.IsTrue(await queryResult.ReadAsync());
+
+					Assert.AreEqual(modelInstance.Id, queryResult.GetGuid(queryResult.GetOrdinal(nameof(modelInstance.Id))));
+					Assert.IsTrue(queryResult.IsDBNull(queryResult.GetOrdinal("ModelAData")));
+					Assert.AreEqual(modelInstance.ModelB1.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB1Data")));
+					Assert.AreEqual(modelInstance.ModelB2.Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB2Data")));
+				}
+			}
+			finally
+			{
+				foreach (var table in dataModel.Schema.Tables)
+				{
+					await table.DropAsync(TestDb.Provider);
+				}
+			}
+		}
+
+		[TestMethod]
 		public async Task UpdateConventionModelWithoutNulls()
 		{
 			var dataModel = _conventionModel;
@@ -598,6 +642,18 @@ namespace Silk.Data.SQL.ORM.Tests
 			public Guid Id { get; private set; }
 			public SubModelB ModelB1 { get; set; }
 			public SubModelB ModelB2 { get; set; }
+		}
+
+		private class ViewOfObjectWithRequiredPropertiesAsViews
+		{
+			public Guid Id { get; private set; }
+			public SubModelBView ModelB1 { get; set; }
+			public SubModelBView ModelB2 { get; set; }
+		}
+
+		private class SubModelBView
+		{
+			public int Data { get; set; }
 		}
 	}
 }
