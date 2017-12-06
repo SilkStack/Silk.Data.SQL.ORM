@@ -217,6 +217,51 @@ namespace Silk.Data.SQL.ORM.Tests
 		}
 
 		[TestMethod]
+		public async Task InsertFlatView()
+		{
+			var dataModel = _conventionModel;
+
+			foreach (var table in dataModel.Schema.Tables)
+			{
+				await table.CreateAsync(TestDb.Provider);
+			}
+
+			try
+			{
+				var modelInstance = new ObjectWithPocoSubModelsView
+				{
+					ModelAData = "Hello World",
+					ModelB1Data = 5,
+					ModelB2Data = 10
+				};
+				await dataModel.Insert(modelInstance)
+					.ExecuteAsync(TestDb.Provider);
+
+				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
+					QueryExpression.Select(
+						new[] { QueryExpression.All() },
+						from: QueryExpression.Table(dataModel.Schema.EntityTable.TableName)
+					)))
+				{
+					Assert.IsTrue(queryResult.HasRows);
+					Assert.IsTrue(await queryResult.ReadAsync());
+
+					Assert.AreEqual(modelInstance.Id, queryResult.GetGuid(queryResult.GetOrdinal(nameof(modelInstance.Id))));
+					Assert.AreEqual(modelInstance.ModelAData, queryResult.GetString(queryResult.GetOrdinal("ModelAData")));
+					Assert.AreEqual(modelInstance.ModelB1Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB1Data")));
+					Assert.AreEqual(modelInstance.ModelB2Data, queryResult.GetInt32(queryResult.GetOrdinal("ModelB2Data")));
+				}
+			}
+			finally
+			{
+				foreach (var table in dataModel.Schema.Tables)
+				{
+					await table.DropAsync(TestDb.Provider);
+				}
+			}
+		}
+
+		[TestMethod]
 		public async Task UpdateConventionModelWithoutNulls()
 		{
 			var dataModel = _conventionModel;
