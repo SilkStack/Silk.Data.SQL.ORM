@@ -403,6 +403,39 @@ namespace Silk.Data.SQL.ORM.Tests
 		}
 
 		[TestMethod]
+		public async Task SelectFlattenedPocoWithConventionsWithoutWhere()
+		{
+			var dataModel = _conventionModel;
+
+			foreach (var table in dataModel.Schema.Tables)
+			{
+				await table.CreateAsync(TestDb.Provider);
+			}
+
+			try
+			{
+				var modelInstance = new ObjectWithPocoSubModels
+				{
+					ModelA = new SubModelA { Data = "Hello World" },
+					ModelB1 = new SubModelB { Data = 5 },
+					ModelB2 = new SubModelB { Data = 10 }
+				};
+				await dataModel.Insert(modelInstance)
+					.ExecuteAsync(TestDb.Provider);
+
+				var selectResults = await dataModel.Select()
+					.ExecuteAsync(TestDb.Provider);
+			}
+			finally
+			{
+				foreach (var table in dataModel.Schema.Tables)
+				{
+					await table.DropAsync(TestDb.Provider);
+				}
+			}
+		}
+
+		[TestMethod]
 		public void FlattenPocoInDataModelWithViewModel()
 		{
 			var dataModel = _viewModelModel;
