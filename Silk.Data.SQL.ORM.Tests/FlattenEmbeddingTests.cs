@@ -403,7 +403,7 @@ namespace Silk.Data.SQL.ORM.Tests
 		}
 
 		[TestMethod]
-		public async Task SelectFlattenedPocoWithConventionsWithoutWhere()
+		public async Task SelectInflatedPocoWithConventionsWithoutWhere()
 		{
 			var dataModel = _conventionModel;
 
@@ -424,6 +424,45 @@ namespace Silk.Data.SQL.ORM.Tests
 					.ExecuteAsync(TestDb.Provider);
 
 				var selectResults = await dataModel.Select()
+					.ExecuteAsync(TestDb.Provider);
+
+				Assert.AreEqual(1, selectResults.Count);
+				var selectedInstance = selectResults.First();
+				Assert.AreEqual(modelInstance.ModelA.Data, selectedInstance.ModelA.Data);
+				Assert.AreEqual(modelInstance.ModelB1.Data, selectedInstance.ModelB1.Data);
+				Assert.AreEqual(modelInstance.ModelB2.Data, selectedInstance.ModelB2.Data);
+			}
+			finally
+			{
+				foreach (var table in dataModel.Schema.Tables)
+				{
+					await table.DropAsync(TestDb.Provider);
+				}
+			}
+		}
+
+		[TestMethod]
+		public async Task SelectFlatPocoWithConventionsWithoutWhere()
+		{
+			var dataModel = _conventionModel;
+
+			foreach (var table in dataModel.Schema.Tables)
+			{
+				await table.CreateAsync(TestDb.Provider);
+			}
+
+			try
+			{
+				var modelInstance = new ObjectWithPocoSubModels
+				{
+					ModelA = new SubModelA { Data = "Hello World" },
+					ModelB1 = new SubModelB { Data = 5 },
+					ModelB2 = new SubModelB { Data = 10 }
+				};
+				await dataModel.Insert(modelInstance)
+					.ExecuteAsync(TestDb.Provider);
+
+				var selectResults = await dataModel.Select<ObjectWithPocoSubModelsView>()
 					.ExecuteAsync(TestDb.Provider);
 			}
 			finally
