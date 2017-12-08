@@ -179,7 +179,8 @@ namespace Silk.Data.SQL.ORM
 					q => q.Name == fieldDefinition.Name
 					);
 				fields.Add(
-					new DataField(entityField.Storage.ColumnName, fieldDefinition.DataType, fieldDefinition.Metadata.ToArray(),
+					new DataField(entityField.Storage.ColumnName, fieldDefinition.DataType,
+						fieldDefinition.Metadata.Concat(entityField.Metadata).ToArray(),
 						fieldDefinition.ModelBinding, entityField.Storage.Table, entityField.Relationship, fieldDefinition.Name)
 					);
 			}
