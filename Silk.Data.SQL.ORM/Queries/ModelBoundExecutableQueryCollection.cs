@@ -61,6 +61,14 @@ namespace Silk.Data.SQL.ORM.Queries
 			return this;
 		}
 
+		public ModelBoundExecutableQueryCollection<TSource> Delete<TView>(params TView[] sources)
+			where TView : new()
+		{
+			var queryuBuilder = new DeleteQueryBuilder<TSource>(DataModel);
+			Queries.AddRange(queryuBuilder.CreateQuery(sources));
+			return this;
+		}
+
 		public ModelBoundExecutableQueryCollection<TSource> Delete(QueryExpression where = null)
 		{
 			var queryuBuilder = new DeleteQueryBuilder<TSource>(DataModel);
@@ -147,6 +155,14 @@ namespace Silk.Data.SQL.ORM.Queries
 		{
 			var queryuBuilder = new DeleteQueryBuilder<TSource>(DataModel);
 			Queries.AddRange(queryuBuilder.CreateQuery(where));
+			return this;
+		}
+
+		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult> Delete<TView>(params TView[] sources)
+			where TView : new()
+		{
+			var queryuBuilder = new DeleteQueryBuilder<TSource>(DataModel);
+			Queries.AddRange(queryuBuilder.CreateQuery(sources));
 			return this;
 		}
 
@@ -278,6 +294,14 @@ namespace Silk.Data.SQL.ORM.Queries
 		}
 
 		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2> Delete(params TSource[] sources)
+		{
+			var queryuBuilder = new DeleteQueryBuilder<TSource>(DataModel);
+			Queries.AddRange(queryuBuilder.CreateQuery(sources));
+			return this;
+		}
+
+		public new ModelBoundExecutableQueryCollection<TSource, TQueryResult1, TQueryResult2> Delete<TView>(params TView[] sources)
+			where TView : new()
 		{
 			var queryuBuilder = new DeleteQueryBuilder<TSource>(DataModel);
 			Queries.AddRange(queryuBuilder.CreateQuery(sources));

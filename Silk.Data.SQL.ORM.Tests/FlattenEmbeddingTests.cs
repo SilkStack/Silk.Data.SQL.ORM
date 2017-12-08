@@ -549,6 +549,127 @@ namespace Silk.Data.SQL.ORM.Tests
 		}
 
 		[TestMethod]
+		public async Task DeleteViewOfObjectWithRequiredProperties()
+		{
+			var dataModel = _conventionModel;
+
+			foreach (var table in dataModel.Schema.Tables)
+			{
+				await table.CreateAsync(TestDb.Provider);
+			}
+
+			try
+			{
+				var modelInstance = new ViewOfObjectWithRequiredProperties
+				{
+					ModelB1 = new SubModelB { Data = 5 },
+					ModelB2 = new SubModelB { Data = 10 }
+				};
+				await dataModel.Insert(modelInstance)
+					.ExecuteAsync(TestDb.Provider);
+				await dataModel.Delete(modelInstance)
+					.ExecuteAsync(TestDb.Provider);
+
+				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
+					QueryExpression.Select(
+						new[] { QueryExpression.All() },
+						from: QueryExpression.Table(dataModel.Schema.EntityTable.TableName)
+					)))
+				{
+					Assert.IsFalse(queryResult.HasRows);
+				}
+			}
+			finally
+			{
+				foreach (var table in dataModel.Schema.Tables)
+				{
+					await table.DropAsync(TestDb.Provider);
+				}
+			}
+		}
+
+		[TestMethod]
+		public async Task DeleteViewOfObjectWithRequiredPropertiesAsViews()
+		{
+			var dataModel = _conventionModel;
+
+			foreach (var table in dataModel.Schema.Tables)
+			{
+				await table.CreateAsync(TestDb.Provider);
+			}
+
+			try
+			{
+				var modelInstance = new ViewOfObjectWithRequiredPropertiesAsViews
+				{
+					ModelB1 = new SubModelBView { Data = 5 },
+					ModelB2 = new SubModelBView { Data = 10 }
+				};
+				await dataModel.Insert(modelInstance)
+					.ExecuteAsync(TestDb.Provider);
+				await dataModel.Delete(modelInstance)
+					.ExecuteAsync(TestDb.Provider);
+
+				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
+					QueryExpression.Select(
+						new[] { QueryExpression.All() },
+						from: QueryExpression.Table(dataModel.Schema.EntityTable.TableName)
+					)))
+				{
+					Assert.IsFalse(queryResult.HasRows);
+				}
+			}
+			finally
+			{
+				foreach (var table in dataModel.Schema.Tables)
+				{
+					await table.DropAsync(TestDb.Provider);
+				}
+			}
+		}
+
+		[TestMethod]
+		public async Task DeleteFlatViewOfConventionModel()
+		{
+			var dataModel = _conventionModel;
+
+			foreach (var table in dataModel.Schema.Tables)
+			{
+				await table.CreateAsync(TestDb.Provider);
+			}
+
+			try
+			{
+				var modelInstance = new ObjectWithPocoSubModelsView
+				{
+					ModelAData = "Hello World",
+					ModelB1Data = 5,
+					ModelB2Data = 10
+				};
+				await dataModel.Insert(modelInstance)
+					.ExecuteAsync(TestDb.Provider);
+				await dataModel.Delete(modelInstance)
+					.ExecuteAsync(TestDb.Provider);
+
+				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
+					QueryExpression.Select(
+						new[] { QueryExpression.All() },
+						from: QueryExpression.Table(dataModel.Schema.EntityTable.TableName)
+					)))
+				{
+					Assert.IsFalse(queryResult.HasRows);
+				}
+			}
+			finally
+			{
+				foreach (var table in dataModel.Schema.Tables)
+				{
+					await table.DropAsync(TestDb.Provider);
+				}
+			}
+		}
+
+		[TestMethod]
 		public async Task SelectInflatedPocoWithConventions()
 		{
 			var dataModel = _conventionModel;
@@ -1123,6 +1244,127 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelA = new SubModelA { Data = "Hello World" },
 					ModelB1 = new SubModelB { Data = 5 },
 					ModelB2 = new SubModelB { Data = 10 }
+				};
+				await dataModel.Insert(modelInstance)
+					.ExecuteAsync(TestDb.Provider);
+				await dataModel.Delete(modelInstance)
+					.ExecuteAsync(TestDb.Provider);
+
+				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
+					QueryExpression.Select(
+						new[] { QueryExpression.All() },
+						from: QueryExpression.Table(dataModel.Schema.EntityTable.TableName)
+					)))
+				{
+					Assert.IsFalse(queryResult.HasRows);
+				}
+			}
+			finally
+			{
+				foreach (var table in dataModel.Schema.Tables)
+				{
+					await table.DropAsync(TestDb.Provider);
+				}
+			}
+		}
+
+		[TestMethod]
+		public async Task DeleteViewModelModelOfObjectWithRequiredProperties()
+		{
+			var dataModel = _viewModelModel;
+
+			foreach (var table in dataModel.Schema.Tables)
+			{
+				await table.CreateAsync(TestDb.Provider);
+			}
+
+			try
+			{
+				var modelInstance = new ViewOfObjectWithRequiredProperties
+				{
+					ModelB1 = new SubModelB { Data = 5 },
+					ModelB2 = new SubModelB { Data = 10 }
+				};
+				await dataModel.Insert(modelInstance)
+					.ExecuteAsync(TestDb.Provider);
+				await dataModel.Delete(modelInstance)
+					.ExecuteAsync(TestDb.Provider);
+
+				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
+					QueryExpression.Select(
+						new[] { QueryExpression.All() },
+						from: QueryExpression.Table(dataModel.Schema.EntityTable.TableName)
+					)))
+				{
+					Assert.IsFalse(queryResult.HasRows);
+				}
+			}
+			finally
+			{
+				foreach (var table in dataModel.Schema.Tables)
+				{
+					await table.DropAsync(TestDb.Provider);
+				}
+			}
+		}
+
+		[TestMethod]
+		public async Task DeleteViewModelModelOfObjectWithRequiredPropertiesAsViews()
+		{
+			var dataModel = _viewModelModel;
+
+			foreach (var table in dataModel.Schema.Tables)
+			{
+				await table.CreateAsync(TestDb.Provider);
+			}
+
+			try
+			{
+				var modelInstance = new ViewOfObjectWithRequiredPropertiesAsViews
+				{
+					ModelB1 = new SubModelBView { Data = 5 },
+					ModelB2 = new SubModelBView { Data = 10 }
+				};
+				await dataModel.Insert(modelInstance)
+					.ExecuteAsync(TestDb.Provider);
+				await dataModel.Delete(modelInstance)
+					.ExecuteAsync(TestDb.Provider);
+
+				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
+					QueryExpression.Select(
+						new[] { QueryExpression.All() },
+						from: QueryExpression.Table(dataModel.Schema.EntityTable.TableName)
+					)))
+				{
+					Assert.IsFalse(queryResult.HasRows);
+				}
+			}
+			finally
+			{
+				foreach (var table in dataModel.Schema.Tables)
+				{
+					await table.DropAsync(TestDb.Provider);
+				}
+			}
+		}
+
+		[TestMethod]
+		public async Task DeleteFlatViewOfViewModelModel()
+		{
+			var dataModel = _viewModelModel;
+
+			foreach (var table in dataModel.Schema.Tables)
+			{
+				await table.CreateAsync(TestDb.Provider);
+			}
+
+			try
+			{
+				var modelInstance = new ObjectWithPocoSubModelsView
+				{
+					ModelAData = "Hello World",
+					ModelB1Data = 5,
+					ModelB2Data = 10
 				};
 				await dataModel.Insert(modelInstance)
 					.ExecuteAsync(TestDb.Provider);

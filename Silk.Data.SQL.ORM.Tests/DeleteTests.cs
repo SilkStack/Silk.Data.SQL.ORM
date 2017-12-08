@@ -116,7 +116,7 @@ namespace Silk.Data.SQL.ORM.Tests
 				};
 				await dataModel.Insert(sourceInstances)
 					.ExecuteAsync(TestDb.Provider);
-				await dataModel.Delete(
+				await dataModel.Delete((QueryExpression)
 					QueryExpression.Compare(
 						QueryExpression.Column("Id"),
 						ComparisonOperator.AreEqual,

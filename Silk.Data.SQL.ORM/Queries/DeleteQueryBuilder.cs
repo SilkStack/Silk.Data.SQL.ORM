@@ -19,22 +19,34 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public ICollection<ORMQuery> CreateQuery(params TSource[] sources)
 		{
+			return CreateQuery(DataModel, sources);
+		}
+
+		public ICollection<ORMQuery> CreateQuery<TView>(params TView[] sources)
+			where TView : new()
+		{
+			return CreateQuery(DataModel.Domain.GetProjectionModel<TSource,TView>(), sources);
+		}
+
+		public ICollection<ORMQuery> CreateQuery<TView>(EntityModel<TView> model, params TView[] sources)
+			where TView : new()
+		{
 			if (sources == null || sources.Length < 1)
 				throw new ArgumentException("At least one source must be provided.", nameof(sources));
 
-			if (DataModel.PrimaryKeyFields == null ||
-				DataModel.PrimaryKeyFields.Length == 0)
+			if (model.PrimaryKeyFields == null ||
+				model.PrimaryKeyFields.Length == 0)
 				throw new InvalidOperationException("A primary key is required.");
 
 			var sourceReadWriters = sources
-				.Select(q => new ObjectModelReadWriter(DataModel.Model, q))
+				.Select(q => new ObjectModelReadWriter(model.Model, q))
 				.ToArray();
 
 			QueryExpression whereExpr = null;
 			foreach (var sourceReadWriter in sourceReadWriters)
 			{
 				QueryExpression sourceWhere = null;
-				foreach (var primaryKey in DataModel.PrimaryKeyFields)
+				foreach (var primaryKey in model.PrimaryKeyFields)
 				{
 					var pkCondition = QueryExpression.Compare(
 						QueryExpression.Column(primaryKey.Storage.ColumnName),
@@ -57,7 +69,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			{
 				new NoResultORMQuery(
 					QueryExpression.Delete(
-						QueryExpression.Table(DataModel.Schema.EntityTable.TableName),
+						QueryExpression.Table(model.Schema.EntityTable.TableName),
 						whereConditions: whereExpr
 					))
 			};
