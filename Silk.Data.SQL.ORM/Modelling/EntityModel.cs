@@ -190,6 +190,13 @@ namespace Silk.Data.SQL.ORM.Modelling
 				.Update(sources);
 		}
 
+		public ModelBoundExecutableQueryCollection<TSource> Update<TView>(params TView[] sources)
+			where TView : new()
+		{
+			return new ModelBoundExecutableQueryCollection<TSource>(this)
+				.Update(sources);
+		}
+
 		public ModelBoundExecutableQueryCollection<TSource> Delete(params TSource[] sources)
 		{
 			return new ModelBoundExecutableQueryCollection<TSource>(this)
