@@ -111,8 +111,7 @@ namespace Silk.Data.SQL.ORM
 		{
 			foreach (var field in model.Fields)
 			{
-				foreach (var viewConvention in ViewDefinition.ViewConventions
-					.OfType<ViewConvention<ViewBuilder>>())
+				foreach (var viewConvention in ViewDefinition.ViewConventions)
 				{
 					if (!IsFirstPass && !viewConvention.PerformMultiplePasses)
 						continue;
@@ -121,37 +120,24 @@ namespace Silk.Data.SQL.ORM
 					if (viewConvention.SkipIfFieldDefined &&
 						IsFieldDefined(field.Name))
 						continue;
-					viewConvention.MakeModelField(this, field);
-				}
-				foreach (var viewConvention in ViewDefinition.ViewConventions
-					.OfType<ViewConvention<DataViewBuilder>>())
-				{
-					if (!IsFirstPass && !viewConvention.PerformMultiplePasses)
-						continue;
-					if (!viewConvention.SupportedViewTypes.HasFlag(Mode))
-						continue;
-					if (viewConvention.SkipIfFieldDefined &&
-						IsFieldDefined(field.Name))
-						continue;
-					viewConvention.MakeModelField(this, field);
+
+					if (viewConvention is ViewConvention<ViewBuilder> vbViewConvention)
+						vbViewConvention.MakeModelField(this, field);
+					else if (viewConvention is ViewConvention<DataViewBuilder> dvbViewConvention)
+						dvbViewConvention.MakeModelField(this, field);
 				}
 			}
 
 			_bindEnumerableConversions.FinalizeModel(this);
 
-			foreach (var viewConvention in ViewDefinition.ViewConventions
-					.OfType<ViewConvention<ViewBuilder>>())
+			foreach (var viewConvention in ViewDefinition.ViewConventions)
 			{
 				if (!IsFirstPass && !viewConvention.PerformMultiplePasses)
 					continue;
-				viewConvention.FinalizeModel(this);
-			}
-			foreach (var viewConvention in ViewDefinition.ViewConventions
-					.OfType<ViewConvention<DataViewBuilder>>())
-			{
-				if (!IsFirstPass && !viewConvention.PerformMultiplePasses)
-					continue;
-				viewConvention.FinalizeModel(this);
+				if (viewConvention is ViewConvention<ViewBuilder> vbViewConvention)
+					vbViewConvention.FinalizeModel(this);
+				else if (viewConvention is ViewConvention<DataViewBuilder> dvbViewConvention)
+					dvbViewConvention.FinalizeModel(this);
 			}
 		}
 

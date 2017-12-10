@@ -13,32 +13,28 @@ namespace Silk.Data.SQL.ORM
 	/// </summary>
 	public class DataDomainBuilder
 	{
-		private static ViewConvention<DataViewBuilder>[] _dataViewConventions
-			= new ViewConvention<DataViewBuilder>[]
-			{
-				new IdIsPrimaryKeyConvention(),
-				new FlattenPocosConvention(),
-				new CopyNonPrimitiveTypesWithViewConvention(),
-				//new CleanModelNameConvention(),
-				//new CopySupportedSQLTypesConvention(),
-				//new IdIsPrimaryKeyConvention(),
-				//new CopyPrimaryKeyOfTypesWithSchemaConvention(),
-				//new ProjectReferenceKeysConvention()
-			};
-		private static ViewConvention<ViewBuilder>[] _standardViewConventions
-			= new ViewConvention<ViewBuilder>[]
+		private static ViewConvention[] _defaultViewConventions
+			= new ViewConvention[]
 			{
 				new CleanModelNameConvention(),
-				new CopyPrimitiveTypesConvention()
+				new CopyPrimitiveTypesConvention(),
+				new IdIsPrimaryKeyConvention(),
+				new FlattenPocosConvention(),
+				new CopyNonPrimitiveTypesWithViewConvention()
 			};
 
 		private readonly List<EntityModelBuilder> _entityModelBuilders = new List<EntityModelBuilder>();
 		private readonly DomainDefinition _domainDefinition = new DomainDefinition();
-		private readonly ViewConvention[] _allViewConventions = _standardViewConventions
-			.Concat<ViewConvention>(_dataViewConventions).ToArray();
+		private readonly ViewConvention[] _viewConventions;
 
 		public DataDomainBuilder()
+			: this(_defaultViewConventions)
 		{
+		}
+
+		public DataDomainBuilder(IEnumerable<ViewConvention> viewConventions)
+		{
+			_viewConventions = viewConventions.ToArray();
 		}
 
 		public void AddDataEntity<TSource>(Action<EntityModel<TSource>> builtDelegate = null)
@@ -46,7 +42,7 @@ namespace Silk.Data.SQL.ORM
 		{
 			_domainDefinition.EntityTypes.Add(typeof(TSource));
 			_entityModelBuilders.Add(new EntityModelBuilder<TSource>(
-				builtDelegate, _allViewConventions, _domainDefinition
+				builtDelegate, _viewConventions, _domainDefinition
 				));
 		}
 
@@ -56,7 +52,7 @@ namespace Silk.Data.SQL.ORM
 		{
 			_domainDefinition.EntityTypes.Add(typeof(TSource));
 			_entityModelBuilders.Add(new EntityModelBuilder<TSource, TView>(
-				builtDelegate, _allViewConventions, _domainDefinition
+				builtDelegate, _viewConventions, _domainDefinition
 				));
 		}
 
@@ -91,8 +87,7 @@ namespace Silk.Data.SQL.ORM
 				}
 			}
 
-			builtDomain = DataDomain.CreateFromDefinition(_domainDefinition,
-				_standardViewConventions.Concat<ViewConvention>(_dataViewConventions));
+			builtDomain = DataDomain.CreateFromDefinition(_domainDefinition, _viewConventions);
 
 			foreach (var entityModelBuilder in _entityModelBuilders)
 			{
