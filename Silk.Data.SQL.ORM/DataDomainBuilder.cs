@@ -19,7 +19,8 @@ namespace Silk.Data.SQL.ORM
 				new CleanModelNameConvention(),
 				new CopyPrimitiveTypesConvention(),
 				new IdIsPrimaryKeyConvention(),
-				new FlattenPocosConvention(),
+				new ManyToOneConvention(),
+				new FlattenPocosConvention()
 			};
 
 		private readonly List<EntityModelBuilder> _entityModelBuilders = new List<EntityModelBuilder>();

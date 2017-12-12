@@ -93,6 +93,27 @@ namespace Silk.Data.SQL.ORM
 			return base.IsFieldDefined(viewFieldName);
 		}
 
+		public void UndefineField(ViewFieldDefinition fieldDefinition)
+		{
+			ViewDefinition.FieldDefinitions.Remove(fieldDefinition);
+
+			if (!DomainDefinition.IsReadOnly)
+			{
+				var schemaDefinition = GetSchemaDefinition();
+				var entityTable = schemaDefinition.GetEntityTableDefinition(true);
+				entityTable.Fields.Remove(fieldDefinition);
+			}
+		}
+
+		public ViewFieldDefinition GetDefinedField(string viewFieldName)
+		{
+			if (_prefixStack.Count > 0)
+			{
+				viewFieldName = $"{string.Join("", _prefixStack)}{viewFieldName}";
+			}
+			return ViewDefinition.FieldDefinitions.FirstOrDefault(q => q.Name == viewFieldName);
+		}
+
 		public override FieldInfo FindSourceField(ModelField modelField, string name, bool caseSenitive = true, Type dataType = null)
 		{
 			if (_modelStack.Count > 0)
@@ -146,7 +167,7 @@ namespace Silk.Data.SQL.ORM
 			return _defaultPrimitiveTypes.Contains(type);
 		}
 
-		private SchemaDefinition GetSchemaDefinition()
+		public SchemaDefinition GetSchemaDefinition()
 		{
 			var schemaDefinition = GetSchemaDefinitionFor(EntityType);
 			if (schemaDefinition == null)
@@ -160,7 +181,7 @@ namespace Silk.Data.SQL.ORM
 			return schemaDefinition;
 		}
 
-		private SchemaDefinition GetSchemaDefinitionFor(Type entityType)
+		public SchemaDefinition GetSchemaDefinitionFor(Type entityType)
 		{
 			return DomainDefinition
 				.SchemaDefinitions.FirstOrDefault(q => q.EntityType == entityType);
