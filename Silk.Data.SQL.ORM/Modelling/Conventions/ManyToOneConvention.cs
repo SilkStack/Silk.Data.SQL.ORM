@@ -62,6 +62,7 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 					RelationshipField = primaryKeyField.Name,
 					RelationshipType = RelationshipType.ManyToOne
 				});
+				viewField.Metadata.Add(new IsNullableAttribute(true));
 			}
 		}
 
@@ -101,6 +102,7 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 					RelationshipField = primaryKeyField.Name,
 					RelationshipType = RelationshipType.ManyToOne
 				});
+				viewField.Metadata.Add(new IsNullableAttribute(true));
 			}
 		}
 	}
