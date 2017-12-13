@@ -25,8 +25,7 @@ namespace Silk.Data.SQL.ORM.Tests
 				new BasicPocoWithGuidId { Data = "Hello World 2" },
 				new BasicPocoWithGuidId { Data = "Hello World 3" }
 			};
-			dataModel.Insert(sourceInstances)
-				.AsTransaction()
+			dataModel.Domain.Insert(sourceInstances)
 				.Execute(TestDb.Provider);
 
 			Assert.AreNotEqual(sourceInstances[0].Id, Guid.Empty);
@@ -83,8 +82,7 @@ namespace Silk.Data.SQL.ORM.Tests
 				new BasicPocoWithIntId { Data = "Hello World 2" },
 				new BasicPocoWithIntId { Data = "Hello World 3" }
 			};
-			dataModel.Insert(sourceInstances)
-				.AsTransaction()
+			dataModel.Domain.Insert(sourceInstances)
 				.Execute(TestDb.Provider);
 
 			Assert.AreNotEqual(sourceInstances[0].Id, 0);

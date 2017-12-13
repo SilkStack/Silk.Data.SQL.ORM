@@ -57,7 +57,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelB { Data = 5 },
 					ModelB2 = new SubModelB { Data = 10 }
 				};
-				await dataModel.Insert(modelInstance)
+				await dataModel.Domain.Insert(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
@@ -101,7 +101,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelB { Data = 5 },
 					ModelB2 = new SubModelB { Data = 10 }
 				};
-				await dataModel.Insert(modelInstance)
+				await dataModel.Domain.Insert(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
@@ -145,7 +145,8 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelB { Data = 5 },
 					ModelB2 = new SubModelB { Data = 10 }
 				};
-				await dataModel.Insert(modelInstance)
+				await dataModel.Domain
+					.Insert<ObjectWithPocoSubModels, ViewOfObjectWithRequiredProperties>(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
@@ -189,7 +190,8 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelBView { Data = 5 },
 					ModelB2 = new SubModelBView { Data = 10 }
 				};
-				await dataModel.Insert(modelInstance)
+				await dataModel.Domain
+					.Insert<ObjectWithPocoSubModels, ViewOfObjectWithRequiredPropertiesAsViews>(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
@@ -234,7 +236,8 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1Data = 5,
 					ModelB2Data = 10
 				};
-				await dataModel.Insert(modelInstance)
+				await dataModel.Domain
+					.Insert<ObjectWithPocoSubModels, ObjectWithPocoSubModelsView>(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
@@ -279,12 +282,12 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelB { Data = 5 },
 					ModelB2 = new SubModelB { Data = 10 }
 				};
-				await dataModel.Insert(modelInstance)
+				await dataModel.Domain.Insert(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 				modelInstance.ModelA.Data = "Changed World";
 				modelInstance.ModelB1.Data = 15;
 				modelInstance.ModelB2.Data = 20;
-				await dataModel.Update(modelInstance)
+				await dataModel.Domain.Update(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
@@ -329,12 +332,12 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelB { Data = 5 },
 					ModelB2 = new SubModelB { Data = 10 }
 				};
-				await dataModel.Insert(modelInstance)
+				await dataModel.Domain.Insert(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 				modelInstance.ModelA = null;
 				modelInstance.ModelB1.Data = 15;
 				modelInstance.ModelB2.Data = 20;
-				await dataModel.Update(modelInstance)
+				await dataModel.Domain.Update(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
@@ -378,11 +381,13 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelB { Data = 5 },
 					ModelB2 = new SubModelB { Data = 10 }
 				};
-				await dataModel.Insert(modelInstance)
+				await dataModel.Domain
+					.Insert<ObjectWithPocoSubModels, ViewOfObjectWithRequiredProperties>(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 				modelInstance.ModelB1.Data = 15;
 				modelInstance.ModelB2.Data = 20;
-				await dataModel.Update(modelInstance)
+				await dataModel.Domain
+					.Update<ObjectWithPocoSubModels, ViewOfObjectWithRequiredProperties>(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
@@ -426,11 +431,13 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelBView { Data = 5 },
 					ModelB2 = new SubModelBView { Data = 10 }
 				};
-				await dataModel.Insert(modelInstance)
+				await dataModel.Domain
+					.Insert<ObjectWithPocoSubModels, ViewOfObjectWithRequiredPropertiesAsViews>(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 				modelInstance.ModelB1.Data = 15;
 				modelInstance.ModelB2.Data = 20;
-				await dataModel.Update(modelInstance)
+				await dataModel.Domain
+					.Update<ObjectWithPocoSubModels, ViewOfObjectWithRequiredPropertiesAsViews>(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
@@ -475,12 +482,14 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1Data = 5,
 					ModelB2Data = 10
 				};
-				await dataModel.Insert(modelInstance)
+				await dataModel.Domain
+					.Insert<ObjectWithPocoSubModels, ObjectWithPocoSubModelsView>(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 				modelInstance.ModelAData = "Changed World!";
 				modelInstance.ModelB1Data = 15;
 				modelInstance.ModelB2Data = 20;
-				await dataModel.Update(modelInstance)
+				await dataModel.Domain
+					.Update<ObjectWithPocoSubModels, ObjectWithPocoSubModelsView>(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
@@ -525,9 +534,9 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelB { Data = 5 },
 					ModelB2 = new SubModelB { Data = 10 }
 				};
-				await dataModel.Insert(modelInstance)
+				await dataModel.Domain.Insert(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
-				await dataModel.Delete(modelInstance)
+				await dataModel.Domain.Delete(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
@@ -565,9 +574,11 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelB { Data = 5 },
 					ModelB2 = new SubModelB { Data = 10 }
 				};
-				await dataModel.Insert(modelInstance)
+				await dataModel.Domain
+					.Insert<ObjectWithPocoSubModels, ViewOfObjectWithRequiredProperties>(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
-				await dataModel.Delete(modelInstance)
+				await dataModel.Domain
+					.Delete<ObjectWithPocoSubModels, ViewOfObjectWithRequiredProperties>(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
@@ -605,9 +616,11 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelBView { Data = 5 },
 					ModelB2 = new SubModelBView { Data = 10 }
 				};
-				await dataModel.Insert(modelInstance)
+				await dataModel.Domain
+					.Insert<ObjectWithPocoSubModels, ViewOfObjectWithRequiredPropertiesAsViews>(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
-				await dataModel.Delete(modelInstance)
+				await dataModel.Domain
+					.Delete<ObjectWithPocoSubModels, ViewOfObjectWithRequiredPropertiesAsViews>(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
@@ -646,9 +659,11 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1Data = 5,
 					ModelB2Data = 10
 				};
-				await dataModel.Insert(modelInstance)
+				await dataModel.Domain
+					.Insert<ObjectWithPocoSubModels, ObjectWithPocoSubModelsView>(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
-				await dataModel.Delete(modelInstance)
+				await dataModel.Domain
+					.Delete<ObjectWithPocoSubModels, ObjectWithPocoSubModelsView>(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
@@ -687,10 +702,10 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelB { Data = 5 },
 					ModelB2 = new SubModelB { Data = 10 }
 				};
-				await dataModel.Insert(modelInstance)
+				await dataModel.Domain.Insert(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 
-				var selectResults = await dataModel.Select()
+				var selectResults = await dataModel.Domain.Select<ObjectWithPocoSubModels>()
 					.ExecuteAsync(TestDb.Provider);
 
 				Assert.AreEqual(1, selectResults.Count);
@@ -726,10 +741,11 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelB { Data = 5 },
 					ModelB2 = new SubModelB { Data = 10 }
 				};
-				await dataModel.Insert(modelInstance)
+				await dataModel.Domain.Insert(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 
-				var selectResults = await dataModel.Select<ViewOfObjectWithRequiredProperties>()
+				var selectResults = await dataModel.Domain
+					.Select<ObjectWithPocoSubModels,ViewOfObjectWithRequiredProperties>()
 					.ExecuteAsync(TestDb.Provider);
 
 				Assert.AreEqual(1, selectResults.Count);
@@ -764,10 +780,11 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelB { Data = 5 },
 					ModelB2 = new SubModelB { Data = 10 }
 				};
-				await dataModel.Insert(modelInstance)
+				await dataModel.Domain.Insert(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 
-				var selectResults = await dataModel.Select<ViewOfObjectWithRequiredPropertiesAsViews>()
+				var selectResults = await dataModel.Domain
+					.Select<ObjectWithPocoSubModels,ViewOfObjectWithRequiredPropertiesAsViews>()
 					.ExecuteAsync(TestDb.Provider);
 
 				Assert.AreEqual(1, selectResults.Count);
@@ -802,10 +819,10 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelB { Data = 5 },
 					ModelB2 = new SubModelB { Data = 10 }
 				};
-				await dataModel.Insert(modelInstance)
+				await dataModel.Domain.Insert(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 
-				var selectResults = await dataModel.Select<ObjectWithPocoSubModelsView>()
+				var selectResults = await dataModel.Domain.Select<ObjectWithPocoSubModels,ObjectWithPocoSubModelsView>()
 					.ExecuteAsync(TestDb.Provider);
 
 				Assert.AreEqual(1, selectResults.Count);
@@ -865,7 +882,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelB { Data = 5 },
 					ModelB2 = new SubModelB { Data = 10 }
 				};
-				await dataModel.Insert(modelInstance)
+				await dataModel.Domain.Insert(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
@@ -909,7 +926,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelB { Data = 5 },
 					ModelB2 = new SubModelB { Data = 10 }
 				};
-				await dataModel.Insert(modelInstance)
+				await dataModel.Domain.Insert(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
@@ -954,7 +971,8 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1Data = 5,
 					ModelB2Data = 10
 				};
-				await dataModel.Insert(modelInstance)
+				await dataModel.Domain
+					.Insert<ObjectWithPocoSubModels, ObjectWithPocoSubModelsView>(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
@@ -999,12 +1017,12 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelB { Data = 5 },
 					ModelB2 = new SubModelB { Data = 10 }
 				};
-				await dataModel.Insert(modelInstance)
+				await dataModel.Domain.Insert(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 				modelInstance.ModelA.Data = "Changed World";
 				modelInstance.ModelB1.Data = 15;
 				modelInstance.ModelB2.Data = 20;
-				await dataModel.Update(modelInstance)
+				await dataModel.Domain.Update(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
@@ -1049,12 +1067,12 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelB { Data = 5 },
 					ModelB2 = new SubModelB { Data = 10 }
 				};
-				await dataModel.Insert(modelInstance)
+				await dataModel.Domain.Insert(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 				modelInstance.ModelA = null;
 				modelInstance.ModelB1.Data = 15;
 				modelInstance.ModelB2.Data = 20;
-				await dataModel.Update(modelInstance)
+				await dataModel.Domain.Update(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
@@ -1098,11 +1116,13 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelB { Data = 5 },
 					ModelB2 = new SubModelB { Data = 10 }
 				};
-				await dataModel.Insert(modelInstance)
+				await dataModel.Domain
+					.Insert<ObjectWithPocoSubModels, ViewOfObjectWithRequiredProperties>(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 				modelInstance.ModelB1.Data = 15;
 				modelInstance.ModelB2.Data = 20;
-				await dataModel.Update(modelInstance)
+				await dataModel.Domain
+					.Update<ObjectWithPocoSubModels, ViewOfObjectWithRequiredProperties>(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
@@ -1146,11 +1166,13 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelBView { Data = 5 },
 					ModelB2 = new SubModelBView { Data = 10 }
 				};
-				await dataModel.Insert(modelInstance)
+				await dataModel.Domain
+					.Insert<ObjectWithPocoSubModels, ViewOfObjectWithRequiredPropertiesAsViews>(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 				modelInstance.ModelB1.Data = 15;
 				modelInstance.ModelB2.Data = 20;
-				await dataModel.Update(modelInstance)
+				await dataModel.Domain
+					.Update<ObjectWithPocoSubModels, ViewOfObjectWithRequiredPropertiesAsViews>(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
@@ -1195,12 +1217,14 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1Data = 5,
 					ModelB2Data = 10
 				};
-				await dataModel.Insert(modelInstance)
+				await dataModel.Domain
+					.Insert<ObjectWithPocoSubModels, ObjectWithPocoSubModelsView>(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 				modelInstance.ModelAData = "Changed World!";
 				modelInstance.ModelB1Data = 15;
 				modelInstance.ModelB2Data = 20;
-				await dataModel.Update(modelInstance)
+				await dataModel.Domain
+					.Update<ObjectWithPocoSubModels, ObjectWithPocoSubModelsView>(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
@@ -1245,9 +1269,9 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelB { Data = 5 },
 					ModelB2 = new SubModelB { Data = 10 }
 				};
-				await dataModel.Insert(modelInstance)
+				await dataModel.Domain.Insert(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
-				await dataModel.Delete(modelInstance)
+				await dataModel.Domain.Delete(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
@@ -1285,9 +1309,11 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelB { Data = 5 },
 					ModelB2 = new SubModelB { Data = 10 }
 				};
-				await dataModel.Insert(modelInstance)
+				await dataModel.Domain
+					.Insert<ObjectWithPocoSubModels, ViewOfObjectWithRequiredProperties>(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
-				await dataModel.Delete(modelInstance)
+				await dataModel.Domain
+					.Delete<ObjectWithPocoSubModels, ViewOfObjectWithRequiredProperties>(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
@@ -1325,9 +1351,11 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelBView { Data = 5 },
 					ModelB2 = new SubModelBView { Data = 10 }
 				};
-				await dataModel.Insert(modelInstance)
+				await dataModel.Domain
+					.Insert<ObjectWithPocoSubModels, ViewOfObjectWithRequiredPropertiesAsViews>(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
-				await dataModel.Delete(modelInstance)
+				await dataModel.Domain
+					.Delete<ObjectWithPocoSubModels, ViewOfObjectWithRequiredPropertiesAsViews>(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
@@ -1366,9 +1394,11 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1Data = 5,
 					ModelB2Data = 10
 				};
-				await dataModel.Insert(modelInstance)
+				await dataModel.Domain
+					.Insert<ObjectWithPocoSubModels, ObjectWithPocoSubModelsView>(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
-				await dataModel.Delete(modelInstance)
+				await dataModel.Domain
+					.Delete<ObjectWithPocoSubModels, ObjectWithPocoSubModelsView>(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
@@ -1407,10 +1437,10 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelB { Data = 5 },
 					ModelB2 = new SubModelB { Data = 10 }
 				};
-				await dataModel.Insert(modelInstance)
+				await dataModel.Domain.Insert(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 
-				var selectResults = await dataModel.Select()
+				var selectResults = await dataModel.Domain.Select<ObjectWithPocoSubModels>()
 					.ExecuteAsync(TestDb.Provider);
 
 				Assert.AreEqual(1, selectResults.Count);
@@ -1446,10 +1476,10 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelB { Data = 5 },
 					ModelB2 = new SubModelB { Data = 10 }
 				};
-				await dataModel.Insert(modelInstance)
+				await dataModel.Domain.Insert(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 
-				var selectResults = await dataModel.Select<ViewOfObjectWithRequiredProperties>()
+				var selectResults = await dataModel.Domain.Select<ObjectWithPocoSubModels,ViewOfObjectWithRequiredProperties>()
 					.ExecuteAsync(TestDb.Provider);
 
 				Assert.AreEqual(1, selectResults.Count);
@@ -1484,10 +1514,11 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelB { Data = 5 },
 					ModelB2 = new SubModelB { Data = 10 }
 				};
-				await dataModel.Insert(modelInstance)
+				await dataModel.Domain.Insert(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 
-				var selectResults = await dataModel.Select<ViewOfObjectWithRequiredPropertiesAsViews>()
+				var selectResults = await dataModel.Domain
+					.Select<ObjectWithPocoSubModels,ViewOfObjectWithRequiredPropertiesAsViews>()
 					.ExecuteAsync(TestDb.Provider);
 
 				Assert.AreEqual(1, selectResults.Count);
@@ -1522,10 +1553,11 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelB { Data = 5 },
 					ModelB2 = new SubModelB { Data = 10 }
 				};
-				await dataModel.Insert(modelInstance)
+				await dataModel.Domain.Insert(modelInstance)
 					.ExecuteAsync(TestDb.Provider);
 
-				var selectResults = await dataModel.Select<ObjectWithPocoSubModelsView>()
+				var selectResults = await dataModel.Domain
+					.Select<ObjectWithPocoSubModels,ObjectWithPocoSubModelsView>()
 					.ExecuteAsync(TestDb.Provider);
 
 				Assert.AreEqual(1, selectResults.Count);

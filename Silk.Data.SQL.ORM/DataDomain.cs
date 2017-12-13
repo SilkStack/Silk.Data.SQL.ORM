@@ -1,6 +1,8 @@
 ﻿using Silk.Data.Modelling;
 using Silk.Data.Modelling.Conventions;
+using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Modelling;
+using Silk.Data.SQL.ORM.Queries;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -194,15 +196,81 @@ namespace Silk.Data.SQL.ORM
 			return ret as EntityModel<TView>;
 		}
 
-		public EntitySchema GetSchema<TSource>()
+		public QueryCollection Insert<TSource>(params TSource[] sources)
 			where TSource : new()
 		{
-			return GetSchema(typeof(TSource));
+			return new QueryCollection(this)
+				.Insert<TSource>(sources);
 		}
 
-		public EntitySchema GetSchema(Type entityType)
+		public QueryCollection Insert<TSource, TView>(params TView[] sources)
+			where TSource : new()
+			where TView : new()
 		{
-			return _entitySchemas.FirstOrDefault(q => q.EntityModel.EntityType == entityType);
+			return new QueryCollection(this)
+				.Insert<TSource, TView>(sources);
+		}
+
+		public QueryCollection Update<TSource>(params TSource[] sources)
+			where TSource : new()
+		{
+			return new QueryCollection(this)
+				.Update<TSource>(sources);
+		}
+
+		public QueryCollection Update<TSource, TView>(params TView[] sources)
+			where TSource : new()
+			where TView : new()
+		{
+			return new QueryCollection(this)
+				.Update<TSource, TView>(sources);
+		}
+
+		public QueryCollection Delete<TSource>(params TSource[] sources)
+			where TSource : new()
+		{
+			return new QueryCollection(this)
+				.Delete<TSource>(sources);
+		}
+
+		public QueryCollection Delete<TSource, TView>(params TView[] sources)
+			where TSource : new()
+			where TView : new()
+		{
+			return new QueryCollection(this)
+				.Delete<TSource, TView>(sources);
+		}
+
+		public QueryCollection Delete<TSource>(QueryExpression where)
+			where TSource : new()
+		{
+			return new QueryCollection(this)
+				.Delete<TSource>(where);
+		}
+
+		public QueryCollection<TSource> Select<TSource>(QueryExpression where = null,
+			QueryExpression having = null,
+			QueryExpression[] orderBy = null,
+			QueryExpression[] groupBy = null,
+			int? offset = null,
+			int? limit = null)
+			where TSource : new()
+		{
+			return new QueryCollection(this)
+				.Select<TSource>(where, having, orderBy, groupBy, offset, limit);
+		}
+
+		public QueryCollection<TView> Select<TSource, TView>(QueryExpression where = null,
+			QueryExpression having = null,
+			QueryExpression[] orderBy = null,
+			QueryExpression[] groupBy = null,
+			int? offset = null,
+			int? limit = null)
+			where TSource : new()
+			where TView : new()
+		{
+			return new QueryCollection(this)
+				.Select<TSource, TView>(where, having, orderBy, groupBy, offset, limit);
 		}
 	}
 }

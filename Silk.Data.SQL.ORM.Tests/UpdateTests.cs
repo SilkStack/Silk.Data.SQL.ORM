@@ -25,14 +25,14 @@ namespace Silk.Data.SQL.ORM.Tests
 				new BasicPocoWithGuidId { Data = "Hello World 2" },
 				new BasicPocoWithGuidId { Data = "Hello World 3" }
 			};
-			dataModel.Insert(sourceInstances)
+			dataModel.Domain.Insert(sourceInstances)
 				.Execute(TestDb.Provider);
 
 			sourceInstances[0].Data = "Hello World 4";
 			sourceInstances[1].Data = "Hello World 5";
 			sourceInstances[2].Data = "Hello World 6";
 
-			dataModel.Update(sourceInstances)
+			dataModel.Domain.Update(sourceInstances)
 				.Execute(TestDb.Provider);
 
 			using (var queryResult = TestDb.Provider.ExecuteReader(

@@ -28,9 +28,9 @@ namespace Silk.Data.SQL.ORM.Tests
 					new BasicPocoWithGuidId { Data = "Hello World 2" },
 					new BasicPocoWithGuidId { Data = "Hello World 3" }
 				};
-				dataModel.Insert(sourceInstances)
+				dataModel.Domain.Insert(sourceInstances)
 					.Execute(TestDb.Provider);
-				dataModel.Delete(sourceInstances)
+				dataModel.Domain.Delete(sourceInstances)
 					.Execute(TestDb.Provider);
 
 				using (var queryResult = TestDb.Provider.ExecuteReader(
@@ -71,9 +71,9 @@ namespace Silk.Data.SQL.ORM.Tests
 					new BasicPocoWithGuidId { Data = "Hello World 2" },
 					new BasicPocoWithGuidId { Data = "Hello World 3" }
 				};
-				await dataModel.Insert(sourceInstances)
+				await dataModel.Domain.Insert(sourceInstances)
 					.ExecuteAsync(TestDb.Provider);
-				await dataModel.Delete()
+				await dataModel.Domain.Delete<BasicPocoWithGuidId>()
 					.ExecuteAsync(TestDb.Provider);
 
 				using (var queryResult = TestDb.Provider.ExecuteReader(
@@ -114,9 +114,9 @@ namespace Silk.Data.SQL.ORM.Tests
 					new BasicPocoWithGuidId { Data = "Hello World 2" },
 					new BasicPocoWithGuidId { Data = "Hello World 3" }
 				};
-				await dataModel.Insert(sourceInstances)
+				await dataModel.Domain.Insert(sourceInstances)
 					.ExecuteAsync(TestDb.Provider);
-				await dataModel.Delete((QueryExpression)
+				await dataModel.Domain.Delete<BasicPocoWithGuidId>(
 					QueryExpression.Compare(
 						QueryExpression.Column("Id"),
 						ComparisonOperator.AreEqual,

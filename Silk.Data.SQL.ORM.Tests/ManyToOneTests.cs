@@ -2,6 +2,7 @@
 using Silk.Data.SQL.ORM.Modelling;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Silk.Data.SQL.ORM.Tests
 {
@@ -79,6 +80,82 @@ namespace Silk.Data.SQL.ORM.Tests
 
 			Assert.IsTrue(model.Schema.EntityTable.DataFields.Contains(fieldForRelationshipA));
 			Assert.IsTrue(model.Schema.EntityTable.DataFields.Contains(fieldForRelationshipB));
+		}
+
+		[TestMethod]
+		public async Task InsertWithNulls()
+		{
+			var model = _conventionDrivenModel;
+
+			foreach (var entityModel in model.Domain.DataModels)
+			{
+				foreach (var table in entityModel.Schema.Tables)
+				{
+					await table.CreateAsync(TestDb.Provider);
+				}
+			}
+
+			try
+			{
+				var objInstance = new ModelWithRelationships();
+				await model.Domain.Insert(objInstance)
+					.ExecuteAsync(TestDb.Provider);
+			}
+			finally
+			{
+				foreach (var entityModel in model.Domain.DataModels)
+				{
+					foreach (var table in entityModel.Schema.Tables)
+					{
+						await table.DropAsync(TestDb.Provider);
+					}
+				}
+			}
+		}
+
+		[TestMethod]
+		public async Task InsertFullyPopulated()
+		{
+			var model = _conventionDrivenModel;
+			var relationshipAModel = _conventionDrivenModel.Domain.GetEntityModel<RelationshipModelA>();
+			var relationshipBModel = _conventionDrivenModel.Domain.GetEntityModel<RelationshipModelB>();
+
+			foreach (var entityModel in model.Domain.DataModels)
+			{
+				foreach (var table in entityModel.Schema.Tables)
+				{
+					await table.CreateAsync(TestDb.Provider);
+				}
+			}
+
+			try
+			{
+				var objInstance = new ModelWithRelationships
+				{
+					RelationshipA = new RelationshipModelA { Data = 10 },
+					RelationshipB = new RelationshipModelB { Data = 20 }
+				};
+
+				await relationshipAModel.Domain
+					.Insert(objInstance.RelationshipA)
+					.ExecuteAsync(TestDb.Provider);
+				await relationshipBModel.Domain
+					.Insert(objInstance.RelationshipB)
+					.ExecuteAsync(TestDb.Provider);
+				await model.Domain
+					.Insert(objInstance)
+					.ExecuteAsync(TestDb.Provider);
+			}
+			finally
+			{
+				foreach (var entityModel in model.Domain.DataModels)
+				{
+					foreach (var table in entityModel.Schema.Tables)
+					{
+						await table.DropAsync(TestDb.Provider);
+					}
+				}
+			}
 		}
 
 		private class ModelWithRelationships

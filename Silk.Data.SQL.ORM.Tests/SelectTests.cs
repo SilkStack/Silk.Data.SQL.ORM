@@ -24,10 +24,10 @@ namespace Silk.Data.SQL.ORM.Tests
 				new BasicPocoWithGuidId { Data = "Hello World 2" },
 				new BasicPocoWithGuidId { Data = "Hello World 3" }
 			};
-			dataModel.Insert(sourceInstances)
+			dataModel.Domain.Insert(sourceInstances)
 				.Execute(TestDb.Provider);
 
-			var queriedInstances = dataModel.Select()
+			var queriedInstances = dataModel.Domain.Select<BasicPocoWithGuidId>()
 				.Execute(TestDb.Provider);
 			Assert.AreEqual(sourceInstances.Length, queriedInstances.Count);
 			foreach (var sourceInstance in sourceInstances)
@@ -59,11 +59,10 @@ namespace Silk.Data.SQL.ORM.Tests
 				new BasicPocoWithGuidId { Data = "Hello World 3" }
 			};
 
-			var (firstResults, lastResults) = dataModel
+			var (firstResults, lastResults) = dataModel.Domain
 				.Insert(sourceInstances)
-				.Select(where: dataModel.Where(q => q.Id == sourceInstances[0].Id))
-				.Select(where: dataModel.Where(q => q.Id == sourceInstances[2].Id))
-				.AsTransaction()
+				.Select<BasicPocoWithGuidId>(where: dataModel.Where(q => q.Id == sourceInstances[0].Id))
+				.Select<BasicPocoWithGuidId>(where: dataModel.Where(q => q.Id == sourceInstances[2].Id))
 				.Execute(TestDb.Provider);
 
 			Assert.AreEqual(1, firstResults.Count);
@@ -95,10 +94,9 @@ namespace Silk.Data.SQL.ORM.Tests
 				new BasicPocoWithGuidId { Data = "Hello World 3" }
 			};
 
-			var dataResults = dataModel
+			var dataResults = dataModel.Domain
 				.Insert(sourceInstances)
-				.Select<BasicPocoView>()
-				.AsTransaction()
+				.Select<BasicPocoWithGuidId, BasicPocoView>()
 				.Execute(TestDb.Provider);
 
 			Assert.AreEqual(sourceInstances.Length, dataResults.Count);

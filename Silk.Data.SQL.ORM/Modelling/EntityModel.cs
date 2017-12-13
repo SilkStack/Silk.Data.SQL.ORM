@@ -146,7 +146,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 			}
 		}
 
-		public ModelBoundExecutableQueryCollection<TSource, TSource> Select(
+		public IEnumerable<ORMQuery> Select(
 			QueryExpression where = null,
 			QueryExpression having = null,
 			QueryExpression[] orderBy = null,
@@ -154,11 +154,11 @@ namespace Silk.Data.SQL.ORM.Modelling
 			int? offset = null,
 			int? limit = null)
 		{
-			return new ModelBoundExecutableQueryCollection<TSource>(this)
-				.Select(where, having, orderBy, groupBy, offset, limit);
+			return new SelectQueryBuilder<TSource>(this)
+				.CreateQuery(where, having, orderBy, groupBy, offset, limit);
 		}
 
-		public ModelBoundExecutableQueryCollection<TSource, TView> Select<TView>(
+		public IEnumerable<ORMQuery> Select<TView>(
 			QueryExpression where = null,
 			QueryExpression having = null,
 			QueryExpression[] orderBy = null,
@@ -167,53 +167,53 @@ namespace Silk.Data.SQL.ORM.Modelling
 			int? limit = null)
 			where TView : new()
 		{
-			return new ModelBoundExecutableQueryCollection<TSource>(this)
-				.Select<TView>(where, having, orderBy, groupBy, offset, limit);
+			return new SelectQueryBuilder<TSource>(this)
+				.CreateQuery<TView>(where, having, orderBy, groupBy, offset, limit);
 		}
 
-		public ModelBoundExecutableQueryCollection<TSource> Insert(params TSource[] sources)
+		public IEnumerable<ORMQuery> Insert(params TSource[] sources)
 		{
-			return new ModelBoundExecutableQueryCollection<TSource>(this)
-				.Insert(sources);
+			return new InsertQueryBuilder<TSource>(this)
+				.CreateQuery(sources);
 		}
 
-		public ModelBoundExecutableQueryCollection<TSource> Insert<TView>(params TView[] sources)
+		public IEnumerable<ORMQuery> Insert<TView>(params TView[] sources)
 			where TView : new()
 		{
-			return new ModelBoundExecutableQueryCollection<TSource>(this)
-				.Insert(sources);
+			return new InsertQueryBuilder<TSource>(this)
+				.CreateQuery(sources);
 		}
 
-		public ModelBoundExecutableQueryCollection<TSource> Update(params TSource[] sources)
+		public IEnumerable<ORMQuery> Update(params TSource[] sources)
 		{
-			return new ModelBoundExecutableQueryCollection<TSource>(this)
-				.Update(sources);
+			return new UpdateQueryBuilder<TSource>(this)
+				.CreateQuery(sources);
 		}
 
-		public ModelBoundExecutableQueryCollection<TSource> Update<TView>(params TView[] sources)
+		public IEnumerable<ORMQuery> Update<TView>(params TView[] sources)
 			where TView : new()
 		{
-			return new ModelBoundExecutableQueryCollection<TSource>(this)
-				.Update(sources);
+			return new UpdateQueryBuilder<TSource>(this)
+				.CreateQuery(sources);
 		}
 
-		public ModelBoundExecutableQueryCollection<TSource> Delete(params TSource[] sources)
+		public IEnumerable<ORMQuery> Delete(params TSource[] sources)
 		{
-			return new ModelBoundExecutableQueryCollection<TSource>(this)
-				.Delete(sources);
+			return new DeleteQueryBuilder<TSource>(this)
+				.CreateQuery(sources);
 		}
 
-		public ModelBoundExecutableQueryCollection<TSource> Delete<TView>(params TView[] sources)
+		public IEnumerable<ORMQuery> Delete<TView>(params TView[] sources)
 			where TView : new()
 		{
-			return new ModelBoundExecutableQueryCollection<TSource>(this)
-				.Delete(sources);
+			return new DeleteQueryBuilder<TSource>(this)
+				.CreateQuery(sources);
 		}
 
-		public ModelBoundExecutableQueryCollection<TSource> Delete(QueryExpression where = null)
+		public IEnumerable<ORMQuery> Delete(QueryExpression where = null)
 		{
-			return new ModelBoundExecutableQueryCollection<TSource>(this)
-				.Delete(where: where);
+			return new DeleteQueryBuilder<TSource>(this)
+				.CreateQuery(where: where);
 		}
 	}
 
