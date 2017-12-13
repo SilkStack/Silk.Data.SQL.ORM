@@ -31,9 +31,6 @@ namespace Silk.Data.SQL.ORM.Queries
 		public ICollection<ORMQuery> CreateQuery<TView>(EntityModel<TView> model, params TView[] sources)
 			where TView : new()
 		{
-			if (sources == null || sources.Length < 1)
-				throw new ArgumentException("At least one source must be provided.", nameof(sources));
-
 			if (model.PrimaryKeyFields == null ||
 				model.PrimaryKeyFields.Length == 0)
 				throw new InvalidOperationException("A primary key is required.");
