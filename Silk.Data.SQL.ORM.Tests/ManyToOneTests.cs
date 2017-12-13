@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Modelling;
 using System;
 using System.Linq;
@@ -100,6 +101,32 @@ namespace Silk.Data.SQL.ORM.Tests
 				var objInstance = new ModelWithRelationships();
 				await model.Domain.Insert(objInstance)
 					.ExecuteAsync(TestDb.Provider);
+
+				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
+					QueryExpression.Select(
+						new[] { QueryExpression.All() },
+						from: QueryExpression.Table(model.Schema.EntityTable.TableName),
+						joins: new[]
+						{
+							QueryExpression.Join(
+								QueryExpression.Column("RelationshipAId", QueryExpression.Table(model.Schema.EntityTable.TableName)),
+								QueryExpression.Column("Id", QueryExpression.Table("RelationshipModelA")),
+								JoinDirection.Left
+								),
+							QueryExpression.Join(
+								QueryExpression.Column("RelationshipBId", QueryExpression.Table(model.Schema.EntityTable.TableName)),
+								QueryExpression.Column("Id", QueryExpression.Table("RelationshipModelB")),
+								JoinDirection.Left
+								)
+						}
+					)))
+				{
+					Assert.IsTrue(queryResult.HasRows);
+					Assert.IsTrue(await queryResult.ReadAsync());
+					Assert.AreEqual(objInstance.Id, queryResult.GetGuid(0));
+					Assert.IsTrue(queryResult.IsDBNull(1));
+					Assert.IsTrue(queryResult.IsDBNull(2));
+				}
 			}
 			finally
 			{
@@ -136,15 +163,43 @@ namespace Silk.Data.SQL.ORM.Tests
 					RelationshipB = new RelationshipModelB { Data = 20 }
 				};
 
-				await relationshipAModel.Domain
-					.Insert(objInstance.RelationshipA)
-					.ExecuteAsync(TestDb.Provider);
-				await relationshipBModel.Domain
-					.Insert(objInstance.RelationshipB)
-					.ExecuteAsync(TestDb.Provider);
 				await model.Domain
+					.Insert(objInstance.RelationshipA)
+					.Insert(objInstance.RelationshipB)
 					.Insert(objInstance)
 					.ExecuteAsync(TestDb.Provider);
+
+				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
+					QueryExpression.Select(
+						new[] { QueryExpression.All() },
+						from: QueryExpression.Table(model.Schema.EntityTable.TableName),
+						joins: new[]
+						{
+							QueryExpression.Join(
+								QueryExpression.Column("RelationshipAId", QueryExpression.Table(model.Schema.EntityTable.TableName)),
+								QueryExpression.Column("Id", QueryExpression.Table("RelationshipModelA")),
+								JoinDirection.Left
+								),
+							QueryExpression.Join(
+								QueryExpression.Column("RelationshipBId", QueryExpression.Table(model.Schema.EntityTable.TableName)),
+								QueryExpression.Column("Id", QueryExpression.Table("RelationshipModelB")),
+								JoinDirection.Left
+								)
+						}
+					)))
+				{
+					Assert.IsTrue(queryResult.HasRows);
+					Assert.IsTrue(await queryResult.ReadAsync());
+					Assert.AreEqual(objInstance.Id, queryResult.GetGuid(0));
+					Assert.AreEqual(objInstance.RelationshipA.Id, queryResult.GetGuid(1));
+					Assert.AreEqual(objInstance.RelationshipB.Id, queryResult.GetInt32(2));
+
+					Assert.AreEqual(objInstance.RelationshipA.Id, queryResult.GetGuid(3));
+					Assert.AreEqual(objInstance.RelationshipA.Data, queryResult.GetInt32(4));
+
+					Assert.AreEqual(objInstance.RelationshipB.Id, queryResult.GetInt32(5));
+					Assert.AreEqual(objInstance.RelationshipB.Data, queryResult.GetInt32(6));
+				}
 			}
 			finally
 			{

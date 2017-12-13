@@ -65,9 +65,18 @@ namespace Silk.Data.SQL.ORM.Queries
 						field.ModelBinding.WriteValue(sourceReadWriter, Guid.NewGuid());
 					}
 
-					row.Add(QueryExpression.Value(
-						field.ModelBinding.ReadValue<object>(sourceReadWriter)
-						));
+					if (field.Relationship == null)
+					{
+						row.Add(QueryExpression.Value(
+							field.ModelBinding.ReadValue<object>(sourceReadWriter)
+							));
+					}
+					else
+					{
+						row.Add(new LateReadValueExpression(() =>
+							field.ModelBinding.ReadValue<object>(sourceReadWriter)
+							));
+					}
 				}
 
 				if (isBulkInsert)
