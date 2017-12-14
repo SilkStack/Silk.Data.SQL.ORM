@@ -13,15 +13,15 @@ namespace Silk.Data.SQL.ORM.Queries
 		protected TThis Self { get; }
 		protected List<ORMQuery> Queries { get; }
 
+		public IORMQueryExecutor QueryExecutor { get; set; }
+
 		protected QueryCollectionBase(DataDomain dataDomain,
-			List<ORMQuery> queries = null)
+			List<ORMQuery> queries = null, IORMQueryExecutor queryExecutor = null)
 		{
 			DataDomain = dataDomain;
 			Self = this as TThis;
-			if (queries == null)
-				Queries = new List<ORMQuery>();
-			else
-				Queries = queries;
+			Queries = queries ?? new List<ORMQuery>();
+			QueryExecutor = queryExecutor ?? new BasicQueryExecutor();
 		}
 
 		protected EntityModel<TSource> GetEntityModel<TSource>()
@@ -31,6 +31,12 @@ namespace Silk.Data.SQL.ORM.Queries
 			if (entityModel == null)
 				throw new System.InvalidOperationException($"Type '{typeof(TSource).FullName}' isn't modelled in the specified data domain.");
 			return entityModel;
+		}
+
+		public TThis AsTransaction()
+		{
+			QueryExecutor = new TransactionQueryExecutor();
+			return Self;
 		}
 
 		public TThis Insert<TSource>(params TSource[] sources)
@@ -99,53 +105,14 @@ namespace Silk.Data.SQL.ORM.Queries
 			return Self;
 		}
 
-		protected virtual List<object> ExecuteQueries(IDataProvider dataProvider)
+		protected List<object> ExecuteQueries(IDataProvider dataProvider)
 		{
-			List<object> ret = null;
-			foreach (var query in Queries)
-			{
-				if (query.MapToType == null)
-				{
-					dataProvider.ExecuteNonQuery(query.Query);
-				}
-				else
-				{
-					using (var queryResult = dataProvider.ExecuteReader(query.Query))
-					{
-						var mapResult = query.MapResult(queryResult);
-						if (ret == null)
-							ret = new List<object>();
-						ret.Add(mapResult);
-					}
-				}
-			}
-			return ret;
+			return QueryExecutor.ExecuteQueries(Queries, dataProvider);
 		}
 
-		protected virtual async Task<List<object>> ExecuteQueriesAsync(IDataProvider dataProvider)
+		protected Task<List<object>> ExecuteQueriesAsync(IDataProvider dataProvider)
 		{
-			List<object> ret = null;
-			foreach (var query in Queries)
-			{
-				if (query.MapToType == null)
-				{
-					await dataProvider.ExecuteNonQueryAsync(query.Query)
-						.ConfigureAwait(false);
-				}
-				else
-				{
-					using (var queryResult = await dataProvider.ExecuteReaderAsync(query.Query)
-						.ConfigureAwait(false))
-					{
-						var mapResult = await query.MapResultAsync(queryResult)
-							.ConfigureAwait(false);
-						if (ret == null)
-							ret = new List<object>();
-						ret.Add(mapResult);
-					}
-				}
-			}
-			return ret;
+			return QueryExecutor.ExecuteQueriesAsync(Queries, dataProvider);
 		}
 
 		public void Execute(IDataProvider dataProvider)
@@ -177,7 +144,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			Queries.AddRange(
 				GetEntityModel<TSource>().Select(where, having, orderBy, groupBy, offset, limit)
 				);
-			return new QueryCollection<TSource>(DataDomain, Queries);
+			return new QueryCollection<TSource>(DataDomain, Queries, QueryExecutor);
 		}
 
 		public QueryCollection<TView> Select<TSource, TView>(QueryExpression where = null,
@@ -192,14 +159,14 @@ namespace Silk.Data.SQL.ORM.Queries
 			Queries.AddRange(
 				GetEntityModel<TSource>().Select<TView>(where, having, orderBy, groupBy, offset, limit)
 				);
-			return new QueryCollection<TView>(DataDomain, Queries);
+			return new QueryCollection<TView>(DataDomain, Queries, QueryExecutor);
 		}
 	}
 
 	public class QueryCollection<TResult> : QueryCollectionBase<QueryCollection<TResult>>
 	{
-		public QueryCollection(DataDomain dataDomain, List<ORMQuery> queries)
-			: base(dataDomain, queries)
+		public QueryCollection(DataDomain dataDomain, List<ORMQuery> queries, IORMQueryExecutor queryExecutor)
+			: base(dataDomain, queries, queryExecutor)
 		{
 		}
 
@@ -214,7 +181,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			Queries.AddRange(
 				GetEntityModel<TSource>().Select(where, having, orderBy, groupBy, offset, limit)
 				);
-			return new QueryCollection<TResult, TSource>(DataDomain, Queries);
+			return new QueryCollection<TResult, TSource>(DataDomain, Queries, QueryExecutor);
 		}
 
 		public QueryCollection<TResult, TView> Select<TSource, TView>(QueryExpression where = null,
@@ -229,7 +196,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			Queries.AddRange(
 				GetEntityModel<TSource>().Select<TView>(where, having, orderBy, groupBy, offset, limit)
 				);
-			return new QueryCollection<TResult, TView>(DataDomain, Queries);
+			return new QueryCollection<TResult, TView>(DataDomain, Queries, QueryExecutor);
 		}
 
 		public new ICollection<TResult> Execute(IDataProvider dataProvider)
@@ -245,8 +212,8 @@ namespace Silk.Data.SQL.ORM.Queries
 
 	public class QueryCollection<TResult1, TResult2> : QueryCollectionBase<QueryCollection<TResult1, TResult2>>
 	{
-		public QueryCollection(DataDomain dataDomain, List<ORMQuery> queries)
-			: base(dataDomain, queries)
+		public QueryCollection(DataDomain dataDomain, List<ORMQuery> queries, IORMQueryExecutor queryExecutor)
+			: base(dataDomain, queries, queryExecutor)
 		{
 		}
 
