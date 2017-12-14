@@ -1,5 +1,6 @@
 ﻿using Silk.Data.Modelling;
 using Silk.Data.SQL.Expressions;
+using Silk.Data.SQL.ORM.Expressions;
 using Silk.Data.SQL.ORM.Modelling;
 using System;
 using System.Collections.Generic;
@@ -48,9 +49,18 @@ namespace Silk.Data.SQL.ORM.Queries
 				var row = new Dictionary<DataField, QueryExpression>();
 				foreach (var field in model.Fields)
 				{
-					row.Add(field, QueryExpression.Value(
-						field.ModelBinding.ReadValue<object>(sourceReadWriter)
-						));
+					if (field.Relationship == null)
+					{
+						row.Add(field, QueryExpression.Value(
+							field.ModelBinding.ReadValue<object>(sourceReadWriter)
+							));
+					}
+					else
+					{
+						row.Add(field, new LateReadValueExpression(() =>
+							field.ModelBinding.ReadValue<object>(sourceReadWriter)
+							));
+					}
 				}
 
 				QueryExpression sourceWhere = null;

@@ -213,6 +213,82 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 		}
 
+		[TestMethod]
+		public async Task UpdateNewRelationship()
+		{
+			var model = _conventionDrivenModel;
+			var relationshipAModel = _conventionDrivenModel.Domain.GetEntityModel<RelationshipModelA>();
+			var relationshipBModel = _conventionDrivenModel.Domain.GetEntityModel<RelationshipModelB>();
+
+			foreach (var entityModel in model.Domain.DataModels)
+			{
+				foreach (var table in entityModel.Schema.Tables)
+				{
+					await table.CreateAsync(TestDb.Provider);
+				}
+			}
+
+			try
+			{
+				var objInstance = new ModelWithRelationships
+				{
+					RelationshipA = new RelationshipModelA { Data = 10 },
+					RelationshipB = new RelationshipModelB { Data = 20 }
+				};
+
+				await model.Domain
+					.Insert(objInstance.RelationshipA)
+					.Insert(objInstance.RelationshipB)
+					.Insert(objInstance)
+					.ExecuteAsync(TestDb.Provider);
+
+				objInstance.RelationshipA = null;
+				objInstance.RelationshipB = new RelationshipModelB { Data = 30 };
+				await model.Domain
+					.Insert(objInstance.RelationshipB)
+					.Update(objInstance)
+					.ExecuteAsync(TestDb.Provider);
+
+				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
+					QueryExpression.Select(
+						new[] { QueryExpression.All() },
+						from: QueryExpression.Table(model.Schema.EntityTable.TableName),
+						joins: new[]
+						{
+							QueryExpression.Join(
+								QueryExpression.Column("RelationshipAId", QueryExpression.Table(model.Schema.EntityTable.TableName)),
+								QueryExpression.Column("Id", QueryExpression.Table("RelationshipModelA")),
+								JoinDirection.Left
+								),
+							QueryExpression.Join(
+								QueryExpression.Column("RelationshipBId", QueryExpression.Table(model.Schema.EntityTable.TableName)),
+								QueryExpression.Column("Id", QueryExpression.Table("RelationshipModelB")),
+								JoinDirection.Left
+								)
+						}
+					)))
+				{
+					Assert.IsTrue(queryResult.HasRows);
+					Assert.IsTrue(await queryResult.ReadAsync());
+					Assert.AreEqual(objInstance.Id, queryResult.GetGuid(0));
+					Assert.IsTrue(queryResult.IsDBNull(1));
+
+					Assert.AreEqual(objInstance.RelationshipB.Id, queryResult.GetInt32(5));
+					Assert.AreEqual(objInstance.RelationshipB.Data, queryResult.GetInt32(6));
+				}
+			}
+			finally
+			{
+				foreach (var entityModel in model.Domain.DataModels)
+				{
+					foreach (var table in entityModel.Schema.Tables)
+					{
+						await table.DropAsync(TestDb.Provider);
+					}
+				}
+			}
+		}
+
 		private class ModelWithRelationships
 		{
 			public Guid Id { get; private set; }
