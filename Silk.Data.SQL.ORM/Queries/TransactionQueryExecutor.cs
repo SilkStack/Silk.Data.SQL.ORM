@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Silk.Data.SQL.Providers;
 
@@ -44,25 +45,33 @@ namespace Silk.Data.SQL.ORM.Queries
 				List<object> ret = null;
 				foreach (var query in queries)
 				{
-					if (query.MapToType == null)
+					try
 					{
-						await transaction.ExecuteNonQueryAsync(query.Query)
-							.ConfigureAwait(false);
-					}
-					else
-					{
-						using (var queryResult = await transaction.ExecuteReaderAsync(query.Query)
-							.ConfigureAwait(false))
+						if (query.MapToType == null)
 						{
-							var mapResult = await query.MapResultAsync(queryResult)
+							await transaction.ExecuteNonQueryAsync(query.Query)
 								.ConfigureAwait(false);
-							if (query.IsQueryResult)
+						}
+						else
+						{
+							using (var queryResult = await transaction.ExecuteReaderAsync(query.Query)
+								.ConfigureAwait(false))
 							{
-								if (ret == null)
-									ret = new List<object>();
-								ret.Add(mapResult);
+								var mapResult = await query.MapResultAsync(queryResult)
+									.ConfigureAwait(false);
+								if (query.IsQueryResult)
+								{
+									if (ret == null)
+										ret = new List<object>();
+									ret.Add(mapResult);
+								}
 							}
 						}
+					}
+					catch (Exception)
+					{
+						transaction.Rollback();
+						throw;
 					}
 				}
 				transaction.Commit();
