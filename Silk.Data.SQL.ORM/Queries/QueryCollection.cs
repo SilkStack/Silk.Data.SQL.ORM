@@ -39,6 +39,12 @@ namespace Silk.Data.SQL.ORM.Queries
 			return Self;
 		}
 
+		public TThis NonResultQuery(params ORMQuery[] queries)
+		{
+			Queries.AddRange(queries);
+			return Self;
+		}
+
 		public TThis Insert<TSource>(params TSource[] sources)
 			where TSource : new()
 		{

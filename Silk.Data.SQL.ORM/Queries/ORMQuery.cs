@@ -98,6 +98,8 @@ namespace Silk.Data.SQL.ORM.Queries
 	public class MapResultORMQuery<TView> : MapResultORMQuery
 		where TView : new()
 	{
+		private static TView[] _noResults = new TView[0];
+
 		public EntityModel EntityModel { get; }
 
 		public MapResultORMQuery(QueryExpression query, EntityModel entityModel)
@@ -109,7 +111,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		public override object MapResult(QueryResult queryResult)
 		{
 			if (!queryResult.HasRows)
-				return null;
+				return _noResults;
 
 			var resultWriters = new List<ModelReadWriter>();
 			var rowReaders = new List<ViewReadWriter>();
@@ -137,7 +139,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		public override async Task<object> MapResultAsync(QueryResult queryResult)
 		{
 			if (!queryResult.HasRows)
-				return null;
+				return _noResults;
 
 			var resultWriters = new List<ModelReadWriter>();
 			var rowReaders = new List<ViewReadWriter>();

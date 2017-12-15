@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Modelling;
+using Silk.Data.SQL.ORM.Queries;
 using System;
 using System.Threading.Tasks;
 
@@ -15,6 +16,36 @@ namespace Silk.Data.SQL.ORM.Tests
 				builder.AddDataEntity<RelationshipModelA>();
 				builder.AddDataEntity<RelationshipModelB>();
 			});
+
+		[TestMethod]
+		public async Task InsertRollsbackOnError()
+		{
+			var model = TestDb.CreateDomainAndModel<RelationshipModelA>();
+
+			await model.Schema.EntityTable.CreateAsync(TestDb.Provider);
+
+			try
+			{
+				try
+				{
+					await model.Domain
+						.Insert(new RelationshipModelA { Data = 60 })
+						.NonResultQuery(new FailingORMQuery())
+						.AsTransaction()
+						.ExecuteAsync(TestDb.Provider);
+				}
+				catch (Exception) { }
+
+				var rows = await model.Domain
+					.Select<RelationshipModelA>()
+					.ExecuteAsync(TestDb.Provider);
+				Assert.AreEqual(0, rows.Count);
+			}
+			finally
+			{
+				await model.Schema.EntityTable.DropAsync(TestDb.Provider);
+			}
+		}
 
 		[TestMethod]
 		public async Task InsertManyToOneAsTransaction()
@@ -107,6 +138,17 @@ namespace Silk.Data.SQL.ORM.Tests
 		{
 			public int Id { get; private set; }
 			public int Data { get; set; }
+		}
+
+		private class FailingORMQuery : ORMQuery
+		{
+			public FailingORMQuery()
+				: base(QueryExpression.Select(
+					new [] { QueryExpression.All() },
+					from: QueryExpression.Table("ThisTableNeverExists")
+					), null, false)
+			{
+			}
 		}
 	}
 }

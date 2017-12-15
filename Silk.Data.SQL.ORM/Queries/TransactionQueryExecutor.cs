@@ -14,22 +14,30 @@ namespace Silk.Data.SQL.ORM.Queries
 				List<object> ret = null;
 				foreach (var query in queries)
 				{
-					if (query.MapToType == null)
+					try
 					{
-						transaction.ExecuteNonQuery(query.Query);
-					}
-					else
-					{
-						using (var queryResult = transaction.ExecuteReader(query.Query))
+						if (query.MapToType == null)
 						{
-							var mapResult = query.MapResult(queryResult);
-							if (query.IsQueryResult)
+							transaction.ExecuteNonQuery(query.Query);
+						}
+						else
+						{
+							using (var queryResult = transaction.ExecuteReader(query.Query))
 							{
-								if (ret == null)
-									ret = new List<object>();
-								ret.Add(mapResult);
+								var mapResult = query.MapResult(queryResult);
+								if (query.IsQueryResult)
+								{
+									if (ret == null)
+										ret = new List<object>();
+									ret.Add(mapResult);
+								}
 							}
 						}
+					}
+					catch (Exception)
+					{
+						transaction.Rollback();
+						throw;
 					}
 				}
 				transaction.Commit();
