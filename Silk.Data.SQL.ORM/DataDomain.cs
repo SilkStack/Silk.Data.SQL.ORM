@@ -214,9 +214,10 @@ namespace Silk.Data.SQL.ORM
 			var fields = new List<DataField>();
 			foreach (var fieldDefinition in viewBuilder.ViewDefinition.FieldDefinitions)
 			{
-				//  todo: ideally the view paths will match (but currently don't), consider improving that
 				var entityField = entityModel.Fields.First(
-					q => q.Name == fieldDefinition.Name
+					q => q.ModelBinding?.ViewFieldPath != null &&
+						fieldDefinition.ModelBinding?.ViewFieldPath != null &&
+						q.ModelBinding.ViewFieldPath.SequenceEqual(fieldDefinition.ModelBinding.ViewFieldPath)
 					);
 				fields.Add(
 					new DataField(entityField.Storage.ColumnName, fieldDefinition.DataType,
