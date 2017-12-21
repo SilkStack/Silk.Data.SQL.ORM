@@ -13,13 +13,11 @@ namespace Silk.Data.SQL.ORM.Modelling
 {
 	public abstract class EntityModel : IView<DataField>
 	{
-		private Lazy<DataDomain> _domain;
-
 		public abstract Type EntityType { get; }
 
-		public DataField[] Fields { get; private set; }
+		public DataField[] Fields { get; internal set; }
 
-		public string Name { get; private set; }
+		public string Name { get; internal set; }
 
 		public Model Model { get; protected set; }
 
@@ -27,17 +25,17 @@ namespace Silk.Data.SQL.ORM.Modelling
 
 		IViewField[] IView.Fields => Fields;
 
-		public EntitySchema Schema { get; private set; }
+		public EntitySchema Schema { get; internal set; }
 
-		public DataDomain Domain => _domain.Value;
+		public DataDomain Domain { get; internal set; }
 
-		public DataField[] PrimaryKeyFields { get; private set; }
+		public DataField[] PrimaryKeyFields { get; internal set; }
 
 		protected EntityModel() { }
 
 		public EntityModel(string name, Model model,
 			EntitySchema schema, DataField[] fields,
-			Lazy<DataDomain> domain)
+			DataDomain domain)
 		{
 			Name = name;
 			Model = model;
@@ -50,25 +48,25 @@ namespace Silk.Data.SQL.ORM.Modelling
 				.ToArray();
 			Schema = schema;
 			PrimaryKeyFields = Fields.Where(q => q.Storage.IsPrimaryKey).ToArray();
-			_domain = domain;
+			Domain = domain;
 		}
 
 		internal virtual void Initalize(string name, Model model,
 			EntitySchema schema, IEnumerable<DataField> fields,
-			Lazy<DataDomain> domain)
+			DataDomain domain)
 		{
 			Name = name;
 			Model = model;
 			Fields = fields.ToArray();
 			ResourceLoaders = fields
-				.Where(q => q.ModelBinding.ResourceLoaders != null)
+				.Where(q => q.ModelBinding?.ResourceLoaders != null)
 				.SelectMany(q => q.ModelBinding.ResourceLoaders)
 				.GroupBy(q => q)
 				.Select(q => q.First())
 				.ToArray();
 			Schema = schema;
-			_domain = domain;
-			PrimaryKeyFields = Fields.Where(q => q.Storage.IsPrimaryKey).ToArray();
+			Domain = domain;
+			PrimaryKeyFields = Fields.Where(q => q.Storage?.IsPrimaryKey == true).ToArray();
 		}
 
 		public abstract void SetModel(Model model);
@@ -85,15 +83,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 
 		internal EntityModel() { }
 
-		public EntityModel(string name, TypedModel<TSource> model,
-			EntitySchema schema, DataField[] fields,
-			Lazy<DataDomain> domain)
-			: base(name, model, schema, fields, domain)
-		{
-			Model = model;
-		}
-
-		internal override void Initalize(string name, Model model, EntitySchema schema, IEnumerable<DataField> fields, Lazy<DataDomain> domain)
+		internal override void Initalize(string name, Model model, EntitySchema schema, IEnumerable<DataField> fields, DataDomain domain)
 		{
 			base.Initalize(name, model, schema, fields, domain);
 			Model = model as TypedModel<TSource>;
@@ -222,13 +212,6 @@ namespace Silk.Data.SQL.ORM.Modelling
 		where TView: new()
 	{
 		internal EntityModel() { }
-
-		public EntityModel(string name, TypedModel<TSource> model,
-			EntitySchema schema, DataField[] fields,
-			Lazy<DataDomain> domain)
-			: base(name, model, schema, fields, domain)
-		{
-		}
 
 		public ConditionExpression<TSource, TView> Where(Expression<Func<TView, bool>> expression)
 		{

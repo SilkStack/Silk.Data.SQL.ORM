@@ -20,6 +20,7 @@ namespace Silk.Data.SQL.ORM
 				new CopyPrimitiveTypesConvention(),
 				new IdIsPrimaryKeyConvention(),
 				new ManyToOneConvention(),
+				new ManyToManyConvention(),
 				new FlattenPocosConvention()
 			};
 

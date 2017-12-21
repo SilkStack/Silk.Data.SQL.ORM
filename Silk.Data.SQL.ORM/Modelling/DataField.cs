@@ -7,12 +7,15 @@ namespace Silk.Data.SQL.ORM.Modelling
 {
 	public class DataField : IViewField
 	{
-		public string Name { get; }
-		public Type DataType { get; }
-		public object[] Metadata { get; }
-		public ModelBinding ModelBinding { get; }
-		public DataStorage Storage { get; }
+		public string Name { get; protected set; }
+		public Type DataType { get; protected set; }
+		public object[] Metadata { get; protected set; }
+		public ModelBinding ModelBinding { get; protected set; }
+
+		public DataStorage Storage { get; protected set; }
 		public DataRelationship Relationship { get; private set; }
+
+		protected DataField() { }
 
 		public DataField(string storageName, Type dataType, object[] metadata,
 			ModelBinding modelBinding, Table tableSchema, DataRelationship relationship,
@@ -44,12 +47,19 @@ namespace Silk.Data.SQL.ORM.Modelling
 			}
 
 			//  todo: search metadata for index definitions?
-			Storage = new DataStorage(storageName, GetSqlDataType(),
-				tableSchema,
-				metadata.OfType<PrimaryKeyAttribute>().Any(),
-				metadata.OfType<AutoIncrementAttribute>().Any(),
-				metadata.OfType<AutoGenerateIdAttribute>().Any(),
-				isNullable);
+			if (relationship?.RelationshipType != RelationshipType.ManyToMany)
+			{
+				var sqlType = GetSqlDataType();
+				if (sqlType != null)
+				{
+					Storage = new DataStorage(storageName, sqlType,
+						tableSchema,
+						metadata.OfType<PrimaryKeyAttribute>().Any(),
+						metadata.OfType<AutoIncrementAttribute>().Any(),
+						metadata.OfType<AutoGenerateIdAttribute>().Any(),
+						isNullable);
+				}
+			}
 		}
 
 		internal void SetRelationship(DataRelationship dataRelationship)
@@ -57,7 +67,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 			Relationship = dataRelationship;
 		}
 
-		private SqlDataType GetSqlDataType()
+		protected SqlDataType GetSqlDataType()
 		{
 			//  todo: allow override with an attribute
 			if (DataType == typeof(string))
@@ -116,7 +126,57 @@ namespace Silk.Data.SQL.ORM.Modelling
 				return SqlDataType.DateTime();
 			}
 
-			throw new NotSupportedException($"Data type {DataType.FullName} not supported.");
+			return null;
+		}
+	}
+
+	/// <summary>
+	/// A mutable version of DataField, only to be used when building a domain.
+	/// </summary>
+	public class MutableDataField : DataField
+	{
+		public Table Table { get; set; }
+
+		public MutableDataField(string fieldName, Type fieldType,
+			ModelBinding binding, object[] metadata)
+		{
+			Name = fieldName;
+			DataType = fieldType;
+			ModelBinding = binding;
+			Metadata = metadata;
+		}
+
+		public void SetStorage()
+		{
+			if (Relationship?.RelationshipType != RelationshipType.ManyToMany)
+			{
+				var isNullable = false;
+				var nullableAttr = Metadata.OfType<IsNullableAttribute>().FirstOrDefault();
+				if (nullableAttr != null)
+				{
+					isNullable = nullableAttr.IsNullable;
+				}
+				else
+				{
+					isNullable = !DataType.IsValueType;
+					if (!isNullable)
+					{
+						isNullable = DataType.IsGenericType &&
+							DataType.GetGenericTypeDefinition() == typeof(Nullable<>);
+					}
+				}
+
+				var sqlType = GetSqlDataType();
+				if (sqlType != null)
+				{
+					Storage = new DataStorage(Name, sqlType,
+						Table,
+						Metadata.OfType<PrimaryKeyAttribute>().Any(),
+						Metadata.OfType<AutoIncrementAttribute>().Any(),
+						Metadata.OfType<AutoGenerateIdAttribute>().Any(),
+						isNullable);
+				}
+			}
 		}
 	}
 }
