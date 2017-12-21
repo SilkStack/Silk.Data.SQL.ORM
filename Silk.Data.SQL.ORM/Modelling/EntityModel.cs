@@ -21,7 +21,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 
 		public Model Model { get; protected set; }
 
-		public IResourceLoader[] ResourceLoaders { get; private set; }
+		public IResourceLoader[] ResourceLoaders { get; internal set; }
 
 		IViewField[] IView.Fields => Fields;
 
@@ -49,6 +49,16 @@ namespace Silk.Data.SQL.ORM.Modelling
 			Schema = schema;
 			PrimaryKeyFields = Fields.Where(q => q.Storage.IsPrimaryKey).ToArray();
 			Domain = domain;
+		}
+
+		internal virtual void SetResourceLoaders()
+		{
+			ResourceLoaders = Fields
+				.Where(q => q.ModelBinding.ResourceLoaders != null)
+				.SelectMany(q => q.ModelBinding.ResourceLoaders)
+				.GroupBy(q => q)
+				.Select(q => q.First())
+				.ToArray();
 		}
 
 		internal virtual void Initalize(string name, Model model,

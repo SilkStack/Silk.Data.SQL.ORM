@@ -134,6 +134,7 @@ namespace Silk.Data.SQL.ORM
 
 			foreach (var entityModel in entityModels)
 			{
+				entityModel.SetResourceLoaders();
 				foreach (var field in entityModel.Fields.OfType<MutableDataField>())
 				{
 					ConstructRelationship(entityModel, field, domainDefinition, dataDomain);
