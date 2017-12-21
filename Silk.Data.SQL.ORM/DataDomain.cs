@@ -63,7 +63,12 @@ namespace Silk.Data.SQL.ORM
 			{
 				if (tableDefinition.IsEntityTable)
 				{
-					var table = new Table(tableDefinition.TableName, true, entityModel.Fields);
+					var table = new Table(tableDefinition.TableName, true,
+						entityModel.Fields.Where(q =>
+							!q.Metadata.OfType<RelationshipDefinition>().Any() ||
+							q.Metadata.OfType<RelationshipDefinition>().First().RelationshipType != RelationshipType.ManyToMany
+							).ToArray()
+						);
 					foreach(var field in table.DataFields.OfType<MutableDataField>())
 					{
 						field.Table = table;
