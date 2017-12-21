@@ -84,6 +84,37 @@ namespace Silk.Data.SQL.ORM
 			return schema;
 		}
 
+		private static void ConstructRelationship(EntityModel entityModel, MutableDataField dataField,
+			DomainDefinition domainDefinition, DataDomain dataDomain)
+		{
+			var schemaDefinition = domainDefinition.SchemaDefinitions.FirstOrDefault(q => q.EntityType == entityModel.EntityType);
+			if (schemaDefinition == null)
+				return;
+
+			var entityTableDefinition = schemaDefinition.TableDefinitions.FirstOrDefault(q => q.IsEntityTable);
+			if (entityTableDefinition == null)
+				return;
+
+			var fieldDefinition = entityTableDefinition.Fields.FirstOrDefault(q => q.Name == dataField.Name);
+			if (fieldDefinition == null)
+				return;
+
+			var relationshipDefinition = fieldDefinition.Metadata.OfType<RelationshipDefinition>().FirstOrDefault();
+			if (relationshipDefinition == null)
+				return;
+
+			var relatedToEntity = dataDomain.DataModels.FirstOrDefault(q => q.EntityType == relationshipDefinition.EntityType);
+			if (relatedToEntity == null)
+				return;
+
+			var relatedToField = relatedToEntity.Fields.FirstOrDefault(q => q.Name == relationshipDefinition.RelationshipField);
+			if (relatedToField == null)
+				return;
+
+			var relationship = new DataRelationship(relatedToField, relatedToEntity, relationshipDefinition.RelationshipType);
+			dataField.SetRelationship(relationship);
+		}
+
 		public static DataDomain CreateFromDefinition(DomainDefinition domainDefinition,
 			IEnumerable<ViewConvention> viewConventions)
 		{
@@ -101,9 +132,13 @@ namespace Silk.Data.SQL.ORM
 				entityModel.Schema = MakeDataSchema(entityModel, domainDefinition);
 			}
 
-			foreach (var field in entityModels.SelectMany(q => q.Fields).OfType<MutableDataField>())
+			foreach (var entityModel in entityModels)
 			{
-				field.SetStorage();
+				foreach (var field in entityModel.Fields.OfType<MutableDataField>())
+				{
+					ConstructRelationship(entityModel, field, domainDefinition, dataDomain);
+					field.SetStorage();
+				}
 			}
 
 			return dataDomain;
@@ -194,7 +229,6 @@ namespace Silk.Data.SQL.ORM
 			//}
 		}
 
-		private readonly EntitySchema[] _entitySchemas;
 		private readonly List<EntityModel> _entityModels = new List<EntityModel>();
 		private readonly ViewConvention[] _viewConventions;
 		private readonly DomainDefinition _domainDefinition;
@@ -212,12 +246,11 @@ namespace Silk.Data.SQL.ORM
 
 		private DataDomain() { }
 
-		public DataDomain(IEnumerable<EntitySchema> entitySchemas, IEnumerable<EntityModel> entityModels,
+		public DataDomain(IEnumerable<EntityModel> entityModels,
 			IEnumerable<ViewConvention> viewConventions, DomainDefinition domainDefinition)
 		{
 			domainDefinition.IsReadOnly = true;
 
-			_entitySchemas = entitySchemas.ToArray();
 			_entityModels = entityModels.ToList();
 			_viewConventions = viewConventions.ToArray();
 			_domainDefinition = domainDefinition;
