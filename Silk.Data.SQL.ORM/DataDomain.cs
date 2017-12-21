@@ -107,11 +107,7 @@ namespace Silk.Data.SQL.ORM
 			if (relatedToEntity == null)
 				return;
 
-			var relatedToField = relatedToEntity.Fields.FirstOrDefault(q => q.Name == relationshipDefinition.RelationshipField);
-			if (relatedToField == null)
-				return;
-
-			var relationship = new DataRelationship(relatedToField, relatedToEntity, relationshipDefinition.RelationshipType);
+			var relationship = new DataRelationship(relatedToEntity, relationshipDefinition.RelationshipType);
 			dataField.SetRelationship(relationship);
 		}
 
@@ -143,95 +139,9 @@ namespace Silk.Data.SQL.ORM
 			}
 
 			return dataDomain;
-
-			//foreach (var schemaDefinition in domainDefinition.SchemaDefinitions)
-			//{
-			//	Type entityModelType;
-			//	if (schemaDefinition.ProjectionType == null)
-			//		entityModelType = typeof(EntityModel<>)
-			//			.MakeGenericType(schemaDefinition.EntityType);
-			//	else
-			//		entityModelType = typeof(EntityModel<,>)
-			//			.MakeGenericType(schemaDefinition.EntityType, schemaDefinition.ProjectionType);
-
-			//	var entityModel = Activator.CreateInstance(entityModelType, true) as EntityModel;
-			//	entityModel.SetModel(TypeModeller.GetModelOf(schemaDefinition.EntityType));
-
-			//	var schema = new EntitySchema();
-
-			//	foreach (var tableDefinition in schemaDefinition.TableDefinitions)
-			//	{
-			//		var table = new Table();
-			//		var fields = new List<DataField>();
-
-			//		foreach (var fieldDefinition in tableDefinition.Fields)
-			//		{
-			//			var field = new DataField(fieldDefinition.Name, fieldDefinition.DataType,
-			//				fieldDefinition.Metadata.ToArray(), fieldDefinition.ModelBinding, table,
-			//				null, fieldDefinition.ModelFieldName);
-
-			//			fields.Add(field);
-			//		}
-			//		table.Initialize(tableDefinition.TableName, tableDefinition.IsEntityTable, fields.ToArray());
-
-			//		schema.AddTable(table);
-			//	}
-			//	entityModel.Initalize(
-			//		schemaDefinition.EntityType.Name, TypeModeller.GetModelOf(schemaDefinition.EntityType),
-			//		schema, schema.Tables.SelectMany(q => q.DataFields),
-			//		lazyDomainAccessor);
-
-			//	schema.SetEntityModel(entityModel);
-
-			//	schemas.Add(schema);
-			//	entityModels.Add(entityModel);
-			//}
-
-			//foreach (var schemaDefinition in domainDefinition.SchemaDefinitions)
-			//{
-			//	foreach (var tableDefinition in schemaDefinition.TableDefinitions)
-			//	{
-			//		foreach (var viewDefinition in tableDefinition.Fields)
-			//		{
-			//			var relationshipDefinition = viewDefinition.Metadata
-			//				.OfType<RelationshipDefinition>()
-			//				.FirstOrDefault();
-			//			if (relationshipDefinition == null)
-			//				continue;
-
-			//			//  note: the ProjectionType property is invalid here, everything in domain building is bound to full entity schemas
-			//			//        ProjectionType is only valid when making projected views.
-			//			if (relationshipDefinition.ProjectionType != null &&
-			//				relationshipDefinition.ProjectionType != relationshipDefinition.EntityType)
-			//				throw new InvalidOperationException("ProjectionType is only valid on ProjectionModels.");
-
-			//			var viewField = entityModels
-			//				.Where(q => q.EntityType == schemaDefinition.EntityType)
-			//				.SelectMany(q => q.Fields)
-			//				.Where(q => q.DataType == viewDefinition.DataType && q.Storage?.ColumnName == viewDefinition.Name)
-			//				.FirstOrDefault();
-			//			if (viewField == null)
-			//				continue;
-
-			//			var joinSchema = schemas.FirstOrDefault(q => q.EntityModel.EntityType == relationshipDefinition.EntityType);
-			//			if (joinSchema == null)
-			//				continue;
-			//			//  todo: support schemas were the foreign key may not be in the main entity table?
-			//			var joinedDataField = joinSchema.EntityTable.DataFields
-			//				.FirstOrDefault(q => q.Storage.ColumnName == relationshipDefinition.RelationshipField);
-			//			if (joinedDataField == null)
-			//				continue;
-
-			//			var relationship = new DataRelationship(joinedDataField, joinSchema.EntityModel,
-			//				relationshipDefinition.RelationshipType);
-			//			viewField.SetRelationship(relationship);
-			//		}
-			//	}
-			//}
 		}
 
 		private readonly List<EntityModel> _entityModels = new List<EntityModel>();
-		private readonly ViewConvention[] _viewConventions;
 		private readonly DomainDefinition _domainDefinition;
 		private readonly Dictionary<Type, TableDefinition> _entitySchemaDefinitions = new Dictionary<Type, TableDefinition>();
 		private readonly Dictionary<string, EntityModel> _projectionModelCache = new Dictionary<string, EntityModel>();
@@ -250,13 +160,11 @@ namespace Silk.Data.SQL.ORM
 			_domainDefinition = domainDefinition;
 		}
 
-		public DataDomain(IEnumerable<EntityModel> entityModels,
-			IEnumerable<ViewConvention> viewConventions, DomainDefinition domainDefinition)
+		public DataDomain(IEnumerable<EntityModel> entityModels, DomainDefinition domainDefinition)
 		{
 			domainDefinition.IsReadOnly = true;
 
 			_entityModels = entityModels.ToList();
-			_viewConventions = viewConventions.ToArray();
 			_domainDefinition = domainDefinition;
 		}
 

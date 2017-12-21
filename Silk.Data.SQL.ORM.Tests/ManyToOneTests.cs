@@ -37,16 +37,12 @@ namespace Silk.Data.SQL.ORM.Tests
 			Assert.IsNotNull(fieldForRelationshipA.Relationship);
 			Assert.ReferenceEquals(model.Domain.GetEntityModel<RelationshipModelA>(), fieldForRelationshipA.Relationship.ForeignModel);
 			Assert.AreEqual(RelationshipType.ManyToOne, fieldForRelationshipA.Relationship.RelationshipType);
-			Assert.AreEqual("Id", fieldForRelationshipA.Relationship.ForeignField.Name);
-			Assert.AreEqual(typeof(Guid), fieldForRelationshipA.Relationship.ForeignField.DataType);
 			Assert.IsTrue(fieldForRelationshipA.Storage.IsNullable);
 
 			Assert.IsNotNull(fieldForRelationshipB);
 			Assert.IsNotNull(fieldForRelationshipB.Relationship);
 			Assert.ReferenceEquals(model.Domain.GetEntityModel<RelationshipModelB>(), fieldForRelationshipB.Relationship.ForeignModel);
 			Assert.AreEqual(RelationshipType.ManyToOne, fieldForRelationshipB.Relationship.RelationshipType);
-			Assert.AreEqual("Id", fieldForRelationshipA.Relationship.ForeignField.Name);
-			Assert.AreEqual(typeof(int), fieldForRelationshipB.Relationship.ForeignField.DataType);
 			Assert.IsTrue(fieldForRelationshipB.Storage.IsNullable);
 
 			Assert.IsTrue(model.Schema.EntityTable.DataFields.Contains(fieldForRelationshipA));
@@ -67,16 +63,12 @@ namespace Silk.Data.SQL.ORM.Tests
 			Assert.IsNotNull(fieldForRelationshipA.Relationship);
 			Assert.ReferenceEquals(model.Domain.GetEntityModel<RelationshipModelA>(), fieldForRelationshipA.Relationship.ForeignModel);
 			Assert.AreEqual(RelationshipType.ManyToOne, fieldForRelationshipA.Relationship.RelationshipType);
-			Assert.AreEqual("Id", fieldForRelationshipA.Relationship.ForeignField.Name);
-			Assert.AreEqual(typeof(Guid), fieldForRelationshipA.Relationship.ForeignField.DataType);
 			Assert.IsTrue(fieldForRelationshipA.Storage.IsNullable);
 
 			Assert.IsNotNull(fieldForRelationshipB);
 			Assert.IsNotNull(fieldForRelationshipB.Relationship);
 			Assert.ReferenceEquals(model.Domain.GetEntityModel<RelationshipModelB>(), fieldForRelationshipB.Relationship.ForeignModel);
 			Assert.AreEqual(RelationshipType.ManyToOne, fieldForRelationshipB.Relationship.RelationshipType);
-			Assert.AreEqual("Id", fieldForRelationshipA.Relationship.ForeignField.Name);
-			Assert.AreEqual(typeof(int), fieldForRelationshipB.Relationship.ForeignField.DataType);
 			Assert.IsTrue(fieldForRelationshipB.Storage.IsNullable);
 
 			Assert.IsTrue(model.Schema.EntityTable.DataFields.Contains(fieldForRelationshipA));
