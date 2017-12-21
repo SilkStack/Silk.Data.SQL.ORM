@@ -118,7 +118,7 @@ namespace Silk.Data.SQL.ORM
 		public static DataDomain CreateFromDefinition(DomainDefinition domainDefinition,
 			IEnumerable<ViewConvention> viewConventions)
 		{
-			var dataDomain = new DataDomain();
+			var dataDomain = new DataDomain(domainDefinition);
 
 			var entityModels = MakeEntityModels(domainDefinition, dataDomain).ToArray();
 			foreach (var entityModel in entityModels)
@@ -244,7 +244,10 @@ namespace Silk.Data.SQL.ORM
 
 		public IReadOnlyCollection<EntityModel> DataModels => _entityModels;
 
-		private DataDomain() { }
+		private DataDomain(DomainDefinition domainDefinition)
+		{
+			_domainDefinition = domainDefinition;
+		}
 
 		public DataDomain(IEnumerable<EntityModel> entityModels,
 			IEnumerable<ViewConvention> viewConventions, DomainDefinition domainDefinition)
