@@ -281,6 +281,51 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 		}
 
+		[TestMethod]
+		public async Task SelectRelationshipNulls()
+		{
+			var model = _conventionDrivenModel;
+
+			foreach (var entityModel in model.Domain.DataModels)
+			{
+				foreach (var table in entityModel.Schema.Tables)
+				{
+					await table.CreateAsync(TestDb.Provider);
+				}
+			}
+
+			try
+			{
+				var objInstance = new ModelWithRelationships();
+				await model.Domain.Insert(objInstance)
+					.ExecuteAsync(TestDb.Provider);
+
+				var queriedInstance = (await model.Domain.Select<ModelWithRelationships>()
+					.ExecuteAsync(TestDb.Provider)).FirstOrDefault();
+
+				Assert.IsNotNull(queriedInstance);
+				Assert.AreEqual(objInstance.Id, queriedInstance.Id);
+				Assert.IsNull(queriedInstance.RelationshipA);
+				Assert.IsNull(queriedInstance.RelationshipB);
+			}
+			finally
+			{
+				foreach (var entityModel in model.Domain.DataModels)
+				{
+					foreach (var table in entityModel.Schema.Tables)
+					{
+						await table.DropAsync(TestDb.Provider);
+					}
+				}
+			}
+		}
+
+		[TestMethod]
+		public async Task SelectRelationshipObjects()
+		{
+			Assert.Fail("Test not written yet.");
+		}
+
 		private class ModelWithRelationships
 		{
 			public Guid Id { get; private set; }
