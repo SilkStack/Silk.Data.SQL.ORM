@@ -2,6 +2,7 @@
 using Silk.Data.Modelling;
 using Silk.Data.Modelling.Bindings;
 using System.Linq;
+using System.Reflection;
 
 namespace Silk.Data.SQL.ORM.Modelling
 {
@@ -38,10 +39,11 @@ namespace Silk.Data.SQL.ORM.Modelling
 			}
 			else
 			{
-				isNullable = !dataType.IsValueType;
+				var typeInfo = dataType.GetTypeInfo();
+				isNullable = !typeInfo.IsValueType;
 				if (!isNullable)
 				{
-					isNullable = dataType.IsGenericType &&
+					isNullable = typeInfo.IsGenericType &&
 						dataType.GetGenericTypeDefinition() == typeof(Nullable<>);
 				}
 			}
@@ -158,10 +160,11 @@ namespace Silk.Data.SQL.ORM.Modelling
 				}
 				else
 				{
-					isNullable = !DataType.IsValueType;
+					var typeInfo = DataType.GetTypeInfo();
+					isNullable = !typeInfo.IsValueType;
 					if (!isNullable)
 					{
-						isNullable = DataType.IsGenericType &&
+						isNullable = typeInfo.IsGenericType &&
 							DataType.GetGenericTypeDefinition() == typeof(Nullable<>);
 					}
 				}

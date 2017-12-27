@@ -6,6 +6,7 @@ using Silk.Data.SQL.ORM.Queries;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace Silk.Data.SQL.ORM
 {
@@ -28,7 +29,8 @@ namespace Silk.Data.SQL.ORM
 					entityModelType = typeof(EntityModel<,>)
 						.MakeGenericType(schemaDefinition.EntityType, schemaDefinition.ProjectionType);
 
-				var entityModel = Activator.CreateInstance(entityModelType, true) as EntityModel;
+				var ctor = entityModelType.GetTypeInfo().DeclaredConstructors.First(q => q.GetParameters().Length == 0);
+				var entityModel = ctor.Invoke(null) as EntityModel;
 				entityModel.Name = entityModelType.Name;
 				entityModel.SetModel(TypeModeller.GetModelOf(schemaDefinition.EntityType));
 				entityModel.Domain = dataDomain;
