@@ -214,11 +214,22 @@ namespace Silk.Data.SQL.ORM
 			var fields = new List<DataField>();
 			foreach (var fieldDefinition in viewBuilder.ViewDefinition.FieldDefinitions)
 			{
-				var entityField = entityModel.Fields.First(
+				var entityField = entityModel.Fields.FirstOrDefault(
 					q => q.ModelBinding?.ViewFieldPath != null &&
 						fieldDefinition.ModelBinding?.ViewFieldPath != null &&
 						q.ModelBinding.ViewFieldPath.SequenceEqual(fieldDefinition.ModelBinding.ViewFieldPath)
 					);
+				if (entityField == null)
+				{
+					//  todo: remove the need for this - this is a special catch case for the many-to-one relationship type
+					//    since the full datatype isn't modelled but the schema is instead
+					//    this needs rectifying somehow
+					entityField = entityModel.Fields.FirstOrDefault(q => q.Name == fieldDefinition.Name);
+				}
+				if (entityField == null)
+				{
+					continue;
+				}
 				fields.Add(
 					new DataField(entityField.Storage.ColumnName, fieldDefinition.DataType,
 						fieldDefinition.Metadata.Concat(entityField.Metadata).ToArray(),

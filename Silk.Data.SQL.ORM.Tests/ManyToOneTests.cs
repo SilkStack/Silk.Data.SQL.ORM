@@ -370,6 +370,91 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 		}
 
+		[TestMethod]
+		public async Task SelectRelationshipIdsWithNulls()
+		{
+			var model = _conventionDrivenModel;
+
+			foreach (var entityModel in model.Domain.DataModels)
+			{
+				foreach (var table in entityModel.Schema.Tables)
+				{
+					await table.CreateAsync(TestDb.Provider);
+				}
+			}
+
+			try
+			{
+				var objInstance = new ModelWithRelationships();
+				await model.Domain.Insert(objInstance)
+					.ExecuteAsync(TestDb.Provider);
+
+				var queriedInstance = (await model.Domain.Select<ModelWithRelationships, ModelWithRelationshipsView>()
+					.ExecuteAsync(TestDb.Provider)).FirstOrDefault();
+
+				Assert.IsNotNull(queriedInstance);
+				Assert.AreEqual(objInstance.Id, queriedInstance.Id);
+				Assert.AreEqual(default(Guid), queriedInstance.RelationshipAId);
+				Assert.AreEqual(default(int), queriedInstance.RelationshipBId);
+			}
+			finally
+			{
+				foreach (var entityModel in model.Domain.DataModels)
+				{
+					foreach (var table in entityModel.Schema.Tables)
+					{
+						await table.DropAsync(TestDb.Provider);
+					}
+				}
+			}
+		}
+
+		[TestMethod]
+		public async Task SelectRelationshipIds()
+		{
+			var model = _conventionDrivenModel;
+
+			foreach (var entityModel in model.Domain.DataModels)
+			{
+				foreach (var table in entityModel.Schema.Tables)
+				{
+					await table.CreateAsync(TestDb.Provider);
+				}
+			}
+
+			try
+			{
+				var objInstance = new ModelWithRelationships
+				{
+					RelationshipA = new RelationshipModelA { Data = 10 },
+					RelationshipB = new RelationshipModelB { Data = 20 }
+				};
+				await model.Domain
+					.Insert(objInstance.RelationshipA)
+					.Insert(objInstance.RelationshipB)
+					.Insert(objInstance)
+					.ExecuteAsync(TestDb.Provider);
+
+				var queriedInstance = (await model.Domain.Select<ModelWithRelationships, ModelWithRelationshipsView>()
+					.ExecuteAsync(TestDb.Provider)).FirstOrDefault();
+
+				Assert.IsNotNull(queriedInstance);
+				Assert.AreEqual(objInstance.Id, queriedInstance.Id);
+				Assert.AreEqual(objInstance.RelationshipA.Id, queriedInstance.RelationshipAId);
+				Assert.AreEqual(objInstance.RelationshipB.Id, queriedInstance.RelationshipBId);
+			}
+			finally
+			{
+				foreach (var entityModel in model.Domain.DataModels)
+				{
+					foreach (var table in entityModel.Schema.Tables)
+					{
+						await table.DropAsync(TestDb.Provider);
+					}
+				}
+			}
+		}
+
 		private class ModelWithRelationships
 		{
 			public Guid Id { get; private set; }
