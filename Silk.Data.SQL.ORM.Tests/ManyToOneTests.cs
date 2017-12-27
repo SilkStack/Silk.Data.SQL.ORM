@@ -323,7 +323,51 @@ namespace Silk.Data.SQL.ORM.Tests
 		[TestMethod]
 		public async Task SelectRelationshipObjects()
 		{
-			Assert.Fail("Test not written yet.");
+			var model = _conventionDrivenModel;
+
+			foreach (var entityModel in model.Domain.DataModels)
+			{
+				foreach (var table in entityModel.Schema.Tables)
+				{
+					await table.CreateAsync(TestDb.Provider);
+				}
+			}
+
+			try
+			{
+				var objInstance = new ModelWithRelationships
+				{
+					RelationshipA = new RelationshipModelA { Data = 10 },
+					RelationshipB = new RelationshipModelB { Data = 20 }
+				};
+				await model.Domain
+					.Insert(objInstance.RelationshipA)
+					.Insert(objInstance.RelationshipB)
+					.Insert(objInstance)
+					.ExecuteAsync(TestDb.Provider);
+
+				var queriedInstance = (await model.Domain.Select<ModelWithRelationships>()
+					.ExecuteAsync(TestDb.Provider)).FirstOrDefault();
+
+				Assert.IsNotNull(queriedInstance);
+				Assert.AreEqual(objInstance.Id, queriedInstance.Id);
+				Assert.IsNotNull(queriedInstance.RelationshipA);
+				Assert.IsNotNull(queriedInstance.RelationshipB);
+				Assert.AreEqual(objInstance.RelationshipA.Id, queriedInstance.RelationshipA.Id);
+				Assert.AreEqual(objInstance.RelationshipB.Id, queriedInstance.RelationshipB.Id);
+				Assert.AreEqual(objInstance.RelationshipA.Data, queriedInstance.RelationshipA.Data);
+				Assert.AreEqual(objInstance.RelationshipB.Data, queriedInstance.RelationshipB.Data);
+			}
+			finally
+			{
+				foreach (var entityModel in model.Domain.DataModels)
+				{
+					foreach (var table in entityModel.Schema.Tables)
+					{
+						await table.DropAsync(TestDb.Provider);
+					}
+				}
+			}
 		}
 
 		private class ModelWithRelationships

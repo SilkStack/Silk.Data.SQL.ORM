@@ -54,15 +54,14 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 					viewBuilder.UndefineField(existingField);
 				}
 
-				viewBuilder.DefineAssignedViewField(sourceField, modelBindingPath: candidatePath, viewFieldName: fieldName);
-				var viewField = viewBuilder.GetDefinedField(fieldName);
-				viewField.Metadata.Add(new RelationshipDefinition
-				{
-					EntityType = rootSourceField.Field.DataType,
-					RelationshipField = primaryKeyField.Name,
-					RelationshipType = RelationshipType.ManyToOne
-				});
-				viewField.Metadata.Add(new IsNullableAttribute(true));
+				viewBuilder.DefineManyToOneViewField(sourceField, candidatePath, fieldName,
+					new RelationshipDefinition
+					{
+						EntityType = rootSourceField.Field.DataType,
+						RelationshipField = primaryKeyField.Name,
+						RelationshipType = RelationshipType.ManyToOne
+					},
+					new IsNullableAttribute(true));
 			}
 		}
 
@@ -94,15 +93,14 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 				if (sourceField == null)
 					continue;
 
-				viewBuilder.DefineAssignedViewField(sourceField, modelBindingPath: modelBindPath, viewFieldName: fieldName);
-				var viewField = viewBuilder.GetDefinedField(fieldName);
-				viewField.Metadata.Add(new RelationshipDefinition
-				{
-					EntityType = field.DataType,
-					RelationshipField = primaryKeyField.Name,
-					RelationshipType = RelationshipType.ManyToOne
-				});
-				viewField.Metadata.Add(new IsNullableAttribute(true));
+				viewBuilder.DefineManyToOneViewField(sourceField, modelBindPath, fieldName,
+					new RelationshipDefinition
+					{
+						EntityType = field.DataType,
+						RelationshipField = primaryKeyField.Name,
+						RelationshipType = RelationshipType.ManyToOne
+					},
+					new IsNullableAttribute(true));
 			}
 		}
 	}

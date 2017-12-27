@@ -1,4 +1,5 @@
 ﻿using Silk.Data.SQL.Expressions;
+using Silk.Data.SQL.ORM.Expressions;
 using Silk.Data.SQL.ORM.Modelling;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +10,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		where TSource : new()
 	{
 		public EntityModel<TSource> DataModel { get; }
+		private int _aliasCount = 0;
 
 		public SelectQueryBuilder(EntityModel<TSource> dataModel)
 		{
@@ -53,30 +55,85 @@ namespace Silk.Data.SQL.ORM.Queries
 			)
 			where TView : new()
 		{
-			var entityTable = model.Schema.Tables.First(q => q.IsEntityTable);
-			var queries = new List<ORMQuery>();
+			var entityTable = model.Schema.EntityTable;
+			var queries = new CompositeQueryExpression();
 			var projectedFields = new List<QueryExpression>();
+			List<JoinExpression> joins = null;
 
-			foreach (var field in model.Fields.Where(q => q.Storage.Table == entityTable))
-			{
-				projectedFields.Add(QueryExpression.Alias(
-						QueryExpression.Column(field.Storage.ColumnName, QueryExpression.Table(field.Storage.Table.TableName)),
-						field.Name
-					));
-			}
+			var entityTableAlias = QueryExpression.Alias(QueryExpression.Table(entityTable.TableName), entityTable.TableName);
+			AddProjectedFields(entityTableAlias, model, projectedFields, ref joins);
 
-			queries.Add(new MapResultORMQuery<TView>(QueryExpression.Select(
+			queries.Queries.Add(QueryExpression.Select(
 					projectedFields.ToArray(),
-					from: QueryExpression.Table(entityTable.TableName),
+					from: entityTableAlias,
 					where: where,
+					joins: joins?.ToArray(),
 					having: having,
 					orderBy: orderBy,
 					groupBy: groupBy,
 					offset: offset != null ? QueryExpression.Value(offset.Value) : null,
 					limit: limit != null ? QueryExpression.Value(limit.Value) : null
-				), model));
+				));
 
-			return queries;
+			return new[] {
+				new MapResultORMQuery<TView>(queries, model)
+			};
+		}
+
+		private void AddProjectedFields(AliasExpression fromAliasExpression, EntityModel model,
+			List<QueryExpression> projectedFields, ref List<JoinExpression> joins,
+			string aliasPath = null)
+		{
+			var aliasPrefix = "";
+			if (aliasPath != null)
+				aliasPrefix = $"{aliasPath}_";
+			foreach (var field in model.Schema.EntityTable.DataFields)
+			{
+				if (field.Relationship == null)
+				{
+					projectedFields.Add(QueryExpression.Alias(
+							QueryExpression.Column(field.Storage.ColumnName, fromAliasExpression.Identifier),
+							$"{aliasPrefix}{field.Name}"
+						));
+				}
+				else
+				{
+					projectedFields.Add(QueryExpression.Alias(
+							QueryExpression.Column(field.Storage.ColumnName, fromAliasExpression.Identifier),
+							$"{aliasPrefix}{field.Name}"
+						));
+
+					var aliasExpression = AddJoinExpression(ref joins, field);
+					if (aliasExpression != null)
+					{
+						AddProjectedFields(aliasExpression, field.Relationship.ForeignModel,
+							projectedFields, ref joins, $"{aliasPrefix}{field.Name}");
+					}
+				}
+			}
+		}
+
+		private AliasExpression AddJoinExpression(ref List<JoinExpression> joins, DataField field)
+		{
+			if (field.Relationship.RelationshipType == RelationshipType.ManyToMany)
+				return null;
+			if (joins == null)
+				joins = new List<JoinExpression>();
+
+			//  todo: how to support joins that don't use the primary key as the foreign relationship key
+			//  todo: investigate how to perform this join for tables with composite primary keys
+			var foreignEntityTable = field.Relationship.ForeignModel.Schema.EntityTable;
+			var foreignPrimaryKey = field.Relationship.ForeignModel.PrimaryKeyFields.First();
+
+			var foreignTableAlias = QueryExpression.Alias(QueryExpression.Table(foreignEntityTable.TableName), $"t{++_aliasCount}");
+
+			joins.Add(QueryExpression.Join(
+				QueryExpression.Column(field.Storage.ColumnName, QueryExpression.Table(field.Storage.Table.TableName)),
+				QueryExpression.Column(foreignPrimaryKey.Storage.ColumnName, foreignTableAlias),
+				JoinDirection.Left
+				));
+
+			return foreignTableAlias;
 		}
 
 		//public ICollection<QueryWithDelegate> CreateQuery<TView>(

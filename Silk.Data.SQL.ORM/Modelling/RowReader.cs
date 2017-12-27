@@ -33,20 +33,37 @@ namespace Silk.Data.SQL.ORM.Modelling
 
 		public void ReadRow(QueryResult queryResult)
 		{
-			foreach (var field in _viewReadWriter.View.Fields
+			ReadViewFields(queryResult, _viewReadWriter.View);
+		}
+
+		private void ReadViewFields(QueryResult queryResult, IView view, string aliasPath = null)
+		{
+			//  todo: splitting on '_' seems ineffecient, improve that
+			var aliasPrefix = "";
+			if (aliasPath != null)
+				aliasPrefix = $"{aliasPath}_";
+
+			foreach (var field in view.Fields
 				.OfType<DataField>()
-				.Where(q => q.Storage.Table.IsEntityTable &&
-				q.Relationship == null))
+				.Where(q => q.Storage?.Table.IsEntityTable == true))
 			{
+				if (field.Relationship?.RelationshipType == RelationshipType.ManyToMany)
+					continue;
+
 				if (!_typeReaders.TryGetValue(field.DataType, out var readFunc))
 					throw new InvalidOperationException("Unsupported data type.");
 
-				var ord = queryResult.GetOrdinal(field.Name);
+				var ord = queryResult.GetOrdinal($"{aliasPrefix}{field.Name}");
 
 				if (queryResult.IsDBNull(ord))
-					_viewReadWriter.WriteToPath<object>(new[] { field.Name }, null);
+					_viewReadWriter.WriteToPath<object>($"{aliasPrefix}{field.Name}".Split('_'), null);
 				else
-					_viewReadWriter.WriteToPath<object>(new[] { field.Name }, readFunc(queryResult, ord));
+					_viewReadWriter.WriteToPath<object>($"{aliasPrefix}{field.Name}".Split('_'), readFunc(queryResult, ord));
+
+				if (field.Relationship?.RelationshipType == RelationshipType.ManyToOne)
+				{
+					ReadViewFields(queryResult, field.Relationship.ForeignModel, $"{aliasPrefix}{field.Name}");
+				}
 			}
 		}
 	}
