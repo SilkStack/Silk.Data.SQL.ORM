@@ -54,6 +54,17 @@ namespace Silk.Data.SQL.ORM
 			}
 		}
 
+		private static IEnumerable<DataField> EntityTableFields(EntityModel model)
+		{
+			foreach (var field in model.Fields)
+			{
+				var relationshipDefinition = field.Metadata.OfType<RelationshipDefinition>()
+					.FirstOrDefault();
+				if (relationshipDefinition == null)
+					yield return field;
+			}
+		}
+
 		private static EntitySchema MakeDataSchema(EntityModel entityModel, DomainDefinition domainDefinition)
 		{
 			var schemaDefinition = domainDefinition.SchemaDefinitions.FirstOrDefault(q => q.EntityType == entityModel.EntityType);
@@ -66,10 +77,7 @@ namespace Silk.Data.SQL.ORM
 				if (tableDefinition.IsEntityTable)
 				{
 					var table = new Table(tableDefinition.TableName, true,
-						entityModel.Fields.Where(q =>
-							!q.Metadata.OfType<RelationshipDefinition>().Any() ||
-							q.Metadata.OfType<RelationshipDefinition>().First().RelationshipType != RelationshipType.ManyToMany
-							).ToArray()
+						EntityTableFields(entityModel).ToArray()
 						);
 					foreach(var field in table.DataFields.OfType<MutableDataField>())
 					{
@@ -115,6 +123,26 @@ namespace Silk.Data.SQL.ORM
 				return;
 
 			var relationship = new DataRelationship(relatedToEntity, relationshipDefinition.RelationshipType);
+
+			if (relationshipDefinition.TableReferences != null)
+			{
+				foreach (var tableReference in relationshipDefinition.TableReferences)
+				{
+					if (tableReference.EntityTableReferences == null)
+						continue;
+					foreach (var entityTableReference in tableReference.EntityTableReferences)
+					{
+						var relatedDataField = new MutableDataField(entityTableReference.Name, entityTableReference.DataType,
+							entityTableReference.ModelBinding, entityTableReference.Metadata.Concat(new object[] { new IsNullableAttribute(true) }).ToArray());
+						relatedDataField.Table = entityModel.Schema.EntityTable;
+						relatedDataField.SetStorage();
+						relatedDataField.SetRelationship(relationship);
+						entityModel.Schema.EntityTable.InternalDataFields.Add(relatedDataField);
+						entityModel.AddField(relatedDataField);
+					}
+				}
+			}
+
 			dataField.SetRelationship(relationship);
 		}
 
@@ -226,6 +254,7 @@ namespace Silk.Data.SQL.ORM
 					//  todo: remove the need for this - this is a special catch case for the many-to-one relationship type
 					//    since the full datatype isn't modelled but the schema is instead
 					//    this needs rectifying somehow
+					//    - important - this also causes the full entity to be requested from the database just to select a projected ID field
 					entityField = entityModel.Fields.FirstOrDefault(q => q.Name == fieldDefinition.Name);
 				}
 				if (entityField == null)

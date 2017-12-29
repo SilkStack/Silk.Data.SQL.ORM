@@ -54,6 +54,9 @@ namespace Silk.Data.SQL.ORM.Queries
 				var row = new List<QueryExpression>();
 				foreach (var field in model.Fields)
 				{
+					if (field.Storage == null)
+						continue;
+
 					if (field.Storage.IsAutoIncrement)
 					{
 						continue;
@@ -107,7 +110,7 @@ namespace Silk.Data.SQL.ORM.Queries
 					QueryExpression.Insert(
 						DataModel.Schema.EntityTable.TableName,
 						model.Fields
-							.Where(q => q.Storage.Table.IsEntityTable)
+							.Where(q => q.Storage?.Table.IsEntityTable == true)
 							.Select(q => q.Storage.ColumnName).ToArray(),
 						rows.ToArray()
 					)));

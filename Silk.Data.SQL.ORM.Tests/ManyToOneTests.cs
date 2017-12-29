@@ -30,8 +30,8 @@ namespace Silk.Data.SQL.ORM.Tests
 
 			Assert.AreEqual(3, model.Fields.Length);
 
-			var fieldForRelationshipA = model.Fields.FirstOrDefault(q => q.Name == "RelationshipAId");
-			var fieldForRelationshipB = model.Fields.FirstOrDefault(q => q.Name == "RelationshipBId");
+			var fieldForRelationshipA = model.Fields.FirstOrDefault(q => q.Name == "RelationshipA");
+			var fieldForRelationshipB = model.Fields.FirstOrDefault(q => q.Name == "RelationshipB");
 
 			Assert.IsNotNull(fieldForRelationshipA);
 			Assert.IsNotNull(fieldForRelationshipA.Relationship);
@@ -455,6 +455,54 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 		}
 
+		[TestMethod]
+		public async Task SelectRelationshipSubviews()
+		{
+			var model = _conventionDrivenModel;
+
+			foreach (var entityModel in model.Domain.DataModels)
+			{
+				foreach (var table in entityModel.Schema.Tables)
+				{
+					await table.CreateAsync(TestDb.Provider);
+				}
+			}
+
+			try
+			{
+				var objInstance = new ModelWithRelationships
+				{
+					RelationshipA = new RelationshipModelA { Data = 10 },
+					RelationshipB = new RelationshipModelB { Data = 20 }
+				};
+				await model.Domain
+					.Insert(objInstance.RelationshipA)
+					.Insert(objInstance.RelationshipB)
+					.Insert(objInstance)
+					.ExecuteAsync(TestDb.Provider);
+
+				var queriedInstance = (await model.Domain.Select<ModelWithRelationships, ModelWithRelationshipsWithSubviews>()
+					.ExecuteAsync(TestDb.Provider)).FirstOrDefault();
+
+				Assert.IsNotNull(queriedInstance);
+				Assert.IsNotNull(queriedInstance.RelationshipA);
+				Assert.IsNotNull(queriedInstance.RelationshipB);
+				Assert.AreEqual(objInstance.Id, queriedInstance.Id);
+				Assert.AreEqual(objInstance.RelationshipA.Data, queriedInstance.RelationshipA.Data);
+				Assert.AreEqual(objInstance.RelationshipB.Data, queriedInstance.RelationshipB.Data);
+			}
+			finally
+			{
+				foreach (var entityModel in model.Domain.DataModels)
+				{
+					foreach (var table in entityModel.Schema.Tables)
+					{
+						await table.DropAsync(TestDb.Provider);
+					}
+				}
+			}
+		}
+
 		private class ModelWithRelationships
 		{
 			public Guid Id { get; private set; }
@@ -478,6 +526,23 @@ namespace Silk.Data.SQL.ORM.Tests
 		private class RelationshipModelB
 		{
 			public int Id { get; private set; }
+			public int Data { get; set; }
+		}
+
+		private class ModelWithRelationshipsWithSubviews
+		{
+			public Guid Id { get; private set; }
+			public RelationshipModelAView RelationshipA { get; set; }
+			public RelationshipModelBView RelationshipB { get; set; }
+		}
+
+		private class RelationshipModelAView
+		{
+			public int Data { get; set; }
+		}
+
+		private class RelationshipModelBView
+		{
 			public int Data { get; set; }
 		}
 	}

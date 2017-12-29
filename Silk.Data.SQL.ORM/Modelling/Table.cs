@@ -1,6 +1,7 @@
 ﻿using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.Providers;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -10,7 +11,9 @@ namespace Silk.Data.SQL.ORM.Modelling
 	{
 		public string TableName { get; private set; }
 		public bool IsEntityTable { get; private set; }
-		public DataField[] DataFields { get; private set; }
+		public IReadOnlyCollection<DataField> DataFields => InternalDataFields;
+
+		internal List<DataField> InternalDataFields { get; } = new List<DataField>();
 
 		internal Table()
 		{
@@ -20,14 +23,14 @@ namespace Silk.Data.SQL.ORM.Modelling
 		{
 			TableName = tableName;
 			IsEntityTable = isEntityTable;
-			DataFields = dataFields;
+			InternalDataFields.AddRange(dataFields);
 		}
 
 		internal void Initialize(string tableName, bool isEntityTable, DataField[] dataFields)
 		{
 			TableName = tableName;
 			IsEntityTable = isEntityTable;
-			DataFields = dataFields;
+			InternalDataFields.AddRange(dataFields);
 		}
 
 		private CreateTableExpression CreateTableExpression()

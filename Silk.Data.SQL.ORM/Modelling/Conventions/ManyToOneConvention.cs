@@ -70,6 +70,9 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 			if (viewBuilder.IsPrimitiveType(field.DataType) || field.IsEnumerable)
 				return;
 
+			if (viewBuilder.IsFieldDefined(field.Name))
+				return;
+
 			var dataTypeSchemaDefinition = viewBuilder.GetSchemaDefinitionFor(field.DataType);
 			if (dataTypeSchemaDefinition == null)
 				return;
@@ -82,26 +85,46 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 			if (dataTypePrimaryKeyFields.Length == 0)
 				return;
 
+			var sourceField = viewBuilder.FindSourceField(field, field.Name);
+			if (sourceField == null)
+				return;
+
+			var relationshipDefinition = new RelationshipDefinition
+			{
+				EntityType = sourceField.Field.DataType,
+				RelationshipType = RelationshipType.ManyToOne
+			};
+
+			var tableReference = relationshipDefinition.CreateTableReference();
 			foreach (var primaryKeyField in dataTypePrimaryKeyFields)
 			{
-				var fieldName = $"{field.Name}{primaryKeyField.Name}";
-				if (viewBuilder.IsFieldDefined(fieldName))
-					continue;
-
-				var modelBindPath = new[] { field.Name, primaryKeyField.Name };
-				var sourceField = viewBuilder.FindSourceField(field, modelBindPath);
-				if (sourceField == null)
-					continue;
-
-				viewBuilder.DefineManyToOneViewField(sourceField, modelBindPath, fieldName,
-					new RelationshipDefinition
-					{
-						EntityType = field.DataType,
-						RelationshipField = primaryKeyField.Name,
-						RelationshipType = RelationshipType.ManyToOne
-					},
-					new IsNullableAttribute(true));
+				tableReference.AddReferenceToEntityTable(sourceField, dataTypeEntityTable, primaryKeyField);
 			}
+
+			viewBuilder.DefineManyToOneViewField(sourceField, new[] { sourceField.Field.Name }, field.Name,
+				relationshipDefinition,
+				new IsNullableAttribute(true));
+
+			//foreach (var primaryKeyField in dataTypePrimaryKeyFields)
+			//{
+			//	var fieldName = $"{field.Name}{primaryKeyField.Name}";
+			//	if (viewBuilder.IsFieldDefined(fieldName))
+			//		continue;
+
+			//	var modelBindPath = new[] { field.Name, primaryKeyField.Name };
+			//	var sourceField = viewBuilder.FindSourceField(field, modelBindPath);
+			//	if (sourceField == null)
+			//		continue;
+
+			//	viewBuilder.DefineManyToOneViewField(sourceField, modelBindPath, fieldName,
+			//		new RelationshipDefinition
+			//		{
+			//			EntityType = field.DataType,
+			//			RelationshipField = primaryKeyField.Name,
+			//			RelationshipType = RelationshipType.ManyToOne
+			//		},
+			//		new IsNullableAttribute(true));
+			//}
 		}
 	}
 }

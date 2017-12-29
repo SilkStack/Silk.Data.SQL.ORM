@@ -37,7 +37,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			Assert.AreEqual(RelationshipType.ManyToMany, fieldForRelationshipB.Relationship.RelationshipType);
 			Assert.IsNull(fieldForRelationshipB.Storage);
 
-			Assert.AreEqual(1, model.Schema.EntityTable.DataFields.Length);
+			Assert.AreEqual(1, model.Schema.EntityTable.DataFields.Count);
 			var idField = model.Schema.EntityTable.DataFields.FirstOrDefault(q => q.Name == "Id");
 			Assert.IsNotNull(idField);
 			Assert.AreEqual(typeof(Guid), idField.DataType);
@@ -45,7 +45,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			Assert.IsTrue(idField.Storage.IsPrimaryKey);
 
 			var relationshipATable = model.Schema.RelationshipTables.FirstOrDefault(q => q.TableName == "PocoWithManyRelationshipsToRelationshipTypeA");
-			Assert.AreEqual(2, relationshipATable.DataFields.Length);
+			Assert.AreEqual(2, relationshipATable.DataFields.Count);
 			var modelIdField = relationshipATable.DataFields.FirstOrDefault(q => q.Name == "PocoWithManyRelationships_Id");
 			Assert.IsNotNull(modelIdField);
 			Assert.AreEqual(typeof(Guid), modelIdField.DataType);
@@ -54,7 +54,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			Assert.AreEqual(typeof(int), relationshipIdField.DataType);
 
 			var relationshipBTable = model.Schema.RelationshipTables.FirstOrDefault(q => q.TableName == "PocoWithManyRelationshipsToRelationshipTypeB");
-			Assert.AreEqual(2, relationshipBTable.DataFields.Length);
+			Assert.AreEqual(2, relationshipBTable.DataFields.Count);
 			modelIdField = relationshipBTable.DataFields.FirstOrDefault(q => q.Name == "PocoWithManyRelationships_Id");
 			Assert.IsNotNull(modelIdField);
 			Assert.AreEqual(typeof(Guid), modelIdField.DataType);

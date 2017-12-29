@@ -79,6 +79,16 @@ namespace Silk.Data.SQL.ORM.Modelling
 			PrimaryKeyFields = Fields.Where(q => q.Storage?.IsPrimaryKey == true).ToArray();
 		}
 
+		internal void AddField(DataField field)
+		{
+			//  todo: I know this is super ineffecient but the IView<T> interface specifies an array property for Fields
+			//  investigate fixing that!
+			var copy = Fields;
+			Fields = new DataField[Fields.Length + 1];
+			Array.Copy(copy, Fields, copy.Length);
+			Fields[copy.Length] = field;
+		}
+
 		public abstract void SetModel(Model model);
 
 		public abstract Model GetAsModel();
