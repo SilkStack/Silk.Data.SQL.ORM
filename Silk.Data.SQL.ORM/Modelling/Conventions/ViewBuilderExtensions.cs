@@ -21,7 +21,10 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 				viewFieldName
 				);
 
-			relationshipLoader.AddField(fieldInfo.Field, modelBindingPath[0], viewFieldName);
+			//  todo: this null check field only works because of the workings of the DataDomain as it's built
+			//      this should be refactored away at some point
+			relationshipLoader.AddField(fieldInfo.Field, modelBindingPath[0],
+				viewFieldName, $"{modelBindingPath[0]}Id");
 
 			viewBuilder.DefineField(viewFieldName, binding, fieldInfo.Field.DataType, metadata);
 		}

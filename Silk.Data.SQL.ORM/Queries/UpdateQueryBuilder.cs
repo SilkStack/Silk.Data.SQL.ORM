@@ -49,6 +49,9 @@ namespace Silk.Data.SQL.ORM.Queries
 				var row = new Dictionary<DataField, QueryExpression>();
 				foreach (var field in model.Fields)
 				{
+					if (field.Storage == null)
+						continue;
+
 					if (field.Relationship == null)
 					{
 						row.Add(field, QueryExpression.Value(

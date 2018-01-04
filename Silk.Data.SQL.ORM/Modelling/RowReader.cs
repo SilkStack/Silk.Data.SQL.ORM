@@ -44,11 +44,16 @@ namespace Silk.Data.SQL.ORM.Modelling
 				aliasPrefix = $"{aliasPath}_";
 
 			foreach (var field in view.Fields
-				.OfType<DataField>()
-				.Where(q => q.Storage?.Table.IsEntityTable == true))
+				.OfType<DataField>())
 			{
 				if (field.Relationship?.RelationshipType == RelationshipType.ManyToMany)
 					continue;
+
+				if (field.Storage == null)
+				{
+					ReadViewFields(queryResult, field.Relationship.ProjectedModel ?? field.Relationship.ForeignModel, $"{aliasPrefix}{field.Name}");
+					continue;
+				}
 
 				if (!_typeReaders.TryGetValue(field.DataType, out var readFunc))
 					throw new InvalidOperationException("Unsupported data type.");
@@ -59,11 +64,6 @@ namespace Silk.Data.SQL.ORM.Modelling
 					_viewReadWriter.WriteToPath<object>($"{aliasPrefix}{field.Name}".Split('_'), null);
 				else
 					_viewReadWriter.WriteToPath<object>($"{aliasPrefix}{field.Name}".Split('_'), readFunc(queryResult, ord));
-
-				if (field.Relationship?.RelationshipType == RelationshipType.ManyToOne)
-				{
-					ReadViewFields(queryResult, field.Relationship.ForeignModel, $"{aliasPrefix}{field.Name}");
-				}
 			}
 		}
 	}

@@ -12,14 +12,15 @@ namespace Silk.Data.SQL.ORM.Modelling.ResourceLoaders
 		private readonly List<RelatedObjectMapper> _relatedObjectMappers
 			= new List<RelatedObjectMapper>();
 
-		public void AddField(ModelField modelField, string modelFieldName, string viewFieldName)
+		public void AddField(ModelField modelField, string modelFieldName, string viewFieldName,
+			string nullCheckFieldName)
 		{
-			var model = modelField.ParentModel as TypedModel;
+			var model = modelField.DataTypeModel as TypedModel;
 			if (model == null)
 				throw new InvalidOperationException("Only type models are supported.");
 			var relatedObjectMapper = GetRelatedObjectMapper(model.DataType);
 			relatedObjectMapper.AddField(
-				new FieldName(viewFieldName, modelFieldName));
+				new FieldName(viewFieldName, modelFieldName, nullCheckFieldName));
 		}
 
 		private RelatedObjectMapper GetRelatedObjectMapper(Type modelType)
@@ -45,11 +46,14 @@ namespace Silk.Data.SQL.ORM.Modelling.ResourceLoaders
 		{
 			public string ViewFieldName { get; }
 			public string ModelFieldName { get; }
+			public string NullCheckFieldName { get; }
 
-			public FieldName(string viewFieldName, string modelFieldName)
+			public FieldName(string viewFieldName, string modelFieldName,
+				string nullCheckFieldName)
 			{
 				ViewFieldName = viewFieldName;
 				ModelFieldName = modelFieldName;
+				NullCheckFieldName = nullCheckFieldName;
 			}
 		}
 
@@ -74,7 +78,7 @@ namespace Silk.Data.SQL.ORM.Modelling.ResourceLoaders
 			{
 				foreach (var viewFieldName in _viewFields)
 				{
-					var fieldPath = new[] { viewFieldName.ViewFieldName };
+					var fieldPath = new[] { viewFieldName.NullCheckFieldName };
 					foreach (var source in sources)
 					{
 						var relatedObjectField = source.ReadFromPath<object>(fieldPath);

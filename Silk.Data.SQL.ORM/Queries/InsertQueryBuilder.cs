@@ -92,7 +92,7 @@ namespace Silk.Data.SQL.ORM.Queries
 						QueryExpression.Insert(
 							DataModel.Schema.EntityTable.TableName,
 							model.Fields
-								.Where(q => q.Storage.Table.IsEntityTable && !q.Storage.IsAutoIncrement)
+								.Where(q => q.Storage?.Table.IsEntityTable == true && q.Storage?.IsAutoIncrement == false)
 								.Select(q => q.Storage.ColumnName).ToArray(),
 							row.ToArray()
 						)));

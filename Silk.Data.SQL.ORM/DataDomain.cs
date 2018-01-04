@@ -2,6 +2,7 @@
 using Silk.Data.Modelling.Conventions;
 using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Modelling;
+using Silk.Data.SQL.ORM.Modelling.Conventions;
 using Silk.Data.SQL.ORM.Queries;
 using System;
 using System.Collections.Generic;
@@ -185,7 +186,7 @@ namespace Silk.Data.SQL.ORM
 			new CopyPrimitiveTypesConvention(),
 			new FlattenSimpleTypesConvention(),
 			new CopyReferencesConvention(),
-			new MapReferenceTypesConvention()
+			new ProjectSubObjectProperties()
 		};
 
 		public IReadOnlyCollection<EntityModel> DataModels => _entityModels;
@@ -218,28 +219,35 @@ namespace Silk.Data.SQL.ORM
 			where TSource : new()
 			where TView : new()
 		{
-			var entityModel = GetEntityModel<TSource>();
+			return GetProjectionModel(typeof(TSource), typeof(TView)) as EntityModel<TView>;
+		}
+
+		private EntityModel GetProjectionModel(Type sourceType, Type viewType)
+		{
+			var entityModel = _entityModels.FirstOrDefault(q => q.EntityType == sourceType);
 			if (entityModel == null)
 				throw new InvalidOperationException("Entity type not present in data domain.");
 
-			var cacheKey = $"{typeof(TSource).FullName} to {typeof(TView).FullName}";
+			var cacheKey = $"{sourceType.FullName} to {viewType.FullName}";
 			if (_projectionModelCache.TryGetValue(cacheKey, out var ret))
-				return ret as EntityModel<TView>;
+				return ret as EntityModel;
 
 			lock (_projectionModelCache)
 			{
 				if (_projectionModelCache.TryGetValue(cacheKey, out ret))
-					return ret as EntityModel<TView>;
+					return ret;
 			}
 
-			var modelOfViewType = TypeModeller.GetModelOf<TView>();
+			var modelOfViewType = TypeModeller.GetModelOf(viewType);
 			var targetModel = entityModel.GetAsModel();
 
 			var viewBuilder = new DataViewBuilder(modelOfViewType, targetModel, _projectionConventions, _domainDefinition,
-				typeof(TSource), typeof(TView));
+				sourceType, viewType);
 			viewBuilder.ProcessModel(targetModel);
 
-			ret = new EntityModel<TView>();
+			var ctor = typeof(EntityModel<>).MakeGenericType(viewType)
+				.GetTypeInfo().DeclaredConstructors.First(q => q.GetParameters().Length == 0);
+			ret = ctor.Invoke(null) as EntityModel;
 
 			var fields = new List<DataField>();
 			foreach (var fieldDefinition in viewBuilder.ViewDefinition.FieldDefinitions)
@@ -250,30 +258,33 @@ namespace Silk.Data.SQL.ORM
 						q.ModelBinding.ViewFieldPath.SequenceEqual(fieldDefinition.ModelBinding.ViewFieldPath)
 					);
 				if (entityField == null)
-				{
-					//  todo: remove the need for this - this is a special catch case for the many-to-one relationship type
-					//    since the full datatype isn't modelled but the schema is instead
-					//    this needs rectifying somehow
-					//    - important - this also causes the full entity to be requested from the database just to select a projected ID field
-					entityField = entityModel.Fields.FirstOrDefault(q => q.Name == fieldDefinition.Name);
-				}
-				if (entityField == null)
-				{
 					continue;
-				}
+				var relationship = GetProjectionFieldRelationship(fieldDefinition);
 				fields.Add(
-					new DataField(entityField.Storage.ColumnName, fieldDefinition.DataType,
+					new DataField(entityField.Storage?.ColumnName, fieldDefinition.DataType,
 						fieldDefinition.Metadata.Concat(entityField.Metadata).ToArray(),
-						fieldDefinition.ModelBinding, entityField.Storage.Table, entityField.Relationship, fieldDefinition.Name)
+						fieldDefinition.ModelBinding, entityField.Storage?.Table, relationship, fieldDefinition.Name)
 					);
 			}
 
-			ret.Initalize(viewBuilder.ViewDefinition.Name, TypeModeller.GetModelOf<TView>(),
+			ret.Initalize(viewBuilder.ViewDefinition.Name, TypeModeller.GetModelOf(viewType),
 				entityModel.Schema, fields.ToArray(), this);
 
 			_projectionModelCache.Add(cacheKey, ret);
 
-			return ret as EntityModel<TView>;
+			return ret;
+		}
+
+		private DataRelationship GetProjectionFieldRelationship(ViewFieldDefinition fieldDefinition)
+		{
+			var relationshipDefinition = fieldDefinition.Metadata.OfType<RelationshipDefinition>().FirstOrDefault();
+			if (relationshipDefinition == null)
+				return null;
+			return new DataRelationship(
+				_entityModels.FirstOrDefault(q => q.EntityType == relationshipDefinition.EntityType),
+				GetProjectionModel(relationshipDefinition.EntityType, relationshipDefinition.ProjectionType),
+				relationshipDefinition.RelationshipType
+				);
 		}
 
 		public QueryCollection Insert<TSource>(params TSource[] sources)

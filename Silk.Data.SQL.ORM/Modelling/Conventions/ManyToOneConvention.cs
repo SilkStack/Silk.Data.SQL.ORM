@@ -104,27 +104,6 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 			viewBuilder.DefineManyToOneViewField(sourceField, new[] { sourceField.Field.Name }, field.Name,
 				relationshipDefinition,
 				new IsNullableAttribute(true));
-
-			//foreach (var primaryKeyField in dataTypePrimaryKeyFields)
-			//{
-			//	var fieldName = $"{field.Name}{primaryKeyField.Name}";
-			//	if (viewBuilder.IsFieldDefined(fieldName))
-			//		continue;
-
-			//	var modelBindPath = new[] { field.Name, primaryKeyField.Name };
-			//	var sourceField = viewBuilder.FindSourceField(field, modelBindPath);
-			//	if (sourceField == null)
-			//		continue;
-
-			//	viewBuilder.DefineManyToOneViewField(sourceField, modelBindPath, fieldName,
-			//		new RelationshipDefinition
-			//		{
-			//			EntityType = field.DataType,
-			//			RelationshipField = primaryKeyField.Name,
-			//			RelationshipType = RelationshipType.ManyToOne
-			//		},
-			//		new IsNullableAttribute(true));
-			//}
 		}
 	}
 }
