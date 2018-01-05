@@ -30,7 +30,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			var projectionModel = DataModel.Domain
 				.GetProjectionModel<TSource, TView>();
 
-			return CreateQuery(sources);
+			return CreateQuery(projectionModel, sources);
 		}
 
 		public ICollection<ORMQuery> CreateQuery(params TSource[] sources)
