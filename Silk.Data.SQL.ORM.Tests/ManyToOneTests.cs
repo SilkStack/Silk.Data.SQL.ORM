@@ -28,25 +28,38 @@ namespace Silk.Data.SQL.ORM.Tests
 		{
 			var model = _conventionDrivenModel;
 
-			Assert.AreEqual(3, model.Fields.Length);
+			Assert.AreEqual(5, model.Fields.Length);
 
 			var fieldForRelationshipA = model.Fields.FirstOrDefault(q => q.Name == "RelationshipA");
 			var fieldForRelationshipB = model.Fields.FirstOrDefault(q => q.Name == "RelationshipB");
+
+			var fieldForRelationshipAId = model.Fields.FirstOrDefault(q => q.Name == "RelationshipAId");
+			var fieldForRelationshipBId = model.Fields.FirstOrDefault(q => q.Name == "RelationshipBId");
 
 			Assert.IsNotNull(fieldForRelationshipA);
 			Assert.IsNotNull(fieldForRelationshipA.Relationship);
 			Assert.ReferenceEquals(model.Domain.GetEntityModel<RelationshipModelA>(), fieldForRelationshipA.Relationship.ForeignModel);
 			Assert.AreEqual(RelationshipType.ManyToOne, fieldForRelationshipA.Relationship.RelationshipType);
-			Assert.IsTrue(fieldForRelationshipA.Storage.IsNullable);
+			Assert.IsNull(fieldForRelationshipA.Storage);
+
+			Assert.IsNotNull(fieldForRelationshipAId);
+			Assert.IsNotNull(fieldForRelationshipAId.Relationship);
+			Assert.ReferenceEquals(fieldForRelationshipA.Relationship, fieldForRelationshipAId.Relationship);
+			Assert.IsTrue(fieldForRelationshipAId.Storage.IsNullable);
 
 			Assert.IsNotNull(fieldForRelationshipB);
 			Assert.IsNotNull(fieldForRelationshipB.Relationship);
 			Assert.ReferenceEquals(model.Domain.GetEntityModel<RelationshipModelB>(), fieldForRelationshipB.Relationship.ForeignModel);
 			Assert.AreEqual(RelationshipType.ManyToOne, fieldForRelationshipB.Relationship.RelationshipType);
-			Assert.IsTrue(fieldForRelationshipB.Storage.IsNullable);
+			Assert.IsNull(fieldForRelationshipA.Storage);
 
-			Assert.IsTrue(model.Schema.EntityTable.DataFields.Contains(fieldForRelationshipA));
-			Assert.IsTrue(model.Schema.EntityTable.DataFields.Contains(fieldForRelationshipB));
+			Assert.IsNotNull(fieldForRelationshipBId);
+			Assert.IsNotNull(fieldForRelationshipBId.Relationship);
+			Assert.ReferenceEquals(fieldForRelationshipA.Relationship, fieldForRelationshipBId.Relationship);
+			Assert.IsTrue(fieldForRelationshipBId.Storage.IsNullable);
+
+			Assert.IsTrue(model.Schema.EntityTable.DataFields.Contains(fieldForRelationshipAId));
+			Assert.IsTrue(model.Schema.EntityTable.DataFields.Contains(fieldForRelationshipBId));
 		}
 
 		[TestMethod]
