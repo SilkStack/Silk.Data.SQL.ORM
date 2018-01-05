@@ -14,7 +14,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 		public Type EntityType { get; private set; }
 		public bool IsJoinTable { get; private set; }
 		public Type[] JoinEntityTypes { get; private set; }
-		public IReadOnlyCollection<DataField> DataFields => InternalDataFields;
+		public IReadOnlyList<DataField> DataFields => InternalDataFields;
 
 		internal List<DataField> InternalDataFields { get; } = new List<DataField>();
 

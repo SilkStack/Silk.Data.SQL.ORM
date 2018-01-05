@@ -1,8 +1,10 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Modelling;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Silk.Data.SQL.ORM.Tests
 {
@@ -61,6 +63,126 @@ namespace Silk.Data.SQL.ORM.Tests
 			relationshipIdField = relationshipBTable.DataFields.FirstOrDefault(q => q.Name == "RelationshipTypeB_Id");
 			Assert.IsNotNull(relationshipIdField);
 			Assert.AreEqual(typeof(Guid), relationshipIdField.DataType);
+		}
+
+		[TestMethod]
+		public async Task InsertManyToMany()
+		{
+			var model = _conventionDrivenModel;
+			var domain = model.Domain;
+
+			foreach (var entityModel in model.Domain.DataModels)
+			{
+				foreach (var table in entityModel.Schema.Tables)
+				{
+					await table.CreateAsync(TestDb.Provider);
+				}
+			}
+
+			try
+			{
+				var mainInstance = new PocoWithManyRelationships
+				{
+					RelationshipA = new List<RelationshipTypeA>
+					{
+						new RelationshipTypeA { Data = 10 },
+						new RelationshipTypeA { Data = 20 },
+						new RelationshipTypeA { Data = 30 }
+					},
+					RelationshipB = new RelationshipTypeB[]
+					{
+						new RelationshipTypeB { Data = 40 },
+						new RelationshipTypeB { Data = 50 },
+						new RelationshipTypeB { Data = 60 }
+					}
+				};
+
+				await domain
+					.Insert(mainInstance.RelationshipA)
+					.Insert(mainInstance.RelationshipB)
+					.Insert(mainInstance)
+					.ExecuteAsync(TestDb.Provider);
+
+				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
+					QueryExpression.Select(
+						new[] { QueryExpression.All() },
+						from: QueryExpression.Table(model.Schema.EntityTable.TableName),
+						joins: new[]
+						{
+							QueryExpression.Join(
+								QueryExpression.Column("Id", QueryExpression.Table(model.Schema.EntityTable.TableName)),
+								QueryExpression.Column("PocoWithManyRelationships_Id", QueryExpression.Table("PocoWithManyRelationshipsToRelationshipTypeA")),
+								JoinDirection.Left
+								)
+						}
+					)))
+				{
+					var ids = new int[3];
+
+					Assert.IsTrue(queryResult.HasRows);
+
+					Assert.IsTrue(await queryResult.ReadAsync());
+					ids[0] = queryResult.GetInt32(2);
+
+					Assert.IsTrue(await queryResult.ReadAsync());
+					ids[1] = queryResult.GetInt32(2);
+
+					Assert.IsTrue(await queryResult.ReadAsync());
+					ids[2] = queryResult.GetInt32(2);
+
+					Assert.IsFalse(await queryResult.ReadAsync());
+
+					foreach (var relationship in mainInstance.RelationshipA)
+					{
+						Assert.IsTrue(ids.Contains(relationship.Id));
+					}
+				}
+
+				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
+					QueryExpression.Select(
+						new[] { QueryExpression.All() },
+						from: QueryExpression.Table(model.Schema.EntityTable.TableName),
+						joins: new[]
+						{
+							QueryExpression.Join(
+								QueryExpression.Column("Id", QueryExpression.Table(model.Schema.EntityTable.TableName)),
+								QueryExpression.Column("PocoWithManyRelationships_Id", QueryExpression.Table("PocoWithManyRelationshipsToRelationshipTypeB")),
+								JoinDirection.Left
+								)
+						}
+					)))
+				{
+					var ids = new Guid[3];
+
+					Assert.IsTrue(queryResult.HasRows);
+
+					Assert.IsTrue(await queryResult.ReadAsync());
+					ids[0] = queryResult.GetGuid(2);
+
+					Assert.IsTrue(await queryResult.ReadAsync());
+					ids[1] = queryResult.GetGuid(2);
+
+					Assert.IsTrue(await queryResult.ReadAsync());
+					ids[2] = queryResult.GetGuid(2);
+
+					Assert.IsFalse(await queryResult.ReadAsync());
+
+					foreach (var relationship in mainInstance.RelationshipB)
+					{
+						Assert.IsTrue(ids.Contains(relationship.Id));
+					}
+				}
+			}
+			finally
+			{
+				foreach (var entityModel in model.Domain.DataModels)
+				{
+					foreach (var table in entityModel.Schema.Tables)
+					{
+						await table.DropAsync(TestDb.Provider);
+					}
+				}
+			}
 		}
 
 		private class PocoWithManyRelationships

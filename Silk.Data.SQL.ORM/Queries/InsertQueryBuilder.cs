@@ -3,6 +3,7 @@ using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Expressions;
 using Silk.Data.SQL.ORM.Modelling;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -49,6 +50,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			if (sources == null)
 				throw new ArgumentException("At least one source must be provided.", nameof(sources));
 
+			var schema = model.Schema;
 			var queries = new List<ORMQuery>();
 			var autoIncField = DataModel.PrimaryKeyFields.FirstOrDefault(q => q.Storage.IsAutoIncrement);
 			var isBulkInsert = autoIncField == null;
@@ -63,11 +65,8 @@ namespace Silk.Data.SQL.ORM.Queries
 			foreach (var sourceReadWriter in sourceReadWriters)
 			{
 				var row = new List<QueryExpression>();
-				foreach (var field in model.Fields)
+				foreach (var field in model.Fields.Where(q => q.Storage != null))
 				{
-					if (field.Storage == null)
-						continue;
-
 					if (field.Storage.IsAutoIncrement)
 					{
 						continue;
@@ -125,6 +124,70 @@ namespace Silk.Data.SQL.ORM.Queries
 							.Select(q => q.Storage.ColumnName).ToArray(),
 						rows.ToArray()
 					)));
+			}
+
+			var manyToManyFields = model.Fields
+				.Where(q => q.Storage == null && q.Relationship != null && q.Relationship.RelationshipType == RelationshipType.ManyToMany)
+				.ToArray();
+			if (manyToManyFields.Length > 0)
+			{
+				foreach (var sourceReadWriter in sourceReadWriters)
+				{
+					foreach (var field in manyToManyFields)
+					{
+						rows.Clear();
+
+						var joinTable = schema.Tables.FirstOrDefault(q => q.IsJoinTableFor(model.EntityType, field.DataType));
+						if (joinTable == null)
+							throw new InvalidOperationException($"Couldn't locate join table for '{field.DataType.FullName}'.");
+
+						var entityKeyFields = joinTable.DataFields.Where(q => q.RelatedEntityType == model.EntityType).ToArray();
+						var valueKeyFields = joinTable.DataFields.Where(q => q.RelatedEntityType == field.DataType).ToArray();
+
+						var valueEnum = field.ModelBinding.ReadValue<object>(sourceReadWriter) as IEnumerable;
+						foreach (var value in valueEnum)
+						{
+							var valueReadWriter = new ObjectModelReadWriter(field.Relationship.ForeignModel.Model, value);
+							var row = new QueryExpression[joinTable.DataFields.Count];
+
+							for (var i = 0; i < row.Length; i++)
+							{
+								var dataField = joinTable.DataFields[i];
+								if (joinTable.DataFields[i].RelatedEntityType == model.EntityType)
+								{
+									row[i] = new LateReadValueExpression(() =>
+									{
+										return dataField.ModelBinding.ReadValue<object>(sourceReadWriter);
+									});
+								}
+								else if (joinTable.DataFields[i].RelatedEntityType == field.DataType)
+								{
+									row[i] = new LateReadValueExpression(() =>
+									{
+										return dataField.ModelBinding.ReadValue<object>(valueReadWriter);
+									});
+								}
+								else
+								{
+									row[i] = new LateReadValueExpression(() =>
+									{
+										return null;
+									});
+								}
+							}
+
+							rows.Add(row);
+						}
+
+						queries.Add(new NoResultORMQuery(
+							QueryExpression.Insert(
+								joinTable.TableName,
+								joinTable.DataFields
+									.Select(q => q.Storage.ColumnName).ToArray(),
+								rows.ToArray()
+							)));
+					}
+				}
 			}
 
 			if (queries.Count == 0)

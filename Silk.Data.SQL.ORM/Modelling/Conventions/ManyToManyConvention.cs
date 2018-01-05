@@ -1,4 +1,5 @@
 ﻿using Silk.Data.Modelling;
+using Silk.Data.Modelling.Bindings;
 using Silk.Data.Modelling.Conventions;
 using System.Linq;
 
@@ -71,20 +72,28 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 
 			foreach (var primaryKeyField in thisPrimaryKeysFields)
 			{
-				relationshipTableDefinition.Fields.Add(
-					new ViewFieldDefinition($"{thisTableDefinition.TableName}_{primaryKeyField.Name}", null)
-					{
-						DataType = primaryKeyField.DataType
-					});
+				var fieldDefinition = new ViewFieldDefinition(
+					$"{thisTableDefinition.TableName}_{primaryKeyField.Name}",
+					new AssignmentBinding(BindingDirection.Bidirectional, new[] { primaryKeyField.Name }, new[] { primaryKeyField.Name })
+					)
+				{
+					DataType = primaryKeyField.DataType
+				};
+				fieldDefinition.Metadata.Add(new RelatedEntityType(viewBuilder.EntityType));
+				relationshipTableDefinition.Fields.Add(fieldDefinition);
 			}
 
 			foreach (var primaryKeyField in dataTypePrimaryKeyFields)
 			{
-				relationshipTableDefinition.Fields.Add(
-					new ViewFieldDefinition($"{dataTypeEntityTable.TableName}_{primaryKeyField.Name}", null)
-					{
-						DataType = primaryKeyField.DataType
-					});
+				var fieldDefinition = new ViewFieldDefinition(
+					$"{dataTypeEntityTable.TableName}_{primaryKeyField.Name}",
+					new AssignmentBinding(BindingDirection.Bidirectional, new[] { primaryKeyField.Name }, new[] { primaryKeyField.Name })
+					)
+				{
+					DataType = primaryKeyField.DataType
+				};
+				fieldDefinition.Metadata.Add(new RelatedEntityType(field.DataType));
+				relationshipTableDefinition.Fields.Add(fieldDefinition);
 			}
 		}
 	}

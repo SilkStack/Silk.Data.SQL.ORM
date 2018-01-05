@@ -12,6 +12,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 		public Type DataType { get; protected set; }
 		public object[] Metadata { get; protected set; }
 		public ModelBinding ModelBinding { get; protected set; }
+		public Type RelatedEntityType { get; protected set; }
 
 		public DataStorage Storage { get; protected set; }
 		public DataRelationship Relationship { get; private set; }
@@ -30,6 +31,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 			Metadata = metadata;
 			ModelBinding = modelBinding;
 			Relationship = relationship;
+			RelatedEntityType = metadata.OfType<RelatedEntityType>().FirstOrDefault()?.EntityType;
 
 			var isNullable = false;
 			var nullableAttr = metadata.OfType<IsNullableAttribute>().FirstOrDefault();
@@ -146,6 +148,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 			DataType = fieldType;
 			ModelBinding = binding;
 			Metadata = metadata;
+			RelatedEntityType = metadata.OfType<RelatedEntityType>().FirstOrDefault()?.EntityType;
 		}
 
 		public void SetStorage()
