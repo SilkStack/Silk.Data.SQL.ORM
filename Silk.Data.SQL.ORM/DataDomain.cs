@@ -287,6 +287,13 @@ namespace Silk.Data.SQL.ORM
 				);
 		}
 
+		public QueryCollection Insert<TSource>(IEnumerable<TSource> sources)
+			where TSource : new()
+		{
+			return new QueryCollection(this)
+				.Insert<TSource>(sources);
+		}
+
 		public QueryCollection Insert<TSource>(params TSource[] sources)
 			where TSource : new()
 		{
@@ -295,6 +302,14 @@ namespace Silk.Data.SQL.ORM
 		}
 
 		public QueryCollection Insert<TSource, TView>(params TView[] sources)
+			where TSource : new()
+			where TView : new()
+		{
+			return new QueryCollection(this)
+				.Insert<TSource, TView>(sources);
+		}
+
+		public QueryCollection Insert<TSource, TView>(IEnumerable<TView> sources)
 			where TSource : new()
 			where TView : new()
 		{

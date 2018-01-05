@@ -21,21 +21,32 @@ namespace Silk.Data.SQL.ORM.Queries
 		public ICollection<ORMQuery> CreateQuery<TView>(params TView[] sources)
 			where TView : new()
 		{
+			return CreateQuery(sources as IEnumerable<TView>);
+		}
+
+		public ICollection<ORMQuery> CreateQuery<TView>(IEnumerable<TView> sources)
+			where TView : new()
+		{
 			var projectionModel = DataModel.Domain
 				.GetProjectionModel<TSource, TView>();
 
-			return CreateQuery(projectionModel, sources);
+			return CreateQuery(sources);
 		}
 
 		public ICollection<ORMQuery> CreateQuery(params TSource[] sources)
 		{
+			return CreateQuery(sources as IEnumerable<TSource>);
+		}
+
+		public ICollection<ORMQuery> CreateQuery(IEnumerable<TSource> sources)
+		{
 			return CreateQuery(DataModel, sources);
 		}
 
-		public ICollection<ORMQuery> CreateQuery<TView>(EntityModel<TView> model, params TView[] sources)
+		private ICollection<ORMQuery> CreateQuery<TView>(EntityModel<TView> model, IEnumerable<TView> sources)
 			where TView : new()
 		{
-			if (sources == null || sources.Length < 1)
+			if (sources == null)
 				throw new ArgumentException("At least one source must be provided.", nameof(sources));
 
 			var queries = new List<ORMQuery>();
@@ -115,6 +126,9 @@ namespace Silk.Data.SQL.ORM.Queries
 						rows.ToArray()
 					)));
 			}
+
+			if (queries.Count == 0)
+				throw new ArgumentException("At least one source must be provided.", nameof(sources));
 
 			return queries;
 		}

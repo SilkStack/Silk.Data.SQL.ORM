@@ -54,7 +54,26 @@ namespace Silk.Data.SQL.ORM.Queries
 			return Self;
 		}
 
+		public TThis Insert<TSource>(IEnumerable<TSource> sources)
+			where TSource : new()
+		{
+			Queries.AddRange(
+				GetEntityModel<TSource>().Insert(sources)
+				);
+			return Self;
+		}
+
 		public TThis Insert<TSource,TView>(params TView[] sources)
+			where TSource : new()
+			where TView : new()
+		{
+			Queries.AddRange(
+				GetEntityModel<TSource>().Insert<TView>(sources)
+				);
+			return Self;
+		}
+
+		public TThis Insert<TSource, TView>(IEnumerable<TView> sources)
 			where TSource : new()
 			where TView : new()
 		{
