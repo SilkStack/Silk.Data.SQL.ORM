@@ -11,6 +11,9 @@ namespace Silk.Data.SQL.ORM.Modelling
 	{
 		public string TableName { get; private set; }
 		public bool IsEntityTable { get; private set; }
+		public Type EntityType { get; private set; }
+		public bool IsJoinTable { get; private set; }
+		public Type[] JoinEntityTypes { get; private set; }
 		public IReadOnlyCollection<DataField> DataFields => InternalDataFields;
 
 		internal List<DataField> InternalDataFields { get; } = new List<DataField>();
@@ -19,18 +22,26 @@ namespace Silk.Data.SQL.ORM.Modelling
 		{
 		}
 
-		public Table(string tableName, bool isEntityTable, DataField[] dataFields)
+		public Table(string tableName, bool isEntityTable, DataField[] dataFields, Type entityType)
 		{
+			if (isEntityTable && entityType == null)
+				throw new ArgumentNullException(nameof(entityType), "Entity tables must specify an entity type.");
+
 			TableName = tableName;
 			IsEntityTable = isEntityTable;
 			InternalDataFields.AddRange(dataFields);
+			EntityType = entityType;
 		}
 
-		internal void Initialize(string tableName, bool isEntityTable, DataField[] dataFields)
+		internal void Initialize(string tableName, bool isEntityTable, DataField[] dataFields, Type entityType)
 		{
+			if (isEntityTable && entityType == null)
+				throw new ArgumentNullException(nameof(entityType), "Entity tables must specify an entity type.");
+
 			TableName = tableName;
 			IsEntityTable = isEntityTable;
 			InternalDataFields.AddRange(dataFields);
+			EntityType = entityType;
 		}
 
 		private CreateTableExpression CreateTableExpression()

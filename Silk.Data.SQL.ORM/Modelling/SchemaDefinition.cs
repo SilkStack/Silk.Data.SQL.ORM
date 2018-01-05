@@ -28,7 +28,8 @@ namespace Silk.Data.SQL.ORM.Modelling
 				entityTable = new TableDefinition
 				{
 					IsEntityTable = true,
-					TableName = ViewDefinition.Name
+					TableName = ViewDefinition.Name,
+					EntityType = EntityType
 				};
 				TableDefinitions.Add(entityTable);
 			}

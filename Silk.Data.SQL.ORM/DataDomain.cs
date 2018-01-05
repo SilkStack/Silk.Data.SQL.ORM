@@ -78,7 +78,7 @@ namespace Silk.Data.SQL.ORM
 				if (tableDefinition.IsEntityTable)
 				{
 					var table = new Table(tableDefinition.TableName, true,
-						EntityTableFields(entityModel).ToArray()
+						EntityTableFields(entityModel).ToArray(), tableDefinition.EntityType
 						);
 					foreach(var field in table.DataFields.OfType<MutableDataField>())
 					{
@@ -93,7 +93,7 @@ namespace Silk.Data.SQL.ORM
 							new DataField(fieldDefintion.Name, fieldDefintion.DataType, fieldDefintion.Metadata.ToArray(),
 								fieldDefintion.ModelBinding, table, null)
 						).ToArray();
-					table.Initialize(tableDefinition.TableName, false, fields);
+					table.Initialize(tableDefinition.TableName, false, fields, table.EntityType);
 					schema.AddTable(table);
 				}
 			}
