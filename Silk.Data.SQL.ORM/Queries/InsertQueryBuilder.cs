@@ -48,7 +48,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			where TView : new()
 		{
 			if (sources == null)
-				throw new ArgumentException("At least one source must be provided.", nameof(sources));
+				throw new ArgumentNullException(nameof(sources));
 
 			var schema = model.Schema;
 			var queries = new List<ORMQuery>();
@@ -189,9 +189,6 @@ namespace Silk.Data.SQL.ORM.Queries
 					}
 				}
 			}
-
-			if (queries.Count == 0)
-				throw new ArgumentException("At least one source must be provided.", nameof(sources));
 
 			return queries;
 		}
