@@ -6,14 +6,13 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 {
 	public class ManyToManyConvention : ViewConvention<DataViewBuilder>
 	{
-		public override ViewType SupportedViewTypes => ViewType.All;
+		public override ViewType SupportedViewTypes => ViewType.ConventionDerived;
 		public override bool PerformMultiplePasses => true;
 		public override bool SkipIfFieldDefined => true;
 
 		public override void MakeModelField(DataViewBuilder viewBuilder, ModelField field)
 		{
-			if (viewBuilder.Mode == ViewType.ConventionDerived)
-				MakeConventionDrivenFields(viewBuilder, field);
+			MakeConventionDrivenFields(viewBuilder, field);
 		}
 
 		public void MakeConventionDrivenFields(DataViewBuilder viewBuilder, ModelField field)
