@@ -287,6 +287,21 @@ namespace Silk.Data.SQL.ORM
 				);
 		}
 
+		public QueryCollection Insert<TSource>(ICollection<TSource> sources)
+			where TSource : new() => Insert(sources as IEnumerable<TSource>);
+
+		public QueryCollection Insert<TSource>(IReadOnlyCollection<TSource> sources)
+			where TSource : new() => Insert(sources as IEnumerable<TSource>);
+
+		public QueryCollection Insert<TSource>(IList<TSource> sources)
+			where TSource : new() => Insert(sources as IEnumerable<TSource>);
+
+		public QueryCollection Insert<TSource>(IReadOnlyList<TSource> sources)
+			where TSource : new() => Insert(sources as IEnumerable<TSource>);
+
+		public QueryCollection Insert<TSource>(List<TSource> sources)
+			where TSource : new() => Insert(sources as IEnumerable<TSource>);
+
 		public QueryCollection Insert<TSource>(IEnumerable<TSource> sources)
 			where TSource : new()
 		{
@@ -300,6 +315,26 @@ namespace Silk.Data.SQL.ORM
 			return new QueryCollection(this)
 				.Insert<TSource>(sources);
 		}
+
+		public QueryCollection Insert<TSource, TView>(ICollection<TView> sources)
+			where TSource : new()
+			where TView : new() => Insert<TSource, TView>(sources as IEnumerable<TView>);
+
+		public QueryCollection Insert<TSource, TView>(IReadOnlyCollection<TView> sources)
+			where TSource : new()
+			where TView : new() => Insert<TSource, TView>(sources as IEnumerable<TView>);
+
+		public QueryCollection Insert<TSource, TView>(IList<TView> sources)
+			where TSource : new()
+			where TView : new() => Insert<TSource, TView>(sources as IEnumerable<TView>);
+
+		public QueryCollection Insert<TSource, TView>(IReadOnlyList<TView> sources)
+			where TSource : new()
+			where TView : new() => Insert<TSource, TView>(sources as IEnumerable<TView>);
+
+		public QueryCollection Insert<TSource, TView>(List<TView> sources)
+			where TSource : new()
+			where TView : new() => Insert<TSource, TView>(sources as IEnumerable<TView>);
 
 		public QueryCollection Insert<TSource, TView>(params TView[] sources)
 			where TSource : new()
