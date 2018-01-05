@@ -2,6 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard1.3</TargetFramework>
+    <Version>0.0.1</Version>
+    <Authors>John Carruthers</Authors>
+    <Company />
+    <Product>SilkStack</Product>
+    <Description>Simple data orientated ORM for .NET.</Description>
   </PropertyGroup>
 
   <ItemGroup>
