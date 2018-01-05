@@ -50,32 +50,6 @@ namespace Silk.Data.SQL.ORM.Tests
 		}
 
 		[TestMethod]
-		public void ModelDrivenModelManyToOneRelationship()
-		{
-			var model = _modelDrivenModel;
-
-			Assert.AreEqual(3, model.Fields.Length);
-
-			var fieldForRelationshipA = model.Fields.FirstOrDefault(q => q.Name == "RelationshipAId");
-			var fieldForRelationshipB = model.Fields.FirstOrDefault(q => q.Name == "RelationshipBId");
-
-			Assert.IsNotNull(fieldForRelationshipA);
-			Assert.IsNotNull(fieldForRelationshipA.Relationship);
-			Assert.ReferenceEquals(model.Domain.GetEntityModel<RelationshipModelA>(), fieldForRelationshipA.Relationship.ForeignModel);
-			Assert.AreEqual(RelationshipType.ManyToOne, fieldForRelationshipA.Relationship.RelationshipType);
-			Assert.IsTrue(fieldForRelationshipA.Storage.IsNullable);
-
-			Assert.IsNotNull(fieldForRelationshipB);
-			Assert.IsNotNull(fieldForRelationshipB.Relationship);
-			Assert.ReferenceEquals(model.Domain.GetEntityModel<RelationshipModelB>(), fieldForRelationshipB.Relationship.ForeignModel);
-			Assert.AreEqual(RelationshipType.ManyToOne, fieldForRelationshipB.Relationship.RelationshipType);
-			Assert.IsTrue(fieldForRelationshipB.Storage.IsNullable);
-
-			Assert.IsTrue(model.Schema.EntityTable.DataFields.Contains(fieldForRelationshipA));
-			Assert.IsTrue(model.Schema.EntityTable.DataFields.Contains(fieldForRelationshipB));
-		}
-
-		[TestMethod]
 		public async Task InsertWithNulls()
 		{
 			var model = _conventionDrivenModel;
