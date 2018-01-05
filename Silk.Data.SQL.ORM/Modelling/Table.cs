@@ -33,15 +33,32 @@ namespace Silk.Data.SQL.ORM.Modelling
 			EntityType = entityType;
 		}
 
-		internal void Initialize(string tableName, bool isEntityTable, DataField[] dataFields, Type entityType)
+		internal void Initialize(string tableName, bool isEntityTable, DataField[] dataFields, Type entityType,
+			bool isJoinTable, Type[] joinEntityTypes)
 		{
 			if (isEntityTable && entityType == null)
 				throw new ArgumentNullException(nameof(entityType), "Entity tables must specify an entity type.");
+			if (isJoinTable && joinEntityTypes == null)
+				throw new ArgumentNullException(nameof(entityType), "Join tables must specify entity types.");
 
 			TableName = tableName;
 			IsEntityTable = isEntityTable;
 			InternalDataFields.AddRange(dataFields);
 			EntityType = entityType;
+			IsJoinTable = isJoinTable;
+			JoinEntityTypes = joinEntityTypes;
+		}
+
+		public bool IsJoinTableFor(params Type[] entityTypes)
+		{
+			if (!IsJoinTable)
+				return false;
+			foreach (var type in entityTypes)
+			{
+				if (!JoinEntityTypes.Contains(type))
+					return false;
+			}
+			return true;
 		}
 
 		private CreateTableExpression CreateTableExpression()

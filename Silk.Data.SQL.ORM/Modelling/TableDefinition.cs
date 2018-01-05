@@ -9,6 +9,8 @@ namespace Silk.Data.SQL.ORM.Modelling
 		public string TableName { get; set; }
 		public bool IsEntityTable { get; set; }
 		public Type EntityType { get; set; }
+		public bool IsJoinTable { get; set; }
+		public List<Type> JoinEntityTypes { get; } = new List<Type>();
 		public List<ViewFieldDefinition> Fields { get; } = new List<ViewFieldDefinition>();
 	}
 }

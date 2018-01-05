@@ -52,8 +52,11 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 				relationshipTableDefinition = new TableDefinition
 				{
 					IsEntityTable = false,
-					TableName = relationshipTableName
+					TableName = relationshipTableName,
+					IsJoinTable = true
 				};
+				relationshipTableDefinition.JoinEntityTypes.Add(viewBuilder.EntityType);
+				relationshipTableDefinition.JoinEntityTypes.Add(field.DataType);
 				if (!viewBuilder.DomainDefinition.IsReadOnly)
 					viewBuilder.GetSchemaDefinition().TableDefinitions.Add(relationshipTableDefinition);
 			}

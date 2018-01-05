@@ -93,7 +93,8 @@ namespace Silk.Data.SQL.ORM
 							new DataField(fieldDefintion.Name, fieldDefintion.DataType, fieldDefintion.Metadata.ToArray(),
 								fieldDefintion.ModelBinding, table, null)
 						).ToArray();
-					table.Initialize(tableDefinition.TableName, false, fields, table.EntityType);
+					table.Initialize(tableDefinition.TableName, false, fields, tableDefinition.EntityType,
+						tableDefinition.IsJoinTable, tableDefinition.JoinEntityTypes.ToArray());
 					schema.AddTable(table);
 				}
 			}
