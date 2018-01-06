@@ -137,7 +137,7 @@ namespace Silk.Data.SQL.ORM.Queries
 					{
 						rows.Clear();
 
-						var joinTable = schema.Tables.FirstOrDefault(q => q.IsJoinTableFor(model.EntityType, field.DataType));
+						var joinTable = schema.Tables.FirstOrDefault(q => q.IsJoinTableFor(model.Schema.EntityTable.EntityType, field.DataType));
 						if (joinTable == null)
 							throw new InvalidOperationException($"Couldn't locate join table for '{field.DataType.FullName}'.");
 
@@ -153,7 +153,7 @@ namespace Silk.Data.SQL.ORM.Queries
 							for (var i = 0; i < row.Length; i++)
 							{
 								var dataField = joinTable.DataFields[i];
-								if (joinTable.DataFields[i].RelatedEntityType == model.EntityType)
+								if (joinTable.DataFields[i].RelatedEntityType == model.Schema.EntityTable.EntityType)
 								{
 									row[i] = new LateReadValueExpression(() =>
 									{

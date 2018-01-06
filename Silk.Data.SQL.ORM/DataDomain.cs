@@ -260,7 +260,9 @@ namespace Silk.Data.SQL.ORM
 					);
 				if (entityField == null)
 					continue;
-				var relationship = GetProjectionFieldRelationship(fieldDefinition);
+				var relationship =
+					GetProjectionFieldRelationship(fieldDefinition) ??
+					CreateProjectionRelationshipFromField(entityField, fieldDefinition.DataType);
 				fields.Add(
 					new DataField(entityField.Storage?.ColumnName, fieldDefinition.DataType,
 						fieldDefinition.Metadata.Concat(entityField.Metadata).ToArray(),
@@ -285,6 +287,23 @@ namespace Silk.Data.SQL.ORM
 				_entityModels.FirstOrDefault(q => q.EntityType == relationshipDefinition.EntityType),
 				GetProjectionModel(relationshipDefinition.EntityType, relationshipDefinition.ProjectionType),
 				relationshipDefinition.RelationshipType
+				);
+		}
+
+		private DataRelationship CreateProjectionRelationshipFromField(DataField field, Type projectionType)
+		{
+			var relationship = field.Relationship;
+			if (relationship == null)
+				return null;
+			if (relationship.ForeignModel.EntityType == projectionType)
+				return new DataRelationship(
+					relationship.ForeignModel,
+					relationship.RelationshipType
+				);
+			return new DataRelationship(
+				relationship.ForeignModel,
+				GetProjectionModel(relationship.ForeignModel.EntityType, projectionType),
+				relationship.RelationshipType
 				);
 		}
 
