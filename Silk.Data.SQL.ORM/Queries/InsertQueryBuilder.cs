@@ -145,6 +145,9 @@ namespace Silk.Data.SQL.ORM.Queries
 						var valueKeyFields = joinTable.DataFields.Where(q => q.RelatedEntityType == field.DataType).ToArray();
 
 						var valueEnum = field.ModelBinding.ReadValue<object>(sourceReadWriter) as IEnumerable;
+						if (valueEnum == null)
+							continue;
+
 						foreach (var value in valueEnum)
 						{
 							var valueReadWriter = new ObjectModelReadWriter(field.Relationship.ForeignModel.Model, value);
