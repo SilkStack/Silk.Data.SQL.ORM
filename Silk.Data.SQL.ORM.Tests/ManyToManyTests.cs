@@ -829,6 +829,188 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 		}
 
+		[TestMethod]
+		public async Task DeleteManyToManyRelationships()
+		{
+			var model = _conventionDrivenModel;
+			var domain = model.Domain;
+
+			foreach (var entityModel in model.Domain.DataModels)
+			{
+				foreach (var table in entityModel.Schema.Tables)
+				{
+					await table.CreateAsync(TestDb.Provider);
+				}
+			}
+
+			try
+			{
+				var mainInstance = new PocoWithManyRelationships
+				{
+					RelationshipA = new List<RelationshipTypeA>
+					{
+						new RelationshipTypeA { Data = 10 },
+						new RelationshipTypeA { Data = 20 },
+						new RelationshipTypeA { Data = 30 }
+					},
+					RelationshipB = new RelationshipTypeB[]
+					{
+						new RelationshipTypeB { Data = 40 },
+						new RelationshipTypeB { Data = 50 },
+						new RelationshipTypeB { Data = 60 }
+					}
+				};
+
+				await domain
+					.Insert(mainInstance.RelationshipA)
+					.Insert(mainInstance.RelationshipB)
+					.Insert(mainInstance)
+					.ExecuteAsync(TestDb.Provider);
+
+				await domain.Delete(mainInstance).ExecuteAsync(TestDb.Provider);
+
+				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
+					QueryExpression.Select(
+						new[] { QueryExpression.All() },
+						from: QueryExpression.Table("PocoWithManyRelationshipsToRelationshipTypeA")
+					)))
+				{
+					Assert.IsFalse(queryResult.HasRows);
+				}
+
+				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
+					QueryExpression.Select(
+						new[] { QueryExpression.All() },
+						from: QueryExpression.Table("PocoWithManyRelationshipsToRelationshipTypeB")
+					)))
+				{
+					Assert.IsFalse(queryResult.HasRows);
+				}
+			}
+			finally
+			{
+				foreach (var entityModel in model.Domain.DataModels)
+				{
+					foreach (var table in entityModel.Schema.Tables)
+					{
+						await table.DropAsync(TestDb.Provider);
+					}
+				}
+			}
+		}
+
+		[TestMethod]
+		public async Task DeleteViewWithFullModelManyToMany()
+		{
+			var model = _conventionDrivenModel;
+			var domain = model.Domain;
+
+			foreach (var entityModel in model.Domain.DataModels)
+			{
+				foreach (var table in entityModel.Schema.Tables)
+				{
+					await table.CreateAsync(TestDb.Provider);
+				}
+			}
+
+			try
+			{
+				var mainInstance = new PocoWithManyRelationshipsViewWithRelationshipA
+				{
+					RelationshipA = new List<RelationshipTypeA>
+					{
+						new RelationshipTypeA { Data = 10 },
+						new RelationshipTypeA { Data = 20 },
+						new RelationshipTypeA { Data = 30 }
+					}
+				};
+
+				await domain
+					.Insert(mainInstance.RelationshipA)
+					.Insert<PocoWithManyRelationships, PocoWithManyRelationshipsViewWithRelationshipA>(mainInstance)
+					.ExecuteAsync(TestDb.Provider);
+
+				await domain
+					.Delete<PocoWithManyRelationships, PocoWithManyRelationshipsViewWithRelationshipA>(mainInstance)
+					.ExecuteAsync(TestDb.Provider);
+
+				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
+					QueryExpression.Select(
+						new[] { QueryExpression.All() },
+						from: QueryExpression.Table("PocoWithManyRelationshipsToRelationshipTypeA")
+					)))
+				{
+					Assert.IsFalse(queryResult.HasRows);
+				}
+			}
+			finally
+			{
+				foreach (var entityModel in model.Domain.DataModels)
+				{
+					foreach (var table in entityModel.Schema.Tables)
+					{
+						await table.DropAsync(TestDb.Provider);
+					}
+				}
+			}
+		}
+
+		[TestMethod]
+		public async Task DeleteViewWithSubViewManyToMany()
+		{
+			var model = _conventionDrivenModel;
+			var domain = model.Domain;
+
+			foreach (var entityModel in model.Domain.DataModels)
+			{
+				foreach (var table in entityModel.Schema.Tables)
+				{
+					await table.CreateAsync(TestDb.Provider);
+				}
+			}
+
+			try
+			{
+				var mainInstance = new PocoWithManyRelationshipsViewWithRelationshipAView
+				{
+					RelationshipA = new RelationshipTypeAView[]
+					{
+						new RelationshipTypeAView { Data = 10 },
+						new RelationshipTypeAView { Data = 20 },
+						new RelationshipTypeAView { Data = 30 }
+					}
+				};
+
+				await domain
+					.Insert<RelationshipTypeA, RelationshipTypeAView>(mainInstance.RelationshipA)
+					.Insert<PocoWithManyRelationships, PocoWithManyRelationshipsViewWithRelationshipAView>(mainInstance)
+					.ExecuteAsync(TestDb.Provider);
+
+				await domain
+					.Delete<PocoWithManyRelationships, PocoWithManyRelationshipsViewWithRelationshipAView>(mainInstance)
+					.ExecuteAsync(TestDb.Provider);
+
+				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
+					QueryExpression.Select(
+						new[] { QueryExpression.All() },
+						from: QueryExpression.Table("PocoWithManyRelationshipsToRelationshipTypeA")
+					)))
+				{
+					Assert.IsFalse(queryResult.HasRows);
+				}
+			}
+			finally
+			{
+				foreach (var entityModel in model.Domain.DataModels)
+				{
+					foreach (var table in entityModel.Schema.Tables)
+					{
+						await table.DropAsync(TestDb.Provider);
+					}
+				}
+			}
+		}
+
 		private class PocoWithManyRelationships
 		{
 			public Guid Id { get; private set; }

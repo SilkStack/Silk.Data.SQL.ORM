@@ -39,6 +39,8 @@ namespace Silk.Data.SQL.ORM.Queries
 				.Select(q => new ObjectModelReadWriter(model.Model, q))
 				.ToArray();
 
+			var queries = new List<ORMQuery>();
+
 			QueryExpression whereExpr = null;
 			foreach (var sourceReadWriter in sourceReadWriters)
 			{
@@ -62,14 +64,55 @@ namespace Silk.Data.SQL.ORM.Queries
 					whereExpr = QueryExpression.OrElse(whereExpr, sourceWhere);
 			}
 
-			return new ORMQuery[]
+			var schema = model.Schema;
+			var manyToManyFields = model.Fields
+				.Where(q => q.Storage == null && q.Relationship != null && q.Relationship.RelationshipType == RelationshipType.ManyToMany)
+				.ToArray();
+			if (manyToManyFields.Length > 0)
 			{
-				new NoResultORMQuery(
-					QueryExpression.Delete(
-						QueryExpression.Table(model.Schema.EntityTable.TableName),
-						whereConditions: whereExpr
-					))
-			};
+				foreach (var sourceReadWriter in sourceReadWriters)
+				{
+					foreach (var field in manyToManyFields)
+					{
+						var joinTable = schema.Tables.FirstOrDefault(q => q.IsJoinTableFor(model.Schema.EntityTable.EntityType, field.Relationship.ForeignModel.EntityType));
+						if (joinTable == null)
+							throw new InvalidOperationException($"Couldn't locate join table for '{field.Relationship.ForeignModel.EntityType.FullName}'.");
+
+						QueryExpression deleteWhereExpr = null;
+						foreach (var joinTableField in joinTable.DataFields.Where(
+							q => q.RelatedEntityType == schema.EntityTable.EntityType
+							))
+						{
+							var pkCondition = QueryExpression.Compare(
+								QueryExpression.Column(joinTableField.Storage.ColumnName),
+								ComparisonOperator.AreEqual,
+								QueryExpression.Value(joinTableField.ModelBinding.ReadValue<object>(sourceReadWriter))
+							);
+
+							if (deleteWhereExpr == null)
+								deleteWhereExpr = pkCondition;
+							else
+								deleteWhereExpr = QueryExpression.AndAlso(deleteWhereExpr, pkCondition);
+						}
+
+						if (deleteWhereExpr == null)
+							throw new InvalidOperationException("Could not determine DELETE condition for many to many relationship.");
+
+						queries.Add(new NoResultORMQuery(QueryExpression.Delete(
+							QueryExpression.Table(joinTable.TableName),
+							deleteWhereExpr
+							)));
+					}
+				}
+			}
+
+			queries.Add(new NoResultORMQuery(
+				QueryExpression.Delete(
+					QueryExpression.Table(model.Schema.EntityTable.TableName),
+					whereConditions: whereExpr
+				)));
+
+			return queries;
 		}
 
 		public ICollection<ORMQuery> CreateQuery(
