@@ -118,6 +118,21 @@ namespace Silk.Data.SQL.ORM.Queries
 			return Self;
 		}
 
+		public TThis Update<TSource>(ICollection<TSource> sources)
+			where TSource : new() => Update(sources as IEnumerable<TSource>);
+
+		public TThis Update<TSource>(IReadOnlyCollection<TSource> sources)
+			where TSource : new() => Update(sources as IEnumerable<TSource>);
+
+		public TThis Update<TSource>(IList<TSource> sources)
+			where TSource : new() => Update(sources as IEnumerable<TSource>);
+
+		public TThis Update<TSource>(IReadOnlyList<TSource> sources)
+			where TSource : new() => Update(sources as IEnumerable<TSource>);
+
+		public TThis Update<TSource>(List<TSource> sources)
+			where TSource : new() => Update(sources as IEnumerable<TSource>);
+
 		public TThis Update<TSource>(params TSource[] sources)
 			where TSource : new()
 		{
@@ -127,7 +142,46 @@ namespace Silk.Data.SQL.ORM.Queries
 			return Self;
 		}
 
+		public TThis Update<TSource>(IEnumerable<TSource> sources)
+			where TSource : new()
+		{
+			Queries.AddRange(
+				GetEntityModel<TSource>().Update(sources)
+				);
+			return Self;
+		}
+
+		public TThis Update<TSource, TView>(ICollection<TView> sources)
+			where TSource : new()
+			where TView : new() => Update<TSource, TView>(sources as IEnumerable<TView>);
+
+		public TThis Update<TSource, TView>(IReadOnlyCollection<TView> sources)
+			where TSource : new()
+			where TView : new() => Update<TSource, TView>(sources as IEnumerable<TView>);
+
+		public TThis Update<TSource, TView>(IList<TView> sources)
+			where TSource : new()
+			where TView : new() => Update<TSource, TView>(sources as IEnumerable<TView>);
+
+		public TThis Update<TSource, TView>(IReadOnlyList<TView> sources)
+			where TSource : new()
+			where TView : new() => Update<TSource, TView>(sources as IEnumerable<TView>);
+
+		public TThis Update<TSource, TView>(List<TView> sources)
+			where TSource : new()
+			where TView : new() => Update<TSource, TView>(sources as IEnumerable<TView>);
+
 		public TThis Update<TSource, TView>(params TView[] sources)
+			where TSource : new()
+			where TView : new()
+		{
+			Queries.AddRange(
+				GetEntityModel<TSource>().Update<TView>(sources)
+				);
+			return Self;
+		}
+
+		public TThis Update<TSource, TView>(IEnumerable<TView> sources)
 			where TSource : new()
 			where TView : new()
 		{

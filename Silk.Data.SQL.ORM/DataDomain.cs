@@ -373,6 +373,21 @@ namespace Silk.Data.SQL.ORM
 				.Insert<TSource, TView>(sources);
 		}
 
+		public QueryCollection Update<TSource>(ICollection<TSource> sources)
+			where TSource : new() => Update(sources as IEnumerable<TSource>);
+
+		public QueryCollection Update<TSource>(IReadOnlyCollection<TSource> sources)
+			where TSource : new() => Update(sources as IEnumerable<TSource>);
+
+		public QueryCollection Update<TSource>(IList<TSource> sources)
+			where TSource : new() => Update(sources as IEnumerable<TSource>);
+
+		public QueryCollection Update<TSource>(IReadOnlyList<TSource> sources)
+			where TSource : new() => Update(sources as IEnumerable<TSource>);
+
+		public QueryCollection Update<TSource>(List<TSource> sources)
+			where TSource : new() => Update(sources as IEnumerable<TSource>);
+
 		public QueryCollection Update<TSource>(params TSource[] sources)
 			where TSource : new()
 		{
@@ -380,7 +395,42 @@ namespace Silk.Data.SQL.ORM
 				.Update<TSource>(sources);
 		}
 
+		public QueryCollection Update<TSource>(IEnumerable<TSource> sources)
+			where TSource : new()
+		{
+			return new QueryCollection(this)
+				.Update<TSource>(sources);
+		}
+
+		public QueryCollection Update<TSource, TView>(ICollection<TView> sources)
+			where TSource : new()
+			where TView : new() => Update<TSource, TView>(sources as IEnumerable<TView>);
+
+		public QueryCollection Update<TSource, TView>(IReadOnlyCollection<TView> sources)
+			where TSource : new()
+			where TView : new() => Update<TSource, TView>(sources as IEnumerable<TView>);
+
+		public QueryCollection Update<TSource, TView>(IList<TView> sources)
+			where TSource : new()
+			where TView : new() => Update<TSource, TView>(sources as IEnumerable<TView>);
+
+		public QueryCollection Update<TSource, TView>(IReadOnlyList<TView> sources)
+			where TSource : new()
+			where TView : new() => Update<TSource, TView>(sources as IEnumerable<TView>);
+
+		public QueryCollection Update<TSource, TView>(List<TView> sources)
+			where TSource : new()
+			where TView : new() => Update<TSource, TView>(sources as IEnumerable<TView>);
+
 		public QueryCollection Update<TSource, TView>(params TView[] sources)
+			where TSource : new()
+			where TView : new()
+		{
+			return new QueryCollection(this)
+				.Update<TSource, TView>(sources);
+		}
+
+		public QueryCollection Update<TSource, TView>(IEnumerable<TView> sources)
 			where TSource : new()
 			where TView : new()
 		{

@@ -217,7 +217,20 @@ namespace Silk.Data.SQL.ORM.Modelling
 				.CreateQuery(sources);
 		}
 
+		public IEnumerable<ORMQuery> Update(IEnumerable<TSource> sources)
+		{
+			return new UpdateQueryBuilder<TSource>(this)
+				.CreateQuery(sources);
+		}
+
 		public IEnumerable<ORMQuery> Update<TView>(params TView[] sources)
+			where TView : new()
+		{
+			return new UpdateQueryBuilder<TSource>(this)
+				.CreateQuery(sources);
+		}
+
+		public IEnumerable<ORMQuery> Update<TView>(IEnumerable<TView> sources)
 			where TView : new()
 		{
 			return new UpdateQueryBuilder<TSource>(this)
