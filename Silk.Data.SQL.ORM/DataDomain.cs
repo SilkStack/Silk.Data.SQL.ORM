@@ -438,6 +438,21 @@ namespace Silk.Data.SQL.ORM
 				.Update<TSource, TView>(sources);
 		}
 
+		public QueryCollection Delete<TSource>(ICollection<TSource> sources)
+			where TSource : new() => Delete(sources as IEnumerable<TSource>);
+
+		public QueryCollection Delete<TSource>(IReadOnlyCollection<TSource> sources)
+			where TSource : new() => Delete(sources as IEnumerable<TSource>);
+
+		public QueryCollection Delete<TSource>(IList<TSource> sources)
+			where TSource : new() => Delete(sources as IEnumerable<TSource>);
+
+		public QueryCollection Delete<TSource>(IReadOnlyList<TSource> sources)
+			where TSource : new() => Delete(sources as IEnumerable<TSource>);
+
+		public QueryCollection Delete<TSource>(List<TSource> sources)
+			where TSource : new() => Delete(sources as IEnumerable<TSource>);
+
 		public QueryCollection Delete<TSource>(params TSource[] sources)
 			where TSource : new()
 		{
@@ -445,7 +460,42 @@ namespace Silk.Data.SQL.ORM
 				.Delete<TSource>(sources);
 		}
 
+		public QueryCollection Delete<TSource>(IEnumerable<TSource> sources)
+			where TSource : new()
+		{
+			return new QueryCollection(this)
+				.Delete<TSource>(sources);
+		}
+
+		public QueryCollection Delete<TSource, TView>(ICollection<TView> sources)
+			where TSource : new()
+			where TView : new() => Delete<TSource, TView>(sources as IEnumerable<TView>);
+
+		public QueryCollection Delete<TSource, TView>(IReadOnlyCollection<TView> sources)
+			where TSource : new()
+			where TView : new() => Delete<TSource, TView>(sources as IEnumerable<TView>);
+
+		public QueryCollection Delete<TSource, TView>(IList<TView> sources)
+			where TSource : new()
+			where TView : new() => Delete<TSource, TView>(sources as IEnumerable<TView>);
+
+		public QueryCollection Delete<TSource, TView>(IReadOnlyList<TView> sources)
+			where TSource : new()
+			where TView : new() => Delete<TSource, TView>(sources as IEnumerable<TView>);
+
+		public QueryCollection Delete<TSource, TView>(List<TView> sources)
+			where TSource : new()
+			where TView : new() => Delete<TSource, TView>(sources as IEnumerable<TView>);
+
 		public QueryCollection Delete<TSource, TView>(params TView[] sources)
+			where TSource : new()
+			where TView : new()
+		{
+			return new QueryCollection(this)
+				.Delete<TSource, TView>(sources);
+		}
+
+		public QueryCollection Delete<TSource, TView>(IEnumerable<TView> sources)
 			where TSource : new()
 			where TView : new()
 		{

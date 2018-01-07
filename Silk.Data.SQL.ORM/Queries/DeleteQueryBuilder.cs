@@ -22,13 +22,24 @@ namespace Silk.Data.SQL.ORM.Queries
 			return CreateQuery(DataModel, sources);
 		}
 
+		public ICollection<ORMQuery> CreateQuery(IEnumerable<TSource> sources)
+		{
+			return CreateQuery(DataModel, sources);
+		}
+
 		public ICollection<ORMQuery> CreateQuery<TView>(params TView[] sources)
 			where TView : new()
 		{
 			return CreateQuery(DataModel.Domain.GetProjectionModel<TSource,TView>(), sources);
 		}
 
-		public ICollection<ORMQuery> CreateQuery<TView>(EntityModel<TView> model, params TView[] sources)
+		public ICollection<ORMQuery> CreateQuery<TView>(IEnumerable<TView> sources)
+			where TView : new()
+		{
+			return CreateQuery(DataModel.Domain.GetProjectionModel<TSource, TView>(), sources);
+		}
+
+		private ICollection<ORMQuery> CreateQuery<TView>(EntityModel<TView> model, IEnumerable<TView> sources)
 			where TView : new()
 		{
 			if (model.PrimaryKeyFields == null ||

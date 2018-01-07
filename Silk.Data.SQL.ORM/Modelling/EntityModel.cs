@@ -243,7 +243,20 @@ namespace Silk.Data.SQL.ORM.Modelling
 				.CreateQuery(sources);
 		}
 
+		public IEnumerable<ORMQuery> Delete(IEnumerable<TSource> sources)
+		{
+			return new DeleteQueryBuilder<TSource>(this)
+				.CreateQuery(sources);
+		}
+
 		public IEnumerable<ORMQuery> Delete<TView>(params TView[] sources)
+			where TView : new()
+		{
+			return new DeleteQueryBuilder<TSource>(this)
+				.CreateQuery(sources);
+		}
+
+		public IEnumerable<ORMQuery> Delete<TView>(IEnumerable<TView> sources)
 			where TView : new()
 		{
 			return new DeleteQueryBuilder<TSource>(this)

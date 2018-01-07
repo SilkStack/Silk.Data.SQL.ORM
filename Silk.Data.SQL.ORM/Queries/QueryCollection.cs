@@ -191,6 +191,21 @@ namespace Silk.Data.SQL.ORM.Queries
 			return Self;
 		}
 
+		public TThis Delete<TSource>(ICollection<TSource> sources)
+			where TSource : new() => Delete(sources as IEnumerable<TSource>);
+
+		public TThis Delete<TSource>(IReadOnlyCollection<TSource> sources)
+			where TSource : new() => Delete(sources as IEnumerable<TSource>);
+
+		public TThis Delete<TSource>(IList<TSource> sources)
+			where TSource : new() => Delete(sources as IEnumerable<TSource>);
+
+		public TThis Delete<TSource>(IReadOnlyList<TSource> sources)
+			where TSource : new() => Delete(sources as IEnumerable<TSource>);
+
+		public TThis Delete<TSource>(List<TSource> sources)
+			where TSource : new() => Delete(sources as IEnumerable<TSource>);
+
 		public TThis Delete<TSource>(params TSource[] sources)
 			where TSource : new()
 		{
@@ -200,7 +215,46 @@ namespace Silk.Data.SQL.ORM.Queries
 			return Self;
 		}
 
+		public TThis Delete<TSource, TView>(ICollection<TView> sources)
+			where TSource : new()
+			where TView : new() => Delete<TSource, TView>(sources as IEnumerable<TView>);
+
+		public TThis Delete<TSource, TView>(IReadOnlyCollection<TView> sources)
+			where TSource : new()
+			where TView : new() => Delete<TSource, TView>(sources as IEnumerable<TView>);
+
+		public TThis Delete<TSource, TView>(IList<TView> sources)
+			where TSource : new()
+			where TView : new() => Delete<TSource, TView>(sources as IEnumerable<TView>);
+
+		public TThis Delete<TSource, TView>(IReadOnlyList<TView> sources)
+			where TSource : new()
+			where TView : new() => Delete<TSource, TView>(sources as IEnumerable<TView>);
+
+		public TThis Delete<TSource, TView>(List<TView> sources)
+			where TSource : new()
+			where TView : new() => Delete<TSource, TView>(sources as IEnumerable<TView>);
+
+		public TThis Delete<TSource>(IEnumerable<TSource> sources)
+			where TSource : new()
+		{
+			Queries.AddRange(
+				GetEntityModel<TSource>().Delete(sources)
+				);
+			return Self;
+		}
+
 		public TThis Delete<TSource, TView>(params TView[] sources)
+			where TSource : new()
+			where TView : new()
+		{
+			Queries.AddRange(
+				GetEntityModel<TSource>().Delete<TView>(sources)
+				);
+			return Self;
+		}
+
+		public TThis Delete<TSource, TView>(IEnumerable<TView> sources)
 			where TSource : new()
 			where TView : new()
 		{
