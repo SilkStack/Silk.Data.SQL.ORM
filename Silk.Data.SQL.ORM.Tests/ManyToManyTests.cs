@@ -510,6 +510,325 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 		}
 
+		[TestMethod]
+		public async Task UpdateManyToMany()
+		{
+			var model = _conventionDrivenModel;
+			var domain = model.Domain;
+
+			foreach (var entityModel in model.Domain.DataModels)
+			{
+				foreach (var table in entityModel.Schema.Tables)
+				{
+					await table.CreateAsync(TestDb.Provider);
+				}
+			}
+
+			try
+			{
+				var mainInstance = new PocoWithManyRelationships
+				{
+					RelationshipA = new List<RelationshipTypeA>
+					{
+						new RelationshipTypeA { Data = 10 },
+						new RelationshipTypeA { Data = 20 },
+						new RelationshipTypeA { Data = 30 }
+					},
+					RelationshipB = new RelationshipTypeB[]
+					{
+						new RelationshipTypeB { Data = 40 },
+						new RelationshipTypeB { Data = 50 },
+						new RelationshipTypeB { Data = 60 }
+					}
+				};
+
+				await domain
+					.Insert(mainInstance.RelationshipA)
+					.Insert(mainInstance.RelationshipB)
+					.Insert(mainInstance)
+					.ExecuteAsync(TestDb.Provider);
+
+				mainInstance.RelationshipA = new List<RelationshipTypeA>
+				{
+					new RelationshipTypeA { Data = 15 },
+					new RelationshipTypeA { Data = 25 },
+					new RelationshipTypeA { Data = 35 }
+				};
+				mainInstance.RelationshipB = new RelationshipTypeB[]
+				{
+					new RelationshipTypeB { Data = 45 },
+					new RelationshipTypeB { Data = 55 },
+					new RelationshipTypeB { Data = 65 }
+				};
+
+				await domain
+					.Insert(mainInstance.RelationshipA)
+					.Insert(mainInstance.RelationshipB)
+					.Update(mainInstance)
+					.ExecuteAsync(TestDb.Provider);
+
+				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
+					QueryExpression.Select(
+						new[] { QueryExpression.All() },
+						from: QueryExpression.Table(model.Schema.EntityTable.TableName),
+						joins: new[]
+						{
+							QueryExpression.Join(
+								QueryExpression.Column("Id", QueryExpression.Table(model.Schema.EntityTable.TableName)),
+								QueryExpression.Column("PocoWithManyRelationships_Id", QueryExpression.Table("PocoWithManyRelationshipsToRelationshipTypeA")),
+								JoinDirection.Left
+								)
+						}
+					)))
+				{
+					var ids = new int[3];
+
+					Assert.IsTrue(queryResult.HasRows);
+
+					Assert.IsTrue(await queryResult.ReadAsync());
+					ids[0] = queryResult.GetInt32(2);
+
+					Assert.IsTrue(await queryResult.ReadAsync());
+					ids[1] = queryResult.GetInt32(2);
+
+					Assert.IsTrue(await queryResult.ReadAsync());
+					ids[2] = queryResult.GetInt32(2);
+
+					Assert.IsFalse(await queryResult.ReadAsync());
+
+					foreach (var relationship in mainInstance.RelationshipA)
+					{
+						Assert.IsTrue(ids.Contains(relationship.Id));
+					}
+				}
+
+				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
+					QueryExpression.Select(
+						new[] { QueryExpression.All() },
+						from: QueryExpression.Table(model.Schema.EntityTable.TableName),
+						joins: new[]
+						{
+							QueryExpression.Join(
+								QueryExpression.Column("Id", QueryExpression.Table(model.Schema.EntityTable.TableName)),
+								QueryExpression.Column("PocoWithManyRelationships_Id", QueryExpression.Table("PocoWithManyRelationshipsToRelationshipTypeB")),
+								JoinDirection.Left
+								)
+						}
+					)))
+				{
+					var ids = new Guid[3];
+
+					Assert.IsTrue(queryResult.HasRows);
+
+					Assert.IsTrue(await queryResult.ReadAsync());
+					ids[0] = queryResult.GetGuid(2);
+
+					Assert.IsTrue(await queryResult.ReadAsync());
+					ids[1] = queryResult.GetGuid(2);
+
+					Assert.IsTrue(await queryResult.ReadAsync());
+					ids[2] = queryResult.GetGuid(2);
+
+					Assert.IsFalse(await queryResult.ReadAsync());
+
+					foreach (var relationship in mainInstance.RelationshipB)
+					{
+						Assert.IsTrue(ids.Contains(relationship.Id));
+					}
+				}
+			}
+			finally
+			{
+				foreach (var entityModel in model.Domain.DataModels)
+				{
+					foreach (var table in entityModel.Schema.Tables)
+					{
+						await table.DropAsync(TestDb.Provider);
+					}
+				}
+			}
+		}
+
+		[TestMethod]
+		public async Task UpdateViewWithFullModelManyToMany()
+		{
+			var model = _conventionDrivenModel;
+			var domain = model.Domain;
+
+			foreach (var entityModel in model.Domain.DataModels)
+			{
+				foreach (var table in entityModel.Schema.Tables)
+				{
+					await table.CreateAsync(TestDb.Provider);
+				}
+			}
+
+			try
+			{
+				var mainInstance = new PocoWithManyRelationshipsViewWithRelationshipA
+				{
+					RelationshipA = new List<RelationshipTypeA>
+					{
+						new RelationshipTypeA { Data = 10 },
+						new RelationshipTypeA { Data = 20 },
+						new RelationshipTypeA { Data = 30 }
+					}
+				};
+
+				await domain
+					.Insert(mainInstance.RelationshipA)
+					.Insert<PocoWithManyRelationships, PocoWithManyRelationshipsViewWithRelationshipA>(mainInstance)
+					.ExecuteAsync(TestDb.Provider);
+
+				mainInstance.RelationshipA = new List<RelationshipTypeA>
+				{
+					new RelationshipTypeA { Data = 15 },
+					new RelationshipTypeA { Data = 25 },
+					new RelationshipTypeA { Data = 35 }
+				};
+
+				await domain
+					.Insert(mainInstance.RelationshipA)
+					.Update<PocoWithManyRelationships, PocoWithManyRelationshipsViewWithRelationshipA>(mainInstance)
+					.ExecuteAsync(TestDb.Provider);
+
+				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
+					QueryExpression.Select(
+						new[] { QueryExpression.All() },
+						from: QueryExpression.Table(model.Schema.EntityTable.TableName),
+						joins: new[]
+						{
+							QueryExpression.Join(
+								QueryExpression.Column("Id", QueryExpression.Table(model.Schema.EntityTable.TableName)),
+								QueryExpression.Column("PocoWithManyRelationships_Id", QueryExpression.Table("PocoWithManyRelationshipsToRelationshipTypeA")),
+								JoinDirection.Left
+								)
+						}
+					)))
+				{
+					var ids = new int[3];
+
+					Assert.IsTrue(queryResult.HasRows);
+
+					Assert.IsTrue(await queryResult.ReadAsync());
+					ids[0] = queryResult.GetInt32(2);
+
+					Assert.IsTrue(await queryResult.ReadAsync());
+					ids[1] = queryResult.GetInt32(2);
+
+					Assert.IsTrue(await queryResult.ReadAsync());
+					ids[2] = queryResult.GetInt32(2);
+
+					Assert.IsFalse(await queryResult.ReadAsync());
+
+					foreach (var relationship in mainInstance.RelationshipA)
+					{
+						Assert.IsTrue(ids.Contains(relationship.Id));
+					}
+				}
+			}
+			finally
+			{
+				foreach (var entityModel in model.Domain.DataModels)
+				{
+					foreach (var table in entityModel.Schema.Tables)
+					{
+						await table.DropAsync(TestDb.Provider);
+					}
+				}
+			}
+		}
+
+		[TestMethod]
+		public async Task UpdateViewWithSubViewManyToMany()
+		{
+			var model = _conventionDrivenModel;
+			var domain = model.Domain;
+
+			foreach (var entityModel in model.Domain.DataModels)
+			{
+				foreach (var table in entityModel.Schema.Tables)
+				{
+					await table.CreateAsync(TestDb.Provider);
+				}
+			}
+
+			try
+			{
+				var mainInstance = new PocoWithManyRelationshipsViewWithRelationshipAView
+				{
+					RelationshipA = new RelationshipTypeAView[]
+					{
+						new RelationshipTypeAView { Data = 10 },
+						new RelationshipTypeAView { Data = 20 },
+						new RelationshipTypeAView { Data = 30 }
+					}
+				};
+
+				await domain
+					.Insert<RelationshipTypeA, RelationshipTypeAView>(mainInstance.RelationshipA)
+					.Insert<PocoWithManyRelationships, PocoWithManyRelationshipsViewWithRelationshipAView>(mainInstance)
+					.ExecuteAsync(TestDb.Provider);
+
+				mainInstance.RelationshipA = new RelationshipTypeAView[]
+				{
+					new RelationshipTypeAView { Data = 15 },
+					new RelationshipTypeAView { Data = 25 },
+					new RelationshipTypeAView { Data = 35 }
+				};
+
+				await domain
+					.Insert<RelationshipTypeA, RelationshipTypeAView>(mainInstance.RelationshipA)
+					.Update<PocoWithManyRelationships, PocoWithManyRelationshipsViewWithRelationshipAView>(mainInstance)
+					.ExecuteAsync(TestDb.Provider);
+
+				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
+					QueryExpression.Select(
+						new[] { QueryExpression.All() },
+						from: QueryExpression.Table(model.Schema.EntityTable.TableName),
+						joins: new[]
+						{
+							QueryExpression.Join(
+								QueryExpression.Column("Id", QueryExpression.Table(model.Schema.EntityTable.TableName)),
+								QueryExpression.Column("PocoWithManyRelationships_Id", QueryExpression.Table("PocoWithManyRelationshipsToRelationshipTypeA")),
+								JoinDirection.Left
+								)
+						}
+					)))
+				{
+					var ids = new int[3];
+
+					Assert.IsTrue(queryResult.HasRows);
+
+					Assert.IsTrue(await queryResult.ReadAsync());
+					ids[0] = queryResult.GetInt32(2);
+
+					Assert.IsTrue(await queryResult.ReadAsync());
+					ids[1] = queryResult.GetInt32(2);
+
+					Assert.IsTrue(await queryResult.ReadAsync());
+					ids[2] = queryResult.GetInt32(2);
+
+					Assert.IsFalse(await queryResult.ReadAsync());
+
+					foreach (var relationship in mainInstance.RelationshipA)
+					{
+						Assert.IsTrue(ids.Contains(relationship.Id));
+					}
+				}
+			}
+			finally
+			{
+				foreach (var entityModel in model.Domain.DataModels)
+				{
+					foreach (var table in entityModel.Schema.Tables)
+					{
+						await table.DropAsync(TestDb.Provider);
+					}
+				}
+			}
+		}
+
 		private class PocoWithManyRelationships
 		{
 			public Guid Id { get; private set; }
