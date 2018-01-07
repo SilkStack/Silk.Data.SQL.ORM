@@ -123,10 +123,14 @@ namespace Silk.Data.SQL.ORM.Modelling
 				var direction = field.ModelBinding.Direction;
 				var canRead = direction.HasFlag(BindingDirection.ModelToView);
 				var canWrite = direction.HasFlag(BindingDirection.ViewToModel);
+				var dataType = field.DataType;
+				Type enumType = null;
+				if (field.Relationship?.RelationshipType == RelationshipType.ManyToMany)
+					enumType = typeof(IEnumerable<>).MakeGenericType(field.DataType);
 				fields.Add(new ModelField(
 					field.Name, canRead, canWrite,
 					field.Metadata.Concat(new object[] { field.Storage }).ToArray(),
-					field.DataType
+					dataType, enumType
 					));
 			}
 			return new Model(Name, fields, Model.Metadata);

@@ -187,6 +187,7 @@ namespace Silk.Data.SQL.ORM
 			new CopyPrimitiveTypesConvention(),
 			new FlattenSimpleTypesConvention(),
 			new CopyReferencesConvention(),
+			new ProjectManyToManyObjectsConvention(),
 			new ProjectSubObjectProperties()
 		};
 

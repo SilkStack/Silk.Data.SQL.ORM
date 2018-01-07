@@ -137,12 +137,10 @@ namespace Silk.Data.SQL.ORM.Queries
 					{
 						rows.Clear();
 
-						var joinTable = schema.Tables.FirstOrDefault(q => q.IsJoinTableFor(model.Schema.EntityTable.EntityType, field.DataType));
+						var joinTable = schema.Tables.FirstOrDefault(q => q.IsJoinTableFor(model.Schema.EntityTable.EntityType, field.Relationship.ForeignModel.EntityType));
 						if (joinTable == null)
-							throw new InvalidOperationException($"Couldn't locate join table for '{field.DataType.FullName}'.");
+							throw new InvalidOperationException($"Couldn't locate join table for '{field.Relationship.ForeignModel.EntityType.FullName}'.");
 
-						var entityKeyFields = joinTable.DataFields.Where(q => q.RelatedEntityType == model.EntityType).ToArray();
-						var valueKeyFields = joinTable.DataFields.Where(q => q.RelatedEntityType == field.DataType).ToArray();
 
 						var valueEnum = field.ModelBinding.ReadValue<object>(sourceReadWriter) as IEnumerable;
 						if (valueEnum == null)
@@ -163,7 +161,7 @@ namespace Silk.Data.SQL.ORM.Queries
 										return dataField.ModelBinding.ReadValue<object>(sourceReadWriter);
 									});
 								}
-								else if (joinTable.DataFields[i].RelatedEntityType == field.DataType)
+								else if (joinTable.DataFields[i].RelatedEntityType == field.Relationship.ForeignModel.EntityType)
 								{
 									row[i] = new LateReadValueExpression(() =>
 									{

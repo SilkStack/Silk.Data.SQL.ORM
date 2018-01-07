@@ -339,6 +339,84 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 		}
 
+		[TestMethod]
+		public async Task InsertViewWithSubViewManyToMany()
+		{
+			var model = _conventionDrivenModel;
+			var domain = model.Domain;
+
+			foreach (var entityModel in model.Domain.DataModels)
+			{
+				foreach (var table in entityModel.Schema.Tables)
+				{
+					await table.CreateAsync(TestDb.Provider);
+				}
+			}
+
+			try
+			{
+				var mainInstance = new PocoWithManyRelationshipsViewWithRelationshipAView
+				{
+					RelationshipA = new RelationshipTypeAView[]
+					{
+						new RelationshipTypeAView { Data = 10 },
+						new RelationshipTypeAView { Data = 20 },
+						new RelationshipTypeAView { Data = 30 }
+					}
+				};
+
+				await domain
+					.Insert<RelationshipTypeA, RelationshipTypeAView>(mainInstance.RelationshipA)
+					.Insert<PocoWithManyRelationships, PocoWithManyRelationshipsViewWithRelationshipAView>(mainInstance)
+					.ExecuteAsync(TestDb.Provider);
+
+				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
+					QueryExpression.Select(
+						new[] { QueryExpression.All() },
+						from: QueryExpression.Table(model.Schema.EntityTable.TableName),
+						joins: new[]
+						{
+							QueryExpression.Join(
+								QueryExpression.Column("Id", QueryExpression.Table(model.Schema.EntityTable.TableName)),
+								QueryExpression.Column("PocoWithManyRelationships_Id", QueryExpression.Table("PocoWithManyRelationshipsToRelationshipTypeA")),
+								JoinDirection.Left
+								)
+						}
+					)))
+				{
+					var ids = new int[3];
+
+					Assert.IsTrue(queryResult.HasRows);
+
+					Assert.IsTrue(await queryResult.ReadAsync());
+					ids[0] = queryResult.GetInt32(2);
+
+					Assert.IsTrue(await queryResult.ReadAsync());
+					ids[1] = queryResult.GetInt32(2);
+
+					Assert.IsTrue(await queryResult.ReadAsync());
+					ids[2] = queryResult.GetInt32(2);
+
+					Assert.IsFalse(await queryResult.ReadAsync());
+
+					foreach (var relationship in mainInstance.RelationshipA)
+					{
+						Assert.IsTrue(ids.Contains(relationship.Id));
+					}
+				}
+			}
+			finally
+			{
+				foreach (var entityModel in model.Domain.DataModels)
+				{
+					foreach (var table in entityModel.Schema.Tables)
+					{
+						await table.DropAsync(TestDb.Provider);
+					}
+				}
+			}
+		}
+
 		private class PocoWithManyRelationships
 		{
 			public Guid Id { get; private set; }
@@ -352,6 +430,12 @@ namespace Silk.Data.SQL.ORM.Tests
 			public List<RelationshipTypeA> RelationshipA { get; set; } = new List<RelationshipTypeA>();
 		}
 
+		private class PocoWithManyRelationshipsViewWithRelationshipAView
+		{
+			public Guid Id { get; private set; }
+			public RelationshipTypeAView[] RelationshipA { get; set; }
+		}
+
 		private class RelationshipTypeA
 		{
 			public int Id { get; private set; }
@@ -361,6 +445,12 @@ namespace Silk.Data.SQL.ORM.Tests
 		private class RelationshipTypeB
 		{
 			public Guid Id { get; private set; }
+			public int Data { get; set; }
+		}
+
+		private class RelationshipTypeAView
+		{
+			public int Id { get; private set; }
 			public int Data { get; set; }
 		}
 	}
