@@ -127,6 +127,9 @@ namespace Silk.Data.SQL.ORM.Queries
 								deleteWhereExpr = QueryExpression.AndAlso(deleteWhereExpr, pkCondition);
 						}
 
+						if (deleteWhereExpr == null)
+							throw new InvalidOperationException("Could not determine DELETE condition for many to many relationship.");
+
 						queries.Add(new NoResultORMQuery(QueryExpression.Delete(
 							QueryExpression.Table(joinTable.TableName),
 							deleteWhereExpr
