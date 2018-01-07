@@ -3,6 +3,7 @@ using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Expressions;
 using Silk.Data.SQL.ORM.Modelling;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -91,6 +92,95 @@ namespace Silk.Data.SQL.ORM.Queries
 							)).ToArray()
 					)));
 			}
+
+			var schema = model.Schema;
+			var manyToManyFields = model.Fields
+				.Where(q => q.Storage == null && q.Relationship != null && q.Relationship.RelationshipType == RelationshipType.ManyToMany)
+				.ToArray();
+			if (manyToManyFields.Length > 0)
+			{
+				var rows = new List<QueryExpression[]>();
+				foreach (var sourceReadWriter in sourceReadWriters)
+				{
+					foreach (var field in manyToManyFields)
+					{
+						rows.Clear();
+
+						var joinTable = schema.Tables.FirstOrDefault(q => q.IsJoinTableFor(model.Schema.EntityTable.EntityType, field.Relationship.ForeignModel.EntityType));
+						if (joinTable == null)
+							throw new InvalidOperationException($"Couldn't locate join table for '{field.Relationship.ForeignModel.EntityType.FullName}'.");
+
+						QueryExpression deleteWhereExpr = null;
+						foreach (var joinTableField in joinTable.DataFields.Where(
+							q => q.RelatedEntityType == schema.EntityTable.EntityType
+							))
+						{
+							var pkCondition = QueryExpression.Compare(
+								QueryExpression.Column(joinTableField.Storage.ColumnName),
+								ComparisonOperator.AreEqual,
+								QueryExpression.Value(joinTableField.ModelBinding.ReadValue<object>(sourceReadWriter))
+							);
+
+							if (deleteWhereExpr == null)
+								deleteWhereExpr = pkCondition;
+							else
+								deleteWhereExpr = QueryExpression.AndAlso(deleteWhereExpr, pkCondition);
+						}
+
+						queries.Add(new NoResultORMQuery(QueryExpression.Delete(
+							QueryExpression.Table(joinTable.TableName),
+							deleteWhereExpr
+							)));
+
+						var valueEnum = field.ModelBinding.ReadValue<object>(sourceReadWriter) as IEnumerable;
+						if (valueEnum == null)
+							continue;
+
+						foreach (var value in valueEnum)
+						{
+							var valueReadWriter = new ObjectModelReadWriter(field.Relationship.ForeignModel.Model, value);
+							var row = new QueryExpression[joinTable.DataFields.Count];
+
+							for (var i = 0; i < row.Length; i++)
+							{
+								var dataField = joinTable.DataFields[i];
+								if (joinTable.DataFields[i].RelatedEntityType == model.Schema.EntityTable.EntityType)
+								{
+									row[i] = new LateReadValueExpression(() =>
+									{
+										return dataField.ModelBinding.ReadValue<object>(sourceReadWriter);
+									});
+								}
+								else if (joinTable.DataFields[i].RelatedEntityType == field.Relationship.ForeignModel.EntityType)
+								{
+									row[i] = new LateReadValueExpression(() =>
+									{
+										return dataField.ModelBinding.ReadValue<object>(valueReadWriter);
+									});
+								}
+								else
+								{
+									row[i] = new LateReadValueExpression(() =>
+									{
+										return null;
+									});
+								}
+							}
+
+							rows.Add(row);
+						}
+
+						queries.Add(new NoResultORMQuery(
+							QueryExpression.Insert(
+								joinTable.TableName,
+								joinTable.DataFields
+									.Select(q => q.Storage.ColumnName).ToArray(),
+								rows.ToArray()
+							)));
+					}
+				}
+			}
+
 			return queries;
 		}
 	}

@@ -135,12 +135,14 @@ namespace Silk.Data.SQL.ORM.Queries
 				{
 					foreach (var field in manyToManyFields)
 					{
-						rows.Clear();
+						if (rows == null)
+							rows = new List<QueryExpression[]>();
+						else
+							rows.Clear();
 
 						var joinTable = schema.Tables.FirstOrDefault(q => q.IsJoinTableFor(model.Schema.EntityTable.EntityType, field.Relationship.ForeignModel.EntityType));
 						if (joinTable == null)
 							throw new InvalidOperationException($"Couldn't locate join table for '{field.Relationship.ForeignModel.EntityType.FullName}'.");
-
 
 						var valueEnum = field.ModelBinding.ReadValue<object>(sourceReadWriter) as IEnumerable;
 						if (valueEnum == null)
