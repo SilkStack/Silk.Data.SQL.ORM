@@ -122,6 +122,8 @@ namespace Silk.Data.SQL.ORM.Queries
 			while (queryResult.Read())
 			{
 				var compositeKey = ReadCompositePrimaryKey(queryResult);
+				if (compositeKey == "")
+					compositeKey = resultWriters.Count.ToString();
 				var result = new TView();
 				resultList.Add(result);
 				var container = new MemoryViewReadWriter(EntityModel);
@@ -172,6 +174,8 @@ namespace Silk.Data.SQL.ORM.Queries
 				.ConfigureAwait(false))
 			{
 				var compositeKey = ReadCompositePrimaryKey(queryResult);
+				if (compositeKey == "")
+					compositeKey = resultWriters.Count.ToString();
 				var result = new TView();
 				resultList.Add(result);
 				var container = new MemoryViewReadWriter(EntityModel);
