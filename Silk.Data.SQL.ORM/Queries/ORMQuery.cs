@@ -116,18 +116,19 @@ namespace Silk.Data.SQL.ORM.Queries
 				return _noResults;
 
 			var resultWriters = new List<ModelReadWriter>();
-			var rowReaders = new List<ViewReadWriter>();
+			var rowReaders = new Dictionary<string, ViewReadWriter>();
 			var resultList = new List<TView>();
 
 			while (queryResult.Read())
 			{
+				var compositeKey = ReadCompositePrimaryKey(queryResult);
 				var result = new TView();
 				resultList.Add(result);
 				var container = new MemoryViewReadWriter(EntityModel);
 				var rowReader = new RowReader(container);
 				rowReader.ReadRow(queryResult);
 
-				rowReaders.Add(container);
+				rowReaders.Add(compositeKey, container);
 				resultWriters.Add(new ObjectModelReadWriter(EntityModel.Model, result));
 			}
 
@@ -136,15 +137,22 @@ namespace Silk.Data.SQL.ORM.Queries
 				.ToArray();
 			if (manyToManyFields.Length > 0)
 			{
-				queryResult.NextResult();
-
-				while (queryResult.Read())
+				foreach (var field in manyToManyFields)
 				{
+					queryResult.NextResult();
 
+					while (queryResult.Read())
+					{
+						var compositeKey = ReadCompositePrimaryKey(queryResult);
+						var rowReader = new RowReader(rowReaders[compositeKey]);
+						rowReader.ReadRelatedRow(queryResult,
+							field.Relationship.ProjectedModel ?? field.Relationship.ForeignModel,
+							field.Name);
+					}
 				}
 			}
 
-			EntityModel.MapToModelAsync(resultWriters, rowReaders)
+			EntityModel.MapToModelAsync(resultWriters, rowReaders.Values)
 					.ConfigureAwait(false)
 					.GetAwaiter().GetResult();
 
