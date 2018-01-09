@@ -24,7 +24,7 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 			if (relationshipDefinition == null || relationshipDefinition.RelationshipType != RelationshipType.ManyToMany)
 				return;
 
-			viewBuilder.DefineAssignedViewField(sourceField,
+			viewBuilder.DefineManyToManyViewField(sourceField,
 				metadata: sourceField.Field.Metadata);
 		}
 	}
