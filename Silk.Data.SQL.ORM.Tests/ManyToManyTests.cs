@@ -1011,6 +1011,124 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 		}
 
+		[TestMethod]
+		public async Task SelectManyToManyNullRelationships()
+		{
+			var model = _conventionDrivenModel;
+			var domain = model.Domain;
+
+			foreach (var entityModel in model.Domain.DataModels)
+			{
+				foreach (var table in entityModel.Schema.Tables)
+				{
+					await table.CreateAsync(TestDb.Provider);
+				}
+			}
+
+			try
+			{
+				var mainInstance = new PocoWithManyRelationships
+				{
+					RelationshipA = null,
+					RelationshipB = null
+				};
+
+				await domain
+					.Insert(mainInstance)
+					.ExecuteAsync(TestDb.Provider);
+
+				var queriedInstance =
+					(await domain.Select<PocoWithManyRelationships>()
+					.ExecuteAsync(TestDb.Provider))
+					.FirstOrDefault();
+
+				Assert.IsNotNull(queriedInstance);
+				Assert.IsNull(queriedInstance.RelationshipA);
+				Assert.IsNull(queriedInstance.RelationshipB);
+			}
+			finally
+			{
+				foreach (var entityModel in model.Domain.DataModels)
+				{
+					foreach (var table in entityModel.Schema.Tables)
+					{
+						await table.DropAsync(TestDb.Provider);
+					}
+				}
+			}
+		}
+
+		[TestMethod]
+		public async Task SelectManyToMany()
+		{
+			var model = _conventionDrivenModel;
+			var domain = model.Domain;
+
+			foreach (var entityModel in model.Domain.DataModels)
+			{
+				foreach (var table in entityModel.Schema.Tables)
+				{
+					await table.CreateAsync(TestDb.Provider);
+				}
+			}
+
+			try
+			{
+				var mainInstance = new PocoWithManyRelationships
+				{
+					RelationshipA = new List<RelationshipTypeA>
+					{
+						new RelationshipTypeA { Data = 10 },
+						new RelationshipTypeA { Data = 20 },
+						new RelationshipTypeA { Data = 30 }
+					},
+					RelationshipB = new RelationshipTypeB[]
+					{
+						new RelationshipTypeB { Data = 40 },
+						new RelationshipTypeB { Data = 50 },
+						new RelationshipTypeB { Data = 60 }
+					}
+				};
+
+				await domain
+					.Insert(mainInstance.RelationshipA)
+					.Insert(mainInstance.RelationshipB)
+					.Insert(mainInstance)
+					.ExecuteAsync(TestDb.Provider);
+
+				var queriedInstance =
+					(await domain.Select<PocoWithManyRelationships>()
+					.ExecuteAsync(TestDb.Provider))
+					.FirstOrDefault();
+
+				Assert.IsNotNull(queriedInstance);
+				Assert.IsNotNull(queriedInstance.RelationshipA);
+				Assert.IsNotNull(queriedInstance.RelationshipB);
+				Assert.AreEqual(mainInstance.RelationshipA.Count, queriedInstance.RelationshipA.Count);
+				Assert.AreEqual(mainInstance.RelationshipB.Length, queriedInstance.RelationshipB.Length);
+
+				foreach (var relatedObj in mainInstance.RelationshipA)
+				{
+					Assert.IsTrue(queriedInstance.RelationshipA.Any(q => q.Id == relatedObj.Id && q.Data == relatedObj.Data));
+				}
+
+				foreach (var relatedObj in mainInstance.RelationshipB)
+				{
+					Assert.IsTrue(queriedInstance.RelationshipB.Any(q => q.Id == relatedObj.Id && q.Data == relatedObj.Data));
+				}
+			}
+			finally
+			{
+				foreach (var entityModel in model.Domain.DataModels)
+				{
+					foreach (var table in entityModel.Schema.Tables)
+					{
+						await table.DropAsync(TestDb.Provider);
+					}
+				}
+			}
+		}
+
 		private class PocoWithManyRelationships
 		{
 			public Guid Id { get; private set; }

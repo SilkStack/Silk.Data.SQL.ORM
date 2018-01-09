@@ -5,13 +5,13 @@ using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Modelling.Bindings
 {
-	public class RelatedObjectBinding : ModelBinding
+	public class SingleRelatedObjectBinding : ModelBinding
 	{
 		private readonly string _fieldName;
 
 		public override BindingDirection Direction { get; }
 
-		public RelatedObjectBinding(BindingDirection bindingDirection, string[] modelFieldPath,
+		public SingleRelatedObjectBinding(BindingDirection bindingDirection, string[] modelFieldPath,
 			string[] viewFieldPath, IResourceLoader[] resourceLoaders,
 			string fieldName)
 			: base(modelFieldPath, viewFieldPath, resourceLoaders)

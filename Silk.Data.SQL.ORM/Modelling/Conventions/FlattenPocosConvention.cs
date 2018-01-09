@@ -29,6 +29,7 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 			try
 			{
 				viewBuilder.ProcessModel(field.DataTypeModel);
+				viewBuilder.FinalizeModel();
 			}
 			finally
 			{

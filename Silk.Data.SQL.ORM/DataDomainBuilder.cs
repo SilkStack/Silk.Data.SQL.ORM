@@ -87,6 +87,10 @@ namespace Silk.Data.SQL.ORM
 					entityModelBuilder.ViewBuilder.IsFirstPass = false;
 				}
 			}
+			foreach (var entityModelBuilder in _entityModelBuilders)
+			{
+				entityModelBuilder.ViewBuilder.FinalizeModel();
+			}
 
 			builtDomain = DataDomain.CreateFromDefinition(_domainDefinition, _viewConventions);
 

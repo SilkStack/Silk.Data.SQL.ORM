@@ -1,6 +1,7 @@
 ﻿using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Expressions;
 using Silk.Data.SQL.ORM.Modelling;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -75,14 +76,51 @@ namespace Silk.Data.SQL.ORM.Queries
 					limit: limit != null ? QueryExpression.Value(limit.Value) : null
 				));
 
-			return new[] {
+			var manyToManyFields = model.Fields
+				.Where(q => q.Storage == null && q.Relationship != null && q.Relationship.RelationshipType == RelationshipType.ManyToMany)
+				.ToArray();
+			if (manyToManyFields.Length > 0)
+			{
+				foreach (var field in manyToManyFields)
+				{
+					joins?.Clear();
+					projectedFields.Clear();
+
+					foreach (var primaryKeyField in model.PrimaryKeyFields)
+					{
+						projectedFields.Add(QueryExpression.Alias(
+							QueryExpression.Column(primaryKeyField.Storage.ColumnName, entityTableAlias.Identifier),
+							primaryKeyField.Name
+						));
+					}
+
+					var aliasExpression = AddJoinExpression(ref joins, field, model, true);
+					if (aliasExpression != null)
+					{
+						AddProjectedFields(aliasExpression,
+							field.Relationship.ProjectedModel ?? field.Relationship.ForeignModel,
+							projectedFields, ref joins, false, field.Name);
+					}
+
+					queries.Queries.Add(QueryExpression.Select(
+							projectedFields.ToArray(),
+							from: entityTableAlias,
+							where: where,
+							joins: joins?.ToArray(),
+							having: having
+						));
+				}
+			}
+
+			return new[]
+			{
 				new MapResultORMQuery<TView>(queries, model)
 			};
 		}
 
 		private void AddProjectedFields(AliasExpression fromAliasExpression, EntityModel model,
 			List<QueryExpression> projectedFields, ref List<JoinExpression> joins,
-			string aliasPath = null)
+			bool doManyToManyRelations = false, string aliasPath = null)
 		{
 			var aliasPrefix = "";
 			if (aliasPath != null)
@@ -109,41 +147,75 @@ namespace Silk.Data.SQL.ORM.Queries
 						continue;
 					}
 
-					var aliasExpression = AddJoinExpression(ref joins, field, model);
+					var aliasExpression = AddJoinExpression(ref joins, field, model, doManyToManyRelations);
 					if (aliasExpression != null)
 					{
 						AddProjectedFields(aliasExpression,
 							field.Relationship.ProjectedModel ?? field.Relationship.ForeignModel,
-							projectedFields, ref joins, $"{aliasPrefix}{field.Name}");
+							projectedFields, ref joins, doManyToManyRelations, $"{aliasPrefix}{field.Name}");
 					}
 				}
 			}
 		}
 
-		private AliasExpression AddJoinExpression(ref List<JoinExpression> joins, DataField field, EntityModel model)
+		private AliasExpression AddJoinExpression(ref List<JoinExpression> joins, DataField field, EntityModel model,
+			bool doManyToManyRelations)
 		{
-			if (field.Relationship.RelationshipType == RelationshipType.ManyToMany)
-				return null;
 			if (joins == null)
 				joins = new List<JoinExpression>();
 
 			//  todo: how to support joins that don't use the primary key as the foreign relationship key
 			//  todo: investigate how to perform this join for tables with composite primary keys
-			var foreignEntityTable = field.Relationship.ForeignModel.Schema.EntityTable;
-			var foreignPrimaryKey = field.Relationship.ForeignModel.PrimaryKeyFields.First();
-			var fullEntityModel = model.Domain.DataModels.FirstOrDefault(q => q.Schema.EntityTable == model.Schema.EntityTable);
-			var fullEntityField = fullEntityModel.Fields.FirstOrDefault(q => q.ModelBinding.ViewFieldPath.SequenceEqual(field.ModelBinding.ViewFieldPath));
 
-			var foreignTableAlias = QueryExpression.Alias(QueryExpression.Table(foreignEntityTable.TableName), $"t{++_aliasCount}");
-			var foreignKeyStorage = fullEntityModel.Fields.FirstOrDefault(q => q.Storage != null && q.Relationship == fullEntityField.Relationship).Storage;
+			if (field.Relationship.RelationshipType == RelationshipType.ManyToOne)
+			{
+				var foreignEntityTable = field.Relationship.ForeignModel.Schema.EntityTable;
+				var foreignPrimaryKey = field.Relationship.ForeignModel.PrimaryKeyFields.First();
+				var fullEntityModel = model.Domain.DataModels.FirstOrDefault(q => q.Schema.EntityTable == model.Schema.EntityTable);
+				var fullEntityField = fullEntityModel.Fields.FirstOrDefault(q => q.ModelBinding.ViewFieldPath.SequenceEqual(field.ModelBinding.ViewFieldPath));
 
-			joins.Add(QueryExpression.Join(
-				QueryExpression.Column(foreignKeyStorage.ColumnName, QueryExpression.Table(foreignKeyStorage.Table.TableName)),
-				QueryExpression.Column(foreignPrimaryKey.Storage.ColumnName, foreignTableAlias),
-				JoinDirection.Left
-				));
+				var foreignTableAlias = QueryExpression.Alias(QueryExpression.Table(foreignEntityTable.TableName), $"t{++_aliasCount}");
+				var foreignKeyStorage = fullEntityModel.Fields.FirstOrDefault(q => q.Storage != null && q.Relationship == fullEntityField.Relationship).Storage;
 
-			return foreignTableAlias;
+				joins.Add(QueryExpression.Join(
+					QueryExpression.Column(foreignKeyStorage.ColumnName, QueryExpression.Table(foreignKeyStorage.Table.TableName)),
+					QueryExpression.Column(foreignPrimaryKey.Storage.ColumnName, foreignTableAlias),
+					JoinDirection.Left
+					));
+
+				return foreignTableAlias;
+			}
+			else if (doManyToManyRelations && field.Relationship.RelationshipType == RelationshipType.ManyToMany)
+			{
+				var joinTable = model.Schema.Tables.FirstOrDefault(q => q.IsJoinTableFor(model.Schema.EntityTable.EntityType, field.Relationship.ForeignModel.EntityType));
+				if (joinTable == null)
+					throw new InvalidOperationException($"Couldn't locate join table for '{field.Relationship.ForeignModel.EntityType.FullName}'.");
+
+				var foreignEntityTable = field.Relationship.ForeignModel.Schema.EntityTable;
+				var foreignPrimaryKey = field.Relationship.ForeignModel.PrimaryKeyFields.First();
+				var localPrimaryKey = model.PrimaryKeyFields.First();
+				var foreignJoinField = joinTable.DataFields.First(q => q.RelatedEntityType == field.Relationship.ForeignModel.EntityType);
+				var localJoinField = joinTable.DataFields.First(q => q.RelatedEntityType == model.Schema.EntityTable.EntityType);
+
+				var joinTableAlias = QueryExpression.Alias(QueryExpression.Table(joinTable.TableName), $"t{++_aliasCount}");
+				var foreignTableAlias = QueryExpression.Alias(QueryExpression.Table(foreignEntityTable.TableName), $"t{++_aliasCount}");
+
+				joins.Add(QueryExpression.Join(
+					QueryExpression.Column(localPrimaryKey.Storage.ColumnName, QueryExpression.Table(localPrimaryKey.Storage.Table.TableName)),
+					QueryExpression.Column(localJoinField.Storage.ColumnName, joinTableAlias),
+					JoinDirection.Left
+					));
+
+				joins.Add(QueryExpression.Join(
+					QueryExpression.Column(foreignJoinField.Storage.ColumnName, joinTableAlias),
+					QueryExpression.Column(foreignPrimaryKey.Storage.ColumnName, foreignTableAlias),
+					JoinDirection.Inner
+					));
+
+				return foreignTableAlias;
+			}
+
+			return null;
 		}
 	}
 }

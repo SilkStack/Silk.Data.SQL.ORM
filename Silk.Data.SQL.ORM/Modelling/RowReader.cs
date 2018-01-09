@@ -36,6 +36,36 @@ namespace Silk.Data.SQL.ORM.Modelling
 			ReadViewFields(queryResult, _viewReadWriter.View);
 		}
 
+		public void ReadRelatedRow(QueryResult queryResult, IView view, string relatedFieldName)
+		{
+			var aliasPrefix = "";
+			if (relatedFieldName != null)
+				aliasPrefix = $"{relatedFieldName}_";
+
+			var objValues = new Dictionary<string, object>();
+			foreach (var field in view.Fields
+				.OfType<DataField>())
+			{
+				if (!_typeReaders.TryGetValue(field.DataType, out var readFunc))
+					throw new InvalidOperationException("Unsupported data type.");
+
+				var ord = queryResult.GetOrdinal($"{aliasPrefix}{field.Name}");
+
+				if (queryResult.IsDBNull(ord))
+					objValues[field.Name] = null;
+				else
+					objValues[field.Name] = readFunc(queryResult, ord);
+			}
+
+			var relatedFieldPath = new[] { relatedFieldName };
+			var existingValue = _viewReadWriter.ReadFromPath<List<Dictionary<string,object>>>(relatedFieldPath);
+			if (existingValue == null)
+				existingValue = new List<Dictionary<string, object>>();
+			existingValue.Add(objValues);
+
+			_viewReadWriter.WriteToPath(relatedFieldPath, existingValue);
+		}
+
 		private void ReadViewFields(QueryResult queryResult, IView view, string aliasPath = null)
 		{
 			//  todo: splitting on '_' seems ineffecient, improve that

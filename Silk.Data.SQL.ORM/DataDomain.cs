@@ -246,6 +246,7 @@ namespace Silk.Data.SQL.ORM
 			var viewBuilder = new DataViewBuilder(modelOfViewType, targetModel, _projectionConventions, _domainDefinition,
 				sourceType, viewType);
 			viewBuilder.ProcessModel(targetModel);
+			viewBuilder.FinalizeModel();
 
 			var ctor = typeof(EntityModel<>).MakeGenericType(viewType)
 				.GetTypeInfo().DeclaredConstructors.First(q => q.GetParameters().Length == 0);

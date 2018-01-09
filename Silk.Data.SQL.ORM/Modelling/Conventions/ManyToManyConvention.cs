@@ -62,7 +62,7 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 					viewBuilder.GetSchemaDefinition().TableDefinitions.Add(relationshipTableDefinition);
 			}
 
-			viewBuilder.DefineAssignedViewField(sourceField, metadata: sourceField.Field.Metadata);
+			viewBuilder.DefineManyToManyViewField(sourceField, metadata: sourceField.Field.Metadata);
 			var viewField = viewBuilder.GetDefinedField(sourceField.Field.Name);
 			viewField.Metadata.Add(new RelationshipDefinition
 			{

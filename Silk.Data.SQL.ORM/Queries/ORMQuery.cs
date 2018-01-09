@@ -1,10 +1,12 @@
 ﻿using Silk.Data.Modelling;
 using Silk.Data.SQL.Expressions;
+using Silk.Data.SQL.ORM.Expressions;
 using Silk.Data.SQL.ORM.Modelling;
 using Silk.Data.SQL.Queries;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Silk.Data.SQL.ORM.Queries
@@ -129,6 +131,19 @@ namespace Silk.Data.SQL.ORM.Queries
 				resultWriters.Add(new ObjectModelReadWriter(EntityModel.Model, result));
 			}
 
+			var manyToManyFields = EntityModel.Fields
+				.Where(q => q.Storage == null && q.Relationship != null && q.Relationship.RelationshipType == RelationshipType.ManyToMany)
+				.ToArray();
+			if (manyToManyFields.Length > 0)
+			{
+				queryResult.NextResult();
+
+				while (queryResult.Read())
+				{
+
+				}
+			}
+
 			EntityModel.MapToModelAsync(resultWriters, rowReaders)
 					.ConfigureAwait(false)
 					.GetAwaiter().GetResult();
@@ -142,26 +157,64 @@ namespace Silk.Data.SQL.ORM.Queries
 				return _noResults;
 
 			var resultWriters = new List<ModelReadWriter>();
-			var rowReaders = new List<ViewReadWriter>();
+			var rowReaders = new Dictionary<string, ViewReadWriter>();
 			var resultList = new List<TView>();
 
 			while (await queryResult.ReadAsync()
 				.ConfigureAwait(false))
 			{
+				var compositeKey = ReadCompositePrimaryKey(queryResult);
 				var result = new TView();
 				resultList.Add(result);
 				var container = new MemoryViewReadWriter(EntityModel);
 				var rowReader = new RowReader(container);
 				rowReader.ReadRow(queryResult);
 
-				rowReaders.Add(container);
+				rowReaders.Add(compositeKey, container);
 				resultWriters.Add(new ObjectModelReadWriter(EntityModel.Model, result));
 			}
 
-			await EntityModel.MapToModelAsync(resultWriters, rowReaders)
+			var manyToManyFields = EntityModel.Fields
+				.Where(q => q.Storage == null && q.Relationship != null && q.Relationship.RelationshipType == RelationshipType.ManyToMany)
+				.ToArray();
+			if (manyToManyFields.Length > 0)
+			{
+				foreach (var field in manyToManyFields)
+				{
+					await queryResult.NextResultAsync()
+						.ConfigureAwait(false);
+
+					while (await queryResult.ReadAsync()
+						.ConfigureAwait(false))
+					{
+						var compositeKey = ReadCompositePrimaryKey(queryResult);
+						var rowReader = new RowReader(rowReaders[compositeKey]);
+						rowReader.ReadRelatedRow(queryResult,
+							field.Relationship.ProjectedModel ?? field.Relationship.ForeignModel,
+							field.Name);
+					}
+				}
+			}
+
+			await EntityModel.MapToModelAsync(resultWriters, rowReaders.Values)
 					.ConfigureAwait(false);
 
 			return resultList;
+		}
+
+		private StringBuilder _compositeKeyBuilder = new StringBuilder();
+		private string ReadCompositePrimaryKey(QueryResult queryResult)
+		{
+			_compositeKeyBuilder.Clear();
+			foreach (var field in EntityModel.PrimaryKeyFields)
+			{
+				if (field.DataType == typeof(Guid))
+					_compositeKeyBuilder.Append(queryResult.GetGuid(queryResult.GetOrdinal(field.Name)));
+				else
+					_compositeKeyBuilder.Append(queryResult.GetInt32(queryResult.GetOrdinal(field.Name)));
+				_compositeKeyBuilder.Append(":");
+			}
+			return _compositeKeyBuilder.ToString();
 		}
 	}
 }

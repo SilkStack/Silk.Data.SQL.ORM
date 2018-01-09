@@ -149,8 +149,6 @@ namespace Silk.Data.SQL.ORM
 				}
 			}
 
-			_bindEnumerableConversions.FinalizeModel(this);
-
 			foreach (var viewConvention in ViewDefinition.ViewConventions)
 			{
 				if (!IsFirstPass && !viewConvention.PerformMultiplePasses)
@@ -160,6 +158,11 @@ namespace Silk.Data.SQL.ORM
 				else if (viewConvention is ViewConvention<DataViewBuilder> dvbViewConvention)
 					dvbViewConvention.FinalizeModel(this);
 			}
+		}
+
+		public void FinalizeModel()
+		{
+			_bindEnumerableConversions.FinalizeModel(this);
 		}
 
 		public bool IsPrimitiveType(Type type)
