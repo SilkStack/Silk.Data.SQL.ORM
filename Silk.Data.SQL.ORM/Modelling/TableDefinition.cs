@@ -12,5 +12,6 @@ namespace Silk.Data.SQL.ORM.Modelling
 		public bool IsJoinTable { get; set; }
 		public List<Type> JoinEntityTypes { get; } = new List<Type>();
 		public List<ViewFieldDefinition> Fields { get; } = new List<ViewFieldDefinition>();
+		public List<TableIndexDefinition> Indexes { get; } = new List<TableIndexDefinition>();
 	}
 }

@@ -175,6 +175,16 @@ namespace Silk.Data.SQL.ORM
 				}
 			}
 
+			foreach (var schemaDefinition in domainDefinition.SchemaDefinitions)
+			{
+				var entityModel = entityModels.First(q => q.EntityType == schemaDefinition.EntityType);
+				foreach (var tableDefinition in schemaDefinition.TableDefinitions)
+				{
+					var table = entityModel.Schema.Tables.First(q => q.TableName == tableDefinition.TableName);
+					table.SetIndexes(tableDefinition.Indexes);
+				}
+			}
+
 			return dataDomain;
 		}
 

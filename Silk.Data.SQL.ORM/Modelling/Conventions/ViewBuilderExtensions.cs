@@ -31,7 +31,7 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 				fieldDataType, metadata);
 		}
 
-		public static void DefineManyToOneViewField(this ViewBuilder viewBuilder,
+		public static void DefineManyToOneViewField(this DataViewBuilder viewBuilder,
 			ViewBuilder.FieldInfo fieldInfo,
 			 string[] modelBindingPath, string viewFieldName,
 			 params object[] metadata)
@@ -50,6 +50,11 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 			relationshipLoader.AddField(fieldInfo.Field, modelBindingPath[0],
 				viewFieldName, $"{modelBindingPath[0]}Id");
 
+			if (!viewBuilder.DomainDefinition.IsReadOnly)
+			{
+				var tableDefinition = viewBuilder.GetSchemaDefinition().GetEntityTableDefinition();
+				tableDefinition.Indexes.Add(new TableIndexDefinition($"{modelBindingPath[0]}Id"));
+			}
 			viewBuilder.DefineField(viewFieldName, binding, fieldInfo.Field.DataType, metadata);
 		}
 

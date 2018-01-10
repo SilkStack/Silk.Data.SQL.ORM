@@ -1,4 +1,5 @@
 ﻿using Silk.Data.SQL.Expressions;
+using Silk.Data.SQL.ORM.Queries;
 using Silk.Data.SQL.Providers;
 using System;
 using System.Collections.Generic;
@@ -15,8 +16,10 @@ namespace Silk.Data.SQL.ORM.Modelling
 		public bool IsJoinTable { get; private set; }
 		public Type[] JoinEntityTypes { get; private set; }
 		public IReadOnlyList<DataField> DataFields => InternalDataFields;
+		public IReadOnlyCollection<TableIndex> Indexes => _indexes;
 
 		internal List<DataField> InternalDataFields { get; } = new List<DataField>();
+		private List<TableIndex> _indexes = new List<TableIndex>();
 
 		internal Table()
 		{
@@ -49,6 +52,16 @@ namespace Silk.Data.SQL.ORM.Modelling
 			JoinEntityTypes = joinEntityTypes;
 		}
 
+		internal void SetIndexes(IEnumerable<TableIndexDefinition> indexDefinitions)
+		{
+			foreach (var indexDefinition in indexDefinitions)
+			{
+				var tableIndex = new TableIndex(indexDefinition.UniqueConstraint,
+					DataFields.Where(q => indexDefinition.Columns.Contains(q.Name)).ToArray());
+				_indexes.Add(tableIndex);
+			}
+		}
+
 		public bool IsJoinTableFor(params Type[] entityTypes)
 		{
 			if (!IsJoinTable)
@@ -61,16 +74,28 @@ namespace Silk.Data.SQL.ORM.Modelling
 			return true;
 		}
 
-		private CreateTableExpression CreateTableExpression()
+		private QueryCollection CreateTableQueries()
 		{
-			//  todo: support indexes
-			return QueryExpression.CreateTable(TableName,
-				DataFields.Select(dataField =>
+			var queryCollection = new QueryCollection(null)
+				.NonResultQuery(new NoResultORMQuery(
+					QueryExpression.CreateTable(TableName,
+						DataFields.Select(dataField =>
+						{
+							return new ColumnDefinitionExpression(dataField.Storage.ColumnName, dataField.Storage.DataType,
+								dataField.Storage.IsNullable, dataField.Storage.IsAutoIncrement,
+								dataField.Storage.IsPrimaryKey);
+						}))
+					));
+			if (Indexes != null)
+			{
+				foreach (var index in Indexes)
 				{
-					return new ColumnDefinitionExpression(dataField.Storage.ColumnName, dataField.Storage.DataType,
-						dataField.Storage.IsNullable, dataField.Storage.IsAutoIncrement,
-						dataField.Storage.IsPrimaryKey);
-				}));
+					queryCollection.NonResultQuery(new NoResultORMQuery(
+						QueryExpression.CreateIndex(TableName, uniqueConstraint: index.UniqueConstraint, columns: index.Fields.Select(q => q.Storage.ColumnName).ToArray())
+						));
+				}
+			}
+			return queryCollection;
 		}
 
 		private DropExpression DropTableExpression()
@@ -85,12 +110,12 @@ namespace Silk.Data.SQL.ORM.Modelling
 
 		public void Create(IDataProvider dataProvider)
 		{
-			dataProvider.ExecuteNonQuery(CreateTableExpression());
+			CreateTableQueries().Execute(dataProvider);
 		}
 
 		public Task CreateAsync(IDataProvider dataProvider)
 		{
-			return dataProvider.ExecuteNonQueryAsync(CreateTableExpression());
+			return CreateTableQueries().ExecuteAsync(dataProvider);
 		}
 
 		public void Drop(IDataProvider dataProvider)
