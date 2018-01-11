@@ -268,6 +268,11 @@ namespace Silk.Data.SQL.ORM.Modelling
 			return new DeleteQueryBuilder<TSource>(this)
 				.CreateQuery(where: where);
 		}
+
+		public ConditionExpression<TSource> Where(Expression<Func<TSource, bool>> expression)
+		{
+			return new ConditionExpression<TSource>(this, expression);
+		}
 	}
 
 	public class EntityModel<TSource, TView> : EntityModel<TSource>, IView<DataField, TSource, TView>

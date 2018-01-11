@@ -17,6 +17,35 @@ namespace Silk.Data.SQL.ORM.Expressions
 		}
 	}
 
+	public class ConditionExpression<TSource> : ConditionExpression
+		where TSource : new()
+	{
+		private readonly ExpressionConverter<TSource> _converter;
+
+		public ConditionExpression(EntityModel<TSource> dataModel, Expression<Func<TSource, bool>> expression)
+		{
+			_converter = new ExpressionConverter<TSource>(dataModel);
+			Expression = ConvertToQueryExpression(expression);
+		}
+
+		public ConditionExpression<TSource> AndWhere(Expression<Func<TSource, bool>> expression)
+		{
+			Expression = QueryExpression.AndAlso(Expression, ConvertToQueryExpression(expression));
+			return this;
+		}
+
+		public ConditionExpression<TSource> OrWhere(Expression<Func<TSource, bool>> expression)
+		{
+			Expression = QueryExpression.OrElse(Expression, ConvertToQueryExpression(expression));
+			return this;
+		}
+
+		private QueryExpression ConvertToQueryExpression(Expression<Func<TSource, bool>> expression)
+		{
+			return _converter.ConvertToCondition(expression);
+		}
+	}
+
 	public class ConditionExpression<TSource, TView> : ConditionExpression
 		where TSource : new()
 		where TView : new()
