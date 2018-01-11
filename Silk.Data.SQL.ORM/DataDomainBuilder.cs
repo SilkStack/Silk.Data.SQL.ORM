@@ -47,6 +47,7 @@ namespace Silk.Data.SQL.ORM
 				));
 		}
 
+		[Obsolete("Doesn't support full API and will be removed when consumer code has been updated to use AddDataEntity<TSource> only.")]
 		public void AddDataEntity<TSource, TView>(Action<EntityModel<TSource, TView>> builtDelegate = null)
 			where TSource : new()
 			where TView : new()
