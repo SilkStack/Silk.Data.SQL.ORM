@@ -73,7 +73,10 @@ namespace Silk.Data.SQL.ORM.Modelling
 
 		protected SqlDataType GetSqlDataType()
 		{
-			//  todo: allow override with an attribute
+			var sqlDataType = Metadata.OfType<SqlDataType>().FirstOrDefault();
+			if (sqlDataType != null)
+				return sqlDataType;
+
 			if (DataType == typeof(string))
 			{
 				var lengthAttribute = Metadata.OfType<DataLengthAttribute>().FirstOrDefault();

@@ -38,12 +38,15 @@ namespace Silk.Data.SQL.ORM
 			_viewConventions = viewConventions.ToArray();
 		}
 
-		public void AddDataEntity<TSource>(Action<EntityModel<TSource>> builtDelegate = null)
+		public void AddDataEntity<TSource>(
+			Action<EntityModel<TSource>> builtDelegate = null,
+			Action<ModelCustomizer<TSource>> customizeModelDelegate = null
+			)
 			where TSource : new()
 		{
 			_domainDefinition.EntityTypes.Add(typeof(TSource));
 			_entityModelBuilders.Add(new EntityModelBuilder<TSource>(
-				builtDelegate, _viewConventions, _domainDefinition
+				builtDelegate, _viewConventions, _domainDefinition, customizeModelDelegate
 				));
 		}
 
@@ -93,6 +96,11 @@ namespace Silk.Data.SQL.ORM
 				entityModelBuilder.ViewBuilder.FinalizeModel();
 			}
 
+			foreach (var entityModelBuilder in _entityModelBuilders)
+			{
+				entityModelBuilder.CustomizeModel();
+			}
+
 			builtDomain = DataDomain.CreateFromDefinition(_domainDefinition, _viewConventions);
 
 			foreach (var entityModelBuilder in _entityModelBuilders)
@@ -112,6 +120,7 @@ namespace Silk.Data.SQL.ORM
 			public DomainDefinition DomainDefinition { get; protected set; }
 
 			public abstract void CallBuiltDelegate(DataDomain dataDomain);
+			public abstract void CustomizeModel();
 		}
 
 		private class EntityModelBuilder<TSource> : EntityModelBuilder
@@ -122,9 +131,11 @@ namespace Silk.Data.SQL.ORM
 			public override Type ModelType => typeof(TSource);
 			public override Type ProjectionType => null;
 			public override DataViewBuilder ViewBuilder { get; }
+			private Action<ModelCustomizer<TSource>> _modelCustomizerFunc;
 
 			public EntityModelBuilder(Action<EntityModel<TSource>> builtDelegate,
-				ViewConvention[] viewConventions, DomainDefinition domainDefinition)
+				ViewConvention[] viewConventions, DomainDefinition domainDefinition,
+				Action<ModelCustomizer<TSource>> modelCustomizerFunc)
 			{
 				ViewBuilder = new DataViewBuilder(
 					TypeModeller.GetModelOf<TSource>(), null,
@@ -134,12 +145,17 @@ namespace Silk.Data.SQL.ORM
 
 				_builtDelegate = builtDelegate;
 				ViewDefinition = ViewBuilder.ViewDefinition;
+				_modelCustomizerFunc = modelCustomizerFunc;
 			}
 
 			public override void CallBuiltDelegate(DataDomain dataDomain)
 			{
-				if (_builtDelegate != null)
-					_builtDelegate(dataDomain.GetEntityModel<TSource>());
+				_builtDelegate?.Invoke(dataDomain.GetEntityModel<TSource>());
+			}
+
+			public override void CustomizeModel()
+			{
+				_modelCustomizerFunc?.Invoke(new ModelCustomizer<TSource>(ViewBuilder));
 			}
 		}
 
@@ -171,6 +187,10 @@ namespace Silk.Data.SQL.ORM
 			{
 				if (_builtDelegate != null)
 					_builtDelegate(dataDomain.GetEntityModel<TSource>() as EntityModel<TSource, TView>);
+			}
+
+			public override void CustomizeModel()
+			{
 			}
 		}
 	}
