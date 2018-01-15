@@ -557,5 +557,24 @@ namespace Silk.Data.SQL.ORM
 			return new QueryCollection(this)
 				.Select<TSource, TView>(where, having, orderBy, groupBy, offset, limit);
 		}
+
+		public QueryCollection<int> SelectCount<TSource>(QueryExpression where = null,
+			QueryExpression having = null,
+			QueryExpression[] groupBy = null)
+			where TSource : new()
+		{
+			return new QueryCollection(this)
+				.SelectCount<TSource>(where, having, groupBy);
+		}
+
+		public QueryCollection<int> SelectCount<TSource, TView>(QueryExpression where = null,
+			QueryExpression having = null,
+			QueryExpression[] groupBy = null)
+			where TSource : new()
+			where TView : new()
+		{
+			return new QueryCollection(this)
+				.SelectCount<TSource, TView>(where, having, groupBy);
+		}
 	}
 }

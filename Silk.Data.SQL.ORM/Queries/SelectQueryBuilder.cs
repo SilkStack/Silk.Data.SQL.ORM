@@ -56,6 +56,64 @@ namespace Silk.Data.SQL.ORM.Queries
 			)
 			where TView : new()
 		{
+			return new[]
+			{
+				new MapResultORMQuery<TView>(
+					CreateRawQuery(model, where, having, orderBy, groupBy, offset, limit),
+					model
+				)
+			};
+		}
+
+		public ICollection<ORMQuery> CreateCountQuery(
+				QueryExpression where = null,
+				QueryExpression having = null,
+				QueryExpression[] groupBy = null
+			)
+		{
+			return CreateCountQuery(DataModel, where, having, groupBy);
+		}
+
+		public ICollection<ORMQuery> CreateCountQuery<TView>(
+				QueryExpression where = null,
+				QueryExpression having = null,
+				QueryExpression[] groupBy = null
+			)
+			where TView : new()
+		{
+			var dataModel = DataModel.Domain.GetProjectionModel<TSource, TView>();
+
+			return CreateCountQuery(dataModel, where, having, groupBy);
+		}
+
+		public ICollection<ORMQuery> CreateCountQuery<TView>(
+				EntityModel<TView> model,
+				QueryExpression where = null,
+				QueryExpression having = null,
+				QueryExpression[] groupBy = null
+			)
+			where TView : new()
+		{
+			return new[]
+			{
+				new ScalarResultORMQuery<int>(
+					CreateRawQuery(model, where, having, null, groupBy, null, null, true)
+				)
+			};
+		}
+
+		private QueryExpression CreateRawQuery<TView>(
+				EntityModel<TView> model,
+				QueryExpression where = null,
+				QueryExpression having = null,
+				QueryExpression[] orderBy = null,
+				QueryExpression[] groupBy = null,
+				int? offset = null,
+				int? limit = null,
+				bool isCountQuery = false
+			)
+			where TView : new()
+		{
 			var entityTable = model.Schema.EntityTable;
 			var queries = new CompositeQueryExpression();
 			var projectedFields = new List<QueryExpression>();
@@ -64,7 +122,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			var entityTableAlias = QueryExpression.Alias(QueryExpression.Table(entityTable.TableName), entityTable.TableName);
 			AddProjectedFields(entityTableAlias, model, projectedFields, ref joins);
 
-			queries.Queries.Add(QueryExpression.Select(
+			var mainSelect = QueryExpression.Select(
 					projectedFields.ToArray(),
 					from: entityTableAlias,
 					where: where,
@@ -74,7 +132,12 @@ namespace Silk.Data.SQL.ORM.Queries
 					groupBy: groupBy,
 					offset: offset != null ? QueryExpression.Value(offset.Value) : null,
 					limit: limit != null ? QueryExpression.Value(limit.Value) : null
-				));
+				);
+
+			if (isCountQuery)
+				return mainSelect.ToCountQuery();
+
+			queries.Queries.Add(mainSelect);
 
 			var manyToManyFields = model.Fields
 				.Where(q => q.Storage == null && q.Relationship != null && q.Relationship.RelationshipType == RelationshipType.ManyToMany)
@@ -112,10 +175,7 @@ namespace Silk.Data.SQL.ORM.Queries
 				}
 			}
 
-			return new[]
-			{
-				new MapResultORMQuery<TView>(queries, model)
-			};
+			return queries;
 		}
 
 		private void AddProjectedFields(AliasExpression fromAliasExpression, EntityModel model,

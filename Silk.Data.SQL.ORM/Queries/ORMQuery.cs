@@ -97,6 +97,61 @@ namespace Silk.Data.SQL.ORM.Queries
 		}
 	}
 
+	public class ScalarResultORMQuery<T> : MapResultORMQuery
+	{
+		private static readonly Dictionary<Type, Func<QueryResult, int, object>> _typeReaders =
+			new Dictionary<Type, Func<QueryResult, int, object>>()
+			{
+				{ typeof(bool), (q,o) => q.GetBoolean(o) },
+				{ typeof(byte), (q,o) => q.GetByte(o) },
+				{ typeof(short), (q,o) => q.GetInt16(o) },
+				{ typeof(int), (q,o) => q.GetInt32(o) },
+				{ typeof(long), (q,o) => q.GetInt64(o) },
+				{ typeof(float), (q,o) => q.GetFloat(o) },
+				{ typeof(double), (q,o) => q.GetDouble(o) },
+				{ typeof(decimal), (q,o) => q.GetDecimal(o) },
+				{ typeof(string), (q,o) => q.GetString(o) },
+				{ typeof(Guid), (q,o) => q.GetGuid(o) },
+				{ typeof(DateTime), (q,o) => q.GetDateTime(o) },
+			};
+
+		private Func<QueryResult, int, object> _typeReader;
+
+		public ScalarResultORMQuery(QueryExpression query)
+			: base(query, typeof(T))
+		{
+			if (!_typeReaders.TryGetValue(typeof(T), out _typeReader))
+				throw new InvalidOperationException("Type not supported.");
+		}
+
+		public override object MapResult(QueryResult queryResult)
+		{
+			if (!queryResult.HasRows)
+				return new T[0];
+
+			var ret = new List<T>();
+			while (queryResult.Read())
+			{
+				ret.Add((T)_typeReader(queryResult, 0));
+			}
+			return ret;
+		}
+
+		public override async Task<object> MapResultAsync(QueryResult queryResult)
+		{
+			if (!queryResult.HasRows)
+				return new T[0];
+
+			var ret = new List<T>();
+			while (await queryResult.ReadAsync()
+				.ConfigureAwait(false))
+			{
+				ret.Add((T)_typeReader(queryResult, 0));
+			}
+			return ret;
+		}
+	}
+
 	public class MapResultORMQuery<TView> : MapResultORMQuery
 		where TView : new()
 	{

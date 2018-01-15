@@ -227,6 +227,25 @@ namespace Silk.Data.SQL.ORM.Modelling
 				.CreateQuery<TView>(where, having, orderBy, groupBy, offset, limit);
 		}
 
+		public IEnumerable<ORMQuery> SelectCount(
+			QueryExpression where = null,
+			QueryExpression having = null,
+			QueryExpression[] groupBy = null)
+		{
+			return new SelectQueryBuilder<TSource>(this)
+				.CreateCountQuery(where, having, groupBy);
+		}
+
+		public IEnumerable<ORMQuery> SelectCount<TView>(
+			QueryExpression where = null,
+			QueryExpression having = null,
+			QueryExpression[] groupBy = null)
+			where TView : new()
+		{
+			return new SelectQueryBuilder<TSource>(this)
+				.CreateCountQuery<TView>(where, having, groupBy);
+		}
+
 		public IEnumerable<ORMQuery> Insert(params TSource[] sources)
 		{
 			return new InsertQueryBuilder<TSource>(this)

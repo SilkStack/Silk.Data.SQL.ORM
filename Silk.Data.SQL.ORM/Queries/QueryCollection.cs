@@ -329,6 +329,29 @@ namespace Silk.Data.SQL.ORM.Queries
 				);
 			return new QueryCollection<TView>(DataDomain, Queries, QueryExecutor);
 		}
+
+		public QueryCollection<int> SelectCount<TSource>(QueryExpression where = null,
+			QueryExpression having = null,
+			QueryExpression[] groupBy = null)
+			where TSource : new()
+		{
+			Queries.AddRange(
+				GetEntityModel<TSource>().SelectCount(where, having, groupBy)
+				);
+			return new QueryCollection<int>(DataDomain, Queries, QueryExecutor);
+		}
+
+		public QueryCollection<int> SelectCount<TSource, TView>(QueryExpression where = null,
+			QueryExpression having = null,
+			QueryExpression[] groupBy = null)
+			where TSource : new()
+			where TView : new()
+		{
+			Queries.AddRange(
+				GetEntityModel<TSource>().SelectCount<TView>(where, having, groupBy)
+				);
+			return new QueryCollection<int>(DataDomain, Queries, QueryExecutor);
+		}
 	}
 
 	public class QueryCollection<TResult> : QueryCollectionBase<QueryCollection<TResult>>
