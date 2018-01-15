@@ -242,64 +242,64 @@ namespace Silk.Data.SQL.ORM
 
 			var cacheKey = $"{sourceType.FullName} to {viewType.FullName}";
 			if (_projectionModelCache.TryGetValue(cacheKey, out var ret))
-				return ret as EntityModel;
+				return ret;
 
 			lock (_projectionModelCache)
 			{
 				if (_projectionModelCache.TryGetValue(cacheKey, out ret))
 					return ret;
+
+				var modelOfViewType = TypeModeller.GetModelOf(viewType);
+				var targetModel = entityModel.GetAsModel();
+
+				var viewBuilder = new DataViewBuilder(modelOfViewType, targetModel, _projectionConventions, _domainDefinition,
+					sourceType, viewType);
+				viewBuilder.ProcessModel(targetModel);
+				viewBuilder.FinalizeModel();
+
+				var viewTypeDefaultCtor = viewType.GetTypeInfo().DeclaredConstructors
+					.FirstOrDefault(q => q.GetParameters().Length == 0);
+
+				if (viewTypeDefaultCtor != null)
+				{
+					var ctor = typeof(EntityModel<>).MakeGenericType(viewType)
+						.GetTypeInfo().DeclaredConstructors.First(q => q.GetParameters().Length == 0);
+					ret = ctor.Invoke(null) as EntityModel;
+				}
+				else
+				{
+					var ctor = typeof(NonQueryableEntityModel<>).MakeGenericType(viewType)
+						.GetTypeInfo().DeclaredConstructors.First(q => q.GetParameters().Length == 0);
+					ret = ctor.Invoke(null) as EntityModel;
+				}
+
+				var fields = new List<DataField>();
+				foreach (var fieldDefinition in viewBuilder.ViewDefinition.FieldDefinitions)
+				{
+					var entityField = entityModel.Fields.FirstOrDefault(
+						q => q.ModelBinding?.ViewFieldPath != null &&
+							fieldDefinition.ModelBinding?.ViewFieldPath != null &&
+							q.ModelBinding.ViewFieldPath.SequenceEqual(fieldDefinition.ModelBinding.ViewFieldPath)
+						);
+					if (entityField == null)
+						continue;
+					var relationship =
+						GetProjectionFieldRelationship(fieldDefinition) ??
+						CreateProjectionRelationshipFromField(entityField, fieldDefinition.DataType);
+					fields.Add(
+						new DataField(entityField.Storage?.ColumnName, fieldDefinition.DataType,
+							fieldDefinition.Metadata.Concat(entityField.Metadata).ToArray(),
+							fieldDefinition.ModelBinding, entityField.Storage?.Table, relationship, fieldDefinition.Name)
+						);
+				}
+
+				ret.Initalize(viewBuilder.ViewDefinition.Name, TypeModeller.GetModelOf(viewType),
+					entityModel.Schema, fields.ToArray(), this);
+
+				_projectionModelCache.Add(cacheKey, ret);
+
+				return ret;
 			}
-
-			var modelOfViewType = TypeModeller.GetModelOf(viewType);
-			var targetModel = entityModel.GetAsModel();
-
-			var viewBuilder = new DataViewBuilder(modelOfViewType, targetModel, _projectionConventions, _domainDefinition,
-				sourceType, viewType);
-			viewBuilder.ProcessModel(targetModel);
-			viewBuilder.FinalizeModel();
-
-			var viewTypeDefaultCtor = viewType.GetTypeInfo().DeclaredConstructors
-				.FirstOrDefault(q => q.GetParameters().Length == 0);
-
-			if (viewTypeDefaultCtor != null)
-			{
-				var ctor = typeof(EntityModel<>).MakeGenericType(viewType)
-					.GetTypeInfo().DeclaredConstructors.First(q => q.GetParameters().Length == 0);
-				ret = ctor.Invoke(null) as EntityModel;
-			}
-			else
-			{
-				var ctor = typeof(NonQueryableEntityModel<>).MakeGenericType(viewType)
-					.GetTypeInfo().DeclaredConstructors.First(q => q.GetParameters().Length == 0);
-				ret = ctor.Invoke(null) as EntityModel;
-			}
-
-			var fields = new List<DataField>();
-			foreach (var fieldDefinition in viewBuilder.ViewDefinition.FieldDefinitions)
-			{
-				var entityField = entityModel.Fields.FirstOrDefault(
-					q => q.ModelBinding?.ViewFieldPath != null &&
-						fieldDefinition.ModelBinding?.ViewFieldPath != null &&
-						q.ModelBinding.ViewFieldPath.SequenceEqual(fieldDefinition.ModelBinding.ViewFieldPath)
-					);
-				if (entityField == null)
-					continue;
-				var relationship =
-					GetProjectionFieldRelationship(fieldDefinition) ??
-					CreateProjectionRelationshipFromField(entityField, fieldDefinition.DataType);
-				fields.Add(
-					new DataField(entityField.Storage?.ColumnName, fieldDefinition.DataType,
-						fieldDefinition.Metadata.Concat(entityField.Metadata).ToArray(),
-						fieldDefinition.ModelBinding, entityField.Storage?.Table, relationship, fieldDefinition.Name)
-					);
-			}
-
-			ret.Initalize(viewBuilder.ViewDefinition.Name, TypeModeller.GetModelOf(viewType),
-				entityModel.Schema, fields.ToArray(), this);
-
-			_projectionModelCache.Add(cacheKey, ret);
-
-			return ret;
 		}
 
 		private DataRelationship GetProjectionFieldRelationship(ViewFieldDefinition fieldDefinition)
