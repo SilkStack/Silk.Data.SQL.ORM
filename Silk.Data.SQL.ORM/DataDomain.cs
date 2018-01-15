@@ -258,9 +258,21 @@ namespace Silk.Data.SQL.ORM
 			viewBuilder.ProcessModel(targetModel);
 			viewBuilder.FinalizeModel();
 
-			var ctor = typeof(EntityModel<>).MakeGenericType(viewType)
-				.GetTypeInfo().DeclaredConstructors.First(q => q.GetParameters().Length == 0);
-			ret = ctor.Invoke(null) as EntityModel;
+			var viewTypeDefaultCtor = viewType.GetTypeInfo().DeclaredConstructors
+				.FirstOrDefault(q => q.GetParameters().Length == 0);
+
+			if (viewTypeDefaultCtor != null)
+			{
+				var ctor = typeof(EntityModel<>).MakeGenericType(viewType)
+					.GetTypeInfo().DeclaredConstructors.First(q => q.GetParameters().Length == 0);
+				ret = ctor.Invoke(null) as EntityModel;
+			}
+			else
+			{
+				var ctor = typeof(NonQueryableEntityModel<>).MakeGenericType(viewType)
+					.GetTypeInfo().DeclaredConstructors.First(q => q.GetParameters().Length == 0);
+				ret = ctor.Invoke(null) as EntityModel;
+			}
 
 			var fields = new List<DataField>();
 			foreach (var fieldDefinition in viewBuilder.ViewDefinition.FieldDefinitions)

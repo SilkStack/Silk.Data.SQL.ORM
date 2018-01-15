@@ -94,6 +94,48 @@ namespace Silk.Data.SQL.ORM.Modelling
 		public abstract Model GetAsModel();
 	}
 
+	public class NonQueryableEntityModel<TSource> : EntityModel, IView<DataField, TSource>
+	{
+		public override Type EntityType => typeof(TSource);
+
+		public new TypedModel<TSource> Model { get; private set; }
+
+		internal NonQueryableEntityModel() { }
+
+		internal override void Initalize(string name, Model model, EntitySchema schema, IEnumerable<DataField> fields, DataDomain domain)
+		{
+			base.Initalize(name, model, schema, fields, domain);
+			Model = model as TypedModel<TSource>;
+		}
+
+		public override Model GetAsModel()
+		{
+			var fields = new List<ModelField>();
+			foreach (var field in Fields)
+			{
+				var direction = field.ModelBinding.Direction;
+				var canRead = direction.HasFlag(BindingDirection.ModelToView);
+				var canWrite = direction.HasFlag(BindingDirection.ViewToModel);
+				var dataType = field.DataType;
+				Type enumType = null;
+				if (field.Relationship?.RelationshipType == RelationshipType.ManyToMany)
+					enumType = typeof(IEnumerable<>).MakeGenericType(field.DataType);
+				fields.Add(new ModelField(
+					field.Name, canRead, canWrite,
+					field.Metadata.Concat(new object[] { field.Storage }).ToArray(),
+					dataType, enumType
+					));
+			}
+			return new Model(Name, fields, Model.Metadata);
+		}
+
+		public override void SetModel(Model model)
+		{
+			Model = model as TypedModel<TSource>;
+			base.Model = model;
+		}
+	}
+
 	public class EntityModel<TSource> : EntityModel, IView<DataField, TSource>
 		where TSource : new()
 	{
