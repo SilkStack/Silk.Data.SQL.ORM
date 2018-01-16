@@ -85,26 +85,55 @@ namespace Silk.Data.SQL.ORM.Modelling.ResourceLoaders
 					var fullEntityModel = view.Domain.DataModels.FirstOrDefault(q => q.Schema.EntityTable == view.Schema.EntityTable);
 					var fullEntityField = fullEntityModel.Fields.FirstOrDefault(q => q.ModelBinding.ViewFieldPath.SequenceEqual(viewField.ModelBinding.ViewFieldPath));
 					var foreignKeyField = fullEntityModel.Fields.FirstOrDefault(q => q.Storage != null && q.Relationship == fullEntityField.Relationship);
+					var sourcePath = new[] { viewFieldName.ViewFieldName };
 
 					foreach (var source in sources)
 					{
-						var relatedObjectField = foreignKeyField.ModelBinding.ReadValue<object>(source);
-						if (relatedObjectField == null)
-							continue;
-
-						var entityModelOfField = viewField.Relationship.ProjectedModel ?? viewField.Relationship.ForeignModel;
-						var instance = Activator.CreateInstance(entityModelOfField.EntityType);
-						var modelWriter = new ObjectModelReadWriter(TypeModeller.GetModelOf(entityModelOfField.EntityType), instance);
-						foreach (var field in entityModelOfField.Fields)
-						{
-							modelWriter.WriteToPath<object>(
-								new[] { field.Name },
-								source.ReadFromPath<object>(new[] { viewFieldName.ViewFieldName, field.Name })
-								);
-						}
+						var instance = ReadObject(source, viewField, foreignKeyField, sourcePath);
 						mappingContext.Resources.Store(source, viewFieldName.ViewFieldName, instance);
 					}
 				}
+			}
+
+			private object ReadObject(IContainerReadWriter source, DataField viewField, DataField foreignKeyField,
+				string[] sourcePath)
+			{
+				var relatedObjectField = source.ReadFromPath<object>(
+					sourcePath.Take(sourcePath.Length - 1).Concat(new[] { foreignKeyField.Name }).ToArray()
+					);
+				if (relatedObjectField == null)
+					return null;
+
+				var entityModelOfField = viewField.Relationship.ProjectedModel ?? viewField.Relationship.ForeignModel;
+				var instance = Activator.CreateInstance(entityModelOfField.EntityType);
+				var modelWriter = new ObjectModelReadWriter(TypeModeller.GetModelOf(entityModelOfField.EntityType), instance);
+				foreach (var field in entityModelOfField.Fields)
+				{
+					if (field.Relationship == null)
+					{
+						modelWriter.WriteToPath<object>(
+							new[] { field.Name },
+							source.ReadFromPath<object>(sourcePath.Concat(new[] { field.Name }).ToArray())
+							);
+					}
+					else if (field.Relationship.RelationshipType == RelationshipType.ManyToOne)
+					{
+						if (field.Storage != null) //  is the foreign relationship key
+							continue;
+
+						var view = viewField.Relationship.ProjectedModel ?? viewField.Relationship.ForeignModel;
+						var fullEntityModel = view.Domain.DataModels.FirstOrDefault(q => q.Schema.EntityTable == view.Schema.EntityTable);
+						var fullEntityField = fullEntityModel.Fields.FirstOrDefault(q => q.ModelBinding.ViewFieldPath.SequenceEqual(field.ModelBinding.ViewFieldPath));
+						modelWriter.WriteToPath<object>(
+							new[] { field.Name },
+							ReadObject(
+								source, field,
+								fullEntityModel.Fields.FirstOrDefault(q => q.Storage != null && q.Relationship == fullEntityField.Relationship),
+								sourcePath.Concat(new[] { field.Name }).ToArray())
+							);
+					}
+				}
+				return instance;
 			}
 		}
 	}
