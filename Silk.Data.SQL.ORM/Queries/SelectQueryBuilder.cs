@@ -118,9 +118,10 @@ namespace Silk.Data.SQL.ORM.Queries
 			var queries = new CompositeQueryExpression();
 			var projectedFields = new List<QueryExpression>();
 			List<JoinExpression> joins = null;
+			Dictionary<string, AliasExpression> tableAliases = null;
 
 			var entityTableAlias = QueryExpression.Alias(QueryExpression.Table(entityTable.TableName), entityTable.TableName);
-			AddProjectedFields(entityTableAlias, model, projectedFields, ref joins);
+			AddProjectedFields(entityTableAlias, model, projectedFields, ref joins, ref tableAliases);
 
 			var mainSelect = QueryExpression.Select(
 					projectedFields.ToArray(),
@@ -147,6 +148,7 @@ namespace Silk.Data.SQL.ORM.Queries
 				foreach (var field in manyToManyFields)
 				{
 					joins?.Clear();
+					tableAliases?.Clear();
 					projectedFields.Clear();
 
 					foreach (var primaryKeyField in model.PrimaryKeyFields)
@@ -157,12 +159,12 @@ namespace Silk.Data.SQL.ORM.Queries
 						));
 					}
 
-					var aliasExpression = AddJoinExpression(ref joins, field, model, true);
+					var aliasExpression = AddJoinExpression(ref joins, ref tableAliases, field, model, field.Name, true);
 					if (aliasExpression != null)
 					{
 						AddProjectedFields(aliasExpression,
 							field.Relationship.ProjectedModel ?? field.Relationship.ForeignModel,
-							projectedFields, ref joins, false, field.Name);
+							projectedFields, ref joins, ref tableAliases, false, field.Name);
 					}
 
 					queries.Queries.Add(QueryExpression.Select(
@@ -180,6 +182,7 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		private void AddProjectedFields(AliasExpression fromAliasExpression, EntityModel model,
 			List<QueryExpression> projectedFields, ref List<JoinExpression> joins,
+			ref Dictionary<string, AliasExpression> tableAliases,
 			bool doManyToManyRelations = false, string aliasPath = null)
 		{
 			var aliasPrefix = "";
@@ -207,18 +210,20 @@ namespace Silk.Data.SQL.ORM.Queries
 						continue;
 					}
 
-					var aliasExpression = AddJoinExpression(ref joins, field, model, doManyToManyRelations);
+					var aliasExpression = AddJoinExpression(ref joins, ref tableAliases, field, model, aliasPath, doManyToManyRelations);
 					if (aliasExpression != null)
 					{
 						AddProjectedFields(aliasExpression,
 							field.Relationship.ProjectedModel ?? field.Relationship.ForeignModel,
-							projectedFields, ref joins, doManyToManyRelations, $"{aliasPrefix}{field.Name}");
+							projectedFields, ref joins, ref tableAliases, doManyToManyRelations, $"{aliasPrefix}{field.Name}");
 					}
 				}
 			}
 		}
 
-		private AliasExpression AddJoinExpression(ref List<JoinExpression> joins, DataField field, EntityModel model,
+		private AliasExpression AddJoinExpression(ref List<JoinExpression> joins,
+			ref Dictionary<string, AliasExpression> tableAliases,
+			DataField field, EntityModel model, string aliasPath,
 			bool doManyToManyRelations)
 		{
 			if (joins == null)
@@ -229,16 +234,27 @@ namespace Silk.Data.SQL.ORM.Queries
 
 			if (field.Relationship.RelationshipType == RelationshipType.ManyToOne)
 			{
+				var fullFieldName = $"{aliasPath}{field.Name}";
+
 				var foreignEntityTable = field.Relationship.ForeignModel.Schema.EntityTable;
 				var foreignPrimaryKey = field.Relationship.ForeignModel.PrimaryKeyFields.First();
 				var fullEntityModel = model.Domain.DataModels.FirstOrDefault(q => q.Schema.EntityTable == model.Schema.EntityTable);
 				var fullEntityField = fullEntityModel.Fields.FirstOrDefault(q => q.ModelBinding.ViewFieldPath.SequenceEqual(field.ModelBinding.ViewFieldPath));
 
 				var foreignTableAlias = QueryExpression.Alias(QueryExpression.Table(foreignEntityTable.TableName), $"t{++_aliasCount}");
+				if (tableAliases == null)
+					tableAliases = new Dictionary<string, AliasExpression>();
+				tableAliases[fullFieldName] = foreignTableAlias;
+
 				var foreignKeyStorage = fullEntityModel.Fields.FirstOrDefault(q => q.Storage != null && q.Relationship == fullEntityField.Relationship).Storage;
+				QueryExpression foreignKeyStorageSource = QueryExpression.Table(foreignKeyStorage.Table.TableName);
+				if (aliasPath != null && tableAliases.ContainsKey(aliasPath))
+				{
+					foreignKeyStorageSource = tableAliases[aliasPath];
+				}
 
 				joins.Add(QueryExpression.Join(
-					QueryExpression.Column(foreignKeyStorage.ColumnName, QueryExpression.Table(foreignKeyStorage.Table.TableName)),
+					QueryExpression.Column(foreignKeyStorage.ColumnName, foreignKeyStorageSource),
 					QueryExpression.Column(foreignPrimaryKey.Storage.ColumnName, foreignTableAlias),
 					JoinDirection.Left
 					));
