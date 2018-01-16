@@ -12,15 +12,14 @@ namespace Silk.Data.SQL.ORM.Modelling.ResourceLoaders
 		private readonly List<RelatedObjectMapper> _relatedObjectMappers
 			= new List<RelatedObjectMapper>();
 
-		public void AddField(ModelField modelField, string modelFieldName, string viewFieldName,
-			string nullCheckFieldName)
+		public void AddField(ModelField modelField, string modelFieldName, string viewFieldName)
 		{
 			var model = modelField.DataTypeModel as TypedModel;
 			if (model == null)
 				throw new InvalidOperationException("Only type models are supported.");
 			var relatedObjectMapper = GetRelatedObjectMapper(model.DataType);
 			relatedObjectMapper.AddField(
-				new FieldName(viewFieldName, modelFieldName, nullCheckFieldName));
+				new FieldName(viewFieldName, modelFieldName));
 		}
 
 		private RelatedObjectMapper GetRelatedObjectMapper(Type modelType)
@@ -49,14 +48,11 @@ namespace Silk.Data.SQL.ORM.Modelling.ResourceLoaders
 		{
 			public string ViewFieldName { get; }
 			public string ModelFieldName { get; }
-			public string NullCheckFieldName { get; }
 
-			public FieldName(string viewFieldName, string modelFieldName,
-				string nullCheckFieldName)
+			public FieldName(string viewFieldName, string modelFieldName)
 			{
 				ViewFieldName = viewFieldName;
 				ModelFieldName = modelFieldName;
-				NullCheckFieldName = nullCheckFieldName;
 			}
 		}
 
