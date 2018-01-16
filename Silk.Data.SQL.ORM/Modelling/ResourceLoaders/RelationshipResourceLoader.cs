@@ -81,6 +81,7 @@ namespace Silk.Data.SQL.ORM.Modelling.ResourceLoaders
 					if (viewField == null)
 						continue;
 
+					//  todo: move these items to FieldName to avoid repeated, costly, lookups for all queries
 					var fullEntityModel = view.Domain.DataModels.FirstOrDefault(q => q.Schema.EntityTable == view.Schema.EntityTable);
 					var fullEntityField = fullEntityModel.Fields.FirstOrDefault(q => q.ModelBinding.ViewFieldPath.SequenceEqual(viewField.ModelBinding.ViewFieldPath));
 					var foreignKeyField = fullEntityModel.Fields.FirstOrDefault(q => q.Storage != null && q.Relationship == fullEntityField.Relationship);
@@ -91,9 +92,9 @@ namespace Silk.Data.SQL.ORM.Modelling.ResourceLoaders
 						if (relatedObjectField == null)
 							continue;
 
-						var instance = Activator.CreateInstance(ModelType);
-						var modelWriter = new ObjectModelReadWriter(Model, instance);
 						var entityModelOfField = viewField.Relationship.ProjectedModel ?? viewField.Relationship.ForeignModel;
+						var instance = Activator.CreateInstance(entityModelOfField.EntityType);
+						var modelWriter = new ObjectModelReadWriter(TypeModeller.GetModelOf(entityModelOfField.EntityType), instance);
 						foreach (var field in entityModelOfField.Fields)
 						{
 							modelWriter.WriteToPath<object>(
