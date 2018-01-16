@@ -35,10 +35,13 @@ namespace Silk.Data.SQL.ORM.Modelling.ResourceLoaders
 
 		public async Task LoadResourcesAsync(IView view, ICollection<IContainerReadWriter> sources, MappingContext mappingContext)
 		{
-			foreach (var relatedObjectMapper in _relatedObjectMappers)
+			if (view is EntityModel entityModel)
 			{
-				await relatedObjectMapper.Run(view, sources, mappingContext)
-					.ConfigureAwait(false);
+				foreach (var relatedObjectMapper in _relatedObjectMappers)
+				{
+					await relatedObjectMapper.Run(entityModel, sources, mappingContext)
+						.ConfigureAwait(false);
+				}
 			}
 		}
 
@@ -74,20 +77,28 @@ namespace Silk.Data.SQL.ORM.Modelling.ResourceLoaders
 				_viewFields.Add(viewFieldName);
 			}
 
-			public async Task Run(IView view, ICollection<IContainerReadWriter> sources, MappingContext mappingContext)
+			public async Task Run(EntityModel view, ICollection<IContainerReadWriter> sources, MappingContext mappingContext)
 			{
 				foreach (var viewFieldName in _viewFields)
 				{
-					var fieldPath = new[] { viewFieldName.NullCheckFieldName };
+					var viewField = view.Fields.FirstOrDefault(q => q.Name == viewFieldName.ViewFieldName);
+					if (viewField == null)
+						continue;
+
+					var fullEntityModel = view.Domain.DataModels.FirstOrDefault(q => q.Schema.EntityTable == view.Schema.EntityTable);
+					var fullEntityField = fullEntityModel.Fields.FirstOrDefault(q => q.ModelBinding.ViewFieldPath.SequenceEqual(viewField.ModelBinding.ViewFieldPath));
+					var foreignKeyField = fullEntityModel.Fields.FirstOrDefault(q => q.Storage != null && q.Relationship == fullEntityField.Relationship);
+
 					foreach (var source in sources)
 					{
-						var relatedObjectField = source.ReadFromPath<object>(fieldPath);
+						var relatedObjectField = foreignKeyField.ModelBinding.ReadValue<object>(source);
 						if (relatedObjectField == null)
 							continue;
 
 						var instance = Activator.CreateInstance(ModelType);
 						var modelWriter = new ObjectModelReadWriter(Model, instance);
-						foreach (var field in Model.Fields)
+						var entityModelOfField = viewField.Relationship.ProjectedModel ?? viewField.Relationship.ForeignModel;
+						foreach (var field in entityModelOfField.Fields)
 						{
 							modelWriter.WriteToPath<object>(
 								new[] { field.Name },
