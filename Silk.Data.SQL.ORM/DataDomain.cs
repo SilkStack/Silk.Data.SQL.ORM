@@ -240,6 +240,10 @@ namespace Silk.Data.SQL.ORM
 			if (entityModel == null)
 				throw new InvalidOperationException("Entity type not present in data domain.");
 
+			//  todo: invesitgate while projecting as identical type prevented many-to-one relationships from working
+			if (sourceType == viewType)
+				return entityModel;
+
 			var cacheKey = $"{sourceType.FullName} to {viewType.FullName}";
 			if (_projectionModelCache.TryGetValue(cacheKey, out var ret))
 				return ret;
