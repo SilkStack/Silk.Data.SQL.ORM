@@ -10,8 +10,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Silk.Data.Modelling\Silk.Data.Modelling\Silk.Data.Modelling.csproj" />
-    <ProjectReference Include="..\..\Silk.Data.SQL.Base\Silk.Data.SQL.Base\Silk.Data.SQL.Base.csproj" />
+    <PackageReference Include="Silk.Data.Modelling" Version="0.0.1" />
+    <PackageReference Include="Silk.Data.SQL.Base" Version="0.0.1" />
   </ItemGroup>
 
 </Project>

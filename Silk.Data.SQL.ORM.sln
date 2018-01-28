@@ -1,17 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26730.16
+VisualStudioVersion = 15.0.27130.2026
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Silk.Data.SQL.ORM", "Silk.Data.SQL.ORM\Silk.Data.SQL.ORM.csproj", "{1160BE89-6006-4AEA-97B8-4CA1E7CB92CE}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Silk.Data.SQL.ORM.Tests", "Silk.Data.SQL.ORM.Tests\Silk.Data.SQL.ORM.Tests.csproj", "{9F72E3C8-49C7-436B-A561-65164A7F2080}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Silk.Data.SQL.Base", "..\Silk.Data.SQL.Base\Silk.Data.SQL.Base\Silk.Data.SQL.Base.csproj", "{E1AA9D75-989C-4BA5-99BB-446EEBC5E5BE}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Silk.Data.Modelling", "..\Silk.Data.Modelling\Silk.Data.Modelling\Silk.Data.Modelling.csproj", "{FD81850B-29C2-4AC3-9890-63A77DED30FA}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Silk.Data.SQL.SQLite3", "..\Silk.Data.SQL.SQLite3\Silk.Data.SQL.SQLite3\Silk.Data.SQL.SQLite3.csproj", "{FB073373-0F58-4B08-9344-10997E196EB2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,18 +21,6 @@ Global
 		{9F72E3C8-49C7-436B-A561-65164A7F2080}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9F72E3C8-49C7-436B-A561-65164A7F2080}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9F72E3C8-49C7-436B-A561-65164A7F2080}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E1AA9D75-989C-4BA5-99BB-446EEBC5E5BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E1AA9D75-989C-4BA5-99BB-446EEBC5E5BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E1AA9D75-989C-4BA5-99BB-446EEBC5E5BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E1AA9D75-989C-4BA5-99BB-446EEBC5E5BE}.Release|Any CPU.Build.0 = Release|Any CPU
-		{FD81850B-29C2-4AC3-9890-63A77DED30FA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FD81850B-29C2-4AC3-9890-63A77DED30FA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FD81850B-29C2-4AC3-9890-63A77DED30FA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FD81850B-29C2-4AC3-9890-63A77DED30FA}.Release|Any CPU.Build.0 = Release|Any CPU
-		{FB073373-0F58-4B08-9344-10997E196EB2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FB073373-0F58-4B08-9344-10997E196EB2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FB073373-0F58-4B08-9344-10997E196EB2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FB073373-0F58-4B08-9344-10997E196EB2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
