@@ -50,17 +50,6 @@ namespace Silk.Data.SQL.ORM
 				));
 		}
 
-		[Obsolete("Doesn't support full API and will be removed when consumer code has been updated to use AddDataEntity<TSource> only.")]
-		public void AddDataEntity<TSource, TView>(Action<EntityModel<TSource, TView>> builtDelegate = null)
-			where TSource : new()
-			where TView : new()
-		{
-			_domainDefinition.EntityTypes.Add(typeof(TSource));
-			_entityModelBuilders.Add(new EntityModelBuilder<TSource, TView>(
-				builtDelegate, _viewConventions, _domainDefinition
-				));
-		}
-
 		public DataDomain Build()
 		{
 			var viewDefinitionFieldCounts = new Dictionary<ViewDefinition, int>();

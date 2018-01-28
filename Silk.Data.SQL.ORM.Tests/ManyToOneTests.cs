@@ -16,12 +16,6 @@ namespace Silk.Data.SQL.ORM.Tests
 				builder.AddDataEntity<RelationshipModelA>();
 				builder.AddDataEntity<RelationshipModelB>();
 			});
-		private static readonly EntityModel<ModelWithRelationships, ModelWithRelationshipsView> _modelDrivenModel =
-			TestDb.CreateDomainAndModel<ModelWithRelationships, ModelWithRelationshipsView>(builder =>
-			{
-				builder.AddDataEntity<RelationshipModelA>();
-				builder.AddDataEntity<RelationshipModelB>();
-			});
 
 		[TestMethod]
 		public void ConventionDrivenModelManyToOneRelationship()

@@ -18,16 +18,5 @@ namespace Silk.Data.SQL.ORM.Tests
 			var dataDomain = builder.Build();
 			return dataDomain.GetEntityModel<TSource>();
 		}
-
-		public static EntityModel<TSource,TView> CreateDomainAndModel<TSource,TView>(Action<DataDomainBuilder> addBuildersFunc = null)
-			where TSource : new()
-			where TView : new()
-		{
-			var builder = new DataDomainBuilder();
-			builder.AddDataEntity<TSource, TView>();
-			addBuildersFunc?.Invoke(builder);
-			var dataDomain = builder.Build();
-			return dataDomain.GetEntityModel<TSource>() as EntityModel<TSource, TView>;
-		}
 	}
 }
