@@ -33,7 +33,7 @@ To get a good idea of how `Silk.Data.SQL.ORM` is intended to be used here's a ba
 	var dataDomain = domainDefinition.Build();
 
 	//  second, create the schema - this will CREATE all tables, indexes and relationship constraints
-	await dataDomain.CreateSchema().ExecuteAsync(sqlProvider);
+	await dataDomain.Schema.Create().ExecuteAsync(sqlProvider);
 
 	//  third, now query the entities in the database
 	IDatabase<T> database = new EntityDatabase<UserAccount>(dataDomain);
