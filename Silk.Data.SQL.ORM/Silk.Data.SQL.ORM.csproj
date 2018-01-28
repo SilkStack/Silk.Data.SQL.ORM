@@ -6,7 +6,10 @@
     <Authors>John Carruthers</Authors>
     <Company />
     <Product>SilkStack</Product>
-    <Description>Simple data orientated ORM for .NET.</Description>
+    <Description>Silk.Data.SQL.ORM provides data orientated APIs for working with SQL data in .NET.
+
+Part of the SilkStack project.</Description>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
