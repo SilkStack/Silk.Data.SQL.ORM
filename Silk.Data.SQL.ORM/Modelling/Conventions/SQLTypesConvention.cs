@@ -2,6 +2,7 @@
 using Silk.Data.Modelling.Bindings;
 using System;
 using System.Linq;
+using System.Reflection;
 
 namespace Silk.Data.SQL.ORM.Modelling.Conventions
 {
@@ -113,6 +114,10 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 			else if (dataType == typeof(DateTime))
 			{
 				return SqlDataType.DateTime();
+			}
+			else if (dataType.GetTypeInfo().IsEnum)
+			{
+				return SqlDataType.Int();
 			}
 
 			return null;
