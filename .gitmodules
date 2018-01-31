@@ -1,0 +1,4 @@
+[submodule "Silk.Data.SQL.Base"]
+	path = Silk.Data.SQL.Base
+	url = git@github.com:SilkStack/Silk.Data.SQL.Base.git
+	branch = master
