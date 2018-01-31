@@ -15,13 +15,15 @@
 		public bool IsUnique { get; }
 		public int? Precision { get; }
 		public int? Scale { get; }
+		public string Name { get; }
 
 		private FieldOpinions() { }
 
 		public FieldOpinions(SqlDataType dataType, int? dataLength,
 			bool isPrimaryKey, bool autoGenerate,
 			bool isIndex, bool isUnique,
-			int? precision, int? scale)
+			int? precision, int? scale,
+			string name)
 		{
 			DataType = dataType;
 			DataLength = dataLength;
@@ -31,6 +33,7 @@
 			IsUnique = isUnique;
 			Precision = precision;
 			Scale = scale;
+			Name = name;
 		}
 	}
 }

@@ -24,9 +24,10 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 					continue;
 
 				var bindingDirection = field.CanWrite ? BindingDirection.Bidirectional : BindingDirection.ModelToView;
+				var sqlFieldName = builder.GetFieldOpinions(field).Name ?? field.Name;
 
 				builder.DefineField(
-					model, field.Name, sqlDataType,
+					model, sqlFieldName, sqlDataType,
 					new AssignmentBinding(bindingDirection, new[] { field.Name }, new[] { field.Name })
 					);
 			}

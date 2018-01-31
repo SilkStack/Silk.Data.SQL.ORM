@@ -69,8 +69,9 @@ namespace Silk.Data.SQL.ORM.Modelling
 		private bool _uniqueIndex;
 		private SqlDataType _sqlDataType;
 		private int? _dataLength;
-		public int? _precision;
-		public int? _scale;
+		private int? _precision;
+		private int? _scale;
+		private string _name;
 
 		public FieldCustomizer(ModelField modelField) :
 			base(modelField.DataType)
@@ -86,8 +87,19 @@ namespace Silk.Data.SQL.ORM.Modelling
 		{
 			return new FieldOpinions(
 				_sqlDataType, _dataLength, _isPrimaryKey, _autoGenerate,
-				_index, _uniqueIndex, _precision, _scale
+				_index, _uniqueIndex, _precision, _scale, _name
 				);
+		}
+
+		/// <summary>
+		/// Set the field's name.
+		/// </summary>
+		/// <param name="name"></param>
+		/// <returns></returns>
+		public FieldCustomizer<TField> Name(string name)
+		{
+			_name = name;
+			return this;
 		}
 
 		/// <summary>
