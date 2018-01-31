@@ -48,21 +48,37 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 			{
 				return SqlDataType.Bit();
 			}
-			else if (dataType == typeof(byte))
+			else if (dataType == typeof(sbyte))
 			{
 				return SqlDataType.TinyInt();
+			}
+			else if (dataType == typeof(byte))
+			{
+				return SqlDataType.UnsignedTinyInt();
 			}
 			else if (dataType == typeof(short))
 			{
 				return SqlDataType.SmallInt();
 			}
+			else if (dataType == typeof(ushort))
+			{
+				return SqlDataType.UnsignedSmallInt();
+			}
 			else if (dataType == typeof(int))
 			{
 				return SqlDataType.Int();
 			}
+			else if (dataType == typeof(uint))
+			{
+				return SqlDataType.UnsignedInt();
+			}
 			else if (dataType == typeof(long))
 			{
 				return SqlDataType.BigInt();
+			}
+			else if (dataType == typeof(ulong))
+			{
+				return SqlDataType.UnsignedBigInt();
 			}
 			else if (dataType == typeof(float))
 			{
