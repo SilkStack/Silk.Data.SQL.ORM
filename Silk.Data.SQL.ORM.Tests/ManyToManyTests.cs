@@ -13,8 +13,8 @@ namespace Silk.Data.SQL.ORM.Tests
 	{
 		private EntityModel<PocoWithManyRelationships> _conventionDrivenModel =
 			TestDb.CreateDomainAndModel<PocoWithManyRelationships>(builder => {
-				builder.AddDataEntity<RelationshipTypeA>();
-				builder.AddDataEntity<RelationshipTypeB>();
+				builder.AddEntityType<RelationshipTypeA>();
+				builder.AddEntityType<RelationshipTypeB>();
 			});
 
 		[TestMethod]

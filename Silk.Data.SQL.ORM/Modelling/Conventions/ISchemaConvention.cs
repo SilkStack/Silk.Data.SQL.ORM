@@ -8,10 +8,10 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 	public interface ISchemaConvention
 	{
 		/// <summary>
-		/// Visit a model field to possibly create fields on the schema.
+		/// Visit a model.
 		/// </summary>
-		/// <param name="modelField"></param>
-		/// <param name="schemaBuilder"></param>
-		void VisitField(ModelField modelField, SchemaBuilder builder);
+		/// <param name="model"></param>
+		/// <param name="builder"></param>
+		void VisitModel(TypedModel model, SchemaBuilder builder);
 	}
 }

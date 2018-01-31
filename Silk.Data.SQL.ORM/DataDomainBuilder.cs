@@ -13,91 +13,134 @@ namespace Silk.Data.SQL.ORM
 	/// </summary>
 	public class DataDomainBuilder
 	{
-		private static ViewConvention[] _defaultViewConventions
-			= new ViewConvention[]
+		//private static ViewConvention[] _defaultViewConventions
+		//	= new ViewConvention[]
+		//	{
+		//		new CleanModelNameConvention(),
+		//		new CopyPrimitiveTypesConvention(),
+		//		new IdIsPrimaryKeyConvention(),
+		//		new ManyToOneConvention(),
+		//		new ManyToManyConvention(),
+		//		new FlattenPocosConvention()
+		//	};
+
+		private static ISchemaConvention[] _defaultSchemaConventions
+			= new ISchemaConvention[]
 			{
-				new CleanModelNameConvention(),
-				new CopyPrimitiveTypesConvention(),
-				new IdIsPrimaryKeyConvention(),
-				new ManyToOneConvention(),
-				new ManyToManyConvention(),
-				new FlattenPocosConvention()
+				new SQLTypesConvention()
 			};
 
-		private readonly List<EntityModelBuilder> _entityModelBuilders = new List<EntityModelBuilder>();
-		private readonly DomainDefinition _domainDefinition = new DomainDefinition();
-		private readonly ViewConvention[] _viewConventions;
+		private static IProjectionConvention[] _defaultProjectionConventions
+			= new IProjectionConvention[0];
 
-		public DataDomainBuilder()
-			: this(_defaultViewConventions)
-		{
-		}
+		private readonly List<TypedModel> _entityModels = new List<TypedModel>();
+		private readonly Dictionary<Type, ModelCustomizer> _modelCustomizers = new Dictionary<Type, ModelCustomizer>();
 
-		public DataDomainBuilder(IEnumerable<ViewConvention> viewConventions)
-		{
-			_viewConventions = viewConventions.ToArray();
-		}
-
-		public void AddDataEntity<TSource>(
-			Action<EntityModel<TSource>> builtDelegate = null,
-			Action<ModelCustomizer<TSource>> customizeModelDelegate = null
-			)
+		public ModelCustomizer<TSource> AddEntityType<TSource>()
 			where TSource : new()
 		{
-			_domainDefinition.EntityTypes.Add(typeof(TSource));
-			_entityModelBuilders.Add(new EntityModelBuilder<TSource>(
-				builtDelegate, _viewConventions, _domainDefinition, customizeModelDelegate
-				));
+			//  todo: decide what is appropriate if the same type is added twice:
+			//    throw exception?
+			//    return the customizer for the already present model?
+
+			var entityModel = TypeModeller.GetModelOf<TSource>();
+			_entityModels.Add(entityModel);
+			var customizer = new ModelCustomizer<TSource>(entityModel);
+			_modelCustomizers[typeof(TSource)] = customizer;
+			return customizer;
 		}
 
-		public DataDomain Build()
+		private SchemaDefinition BuildSchemaDefinition(ISchemaConvention[] schemaConventions, SchemaBuilderWithAlterReset schemaBuilder)
 		{
-			var viewDefinitionFieldCounts = new Dictionary<ViewDefinition, int>();
-			var currentViewDefinitionFieldCounts = new Dictionary<ViewDefinition, int>();
-			DataDomain builtDomain = null;
-			var lazyDomainAccessor = new Lazy<DataDomain>(() => builtDomain);
-
-			foreach (var entityModelBuilder in _entityModelBuilders)
+			while (true)
 			{
-				viewDefinitionFieldCounts.Add(entityModelBuilder.ViewDefinition, 0);
-			}
+				schemaBuilder.ResetWasAlteredFlag();
 
-			var fieldsChanged = true;
-			while (fieldsChanged)
-			{
-				fieldsChanged = false;
-
-				foreach (var entityModelBuilder in _entityModelBuilders)
+				foreach (var entityModel in schemaBuilder.EntityModels)
 				{
-					entityModelBuilder.ViewBuilder.ProcessModel(entityModelBuilder.ViewDefinition.TargetModel);
-
-					currentViewDefinitionFieldCounts[entityModelBuilder.ViewDefinition] = entityModelBuilder.ViewDefinition.FieldDefinitions.Count;
-					if (currentViewDefinitionFieldCounts[entityModelBuilder.ViewDefinition] !=
-						viewDefinitionFieldCounts[entityModelBuilder.ViewDefinition])
-						fieldsChanged = true;
-					viewDefinitionFieldCounts[entityModelBuilder.ViewDefinition] = entityModelBuilder.ViewDefinition.FieldDefinitions.Count;
-
-					entityModelBuilder.ViewBuilder.IsFirstPass = false;
+					foreach (var convention in schemaConventions)
+					{
+						convention.VisitModel(entityModel, schemaBuilder);
+					}
 				}
+
+				if (!schemaBuilder.WasAltered)
+					break;
 			}
-			foreach (var entityModelBuilder in _entityModelBuilders)
+			return null;
+		}
+
+		public DataDomain Build(ISchemaConvention[] schemaConventions = null, IProjectionConvention[] projectionConventions = null)
+		{
+			if (schemaConventions == null)
+				schemaConventions = _defaultSchemaConventions;
+			if (projectionConventions == null)
+				projectionConventions = _defaultProjectionConventions;
+
+			var schemaBuilder = new SchemaBuilderWithAlterReset(_entityModels.ToArray(), _modelCustomizers.Values);
+			var schemaDefinition = BuildSchemaDefinition(schemaConventions, schemaBuilder);
+
+			return null;
+
+			//var viewDefinitionFieldCounts = new Dictionary<ViewDefinition, int>();
+			//var currentViewDefinitionFieldCounts = new Dictionary<ViewDefinition, int>();
+			//DataDomain builtDomain = null;
+			//var lazyDomainAccessor = new Lazy<DataDomain>(() => builtDomain);
+
+			//foreach (var entityModelBuilder in _entityModelBuilders)
+			//{
+			//	viewDefinitionFieldCounts.Add(entityModelBuilder.ViewDefinition, 0);
+			//}
+
+			//var fieldsChanged = true;
+			//while (fieldsChanged)
+			//{
+			//	fieldsChanged = false;
+
+			//	foreach (var entityModelBuilder in _entityModelBuilders)
+			//	{
+			//		entityModelBuilder.ViewBuilder.ProcessModel(entityModelBuilder.ViewDefinition.TargetModel);
+
+			//		currentViewDefinitionFieldCounts[entityModelBuilder.ViewDefinition] = entityModelBuilder.ViewDefinition.FieldDefinitions.Count;
+			//		if (currentViewDefinitionFieldCounts[entityModelBuilder.ViewDefinition] !=
+			//			viewDefinitionFieldCounts[entityModelBuilder.ViewDefinition])
+			//			fieldsChanged = true;
+			//		viewDefinitionFieldCounts[entityModelBuilder.ViewDefinition] = entityModelBuilder.ViewDefinition.FieldDefinitions.Count;
+
+			//		entityModelBuilder.ViewBuilder.IsFirstPass = false;
+			//	}
+			//}
+			//foreach (var entityModelBuilder in _entityModelBuilders)
+			//{
+			//	entityModelBuilder.ViewBuilder.FinalizeModel();
+			//}
+
+			//foreach (var entityModelBuilder in _entityModelBuilders)
+			//{
+			//	entityModelBuilder.CustomizeModel();
+			//}
+
+			//builtDomain = DataDomain.CreateFromDefinition(_domainDefinition, _viewConventions);
+
+			//foreach (var entityModelBuilder in _entityModelBuilders)
+			//{
+			//	entityModelBuilder.CallBuiltDelegate(builtDomain);
+			//}
+
+			//return builtDomain;
+		}
+
+		private class SchemaBuilderWithAlterReset : SchemaBuilder
+		{
+			public SchemaBuilderWithAlterReset(TypedModel[] entityModels, IEnumerable<ModelCustomizer> modelCustomizers)
+				: base(entityModels, modelCustomizers)
 			{
-				entityModelBuilder.ViewBuilder.FinalizeModel();
 			}
 
-			foreach (var entityModelBuilder in _entityModelBuilders)
+			public void ResetWasAlteredFlag()
 			{
-				entityModelBuilder.CustomizeModel();
+				WasAltered = false;
 			}
-
-			builtDomain = DataDomain.CreateFromDefinition(_domainDefinition, _viewConventions);
-
-			foreach (var entityModelBuilder in _entityModelBuilders)
-			{
-				entityModelBuilder.CallBuiltDelegate(builtDomain);
-			}
-
-			return builtDomain;
 		}
 
 		private abstract class EntityModelBuilder

@@ -13,7 +13,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			where TSource : new()
 		{
 			var builder = new DataDomainBuilder();
-			builder.AddDataEntity<TSource>();
+			builder.AddEntityType<TSource>();
 			addBuildersFunc?.Invoke(builder);
 			var dataDomain = builder.Build();
 			return dataDomain.GetEntityModel<TSource>();

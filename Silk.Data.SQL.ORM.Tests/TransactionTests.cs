@@ -13,8 +13,8 @@ namespace Silk.Data.SQL.ORM.Tests
 		private static readonly EntityModel<ModelWithRelationships> _conventionDrivenModel =
 			TestDb.CreateDomainAndModel<ModelWithRelationships>(builder =>
 			{
-				builder.AddDataEntity<RelationshipModelA>();
-				builder.AddDataEntity<RelationshipModelB>();
+				builder.AddEntityType<RelationshipModelA>();
+				builder.AddEntityType<RelationshipModelB>();
 			});
 
 		[TestMethod]
