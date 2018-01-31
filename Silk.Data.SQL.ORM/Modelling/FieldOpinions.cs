@@ -5,6 +5,9 @@
 	/// </summary>
 	public class FieldOpinions
 	{
+		/// <summary>
+		/// Gets a default <see cref="FieldOpinions"/> instance.
+		/// </summary>
 		public static FieldOpinions Default { get; } = new FieldOpinions();
 
 		public SqlDataType DataType { get; }

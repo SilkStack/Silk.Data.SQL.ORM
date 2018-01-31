@@ -27,19 +27,19 @@ namespace Silk.Data.SQL.ORM.Modelling
 		/// </summary>
 		public bool WasAltered { get; protected set; }
 
-		protected SchemaBuilder(TypedModel[] entityModels, IEnumerable<ModelCustomizer> modelCustomizers)
+		protected SchemaBuilder(Dictionary<TypedModel,ModelOpinions> modelOpinions)
 		{
-			EntityModels = entityModels;
-			foreach (var entityModel in EntityModels)
-			{
-				_entityTableDefinitions.Add(entityModel.DataType, new TableDefinition { EntityType = entityModel.DataType, IsEntityTable = true, TableName = entityModel.Name });
-			}
+			EntityModels = modelOpinions.Keys.ToArray();
 
-			foreach (var modelCustomizer in modelCustomizers)
+			foreach (var kvp in modelOpinions)
 			{
-				foreach (var fieldCustomizer in modelCustomizer.GetFieldCustomizers())
+				_entityTableDefinitions.Add(
+					kvp.Key.DataType,
+					new TableDefinition { EntityType = kvp.Key.DataType, IsEntityTable = true, TableName = kvp.Value.Name ?? kvp.Key.Name }
+					);
+				foreach (var field in kvp.Key.Fields)
 				{
-					_fieldOpinions.Add(fieldCustomizer.ModelField, fieldCustomizer.GetFieldOpinions());
+					_fieldOpinions.Add(field, kvp.Value.GetFieldOpinions(field));
 				}
 			}
 		}

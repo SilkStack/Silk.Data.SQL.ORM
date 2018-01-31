@@ -21,10 +21,10 @@ namespace Silk.Data.SQL.ORM.Modelling
 		public abstract TypedModel EntityModel { get; }
 
 		/// <summary>
-		/// Gets all the field customizers for the model.
+		/// Gets model customizations as a <see cref="ModelOpinions"/>.
 		/// </summary>
 		/// <returns></returns>
-		public abstract IEnumerable<FieldCustomizer> GetFieldCustomizers();
+		public abstract ModelOpinions GetModelOpinions();
 	}
 
 	/// <summary>
@@ -36,12 +36,25 @@ namespace Silk.Data.SQL.ORM.Modelling
 		public override Type EntityType => EntityModel.DataType;
 		public override TypedModel EntityModel { get; }
 
+		private string _name;
+
 		private readonly Dictionary<string, FieldCustomizer> _fieldCustomizers
 			= new Dictionary<string, FieldCustomizer>();
 
 		public ModelCustomizer(TypedModel entityModel)
 		{
 			EntityModel = entityModel;
+		}
+
+		/// <summary>
+		/// Set the table's name.
+		/// </summary>
+		/// <param name="name"></param>
+		/// <returns></returns>
+		public ModelCustomizer<TSource> Name(string name)
+		{
+			_name = name;
+			return this;
 		}
 
 		/// <summary>
@@ -71,9 +84,12 @@ namespace Silk.Data.SQL.ORM.Modelling
 			throw new ArgumentException("Field selector must be a MemberExpression.", nameof(fieldSelector));
 		}
 
-		public override IEnumerable<FieldCustomizer> GetFieldCustomizers()
+		public override ModelOpinions GetModelOpinions()
 		{
-			return _fieldCustomizers.Values;
+			return new ModelOpinions(_name, _fieldCustomizers.ToDictionary(
+				q => EntityModel.Fields.First(q2 => q2.Name == q.Key),
+				q => q.Value.GetFieldOpinions()
+				));
 		}
 	}
 }

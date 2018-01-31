@@ -79,10 +79,6 @@ namespace Silk.Data.SQL.ORM.Modelling
 			ModelField = modelField;
 		}
 
-		/// <summary>
-		/// Get a FieldOptions instance of the customized field options.
-		/// </summary>
-		/// <returns></returns>
 		public override FieldOpinions GetFieldOpinions()
 		{
 			return new FieldOpinions(

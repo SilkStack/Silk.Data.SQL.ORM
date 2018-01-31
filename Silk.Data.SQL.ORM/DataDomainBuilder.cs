@@ -50,6 +50,19 @@ namespace Silk.Data.SQL.ORM
 			return customizer;
 		}
 
+		private Dictionary<TypedModel,ModelOpinions> GetModelOpinions()
+		{
+			var ret = new Dictionary<TypedModel, ModelOpinions>();
+			foreach (var entityModel in _entityModels)
+			{
+				if (_modelCustomizers.TryGetValue(entityModel.DataType, out var customizer))
+					ret.Add(entityModel, customizer.GetModelOpinions());
+				else
+					ret.Add(entityModel, ModelOpinions.Default);
+			}
+			return ret;
+		}
+
 		private SchemaDefinition BuildSchemaDefinition(ISchemaConvention[] schemaConventions, SchemaBuilderWithAlterReset schemaBuilder)
 		{
 			while (true)
@@ -77,7 +90,7 @@ namespace Silk.Data.SQL.ORM
 			if (projectionConventions == null)
 				projectionConventions = _defaultProjectionConventions;
 
-			var schemaBuilder = new SchemaBuilderWithAlterReset(_entityModels.ToArray(), _modelCustomizers.Values);
+			var schemaBuilder = new SchemaBuilderWithAlterReset(GetModelOpinions());
 			var schemaDefinition = BuildSchemaDefinition(schemaConventions, schemaBuilder);
 
 			return null;
@@ -132,8 +145,8 @@ namespace Silk.Data.SQL.ORM
 
 		private class SchemaBuilderWithAlterReset : SchemaBuilder
 		{
-			public SchemaBuilderWithAlterReset(TypedModel[] entityModels, IEnumerable<ModelCustomizer> modelCustomizers)
-				: base(entityModels, modelCustomizers)
+			public SchemaBuilderWithAlterReset(Dictionary<TypedModel, ModelOpinions> modelOpinions)
+				: base(modelOpinions)
 			{
 			}
 
@@ -187,7 +200,7 @@ namespace Silk.Data.SQL.ORM
 
 			public override void CustomizeModel()
 			{
-				_modelCustomizerFunc?.Invoke(new ModelCustomizer<TSource>(ViewBuilder));
+				_modelCustomizerFunc?.Invoke(new ModelCustomizer<TSource>(null));
 			}
 		}
 
