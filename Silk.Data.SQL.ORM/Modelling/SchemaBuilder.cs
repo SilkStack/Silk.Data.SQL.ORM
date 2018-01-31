@@ -50,7 +50,8 @@ namespace Silk.Data.SQL.ORM.Modelling
 		/// <param name="entityModel"></param>
 		/// <param name="name"></param>
 		/// <param name="sqlDataType"></param>
-		public void DefineField(TypedModel entityModel, string name, SqlDataType sqlDataType, ModelBinding binding)
+		public void DefineField(TypedModel entityModel, string name, SqlDataType sqlDataType,
+			ModelBinding binding, FieldOpinions fieldOpinions)
 		{
 			_entityTableDefinitions[entityModel.DataType].Fields.Add(
 				new ViewFieldDefinition(name, binding)

@@ -16,7 +16,9 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 			//  CanWrite is optional here, when CanWrite is false the computed value will be stored with the entity
 			foreach (var field in model.Fields.Where(q => q.CanRead))
 			{
-				var sqlDataType = GetSqlDataType(field, builder);
+				var opinions = builder.GetFieldOpinions(field);
+
+				var sqlDataType = GetSqlDataType(field, builder, opinions);
 				if (sqlDataType == null)
 					continue;
 
@@ -24,18 +26,18 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 					continue;
 
 				var bindingDirection = field.CanWrite ? BindingDirection.Bidirectional : BindingDirection.ModelToView;
-				var sqlFieldName = builder.GetFieldOpinions(field).Name ?? field.Name;
+				var sqlFieldName = opinions.Name ?? field.Name;
 
 				builder.DefineField(
 					model, sqlFieldName, sqlDataType,
-					new AssignmentBinding(bindingDirection, new[] { field.Name }, new[] { field.Name })
-					);
+					new AssignmentBinding(bindingDirection, new[] { field.Name }, new[] { field.Name }),
+					opinions);
 			}
 		}
 
-		private SqlDataType GetSqlDataType(ModelField modelField, SchemaBuilder builder)
+		private SqlDataType GetSqlDataType(ModelField modelField, SchemaBuilder builder,
+			FieldOpinions fieldOpinions)
 		{
-			var fieldOpinions = builder.GetFieldOpinions(modelField);
 			if (fieldOpinions.DataType != null)
 				return fieldOpinions.DataType;
 
