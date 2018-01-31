@@ -30,11 +30,23 @@ namespace Silk.Data.SQL.ORM.Modelling
 		/// <summary>
 		/// Gets a value indicating if the field is capable of being automatically generated.
 		/// </summary>
-		public bool CanAutoGenerate { get; }
+		public bool SupportsAutoGenerate { get; }
+		/// <summary>
+		/// Gets a value indicating if the field supports precision.
+		/// </summary>
+		public bool SupportsPrecision { get; }
+		/// <summary>
+		/// Gets a value indicating if the field supports scale.
+		/// </summary>
+		public bool SupportsScale { get; }
 
 		public FieldCustomizer(Type dataType)
 		{
-			CanAutoGenerate = _autoGenerateTypes.Contains(dataType);
+			SupportsAutoGenerate = _autoGenerateTypes.Contains(dataType);
+			if (dataType == typeof(float) || dataType == typeof(double) || dataType == typeof(decimal))
+				SupportsPrecision = true;
+			if (dataType == typeof(decimal))
+				SupportsScale = true;
 		}
 
 		/// <summary>
@@ -57,6 +69,8 @@ namespace Silk.Data.SQL.ORM.Modelling
 		private bool _uniqueIndex;
 		private SqlDataType _sqlDataType;
 		private int? _dataLength;
+		public int? _precision;
+		public int? _scale;
 
 		public FieldCustomizer(ModelField modelField) :
 			base(modelField.DataType)
@@ -72,7 +86,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 		{
 			return new FieldOpinions(
 				_sqlDataType, _dataLength, _isPrimaryKey, _autoGenerate,
-				_index, _uniqueIndex
+				_index, _uniqueIndex, _precision, _scale
 				);
 		}
 
@@ -83,8 +97,8 @@ namespace Silk.Data.SQL.ORM.Modelling
 		/// <returns></returns>
 		public FieldCustomizer<TField> IsPrimaryKey(bool autoGenerate = false)
 		{
-			if (autoGenerate && !CanAutoGenerate)
-				throw new InvalidOperationException("Field can not be set to auto generate.");
+			if (autoGenerate && !SupportsAutoGenerate)
+				throw new InvalidOperationException("Field doesn't support auto generate.");
 
 			_autoGenerate = autoGenerate;
 			_isPrimaryKey = true;
@@ -100,6 +114,35 @@ namespace Silk.Data.SQL.ORM.Modelling
 		{
 			_index = true;
 			_uniqueIndex = requireUnique;
+			return this;
+		}
+
+		/// <summary>
+		/// Sets the precision of a floating point type.
+		/// </summary>
+		/// <param name="precision"></param>
+		/// <returns></returns>
+		public FieldCustomizer<TField> Precision(int precision)
+		{
+			if (!SupportsPrecision)
+				throw new InvalidOperationException("Field doesn't support precision.");
+			_precision = precision;
+			return this;
+		}
+
+		/// <summary>
+		/// Sets the precision and scale of a floating point type.
+		/// </summary>
+		/// <param name="precision"></param>
+		/// <returns></returns>
+		public FieldCustomizer<TField> Precision(int precision, int scale)
+		{
+			if (!SupportsPrecision)
+				throw new InvalidOperationException("Field doesn't support precision.");
+			if (!SupportsScale)
+				throw new InvalidOperationException("Field doesn't support scale.");
+			_precision = precision;
+			_scale = scale;
 			return this;
 		}
 

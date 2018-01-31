@@ -82,14 +82,22 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 			}
 			else if (dataType == typeof(float))
 			{
+				if (fieldOpinions.Precision != null)
+					return SqlDataType.Float(fieldOpinions.Precision.Value);
 				return SqlDataType.Float(SqlDataType.FLOAT_MAX_PRECISION);
 			}
 			else if (dataType == typeof(double))
 			{
+				if (fieldOpinions.Precision != null)
+					return SqlDataType.Float(fieldOpinions.Precision.Value);
 				return SqlDataType.Float(SqlDataType.DOUBLE_MAX_PRECISION);
 			}
 			else if (dataType == typeof(decimal))
 			{
+				if (fieldOpinions.Precision != null && fieldOpinions.Scale != null)
+					return SqlDataType.Decimal(fieldOpinions.Precision.Value, fieldOpinions.Scale.Value);
+				else if (fieldOpinions.Precision != null)
+					return SqlDataType.Decimal(fieldOpinions.Precision.Value);
 				return SqlDataType.Decimal();
 			}
 			else if (dataType == typeof(Guid))
