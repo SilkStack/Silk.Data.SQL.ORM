@@ -28,7 +28,8 @@ namespace Silk.Data.SQL.ORM
 			= new ISchemaConvention[]
 			{
 				new SQLTypesConvention(),
-				new CleanModelNameConvention()
+				new CleanModelNameConvention(),
+				new IdIsPrimaryKeyConvention()
 			};
 
 		private static IProjectionConvention[] _defaultProjectionConventions

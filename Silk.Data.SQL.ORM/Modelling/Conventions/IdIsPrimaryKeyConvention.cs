@@ -5,32 +5,29 @@ using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Modelling.Conventions
 {
-	public class IdIsPrimaryKeyConvention : ViewConvention<DataViewBuilder>
+	public class IdIsPrimaryKeyConvention : ISchemaConvention
 	{
-		public override ViewType SupportedViewTypes => ViewType.All;
-		public override bool PerformMultiplePasses => true;
-		public override bool SkipIfFieldDefined => false;
-
-		public override void FinalizeModel(DataViewBuilder viewBuilder)
+		public void VisitModel(TypedModel model, SchemaBuilder builder)
 		{
-			var hasPrimaryKey = viewBuilder.ViewDefinition.FieldDefinitions.Any(
-				fieldDef => fieldDef.Metadata.OfType<PrimaryKeyAttribute>().Any()
-				);
-			if (hasPrimaryKey)
-				return;
-			var idField = viewBuilder.ViewDefinition.FieldDefinitions.FirstOrDefault(
-				fieldDef => fieldDef.Name == "Id"
-				);
-			if (idField == null)
+			var entityDefinition = builder.GetEntityDefinition(model.DataType);
+			if (ModelHasPrimaryKey(entityDefinition))
 				return;
 
-			idField.Metadata.Add(new PrimaryKeyAttribute());
-			if (idField.DataType == typeof(int) ||
-				idField.DataType == typeof(long) ||
-				idField.DataType == typeof(short))
-				idField.Metadata.Add(new AutoIncrementAttribute());
-			else if (idField.DataType == typeof(Guid))
-				idField.Metadata.Add(new AutoGenerateIdAttribute());
+			var idFieldDefinition = entityDefinition.Fields.FirstOrDefault(q => q.Name == "Id");
+			if (idFieldDefinition == null)
+				return;
+
+			idFieldDefinition.IsPrimaryKey = true;
+			if (idFieldDefinition.ClrType == typeof(int) ||
+				idFieldDefinition.ClrType == typeof(long) ||
+				idFieldDefinition.ClrType == typeof(short) ||
+				idFieldDefinition.ClrType == typeof(Guid))
+				idFieldDefinition.AutoGenerate = true;
+		}
+
+		private bool ModelHasPrimaryKey(EntityDefinition entityDefinition)
+		{
+			return entityDefinition.Fields.Any(q => q.IsPrimaryKey);
 		}
 	}
 }
