@@ -28,6 +28,24 @@ namespace Silk.Data.SQL.ORM.Modelling
 		/// Gets or sets the CLR <see cref="Type"/> of the field.
 		/// </summary>
 		public Type ClrType { get; set; }
+		/// <summary>
+		/// Gets or sets a value indicating if the field is a primary key.
+		/// </summary>
+		public bool IsPrimaryKey { get; set; }
+		/// <summary>
+		/// Gets or sets a value indicating if the field's value should be auto generated.
+		/// </summary>
+		/// <remarks>Requires <see cref="IsPrimaryKey"/> to be true.</remarks>
+		public bool AutoGenerate { get; set; }
+		/// <summary>
+		/// Gets or sets a value indicating if the field should be indexed.
+		/// </summary>
+		public bool IsIndex { get; set; }
+		/// <summary>
+		/// Gets or sets a value indicating if the field should have a UNIQUE constraint.
+		/// </summary>
+		/// <remarks>Requires <see cref="IsIndex"/> to be true.</remarks>
+		public bool IsUnique { get; set; }
 
 		public static FieldDefinition SimpleMappedField(string name, ModelBinding binding, FieldOpinions opinions,
 			SqlDataType sqlDataType, Type clrType)
@@ -38,7 +56,11 @@ namespace Silk.Data.SQL.ORM.Modelling
 				Binding = binding,
 				Opinions = opinions,
 				SqlDataType = sqlDataType,
-				ClrType = clrType
+				ClrType = clrType,
+				IsPrimaryKey = opinions.IsPrimaryKey,
+				AutoGenerate = opinions.AutoGenerate,
+				IsIndex = opinions.IsIndex,
+				IsUnique = opinions.IsUnique
 			};
 		}
 	}

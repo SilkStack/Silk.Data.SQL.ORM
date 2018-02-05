@@ -48,13 +48,26 @@ namespace Silk.Data.SQL.ORM.NewModelling
 
 		public Type ClrType { get; }
 
+		public bool IsPrimaryKey { get; }
+
+		public bool AutoGenerate { get; }
+
+		public bool IsIndex { get; }
+
+		public bool IsUnique { get; }
+
 		public DataField(string name, Type clrDataType, SqlDataType sqlDataType,
-			ModelBinding modelBinding)
+			ModelBinding modelBinding, bool isPrimaryKey, bool autoGenerate,
+			bool isIndex, bool isUnique)
 		{
 			Name = name;
 			DataType = clrDataType;
 			SqlType = sqlDataType;
 			ModelBinding = modelBinding;
+			IsPrimaryKey = isPrimaryKey;
+			AutoGenerate = autoGenerate;
+			IsIndex = isIndex;
+			IsUnique = isUnique;
 		}
 	}
 }

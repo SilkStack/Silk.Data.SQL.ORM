@@ -82,7 +82,8 @@ namespace Silk.Data.SQL.ORM
 			for (var i = 0; i < ret.Length; i++)
 			{
 				var definition = entityDefinition.Fields[i];
-				ret[i] = new NewModelling.DataField(definition.Name, definition.ClrType, definition.SqlDataType, definition.Binding);
+				ret[i] = new NewModelling.DataField(definition.Name, definition.ClrType, definition.SqlDataType,
+					definition.Binding, definition.IsPrimaryKey, definition.AutoGenerate, definition.IsIndex, definition.IsUnique);
 			}
 			return ret;
 		}

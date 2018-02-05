@@ -42,5 +42,23 @@ namespace Silk.Data.SQL.ORM.NewModelling
 		/// Gets the field's native CLR type.
 		/// </summary>
 		Type ClrType { get; }
+
+		/// <summary>
+		/// Gets a value indicating if the field is a primary key.
+		/// </summary>
+		bool IsPrimaryKey { get; }
+		/// <summary>
+		/// Gets a value indicating if the field's value should be auto generated.
+		/// </summary>
+		bool AutoGenerate { get; }
+		/// <summary>
+		/// Gets a value indicating if the field should be indexed.
+		/// </summary>
+		bool IsIndex { get; }
+		/// <summary>
+		/// Gets a value indicating if the field should have a UNIQUE constraint.
+		/// </summary>
+		/// <remarks>Requires IsIndex to be true.</remarks>
+		bool IsUnique { get; }
 	}
 }
