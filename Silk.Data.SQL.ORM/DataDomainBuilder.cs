@@ -27,14 +27,14 @@ namespace Silk.Data.SQL.ORM
 		private static ISchemaConvention[] _defaultSchemaConventions
 			= new ISchemaConvention[]
 			{
-				new SQLTypesConvention()
+				new SQLTypesConvention(),
+				new CleanModelNameConvention()
 			};
 
 		private static IProjectionConvention[] _defaultProjectionConventions
 			= new IProjectionConvention[0];
 
-		private readonly List<TypedModel> _entityModels = new List<TypedModel>();
-		private readonly Dictionary<Type, ModelCustomizer> _modelCustomizers = new Dictionary<Type, ModelCustomizer>();
+		private readonly Dictionary<Type, EntityTypeHelper> _entityTypes = new Dictionary<Type, EntityTypeHelper>();
 
 		public ModelCustomizer<TSource> AddEntityType<TSource>()
 			where TSource : new()
@@ -43,24 +43,17 @@ namespace Silk.Data.SQL.ORM
 			//    throw exception?
 			//    return the customizer for the already present model?
 
-			var entityModel = TypeModeller.GetModelOf<TSource>();
-			_entityModels.Add(entityModel);
-			var customizer = new ModelCustomizer<TSource>(entityModel);
-			_modelCustomizers[typeof(TSource)] = customizer;
-			return customizer;
+			var helper = new EntityTypeHelper<TSource>();
+			_entityTypes[typeof(TSource)] = helper;
+			return helper.Customizer as ModelCustomizer<TSource>;
 		}
 
 		private Dictionary<TypedModel,ModelOpinions> GetModelOpinions()
 		{
-			var ret = new Dictionary<TypedModel, ModelOpinions>();
-			foreach (var entityModel in _entityModels)
-			{
-				if (_modelCustomizers.TryGetValue(entityModel.DataType, out var customizer))
-					ret.Add(entityModel, customizer.GetModelOpinions());
-				else
-					ret.Add(entityModel, ModelOpinions.Default);
-			}
-			return ret;
+			return _entityTypes.ToDictionary(
+				q => q.Value.Model,
+				q => q.Value.Customizer.GetModelOpinions()
+				);
 		}
 
 		private SchemaDefinition BuildSchemaDefinition(ISchemaConvention[] schemaConventions, SchemaBuilderWithAlterReset schemaBuilder)
@@ -80,7 +73,18 @@ namespace Silk.Data.SQL.ORM
 				if (!schemaBuilder.WasAltered)
 					break;
 			}
-			return null;
+			return schemaBuilder.BuildDefinition();
+		}
+
+		private NewModelling.DataField[] CreateFields(EntityDefinition entityDefinition)
+		{
+			var ret = new NewModelling.DataField[entityDefinition.Fields.Count];
+			for (var i = 0; i < ret.Length; i++)
+			{
+				var definition = entityDefinition.Fields[i];
+				ret[i] = new NewModelling.DataField(definition.Name, definition.ClrType, definition.SqlDataType, definition.Binding);
+			}
+			return ret;
 		}
 
 		public DataDomain Build(ISchemaConvention[] schemaConventions = null, IProjectionConvention[] projectionConventions = null)
@@ -93,7 +97,23 @@ namespace Silk.Data.SQL.ORM
 			var schemaBuilder = new SchemaBuilderWithAlterReset(GetModelOpinions());
 			var schemaDefinition = BuildSchemaDefinition(schemaConventions, schemaBuilder);
 
-			return null;
+			foreach (var entityHelper in _entityTypes.Values)
+			{
+				var entityDefinition = schemaDefinition.Entities.FirstOrDefault(q => q.EntityModel == entityHelper.Model);
+				if (entityDefinition == null)
+					continue;
+
+				var dataFields = CreateFields(entityDefinition);
+				var entityTable = new NewModelling.Table(
+					entityDefinition.TableName, true, dataFields, entityDefinition.EntityModel.DataType
+					);
+
+				entityHelper.EntityTable = entityTable;
+				entityHelper.Tables.Add(entityTable);
+				entityHelper.EntitySchema.Fields = dataFields;
+			}
+
+			return new DataDomain(_entityTypes.Values.Select(q => q.EntitySchema), projectionConventions);
 
 			//var viewDefinitionFieldCounts = new Dictionary<ViewDefinition, int>();
 			//var currentViewDefinitionFieldCounts = new Dictionary<ViewDefinition, int>();
@@ -156,87 +176,114 @@ namespace Silk.Data.SQL.ORM
 			}
 		}
 
-		private abstract class EntityModelBuilder
+		private abstract class EntityTypeHelper
 		{
-			public abstract DataViewBuilder ViewBuilder { get; }
-			public abstract Type ModelType { get; }
-			public abstract Type ProjectionType { get; }
-			public ViewDefinition ViewDefinition { get; protected set; }
-			public DomainDefinition DomainDefinition { get; protected set; }
+			public TypedModel Model { get; }
+			public ModelCustomizer Customizer { get; }
+			public NewModelling.EntitySchema EntitySchema { get; }
+			public List<NewModelling.Table> Tables { get; } = new List<NewModelling.Table>();
+			public NewModelling.Table EntityTable { get; set; }
 
-			public abstract void CallBuiltDelegate(DataDomain dataDomain);
-			public abstract void CustomizeModel();
-		}
-
-		private class EntityModelBuilder<TSource> : EntityModelBuilder
-			where TSource : new()
-		{
-			private readonly Action<EntityModel<TSource>> _builtDelegate;
-
-			public override Type ModelType => typeof(TSource);
-			public override Type ProjectionType => null;
-			public override DataViewBuilder ViewBuilder { get; }
-			private Action<ModelCustomizer<TSource>> _modelCustomizerFunc;
-
-			public EntityModelBuilder(Action<EntityModel<TSource>> builtDelegate,
-				ViewConvention[] viewConventions, DomainDefinition domainDefinition,
-				Action<ModelCustomizer<TSource>> modelCustomizerFunc)
+			public EntityTypeHelper(TypedModel model,
+				ModelCustomizer customizer, NewModelling.EntitySchema entitySchema)
 			{
-				ViewBuilder = new DataViewBuilder(
-					TypeModeller.GetModelOf<TSource>(), null,
-					viewConventions, domainDefinition,
-					typeof(TSource)
-					);
-
-				_builtDelegate = builtDelegate;
-				ViewDefinition = ViewBuilder.ViewDefinition;
-				_modelCustomizerFunc = modelCustomizerFunc;
-			}
-
-			public override void CallBuiltDelegate(DataDomain dataDomain)
-			{
-				_builtDelegate?.Invoke(dataDomain.GetEntityModel<TSource>());
-			}
-
-			public override void CustomizeModel()
-			{
-				_modelCustomizerFunc?.Invoke(new ModelCustomizer<TSource>(null));
+				Model = model;
+				Customizer = customizer;
+				EntitySchema = entitySchema;
 			}
 		}
 
-		private class EntityModelBuilder<TSource,TView> : EntityModelBuilder
-			where TSource : new()
-			where TView : new()
+		private class EntityTypeHelper<T> : EntityTypeHelper
+			where T : new()
 		{
-			private readonly Action<EntityModel<TSource, TView>> _builtDelegate;
-
-			public override Type ModelType => typeof(TSource);
-			public override Type ProjectionType => typeof(TView);
-			public override DataViewBuilder ViewBuilder { get; }
-
-			public EntityModelBuilder(Action<EntityModel<TSource, TView>> builtDelegate,
-				ViewConvention[] viewConventions, DomainDefinition domainDefinition)
-			{
-				ViewBuilder = new DataViewBuilder(
-					TypeModeller.GetModelOf<TSource>(), 
-					TypeModeller.GetModelOf<TView>(),
-					viewConventions, domainDefinition,
-					typeof(TSource), typeof(TView)
-					);
-
-				_builtDelegate = builtDelegate;
-				ViewDefinition = ViewBuilder.ViewDefinition;
-			}
-
-			public override void CallBuiltDelegate(DataDomain dataDomain)
-			{
-				if (_builtDelegate != null)
-					_builtDelegate(dataDomain.GetEntityModel<TSource>() as EntityModel<TSource, TView>);
-			}
-
-			public override void CustomizeModel()
+			public EntityTypeHelper()
+				: base(TypeModeller.GetModelOf<T>(), new ModelCustomizer<T>(TypeModeller.GetModelOf<T>()),
+					  new NewModelling.EntitySchema<T>(TypeModeller.GetModelOf<T>()))
 			{
 			}
 		}
+
+		//private abstract class EntityModelBuilder
+		//{
+		//	public abstract DataViewBuilder ViewBuilder { get; }
+		//	public abstract Type ModelType { get; }
+		//	public abstract Type ProjectionType { get; }
+		//	public ViewDefinition ViewDefinition { get; protected set; }
+		//	public DomainDefinition DomainDefinition { get; protected set; }
+
+		//	public abstract void CallBuiltDelegate(DataDomain dataDomain);
+		//	public abstract void CustomizeModel();
+		//}
+
+		//private class EntityModelBuilder<TSource> : EntityModelBuilder
+		//	where TSource : new()
+		//{
+		//	private readonly Action<EntityModel<TSource>> _builtDelegate;
+
+		//	public override Type ModelType => typeof(TSource);
+		//	public override Type ProjectionType => null;
+		//	public override DataViewBuilder ViewBuilder { get; }
+		//	private Action<ModelCustomizer<TSource>> _modelCustomizerFunc;
+
+		//	public EntityModelBuilder(Action<EntityModel<TSource>> builtDelegate,
+		//		ViewConvention[] viewConventions, DomainDefinition domainDefinition,
+		//		Action<ModelCustomizer<TSource>> modelCustomizerFunc)
+		//	{
+		//		ViewBuilder = new DataViewBuilder(
+		//			TypeModeller.GetModelOf<TSource>(), null,
+		//			viewConventions, domainDefinition,
+		//			typeof(TSource)
+		//			);
+
+		//		_builtDelegate = builtDelegate;
+		//		ViewDefinition = ViewBuilder.ViewDefinition;
+		//		_modelCustomizerFunc = modelCustomizerFunc;
+		//	}
+
+		//	public override void CallBuiltDelegate(DataDomain dataDomain)
+		//	{
+		//		_builtDelegate?.Invoke(dataDomain.GetEntityModel<TSource>());
+		//	}
+
+		//	public override void CustomizeModel()
+		//	{
+		//		_modelCustomizerFunc?.Invoke(new ModelCustomizer<TSource>(null));
+		//	}
+		//}
+
+		//private class EntityModelBuilder<TSource,TView> : EntityModelBuilder
+		//	where TSource : new()
+		//	where TView : new()
+		//{
+		//	private readonly Action<EntityModel<TSource, TView>> _builtDelegate;
+
+		//	public override Type ModelType => typeof(TSource);
+		//	public override Type ProjectionType => typeof(TView);
+		//	public override DataViewBuilder ViewBuilder { get; }
+
+		//	public EntityModelBuilder(Action<EntityModel<TSource, TView>> builtDelegate,
+		//		ViewConvention[] viewConventions, DomainDefinition domainDefinition)
+		//	{
+		//		ViewBuilder = new DataViewBuilder(
+		//			TypeModeller.GetModelOf<TSource>(), 
+		//			TypeModeller.GetModelOf<TView>(),
+		//			viewConventions, domainDefinition,
+		//			typeof(TSource), typeof(TView)
+		//			);
+
+		//		_builtDelegate = builtDelegate;
+		//		ViewDefinition = ViewBuilder.ViewDefinition;
+		//	}
+
+		//	public override void CallBuiltDelegate(DataDomain dataDomain)
+		//	{
+		//		if (_builtDelegate != null)
+		//			_builtDelegate(dataDomain.GetEntityModel<TSource>() as EntityModel<TSource, TView>);
+		//	}
+
+		//	public override void CustomizeModel()
+		//	{
+		//	}
+		//}
 	}
 }

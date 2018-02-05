@@ -29,8 +29,8 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 				var sqlFieldName = opinions.Name ?? field.Name;
 
 				builder.DefineField(
-					model, sqlFieldName, sqlDataType,
-					new AssignmentBinding(bindingDirection, new[] { field.Name }, new[] { field.Name }),
+					model, sqlFieldName, sqlDataType, field.DataType,
+					new AssignmentBinding(bindingDirection, new[] { field.Name }, new[] { sqlFieldName }),
 					opinions);
 			}
 		}

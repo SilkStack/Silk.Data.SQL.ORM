@@ -3,6 +3,7 @@ using Silk.Data.Modelling.Conventions;
 using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Modelling;
 using Silk.Data.SQL.ORM.Modelling.Conventions;
+using Silk.Data.SQL.ORM.NewModelling;
 using Silk.Data.SQL.ORM.Queries;
 using System;
 using System.Collections.Generic;
@@ -20,42 +21,44 @@ namespace Silk.Data.SQL.ORM
 
 		private static IEnumerable<EntityModel> MakeEntityModels(DomainDefinition domainDefinition, DataDomain dataDomain)
 		{
-			foreach (var schemaDefinition in domainDefinition.SchemaDefinitions)
-			{
-				Type entityModelType;
-				if (schemaDefinition.ProjectionType == null)
-					entityModelType = typeof(EntityModel<>)
-						.MakeGenericType(schemaDefinition.EntityType);
-				else
-					entityModelType = typeof(EntityModel<,>)
-						.MakeGenericType(schemaDefinition.EntityType, schemaDefinition.ProjectionType);
+			return null;
+			//foreach (var schemaDefinition in domainDefinition.SchemaDefinitions)
+			//{
+			//	Type entityModelType;
+			//	if (schemaDefinition.ProjectionType == null)
+			//		entityModelType = typeof(EntityModel<>)
+			//			.MakeGenericType(schemaDefinition.EntityType);
+			//	else
+			//		entityModelType = typeof(EntityModel<,>)
+			//			.MakeGenericType(schemaDefinition.EntityType, schemaDefinition.ProjectionType);
 
-				var ctor = entityModelType.GetTypeInfo().DeclaredConstructors.First(q => q.GetParameters().Length == 0);
-				var entityModel = ctor.Invoke(null) as EntityModel;
-				entityModel.Name = entityModelType.Name;
-				entityModel.SetModel(TypeModeller.GetModelOf(schemaDefinition.EntityType));
-				entityModel.Domain = dataDomain;
-				yield return entityModel;
-			}
+			//	var ctor = entityModelType.GetTypeInfo().DeclaredConstructors.First(q => q.GetParameters().Length == 0);
+			//	var entityModel = ctor.Invoke(null) as EntityModel;
+			//	entityModel.Name = entityModelType.Name;
+			//	entityModel.SetModel(TypeModeller.GetModelOf(schemaDefinition.EntityType));
+			//	entityModel.Domain = dataDomain;
+			//	yield return entityModel;
+			//}
 		}
 
 		private static IEnumerable<MutableDataField> MakeDataFields(DomainDefinition domainDefinition, EntityModel entityModel)
 		{
-			var schema = domainDefinition.SchemaDefinitions.FirstOrDefault(q => q.EntityType == entityModel.EntityType);
-			if (schema != null)
-			{
-				var entityTable = schema.TableDefinitions.FirstOrDefault(q => q.IsEntityTable);
-				if (entityTable != null)
-				{
-					foreach (var field in entityTable.Fields)
-					{
-						yield return new MutableDataField(field.Name, field.DataType, field.ModelBinding, field.Metadata.ToArray());
-					}
-				}
-			}
+			return null;
+			//var schema = domainDefinition.SchemaDefinitions.FirstOrDefault(q => q.EntityType == entityModel.EntityType);
+			//if (schema != null)
+			//{
+			//	var entityTable = schema.TableDefinitions.FirstOrDefault(q => q.IsEntityTable);
+			//	if (entityTable != null)
+			//	{
+			//		foreach (var field in entityTable.Fields)
+			//		{
+			//			yield return new MutableDataField(field.Name, field.DataType, field.ModelBinding, field.Metadata.ToArray());
+			//		}
+			//	}
+			//}
 		}
 
-		private static IEnumerable<DataField> EntityTableFields(EntityModel model)
+		private static IEnumerable<Modelling.DataField> EntityTableFields(EntityModel model)
 		{
 			foreach (var field in model.Fields)
 			{
@@ -66,86 +69,87 @@ namespace Silk.Data.SQL.ORM
 			}
 		}
 
-		private static EntitySchema MakeDataSchema(EntityModel entityModel, DomainDefinition domainDefinition)
+		private static Modelling.EntitySchema MakeDataSchema(EntityModel entityModel, DomainDefinition domainDefinition)
 		{
-			var schemaDefinition = domainDefinition.SchemaDefinitions.FirstOrDefault(q => q.EntityType == entityModel.EntityType);
-			if (schemaDefinition == null)
-				return null;
+			return null;
+			//var schemaDefinition = domainDefinition.SchemaDefinitions.FirstOrDefault(q => q.EntityType == entityModel.EntityType);
+			//if (schemaDefinition == null)
+			//	return null;
 
-			var schema = new EntitySchema();
-			foreach (var tableDefinition in schemaDefinition.TableDefinitions)
-			{
-				if (tableDefinition.IsEntityTable)
-				{
-					var table = new Table(tableDefinition.TableName, true,
-						EntityTableFields(entityModel).ToArray(), tableDefinition.EntityType
-						);
-					foreach(var field in table.DataFields.OfType<MutableDataField>())
-					{
-						field.Table = table;
-					}
-					schema.AddTable(table);
-				}
-				else
-				{
-					var table = new Table();
-					var fields = tableDefinition.Fields.Select(fieldDefintion =>
-							new DataField(fieldDefintion.Name, fieldDefintion.DataType, fieldDefintion.Metadata.ToArray(),
-								fieldDefintion.ModelBinding, table, null)
-						).ToArray();
-					table.Initialize(tableDefinition.TableName, false, fields, tableDefinition.EntityType,
-						tableDefinition.IsJoinTable, tableDefinition.JoinEntityTypes.ToArray());
-					schema.AddTable(table);
-				}
-			}
-			return schema;
+			//var schema = new EntitySchema();
+			//foreach (var tableDefinition in schemaDefinition.TableDefinitions)
+			//{
+			//	if (tableDefinition.IsEntityTable)
+			//	{
+			//		var table = new Table(tableDefinition.TableName, true,
+			//			EntityTableFields(entityModel).ToArray(), tableDefinition.EntityType
+			//			);
+			//		foreach(var field in table.DataFields.OfType<MutableDataField>())
+			//		{
+			//			field.Table = table;
+			//		}
+			//		schema.AddTable(table);
+			//	}
+			//	else
+			//	{
+			//		var table = new Table();
+			//		var fields = tableDefinition.Fields.Select(fieldDefintion =>
+			//				new DataField(fieldDefintion.Name, fieldDefintion.DataType, fieldDefintion.Metadata.ToArray(),
+			//					fieldDefintion.ModelBinding, table, null)
+			//			).ToArray();
+			//		table.Initialize(tableDefinition.TableName, false, fields, tableDefinition.EntityType,
+			//			tableDefinition.IsJoinTable, tableDefinition.JoinEntityTypes.ToArray());
+			//		schema.AddTable(table);
+			//	}
+			//}
+			//return schema;
 		}
 
 		private static void ConstructRelationship(EntityModel entityModel, MutableDataField dataField,
 			DomainDefinition domainDefinition, DataDomain dataDomain)
 		{
-			var schemaDefinition = domainDefinition.SchemaDefinitions.FirstOrDefault(q => q.EntityType == entityModel.EntityType);
-			if (schemaDefinition == null)
-				return;
+			//var schemaDefinition = domainDefinition.SchemaDefinitions.FirstOrDefault(q => q.EntityType == entityModel.EntityType);
+			//if (schemaDefinition == null)
+			//	return;
 
-			var entityTableDefinition = schemaDefinition.TableDefinitions.FirstOrDefault(q => q.IsEntityTable);
-			if (entityTableDefinition == null)
-				return;
+			//var entityTableDefinition = schemaDefinition.TableDefinitions.FirstOrDefault(q => q.IsEntityTable);
+			//if (entityTableDefinition == null)
+			//	return;
 
-			var fieldDefinition = entityTableDefinition.Fields.FirstOrDefault(q => q.Name == dataField.Name);
-			if (fieldDefinition == null)
-				return;
+			//var fieldDefinition = entityTableDefinition.Fields.FirstOrDefault(q => q.Name == dataField.Name);
+			//if (fieldDefinition == null)
+			//	return;
 
-			var relationshipDefinition = fieldDefinition.Metadata.OfType<RelationshipDefinition>().FirstOrDefault();
-			if (relationshipDefinition == null)
-				return;
+			//var relationshipDefinition = fieldDefinition.Metadata.OfType<RelationshipDefinition>().FirstOrDefault();
+			//if (relationshipDefinition == null)
+			//	return;
 
-			var relatedToEntity = dataDomain.DataModels.FirstOrDefault(q => q.EntityType == relationshipDefinition.EntityType);
-			if (relatedToEntity == null)
-				return;
+			//var relatedToEntity = dataDomain.DataModels.FirstOrDefault(q => q.EntityType == relationshipDefinition.EntityType);
+			//if (relatedToEntity == null)
+			//	return;
 
-			var relationship = new DataRelationship(relatedToEntity, relationshipDefinition.RelationshipType);
+			//var relationship = new DataRelationship(relatedToEntity, relationshipDefinition.RelationshipType);
 
-			if (relationshipDefinition.TableReferences != null)
-			{
-				foreach (var tableReference in relationshipDefinition.TableReferences)
-				{
-					if (tableReference.EntityTableReferences == null)
-						continue;
-					foreach (var entityTableReference in tableReference.EntityTableReferences)
-					{
-						var relatedDataField = new MutableDataField(entityTableReference.Name, entityTableReference.DataType,
-							entityTableReference.ModelBinding, entityTableReference.Metadata.Concat(new object[] { new IsNullableAttribute(true) }).ToArray());
-						relatedDataField.Table = entityModel.Schema.EntityTable;
-						relatedDataField.SetStorage();
-						relatedDataField.SetRelationship(relationship);
-						entityModel.Schema.EntityTable.InternalDataFields.Add(relatedDataField);
-						entityModel.AddField(relatedDataField);
-					}
-				}
-			}
+			//if (relationshipDefinition.TableReferences != null)
+			//{
+			//	foreach (var tableReference in relationshipDefinition.TableReferences)
+			//	{
+			//		if (tableReference.EntityTableReferences == null)
+			//			continue;
+			//		foreach (var entityTableReference in tableReference.EntityTableReferences)
+			//		{
+			//			var relatedDataField = new MutableDataField(entityTableReference.Name, entityTableReference.DataType,
+			//				entityTableReference.ModelBinding, entityTableReference.Metadata.Concat(new object[] { new IsNullableAttribute(true) }).ToArray());
+			//			relatedDataField.Table = entityModel.Schema.EntityTable;
+			//			relatedDataField.SetStorage();
+			//			relatedDataField.SetRelationship(relationship);
+			//			entityModel.Schema.EntityTable.InternalDataFields.Add(relatedDataField);
+			//			entityModel.AddField(relatedDataField);
+			//		}
+			//	}
+			//}
 
-			dataField.SetRelationship(relationship);
+			//dataField.SetRelationship(relationship);
 		}
 
 		public static DataDomain CreateFromDefinition(DomainDefinition domainDefinition,
@@ -175,39 +179,82 @@ namespace Silk.Data.SQL.ORM
 				}
 			}
 
-			foreach (var schemaDefinition in domainDefinition.SchemaDefinitions)
-			{
-				var entityModel = entityModels.First(q => q.EntityType == schemaDefinition.EntityType);
-				foreach (var tableDefinition in schemaDefinition.TableDefinitions)
-				{
-					var table = entityModel.Schema.Tables.First(q => q.TableName == tableDefinition.TableName);
-					table.SetIndexes(tableDefinition.Indexes);
-				}
-			}
+			//foreach (var schemaDefinition in domainDefinition.SchemaDefinitions)
+			//{
+			//	var entityModel = entityModels.First(q => q.EntityType == schemaDefinition.EntityType);
+			//	foreach (var tableDefinition in schemaDefinition.TableDefinitions)
+			//	{
+			//		var table = entityModel.Schema.Tables.First(q => q.TableName == tableDefinition.TableName);
+			//		table.SetIndexes(tableDefinition.Indexes);
+			//	}
+			//}
 
 			return dataDomain;
 		}
 
+		[Obsolete]
 		private readonly List<EntityModel> _entityModels = new List<EntityModel>();
+		[Obsolete]
 		private readonly DomainDefinition _domainDefinition;
+		[Obsolete]
 		private readonly Dictionary<Type, TableDefinition> _entitySchemaDefinitions = new Dictionary<Type, TableDefinition>();
+		[Obsolete]
 		private readonly Dictionary<string, EntityModel> _projectionModelCache = new Dictionary<string, EntityModel>();
-		private readonly ViewConvention[] _projectionConventions = new ViewConvention[]
-		{
-			new CopyPrimitiveTypesConvention(),
-			new FlattenSimpleTypesConvention(),
-			new ProjectManyToManyObjectsConvention(),
-			new CopyReferencesConvention(),
-			new ProjectSubObjectProperties()
-		};
+		//[Obsolete]
+		//private readonly ViewConvention[] _projectionConventions = new ViewConvention[]
+		//{
+		//	new CopyPrimitiveTypesConvention(),
+		//	new FlattenSimpleTypesConvention(),
+		//	new ProjectManyToManyObjectsConvention(),
+		//	new CopyReferencesConvention(),
+		//	new ProjectSubObjectProperties()
+		//};
 
+		[Obsolete]
 		public IReadOnlyCollection<EntityModel> DataModels => _entityModels;
 
+		private readonly Dictionary<Type,NewModelling.EntitySchema> _entitySchemas;
+		private readonly IProjectionConvention[] _projectionConventions;
+
+		public DataDomain(IEnumerable<NewModelling.EntitySchema> entitySchemas,
+			IEnumerable<IProjectionConvention> projectionConventions)
+		{
+			_entitySchemas = entitySchemas.ToDictionary(
+				q => ((TypedModel)q.Model).DataType,
+				q => q
+				);
+			_projectionConventions = projectionConventions.ToArray();
+		}
+
+		/// <summary>
+		/// Gets the <see cref="EntitySchema{T}"/> of an entity type.
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <returns></returns>
+		public EntitySchema<T> GetEntitySchema<T>()
+			where T : new()
+		{
+			return GetEntitySchema(typeof(T)) as EntitySchema<T>;
+		}
+
+		/// <summary>
+		/// Gets the <see cref="EntitySchema"/> of an entity type.
+		/// </summary>
+		/// <param name="entityType"></param>
+		/// <returns></returns>
+		public NewModelling.EntitySchema GetEntitySchema(Type entityType)
+		{
+			_entitySchemas.TryGetValue(entityType, out var entitySchema);
+			return entitySchema;
+		}
+
+		[Obsolete]
 		private DataDomain(DomainDefinition domainDefinition)
 		{
 			_domainDefinition = domainDefinition;
 		}
 
+		[Obsolete]
 		public DataDomain(IEnumerable<EntityModel> entityModels, DomainDefinition domainDefinition)
 		{
 			domainDefinition.IsReadOnly = true;
@@ -216,17 +263,20 @@ namespace Silk.Data.SQL.ORM
 			_domainDefinition = domainDefinition;
 		}
 
+		[Obsolete]
 		private void AddEntityModel(EntityModel entityModel)
 		{
 			_entityModels.Add(entityModel);
 		}
 
+		[Obsolete]
 		public EntityModel<TSource> GetEntityModel<TSource>()
 			where TSource : new()
 		{
 			return _entityModels.OfType<EntityModel<TSource>>().FirstOrDefault();
 		}
 
+		[Obsolete]
 		public EntityModel<TView> GetProjectionModel<TSource, TView>()
 			where TSource : new()
 			where TView : new()
@@ -234,78 +284,81 @@ namespace Silk.Data.SQL.ORM
 			return GetProjectionModel(typeof(TSource), typeof(TView)) as EntityModel<TView>;
 		}
 
+		[Obsolete]
 		private EntityModel GetProjectionModel(Type sourceType, Type viewType)
 		{
-			var entityModel = _entityModels.FirstOrDefault(q => q.EntityType == sourceType);
-			if (entityModel == null)
-				throw new InvalidOperationException("Entity type not present in data domain.");
+			return null;
+			//var entityModel = _entityModels.FirstOrDefault(q => q.EntityType == sourceType);
+			//if (entityModel == null)
+			//	throw new InvalidOperationException("Entity type not present in data domain.");
 
-			//  todo: invesitgate while projecting as identical type prevented many-to-one relationships from working
-			if (sourceType == viewType)
-				return entityModel;
+			////  todo: invesitgate while projecting as identical type prevented many-to-one relationships from working
+			//if (sourceType == viewType)
+			//	return entityModel;
 
-			var cacheKey = $"{sourceType.FullName} to {viewType.FullName}";
-			if (_projectionModelCache.TryGetValue(cacheKey, out var ret))
-				return ret;
+			//var cacheKey = $"{sourceType.FullName} to {viewType.FullName}";
+			//if (_projectionModelCache.TryGetValue(cacheKey, out var ret))
+			//	return ret;
 
-			lock (_projectionModelCache)
-			{
-				if (_projectionModelCache.TryGetValue(cacheKey, out ret))
-					return ret;
+			//lock (_projectionModelCache)
+			//{
+			//	if (_projectionModelCache.TryGetValue(cacheKey, out ret))
+			//		return ret;
 
-				var modelOfViewType = TypeModeller.GetModelOf(viewType);
-				var targetModel = entityModel.GetAsModel();
+			//	var modelOfViewType = TypeModeller.GetModelOf(viewType);
+			//	var targetModel = entityModel.GetAsModel();
 
-				var viewBuilder = new DataViewBuilder(modelOfViewType, targetModel, _projectionConventions, _domainDefinition,
-					sourceType, viewType);
-				viewBuilder.ProcessModel(targetModel);
-				viewBuilder.FinalizeModel();
+			//	var viewBuilder = new DataViewBuilder(modelOfViewType, targetModel, _projectionConventions, _domainDefinition,
+			//		sourceType, viewType);
+			//	viewBuilder.ProcessModel(targetModel);
+			//	viewBuilder.FinalizeModel();
 
-				var viewTypeDefaultCtor = viewType.GetTypeInfo().DeclaredConstructors
-					.FirstOrDefault(q => q.GetParameters().Length == 0);
+			//	var viewTypeDefaultCtor = viewType.GetTypeInfo().DeclaredConstructors
+			//		.FirstOrDefault(q => q.GetParameters().Length == 0);
 
-				if (viewTypeDefaultCtor != null)
-				{
-					var ctor = typeof(EntityModel<>).MakeGenericType(viewType)
-						.GetTypeInfo().DeclaredConstructors.First(q => q.GetParameters().Length == 0);
-					ret = ctor.Invoke(null) as EntityModel;
-				}
-				else
-				{
-					var ctor = typeof(NonQueryableEntityModel<>).MakeGenericType(viewType)
-						.GetTypeInfo().DeclaredConstructors.First(q => q.GetParameters().Length == 0);
-					ret = ctor.Invoke(null) as EntityModel;
-				}
+			//	if (viewTypeDefaultCtor != null)
+			//	{
+			//		var ctor = typeof(EntityModel<>).MakeGenericType(viewType)
+			//			.GetTypeInfo().DeclaredConstructors.First(q => q.GetParameters().Length == 0);
+			//		ret = ctor.Invoke(null) as EntityModel;
+			//	}
+			//	else
+			//	{
+			//		var ctor = typeof(NonQueryableEntityModel<>).MakeGenericType(viewType)
+			//			.GetTypeInfo().DeclaredConstructors.First(q => q.GetParameters().Length == 0);
+			//		ret = ctor.Invoke(null) as EntityModel;
+			//	}
 
-				var fields = new List<DataField>();
-				foreach (var fieldDefinition in viewBuilder.ViewDefinition.FieldDefinitions)
-				{
-					var entityField = entityModel.Fields.FirstOrDefault(
-						q => q.ModelBinding?.ViewFieldPath != null &&
-							fieldDefinition.ModelBinding?.ViewFieldPath != null &&
-							q.ModelBinding.ViewFieldPath.SequenceEqual(fieldDefinition.ModelBinding.ViewFieldPath)
-						);
-					if (entityField == null)
-						continue;
-					var relationship =
-						GetProjectionFieldRelationship(fieldDefinition) ??
-						CreateProjectionRelationshipFromField(entityField, fieldDefinition.DataType);
-					fields.Add(
-						new DataField(entityField.Storage?.ColumnName, fieldDefinition.DataType,
-							fieldDefinition.Metadata.Concat(entityField.Metadata).ToArray(),
-							fieldDefinition.ModelBinding, entityField.Storage?.Table, relationship, fieldDefinition.Name)
-						);
-				}
+			//	var fields = new List<DataField>();
+			//	foreach (var fieldDefinition in viewBuilder.ViewDefinition.FieldDefinitions)
+			//	{
+			//		var entityField = entityModel.Fields.FirstOrDefault(
+			//			q => q.ModelBinding?.ViewFieldPath != null &&
+			//				fieldDefinition.ModelBinding?.ViewFieldPath != null &&
+			//				q.ModelBinding.ViewFieldPath.SequenceEqual(fieldDefinition.ModelBinding.ViewFieldPath)
+			//			);
+			//		if (entityField == null)
+			//			continue;
+			//		var relationship =
+			//			GetProjectionFieldRelationship(fieldDefinition) ??
+			//			CreateProjectionRelationshipFromField(entityField, fieldDefinition.DataType);
+			//		fields.Add(
+			//			new DataField(entityField.Storage?.ColumnName, fieldDefinition.DataType,
+			//				fieldDefinition.Metadata.Concat(entityField.Metadata).ToArray(),
+			//				fieldDefinition.ModelBinding, entityField.Storage?.Table, relationship, fieldDefinition.Name)
+			//			);
+			//	}
 
-				ret.Initalize(viewBuilder.ViewDefinition.Name, TypeModeller.GetModelOf(viewType),
-					entityModel.Schema, fields.ToArray(), this);
+			//	ret.Initalize(viewBuilder.ViewDefinition.Name, TypeModeller.GetModelOf(viewType),
+			//		entityModel.Schema, fields.ToArray(), this);
 
-				_projectionModelCache.Add(cacheKey, ret);
+			//	_projectionModelCache.Add(cacheKey, ret);
 
-				return ret;
-			}
+			//	return ret;
+			//}
 		}
 
+		[Obsolete]
 		private DataRelationship GetProjectionFieldRelationship(ViewFieldDefinition fieldDefinition)
 		{
 			var relationshipDefinition = fieldDefinition.Metadata.OfType<RelationshipDefinition>().FirstOrDefault();
@@ -318,7 +371,8 @@ namespace Silk.Data.SQL.ORM
 				);
 		}
 
-		private DataRelationship CreateProjectionRelationshipFromField(DataField field, Type projectionType)
+		[Obsolete]
+		private DataRelationship CreateProjectionRelationshipFromField(Modelling.DataField field, Type projectionType)
 		{
 			var relationship = field.Relationship;
 			if (relationship == null)
@@ -335,21 +389,27 @@ namespace Silk.Data.SQL.ORM
 				);
 		}
 
+		[Obsolete]
 		public QueryCollection Insert<TSource>(ICollection<TSource> sources)
 			where TSource : new() => Insert(sources as IEnumerable<TSource>);
 
+		[Obsolete]
 		public QueryCollection Insert<TSource>(IReadOnlyCollection<TSource> sources)
 			where TSource : new() => Insert(sources as IEnumerable<TSource>);
 
+		[Obsolete]
 		public QueryCollection Insert<TSource>(IList<TSource> sources)
 			where TSource : new() => Insert(sources as IEnumerable<TSource>);
 
+		[Obsolete]
 		public QueryCollection Insert<TSource>(IReadOnlyList<TSource> sources)
 			where TSource : new() => Insert(sources as IEnumerable<TSource>);
 
+		[Obsolete]
 		public QueryCollection Insert<TSource>(List<TSource> sources)
 			where TSource : new() => Insert(sources as IEnumerable<TSource>);
 
+		[Obsolete]
 		public QueryCollection Insert<TSource>(IEnumerable<TSource> sources)
 			where TSource : new()
 		{
@@ -357,6 +417,7 @@ namespace Silk.Data.SQL.ORM
 				.Insert<TSource>(sources);
 		}
 
+		[Obsolete]
 		public QueryCollection Insert<TSource>(params TSource[] sources)
 			where TSource : new()
 		{
@@ -364,26 +425,32 @@ namespace Silk.Data.SQL.ORM
 				.Insert<TSource>(sources);
 		}
 
+		[Obsolete]
 		public QueryCollection Insert<TSource, TView>(ICollection<TView> sources)
 			where TSource : new()
 			where TView : new() => Insert<TSource, TView>(sources as IEnumerable<TView>);
 
+		[Obsolete]
 		public QueryCollection Insert<TSource, TView>(IReadOnlyCollection<TView> sources)
 			where TSource : new()
 			where TView : new() => Insert<TSource, TView>(sources as IEnumerable<TView>);
 
+		[Obsolete]
 		public QueryCollection Insert<TSource, TView>(IList<TView> sources)
 			where TSource : new()
 			where TView : new() => Insert<TSource, TView>(sources as IEnumerable<TView>);
 
+		[Obsolete]
 		public QueryCollection Insert<TSource, TView>(IReadOnlyList<TView> sources)
 			where TSource : new()
 			where TView : new() => Insert<TSource, TView>(sources as IEnumerable<TView>);
 
+		[Obsolete]
 		public QueryCollection Insert<TSource, TView>(List<TView> sources)
 			where TSource : new()
 			where TView : new() => Insert<TSource, TView>(sources as IEnumerable<TView>);
 
+		[Obsolete]
 		public QueryCollection Insert<TSource, TView>(params TView[] sources)
 			where TSource : new()
 			where TView : new()
@@ -392,6 +459,7 @@ namespace Silk.Data.SQL.ORM
 				.Insert<TSource, TView>(sources);
 		}
 
+		[Obsolete]
 		public QueryCollection Insert<TSource, TView>(IEnumerable<TView> sources)
 			where TSource : new()
 			where TView : new()
@@ -400,21 +468,27 @@ namespace Silk.Data.SQL.ORM
 				.Insert<TSource, TView>(sources);
 		}
 
+		[Obsolete]
 		public QueryCollection Update<TSource>(ICollection<TSource> sources)
 			where TSource : new() => Update(sources as IEnumerable<TSource>);
 
+		[Obsolete]
 		public QueryCollection Update<TSource>(IReadOnlyCollection<TSource> sources)
 			where TSource : new() => Update(sources as IEnumerable<TSource>);
 
+		[Obsolete]
 		public QueryCollection Update<TSource>(IList<TSource> sources)
 			where TSource : new() => Update(sources as IEnumerable<TSource>);
 
+		[Obsolete]
 		public QueryCollection Update<TSource>(IReadOnlyList<TSource> sources)
 			where TSource : new() => Update(sources as IEnumerable<TSource>);
 
+		[Obsolete]
 		public QueryCollection Update<TSource>(List<TSource> sources)
 			where TSource : new() => Update(sources as IEnumerable<TSource>);
 
+		[Obsolete]
 		public QueryCollection Update<TSource>(params TSource[] sources)
 			where TSource : new()
 		{
@@ -422,6 +496,7 @@ namespace Silk.Data.SQL.ORM
 				.Update<TSource>(sources);
 		}
 
+		[Obsolete]
 		public QueryCollection Update<TSource>(IEnumerable<TSource> sources)
 			where TSource : new()
 		{
@@ -429,26 +504,32 @@ namespace Silk.Data.SQL.ORM
 				.Update<TSource>(sources);
 		}
 
+		[Obsolete]
 		public QueryCollection Update<TSource, TView>(ICollection<TView> sources)
 			where TSource : new()
 			where TView : new() => Update<TSource, TView>(sources as IEnumerable<TView>);
 
+		[Obsolete]
 		public QueryCollection Update<TSource, TView>(IReadOnlyCollection<TView> sources)
 			where TSource : new()
 			where TView : new() => Update<TSource, TView>(sources as IEnumerable<TView>);
 
+		[Obsolete]
 		public QueryCollection Update<TSource, TView>(IList<TView> sources)
 			where TSource : new()
 			where TView : new() => Update<TSource, TView>(sources as IEnumerable<TView>);
 
+		[Obsolete]
 		public QueryCollection Update<TSource, TView>(IReadOnlyList<TView> sources)
 			where TSource : new()
 			where TView : new() => Update<TSource, TView>(sources as IEnumerable<TView>);
 
+		[Obsolete]
 		public QueryCollection Update<TSource, TView>(List<TView> sources)
 			where TSource : new()
 			where TView : new() => Update<TSource, TView>(sources as IEnumerable<TView>);
 
+		[Obsolete]
 		public QueryCollection Update<TSource, TView>(params TView[] sources)
 			where TSource : new()
 			where TView : new()
@@ -457,6 +538,7 @@ namespace Silk.Data.SQL.ORM
 				.Update<TSource, TView>(sources);
 		}
 
+		[Obsolete]
 		public QueryCollection Update<TSource, TView>(IEnumerable<TView> sources)
 			where TSource : new()
 			where TView : new()
@@ -465,21 +547,27 @@ namespace Silk.Data.SQL.ORM
 				.Update<TSource, TView>(sources);
 		}
 
+		[Obsolete]
 		public QueryCollection Delete<TSource>(ICollection<TSource> sources)
 			where TSource : new() => Delete(sources as IEnumerable<TSource>);
 
+		[Obsolete]
 		public QueryCollection Delete<TSource>(IReadOnlyCollection<TSource> sources)
 			where TSource : new() => Delete(sources as IEnumerable<TSource>);
 
+		[Obsolete]
 		public QueryCollection Delete<TSource>(IList<TSource> sources)
 			where TSource : new() => Delete(sources as IEnumerable<TSource>);
 
+		[Obsolete]
 		public QueryCollection Delete<TSource>(IReadOnlyList<TSource> sources)
 			where TSource : new() => Delete(sources as IEnumerable<TSource>);
 
+		[Obsolete]
 		public QueryCollection Delete<TSource>(List<TSource> sources)
 			where TSource : new() => Delete(sources as IEnumerable<TSource>);
 
+		[Obsolete]
 		public QueryCollection Delete<TSource>(params TSource[] sources)
 			where TSource : new()
 		{
@@ -487,6 +575,7 @@ namespace Silk.Data.SQL.ORM
 				.Delete<TSource>(sources);
 		}
 
+		[Obsolete]
 		public QueryCollection Delete<TSource>(IEnumerable<TSource> sources)
 			where TSource : new()
 		{
@@ -494,26 +583,32 @@ namespace Silk.Data.SQL.ORM
 				.Delete<TSource>(sources);
 		}
 
+		[Obsolete]
 		public QueryCollection Delete<TSource, TView>(ICollection<TView> sources)
 			where TSource : new()
 			where TView : new() => Delete<TSource, TView>(sources as IEnumerable<TView>);
 
+		[Obsolete]
 		public QueryCollection Delete<TSource, TView>(IReadOnlyCollection<TView> sources)
 			where TSource : new()
 			where TView : new() => Delete<TSource, TView>(sources as IEnumerable<TView>);
 
+		[Obsolete]
 		public QueryCollection Delete<TSource, TView>(IList<TView> sources)
 			where TSource : new()
 			where TView : new() => Delete<TSource, TView>(sources as IEnumerable<TView>);
 
+		[Obsolete]
 		public QueryCollection Delete<TSource, TView>(IReadOnlyList<TView> sources)
 			where TSource : new()
 			where TView : new() => Delete<TSource, TView>(sources as IEnumerable<TView>);
 
+		[Obsolete]
 		public QueryCollection Delete<TSource, TView>(List<TView> sources)
 			where TSource : new()
 			where TView : new() => Delete<TSource, TView>(sources as IEnumerable<TView>);
 
+		[Obsolete]
 		public QueryCollection Delete<TSource, TView>(params TView[] sources)
 			where TSource : new()
 			where TView : new()
@@ -522,6 +617,7 @@ namespace Silk.Data.SQL.ORM
 				.Delete<TSource, TView>(sources);
 		}
 
+		[Obsolete]
 		public QueryCollection Delete<TSource, TView>(IEnumerable<TView> sources)
 			where TSource : new()
 			where TView : new()
@@ -530,6 +626,7 @@ namespace Silk.Data.SQL.ORM
 				.Delete<TSource, TView>(sources);
 		}
 
+		[Obsolete]
 		public QueryCollection Delete<TSource>(QueryExpression where)
 			where TSource : new()
 		{
@@ -537,6 +634,7 @@ namespace Silk.Data.SQL.ORM
 				.Delete<TSource>(where);
 		}
 
+		[Obsolete]
 		public QueryCollection<TSource> Select<TSource>(QueryExpression where = null,
 			QueryExpression having = null,
 			QueryExpression[] orderBy = null,
@@ -549,6 +647,7 @@ namespace Silk.Data.SQL.ORM
 				.Select<TSource>(where, having, orderBy, groupBy, offset, limit);
 		}
 
+		[Obsolete]
 		public QueryCollection<TView> Select<TSource, TView>(QueryExpression where = null,
 			QueryExpression having = null,
 			QueryExpression[] orderBy = null,
@@ -562,6 +661,7 @@ namespace Silk.Data.SQL.ORM
 				.Select<TSource, TView>(where, having, orderBy, groupBy, offset, limit);
 		}
 
+		[Obsolete]
 		public QueryCollection<int> SelectCount<TSource>(QueryExpression where = null,
 			QueryExpression having = null,
 			QueryExpression[] groupBy = null)
@@ -571,6 +671,7 @@ namespace Silk.Data.SQL.ORM
 				.SelectCount<TSource>(where, having, groupBy);
 		}
 
+		[Obsolete]
 		public QueryCollection<int> SelectCount<TSource, TView>(QueryExpression where = null,
 			QueryExpression having = null,
 			QueryExpression[] groupBy = null)

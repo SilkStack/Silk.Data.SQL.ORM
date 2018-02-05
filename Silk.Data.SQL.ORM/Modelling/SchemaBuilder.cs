@@ -11,8 +11,8 @@ namespace Silk.Data.SQL.ORM.Modelling
 	/// </summary>
 	public abstract class SchemaBuilder
 	{
-		private readonly Dictionary<Type, TableDefinition> _entityTableDefinitions
-			= new Dictionary<Type, TableDefinition>();
+		private readonly Dictionary<Type, EntityDefinition> _entityDefinitions
+			= new Dictionary<Type, EntityDefinition>();
 
 		private readonly Dictionary<ModelField, FieldOpinions> _fieldOpinions =
 			new Dictionary<ModelField, FieldOpinions>();
@@ -33,9 +33,9 @@ namespace Silk.Data.SQL.ORM.Modelling
 
 			foreach (var kvp in modelOpinions)
 			{
-				_entityTableDefinitions.Add(
+				_entityDefinitions.Add(
 					kvp.Key.DataType,
-					new TableDefinition { EntityType = kvp.Key.DataType, IsEntityTable = true, TableName = kvp.Value.Name ?? kvp.Key.Name }
+					new EntityDefinition { EntityModel = kvp.Key, TableName = kvp.Value.Name ?? kvp.Key.Name }
 					);
 				foreach (var field in kvp.Key.Fields)
 				{
@@ -45,18 +45,40 @@ namespace Silk.Data.SQL.ORM.Modelling
 		}
 
 		/// <summary>
+		/// Gets the <see cref="EntityDefinition"/> for a given type.
+		/// </summary>
+		/// <returns>The entity tyoe's definition or null if it's not present in the domain.</returns>
+		public EntityDefinition GetEntityDefinition(Type entityType)
+		{
+			_entityDefinitions.TryGetValue(entityType, out var entityDefinition);
+			return entityDefinition;
+		}
+
+		/// <summary>
 		/// Defines a field for an entity type.
 		/// </summary>
 		/// <param name="entityModel"></param>
 		/// <param name="name"></param>
 		/// <param name="sqlDataType"></param>
-		public void DefineField(TypedModel entityModel, string name, SqlDataType sqlDataType,
-			ModelBinding binding, FieldOpinions fieldOpinions)
+		public void DefineField(TypedModel entityModel, string name,
+			SqlDataType sqlDataType, Type clrType, ModelBinding binding,
+			FieldOpinions fieldOpinions)
 		{
-			_entityTableDefinitions[entityModel.DataType].Fields.Add(
-				new ViewFieldDefinition(name, binding)
+			_entityDefinitions[entityModel.DataType].Fields.Add(
+				FieldDefinition.SimpleMappedField(name, binding, fieldOpinions, sqlDataType, clrType)
 				);
 			WasAltered = true;
+		}
+
+		/// <summary>
+		/// Gets the existing definition for a field on an entity.
+		/// </summary>
+		/// <param name="entityModel"></param>
+		/// <param name="name"></param>
+		/// <returns></returns>
+		public FieldDefinition GetDefinedField(TypedModel entityModel, string name)
+		{
+			return _entityDefinitions[entityModel.DataType].Fields.FirstOrDefault(q => q.Name == name);
 		}
 
 		/// <summary>
@@ -67,7 +89,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 		/// <returns></returns>
 		public bool IsFieldDefined(TypedModel entityModel, string name)
 		{
-			return _entityTableDefinitions[entityModel.DataType].Fields.Any(q => q.Name == name);
+			return _entityDefinitions[entityModel.DataType].Fields.Any(q => q.Name == name);
 		}
 
 		/// <summary>
@@ -80,6 +102,17 @@ namespace Silk.Data.SQL.ORM.Modelling
 			if (_fieldOpinions.TryGetValue(modelField, out var opinions))
 				return opinions;
 			return FieldOpinions.Default;
+		}
+
+		/// <summary>
+		/// Build the complete schema definition.
+		/// </summary>
+		/// <returns></returns>
+		public SchemaDefinition BuildDefinition()
+		{
+			var schemaDefinition = new SchemaDefinition();
+			schemaDefinition.Entities.AddRange(_entityDefinitions.Values);
+			return schemaDefinition;
 		}
 	}
 }

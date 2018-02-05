@@ -63,24 +63,24 @@ namespace Silk.Data.SQL.ORM
 
 		public override void DefineField(string viewFieldName, ModelBinding binding, Type fieldDataType, params object[] metadata)
 		{
-			if (_prefixStack.Count > 0)
-			{
-				viewFieldName = $"{string.Join("", _prefixStack)}{viewFieldName}";
-				binding.ModelFieldPath = _prefixStack.Concat(binding.ModelFieldPath).ToArray();
-				binding.ViewFieldPath[0] = $"{string.Join("", _prefixStack)}{binding.ViewFieldPath[0]}";
-			}
+			//if (_prefixStack.Count > 0)
+			//{
+			//	viewFieldName = $"{string.Join("", _prefixStack)}{viewFieldName}";
+			//	binding.ModelFieldPath = _prefixStack.Concat(binding.ModelFieldPath).ToArray();
+			//	binding.ViewFieldPath[0] = $"{string.Join("", _prefixStack)}{binding.ViewFieldPath[0]}";
+			//}
 
-			base.DefineField(viewFieldName, binding, fieldDataType, metadata);
+			//base.DefineField(viewFieldName, binding, fieldDataType, metadata);
 
-			if (!DomainDefinition.IsReadOnly)
-			{
-				var fieldDefinition = ViewDefinition.FieldDefinitions
-					.First(q => q.Name == viewFieldName);
+			//if (!DomainDefinition.IsReadOnly)
+			//{
+			//	var fieldDefinition = ViewDefinition.FieldDefinitions
+			//		.First(q => q.Name == viewFieldName);
 
-				var schemaDefinition = GetSchemaDefinition();
-				var entityTable = schemaDefinition.GetEntityTableDefinition(true);
-				entityTable.Fields.Add(fieldDefinition);
-			}
+			//	var schemaDefinition = GetSchemaDefinition();
+			//	var entityTable = schemaDefinition.GetEntityTableDefinition(true);
+			//	entityTable.Fields.Add(fieldDefinition);
+			//}
 		}
 
 		public override bool IsFieldDefined(string viewFieldName)
@@ -95,14 +95,14 @@ namespace Silk.Data.SQL.ORM
 
 		public void UndefineField(ViewFieldDefinition fieldDefinition)
 		{
-			ViewDefinition.FieldDefinitions.Remove(fieldDefinition);
+			//ViewDefinition.FieldDefinitions.Remove(fieldDefinition);
 
-			if (!DomainDefinition.IsReadOnly)
-			{
-				var schemaDefinition = GetSchemaDefinition();
-				var entityTable = schemaDefinition.GetEntityTableDefinition(true);
-				entityTable.Fields.Remove(fieldDefinition);
-			}
+			//if (!DomainDefinition.IsReadOnly)
+			//{
+			//	var schemaDefinition = GetSchemaDefinition();
+			//	var entityTable = schemaDefinition.GetEntityTableDefinition(true);
+			//	entityTable.Fields.Remove(fieldDefinition);
+			//}
 		}
 
 		public ViewFieldDefinition GetDefinedField(string viewFieldName)
@@ -172,22 +172,24 @@ namespace Silk.Data.SQL.ORM
 
 		public SchemaDefinition GetSchemaDefinition()
 		{
-			var schemaDefinition = GetSchemaDefinitionFor(EntityType);
-			if (schemaDefinition == null)
-			{
-				schemaDefinition = new SchemaDefinition(
-					ViewDefinition, EntityType, ProjectionType
-					);
+			return null;
+			//var schemaDefinition = GetSchemaDefinitionFor(EntityType);
+			//if (schemaDefinition == null)
+			//{
+			//	schemaDefinition = new SchemaDefinition(
+			//		ViewDefinition, EntityType, ProjectionType
+			//		);
 
-				DomainDefinition.SchemaDefinitions.Add(schemaDefinition);
-			}
-			return schemaDefinition;
+			//	DomainDefinition.SchemaDefinitions.Add(schemaDefinition);
+			//}
+			//return schemaDefinition;
 		}
 
 		public SchemaDefinition GetSchemaDefinitionFor(Type entityType)
 		{
-			return DomainDefinition
-				.SchemaDefinitions.FirstOrDefault(q => q.EntityType == entityType);
+			return null;
+			//return DomainDefinition
+			//	.SchemaDefinitions.FirstOrDefault(q => q.EntityType == entityType);
 		}
 	}
 }

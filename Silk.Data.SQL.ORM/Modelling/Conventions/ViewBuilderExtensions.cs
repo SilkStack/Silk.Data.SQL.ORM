@@ -36,23 +36,23 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 			 string[] modelBindingPath, string viewFieldName,
 			 params object[] metadata)
 		{
-			var relationshipLoader = GetRelationshipResourceLoader(viewBuilder.ViewDefinition);
-			var binding = new SingleRelatedObjectBinding(
-				fieldInfo.BindingDirection,
-				modelBindingPath,
-				new[] { fieldInfo.Field.Name },
-				new[] { relationshipLoader },
-				viewFieldName
-				);
+			//var relationshipLoader = GetRelationshipResourceLoader(viewBuilder.ViewDefinition);
+			//var binding = new SingleRelatedObjectBinding(
+			//	fieldInfo.BindingDirection,
+			//	modelBindingPath,
+			//	new[] { fieldInfo.Field.Name },
+			//	new[] { relationshipLoader },
+			//	viewFieldName
+			//	);
 
-			relationshipLoader.AddField(fieldInfo.Field, modelBindingPath[0], viewFieldName);
+			//relationshipLoader.AddField(fieldInfo.Field, modelBindingPath[0], viewFieldName);
 
-			if (!viewBuilder.DomainDefinition.IsReadOnly)
-			{
-				var tableDefinition = viewBuilder.GetSchemaDefinition().GetEntityTableDefinition();
-				tableDefinition.Indexes.Add(new TableIndexDefinition($"{modelBindingPath[0]}Id"));
-			}
-			viewBuilder.DefineField(viewFieldName, binding, fieldInfo.Field.DataType, metadata);
+			//if (!viewBuilder.DomainDefinition.IsReadOnly)
+			//{
+			//	var tableDefinition = viewBuilder.GetSchemaDefinition().GetEntityTableDefinition();
+			//	tableDefinition.Indexes.Add(new TableIndexDefinition($"{modelBindingPath[0]}Id"));
+			//}
+			//viewBuilder.DefineField(viewFieldName, binding, fieldInfo.Field.DataType, metadata);
 		}
 
 		private static RelationshipResourceLoader GetRelationshipResourceLoader(ViewDefinition viewDefinition)

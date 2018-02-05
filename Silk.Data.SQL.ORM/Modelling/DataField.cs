@@ -6,14 +6,15 @@ using System.Reflection;
 
 namespace Silk.Data.SQL.ORM.Modelling
 {
+	[Obsolete]
 	public class DataField : IViewField
 	{
 		public string Name { get; protected set; }
 		public Type DataType { get; protected set; }
 		public object[] Metadata { get; protected set; }
 		public ModelBinding ModelBinding { get; protected set; }
-		public Type RelatedEntityType { get; protected set; }
 
+		public Type RelatedEntityType { get; protected set; }
 		public DataStorage Storage { get; protected set; }
 		public DataRelationship Relationship { get; private set; }
 
