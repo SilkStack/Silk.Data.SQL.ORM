@@ -1,7 +1,9 @@
 ﻿using Silk.Data.SQL.Expressions;
+using Silk.Data.SQL.ORM.Expressions;
 using Silk.Data.SQL.ORM.Queries;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Silk.Data.SQL.ORM.NewModelling
 {
@@ -32,6 +34,7 @@ namespace Silk.Data.SQL.ORM.NewModelling
 		/// <returns></returns>
 		public ORMQuery CreateTable()
 		{
+			var queryExpression = new CompositeQueryExpression();
 			var columnDefinitions = new List<ColumnDefinitionExpression>();
 			foreach (var field in Fields)
 			{
@@ -48,9 +51,16 @@ namespace Silk.Data.SQL.ORM.NewModelling
 					QueryExpression.DefineColumn(field.Name, field.SqlType, field.IsNullable, autoIncrement, field.IsPrimaryKey)
 					);
 			}
-			return new NoResultORMQuery(
-				QueryExpression.CreateTable(TableName, columnDefinitions.ToArray())
-				);
+			queryExpression.Queries.Add(QueryExpression.CreateTable(TableName, columnDefinitions.ToArray()));
+
+			foreach (var field in Fields.Where(q => q.IsIndex))
+			{
+				queryExpression.Queries.Add(
+					QueryExpression.CreateIndex(TableName, uniqueConstraint: field.IsUnique, columns: field.Name)
+					);
+			}
+
+			return new NoResultORMQuery(queryExpression);
 		}
 
 		/// <summary>
