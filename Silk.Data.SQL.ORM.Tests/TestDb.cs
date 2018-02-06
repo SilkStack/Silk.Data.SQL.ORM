@@ -1,7 +1,10 @@
 ﻿using Silk.Data.SQL.ORM.Modelling;
 using Silk.Data.SQL.ORM.NewModelling;
+using Silk.Data.SQL.ORM.Queries;
 using Silk.Data.SQL.SQLite3;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Tests
 {
@@ -28,6 +31,16 @@ namespace Silk.Data.SQL.ORM.Tests
 			addBuildersFunc?.Invoke(builder);
 			var dataDomain = builder.Build();
 			return dataDomain.GetEntitySchema<TSource>();
+		}
+
+		public static void ExecuteSql(ORMQuery query)
+		{
+			new QueryCollection(null).NonResultQuery(query).Execute(Provider);
+		}
+
+		public static T ExecuteAndRead<T>(ORMQuery query)
+		{
+			return new QueryCollection<T>(null, new List<ORMQuery> { query }, new BasicQueryExecutor()).Execute(Provider).FirstOrDefault();
 		}
 	}
 }

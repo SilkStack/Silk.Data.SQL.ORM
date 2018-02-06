@@ -12,6 +12,7 @@ namespace Silk.Data.SQL.ORM.NewModelling
 		public Model Model { get; }
 		public IResourceLoader[] ResourceLoaders { get; set; }
 		IViewField[] IView.Fields => Fields;
+		public Table EntityTable { get; set; }
 
 		/// <summary>
 		/// Gets a collection of relationships to single objects.

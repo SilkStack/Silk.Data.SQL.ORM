@@ -1,4 +1,7 @@
-﻿using System;
+﻿using Silk.Data.SQL.Expressions;
+using Silk.Data.SQL.ORM.Queries;
+using System;
+using System.Collections.Generic;
 
 namespace Silk.Data.SQL.ORM.NewModelling
 {
@@ -21,6 +24,55 @@ namespace Silk.Data.SQL.ORM.NewModelling
 			IsEntityTable = isEntityTable;
 			EntityType = entityType;
 			Fields = dataFields;
+		}
+
+		/// <summary>
+		/// Creates an <see cref="ORMQuery"/> that will create the table when executed.
+		/// </summary>
+		/// <returns></returns>
+		public ORMQuery CreateTable()
+		{
+			var columnDefinitions = new List<ColumnDefinitionExpression>();
+			foreach (var field in Fields)
+			{
+				if (field.IsMappedObject)
+					continue;
+
+				var autoIncrement = false;
+				if (field.AutoGenerate && (field.ClrType == typeof(short) ||
+					field.ClrType == typeof(int) ||
+					field.ClrType == typeof(long)))
+					autoIncrement = true;
+
+				columnDefinitions.Add(
+					QueryExpression.DefineColumn(field.Name, field.SqlType, field.IsNullable, autoIncrement, field.IsPrimaryKey)
+					);
+			}
+			return new NoResultORMQuery(
+				QueryExpression.CreateTable(TableName, columnDefinitions.ToArray())
+				);
+		}
+
+		/// <summary>
+		/// Creates an <see cref="ORMQuery"/> that will drop the table when executed.
+		/// </summary>
+		/// <returns></returns>
+		public ORMQuery DropTable()
+		{
+			return new NoResultORMQuery(
+				QueryExpression.DropTable(TableName)
+				);
+		}
+
+		/// <summary>
+		/// Creates an <see cref="ORMQuery"/> that will test if the table exists when executed.
+		/// </summary>
+		/// <returns></returns>
+		public ORMQuery TableExists()
+		{
+			return new ScalarResultORMQuery<int>(
+				QueryExpression.TableExists(TableName)
+				);
 		}
 	}
 }

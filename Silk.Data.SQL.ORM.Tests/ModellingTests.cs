@@ -1,8 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Silk.Data.Modelling;
-using Silk.Data.SQL.ORM.Modelling;
 using System;
-using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Tests
 {

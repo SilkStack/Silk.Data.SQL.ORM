@@ -84,7 +84,8 @@ namespace Silk.Data.SQL.ORM
 			{
 				var definition = entityDefinition.Fields[i];
 				ret[i] = new NewModelling.DataField(definition.Name, definition.ClrType, definition.SqlDataType,
-					definition.Binding, definition.IsPrimaryKey, definition.AutoGenerate, definition.IsIndex, definition.IsUnique);
+					definition.Binding, definition.IsPrimaryKey, definition.AutoGenerate, definition.IsIndex,
+					definition.IsUnique, definition.IsNullable);
 			}
 			return ret;
 		}
@@ -110,9 +111,8 @@ namespace Silk.Data.SQL.ORM
 					entityDefinition.TableName, true, dataFields, entityDefinition.EntityModel.DataType
 					);
 
-				entityHelper.EntityTable = entityTable;
-				entityHelper.Tables.Add(entityTable);
 				entityHelper.EntitySchema.Fields = dataFields;
+				entityHelper.EntitySchema.EntityTable = entityTable;
 			}
 
 			return new DataDomain(_entityTypes.Values.Select(q => q.EntitySchema), projectionConventions);
@@ -183,8 +183,6 @@ namespace Silk.Data.SQL.ORM
 			public TypedModel Model { get; }
 			public ModelCustomizer Customizer { get; }
 			public NewModelling.EntitySchema EntitySchema { get; }
-			public List<NewModelling.Table> Tables { get; } = new List<NewModelling.Table>();
-			public NewModelling.Table EntityTable { get; set; }
 
 			public EntityTypeHelper(TypedModel model,
 				ModelCustomizer customizer, NewModelling.EntitySchema entitySchema)

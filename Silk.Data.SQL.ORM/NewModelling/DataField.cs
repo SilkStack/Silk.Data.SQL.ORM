@@ -56,9 +56,11 @@ namespace Silk.Data.SQL.ORM.NewModelling
 
 		public bool IsUnique { get; }
 
+		public bool IsNullable { get; }
+
 		public DataField(string name, Type clrDataType, SqlDataType sqlDataType,
 			ModelBinding modelBinding, bool isPrimaryKey, bool autoGenerate,
-			bool isIndex, bool isUnique)
+			bool isIndex, bool isUnique, bool isNullable)
 		{
 			Name = name;
 			DataType = clrDataType;
@@ -68,6 +70,7 @@ namespace Silk.Data.SQL.ORM.NewModelling
 			AutoGenerate = autoGenerate;
 			IsIndex = isIndex;
 			IsUnique = isUnique;
+			IsNullable = isNullable;
 		}
 	}
 }

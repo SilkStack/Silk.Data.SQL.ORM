@@ -1,5 +1,6 @@
 ﻿using Silk.Data.Modelling.Bindings;
 using System;
+using System.Reflection;
 
 namespace Silk.Data.SQL.ORM.Modelling
 {
@@ -46,6 +47,10 @@ namespace Silk.Data.SQL.ORM.Modelling
 		/// </summary>
 		/// <remarks>Requires <see cref="IsIndex"/> to be true.</remarks>
 		public bool IsUnique { get; set; }
+		/// <summary>
+		/// Gets or sets a value indicating if the field is nullable.
+		/// </summary>
+		public bool IsNullable { get; set; }
 
 		public static FieldDefinition SimpleMappedField(string name, ModelBinding binding, FieldOpinions opinions,
 			SqlDataType sqlDataType, Type clrType)
@@ -60,8 +65,21 @@ namespace Silk.Data.SQL.ORM.Modelling
 				IsPrimaryKey = opinions.IsPrimaryKey,
 				AutoGenerate = opinions.AutoGenerate,
 				IsIndex = opinions.IsIndex,
-				IsUnique = opinions.IsUnique
+				IsUnique = opinions.IsUnique,
+				IsNullable = TypeIsNullable(clrType)
 			};
+		}
+
+		private static bool TypeIsNullable(Type t)
+		{
+			var typeInfo = t.GetTypeInfo();
+			var isNullable = !typeInfo.IsValueType;
+			if (!isNullable)
+			{
+				isNullable = typeInfo.IsGenericType &&
+					t.GetGenericTypeDefinition() == typeof(Nullable<>);
+			}
+			return isNullable;
 		}
 	}
 }

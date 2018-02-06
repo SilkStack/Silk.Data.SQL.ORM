@@ -1,6 +1,5 @@
 ﻿using Silk.Data.Modelling;
 using Silk.Data.SQL.Expressions;
-using Silk.Data.SQL.ORM.Expressions;
 using Silk.Data.SQL.ORM.Modelling;
 using Silk.Data.SQL.Queries;
 using System;

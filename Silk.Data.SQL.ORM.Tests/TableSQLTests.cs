@@ -1,39 +1,36 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Silk.Data.SQL.ORM.Modelling;
 using System;
-using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Tests
 {
 	[TestClass]
 	public class TableSQLTests
 	{
-		private EntityModel<BasicSqlTypesModel>
-			_simpleDataModel = TestDb.CreateDomainAndModel<BasicSqlTypesModel>();
-
+		private NewModelling.EntitySchema<BasicSqlTypesModel>
+			_simpleEntitySchema = TestDb.CreateDomainAndSchema<BasicSqlTypesModel>();
 
 		[TestMethod]
 		public void CreateSimpleTable()
 		{
-			var table = _simpleDataModel.Fields.First().Storage.Table;
+			var table = _simpleEntitySchema.EntityTable;
 
-			if (table.Exists(TestDb.Provider))
-				table.Drop(TestDb.Provider);
-			table.Create(TestDb.Provider);
+			if (TestDb.ExecuteAndRead<int>(table.TableExists()) == 1)
+				TestDb.ExecuteSql(table.DropTable());
+			TestDb.ExecuteSql(table.CreateTable());
 
-			Assert.IsTrue(table.Exists(TestDb.Provider));
+			Assert.AreEqual(1, TestDb.ExecuteAndRead<int>(table.TableExists()));
 		}
 
 		[TestMethod]
 		public void DropSimpleTable()
 		{
-			var table = _simpleDataModel.Fields.First().Storage.Table;
+			var table = _simpleEntitySchema.EntityTable;
 
-			if (!table.Exists(TestDb.Provider))
-				table.Create(TestDb.Provider);
-			table.Drop(TestDb.Provider);
+			if (TestDb.ExecuteAndRead<int>(table.TableExists()) == 0)
+				TestDb.ExecuteSql(table.CreateTable());
+			TestDb.ExecuteSql(table.DropTable());
 
-			Assert.IsFalse(table.Exists(TestDb.Provider));
+			Assert.AreEqual(0, TestDb.ExecuteAndRead<int>(table.TableExists()));
 		}
 
 		private class BasicSqlTypesModel

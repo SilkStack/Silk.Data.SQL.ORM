@@ -44,17 +44,25 @@ namespace Silk.Data.SQL.ORM.NewModelling
 		Type ClrType { get; }
 
 		/// <summary>
+		/// Gets a value indicating if the field is nullable.
+		/// </summary>
+		bool IsNullable { get; }
+
+		/// <summary>
 		/// Gets a value indicating if the field is a primary key.
 		/// </summary>
 		bool IsPrimaryKey { get; }
+
 		/// <summary>
 		/// Gets a value indicating if the field's value should be auto generated.
 		/// </summary>
 		bool AutoGenerate { get; }
+
 		/// <summary>
 		/// Gets a value indicating if the field should be indexed.
 		/// </summary>
 		bool IsIndex { get; }
+
 		/// <summary>
 		/// Gets a value indicating if the field should have a UNIQUE constraint.
 		/// </summary>
