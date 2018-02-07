@@ -18,7 +18,14 @@ namespace Silk.Data.SQL.ORM.Tests
 				TestDb.ExecuteSql(table.DropTable());
 			TestDb.ExecuteSql(table.CreateTable());
 
-			Assert.AreEqual(1, TestDb.ExecuteAndRead<int>(table.TableExists()));
+			try
+			{
+				Assert.AreEqual(1, TestDb.ExecuteAndRead<int>(table.TableExists()));
+			}
+			finally
+			{
+				TestDb.ExecuteSql(table.DropTable());
+			}
 		}
 
 		[TestMethod]

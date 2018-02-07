@@ -16,6 +16,7 @@ namespace Silk.Data.SQL.ORM.NewModelling
 		public bool IsEntityTable { get; }
 		public Type EntityType { get; }
 		public IDataField[] Fields { get; }
+		public IDataField[] PrimaryKeyFields { get; }
 
 		public Table(string tableName, bool isEntityTable, IDataField[] dataFields, Type entityType)
 		{
@@ -26,6 +27,7 @@ namespace Silk.Data.SQL.ORM.NewModelling
 			IsEntityTable = isEntityTable;
 			EntityType = entityType;
 			Fields = dataFields;
+			PrimaryKeyFields = dataFields.Where(q => q.IsPrimaryKey).ToArray();
 		}
 
 		/// <summary>

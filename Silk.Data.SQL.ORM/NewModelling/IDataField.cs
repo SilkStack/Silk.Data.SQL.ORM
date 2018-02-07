@@ -59,6 +59,11 @@ namespace Silk.Data.SQL.ORM.NewModelling
 		bool AutoGenerate { get; }
 
 		/// <summary>
+		/// Gets a value indicating if the field is an auto increment field.
+		/// </summary>
+		bool IsAutoIncrement { get; }
+
+		/// <summary>
 		/// Gets a value indicating if the field should be indexed.
 		/// </summary>
 		bool IsIndex { get; }

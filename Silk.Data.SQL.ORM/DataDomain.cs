@@ -5,6 +5,7 @@ using Silk.Data.SQL.ORM.Modelling;
 using Silk.Data.SQL.ORM.Modelling.Conventions;
 using Silk.Data.SQL.ORM.NewModelling;
 using Silk.Data.SQL.ORM.Queries;
+using Silk.Data.SQL.Providers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -235,6 +236,22 @@ namespace Silk.Data.SQL.ORM
 			where T : new()
 		{
 			return GetEntitySchema(typeof(T)) as EntitySchema<T>;
+		}
+
+		/// <summary>
+		/// Creates an entity database that uses the provided <see cref="IDataProvider"/> to execute statements.
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="dataProvider"></param>
+		/// <returns></returns>
+		public IEntityDatabase<T> GetEntityDatabase<T>(IDataProvider dataProvider) where T : new()
+		{
+			if (dataProvider == null)
+				throw new ArgumentNullException(nameof(dataProvider));
+			var schema = GetEntitySchema<T>();
+			if (schema == null)
+				throw new ArgumentException($"Entity type `{typeof(T).FullName}` is not present in the domain.");
+			return new EntityDatabase<T>(schema, dataProvider);
 		}
 
 		/// <summary>

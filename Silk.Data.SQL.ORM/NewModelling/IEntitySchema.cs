@@ -10,7 +10,7 @@ namespace Silk.Data.SQL.ORM.NewModelling
 		Table EntityTable { get; }
 	}
 
-	public interface IEntitySchema<T> : IView<IDataField, T>
+	public interface IEntitySchema<T> : IEntitySchema, IView<IDataField, T>
 		where T : new()
 	{
 	}

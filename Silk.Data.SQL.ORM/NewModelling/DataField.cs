@@ -52,6 +52,8 @@ namespace Silk.Data.SQL.ORM.NewModelling
 
 		public bool AutoGenerate { get; }
 
+		public bool IsAutoIncrement => AutoGenerate && (ClrType == typeof(short) || ClrType == typeof(int) || ClrType == typeof(long));
+
 		public bool IsIndex { get; }
 
 		public bool IsUnique { get; }

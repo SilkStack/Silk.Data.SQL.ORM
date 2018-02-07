@@ -1,6 +1,7 @@
 ﻿using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Modelling;
 using Silk.Data.SQL.Providers;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -9,12 +10,22 @@ namespace Silk.Data.SQL.ORM.Queries
 	public abstract class QueryCollectionBase<TThis>
 		where TThis : QueryCollectionBase<TThis>
 	{
+		[Obsolete]
 		protected DataDomain DataDomain { get; }
 		protected TThis Self { get; }
 		protected List<ORMQuery> Queries { get; }
 
 		public IORMQueryExecutor QueryExecutor { get; set; }
 
+		protected QueryCollectionBase(List<ORMQuery> queries = null,
+			IORMQueryExecutor queryExecutor = null)
+		{
+			Self = this as TThis;
+			Queries = queries ?? new List<ORMQuery>();
+			QueryExecutor = queryExecutor ?? new BasicQueryExecutor();
+		}
+
+		[Obsolete]
 		protected QueryCollectionBase(DataDomain dataDomain,
 			List<ORMQuery> queries = null, IORMQueryExecutor queryExecutor = null)
 		{
@@ -296,6 +307,11 @@ namespace Silk.Data.SQL.ORM.Queries
 
 	public class QueryCollection : QueryCollectionBase<QueryCollection>
 	{
+		public QueryCollection()
+		{
+		}
+
+		[Obsolete]
 		public QueryCollection(DataDomain dataDomain)
 			: base(dataDomain)
 		{

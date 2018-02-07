@@ -2,6 +2,7 @@
 using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Expressions;
 using Silk.Data.SQL.ORM.Modelling;
+using Silk.Data.SQL.ORM.NewModelling;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -12,8 +13,16 @@ namespace Silk.Data.SQL.ORM.Queries
 	public class InsertQueryBuilder<TSource>
 		where TSource : new()
 	{
+		public EntitySchema<TSource> EntitySchema { get; }
+
+		public InsertQueryBuilder(EntitySchema<TSource> entitySchema)
+		{
+			EntitySchema = entitySchema;
+		}
+
 		public EntityModel<TSource> DataModel { get; }
 
+		[Obsolete]
 		public InsertQueryBuilder(EntityModel<TSource> dataModel)
 		{
 			DataModel = dataModel;
@@ -41,7 +50,104 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public ICollection<ORMQuery> CreateQuery(IEnumerable<TSource> sources)
 		{
-			return CreateQuery(DataModel, sources);
+			return CreateQuery(EntitySchema, sources);
+		}
+
+		public ICollection<ORMQuery> CreateQuery<TView>(IEntitySchema<TView> schema, IEnumerable<TView> sources)
+			where TView : new()
+		{
+			if (sources == null)
+				throw new ArgumentNullException(nameof(sources));
+
+			var sourceReadWriters = sources
+				.Select(q => new ObjectModelReadWriter(schema.Model, q))
+				.ToArray();
+
+			var queries = new List<ORMQuery>();
+
+			var bulkInserts = CreateBulkInsertQuery(schema, sourceReadWriters);
+			if (bulkInserts != null)
+				queries.Add(bulkInserts);
+
+			return queries;
+		}
+
+		private ORMQuery CreateBulkInsertQuery<TView>(IEntitySchema<TView> schema, ObjectModelReadWriter[] sources)
+			where TView : new()
+		{
+			List<QueryExpression[]> rows = null;
+
+			foreach (var source in sources)
+			{
+				var row = new List<QueryExpression>(schema.Fields.Length);
+				var rowIsAutoIncrement = false;
+
+				foreach (var field in schema.Fields)
+				{
+					if (field.IsMappedObject)
+						continue;
+
+					var modelValue = field.ModelBinding.ReadValue<object>(source);
+
+					if (field.AutoGenerate)
+					{
+						if (field.IsAutoIncrement && ValueIsDefault(field, modelValue))
+						{
+							rowIsAutoIncrement = true;
+							break;
+						}
+
+						if (field.DataType == typeof(Guid) && ValueIsDefault(field, modelValue))
+						{
+							var newId = Guid.NewGuid();
+							field.ModelBinding.WriteValue(source, newId);
+							modelValue = newId;
+						}
+					}
+
+					row.Add(QueryExpression.Value(
+						modelValue
+						));
+				}
+
+				if (!rowIsAutoIncrement)
+				{
+					if (rows == null)
+						rows = new List<QueryExpression[]>();
+					rows.Add(row.ToArray());
+				}
+			}
+
+			if (rows == null)
+				return null;
+
+			return new NoResultORMQuery(
+				QueryExpression.Insert(
+					schema.EntityTable.TableName,
+					schema.Fields
+						.Where(q => !q.IsMappedObject)
+						.Select(q => q.Name).ToArray(),
+					rows.ToArray()
+				));
+		}
+
+		private bool ValueIsDefault(IDataField field, object value)
+		{
+			if (field.DataType == typeof(short))
+				return (short)value == 0;
+			if (field.DataType == typeof(ushort))
+				return (ushort)value == 0;
+			if (field.DataType == typeof(int))
+				return (int)value == 0;
+			if (field.DataType == typeof(uint))
+				return (uint)value == 0;
+			if (field.DataType == typeof(long))
+				return (long)value == 0;
+			if (field.DataType == typeof(ulong))
+				return (ulong)value == 0;
+			if (field.DataType == typeof(Guid))
+				return (Guid)value == default(Guid);
+			return false;
 		}
 
 		private ICollection<ORMQuery> CreateQuery<TView>(EntityModel<TView> model, IEnumerable<TView> sources)

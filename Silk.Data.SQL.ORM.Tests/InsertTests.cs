@@ -11,13 +11,13 @@ namespace Silk.Data.SQL.ORM.Tests
 		[TestMethod]
 		public void InsertGuidSimpleModel()
 		{
-			var dataModel = TestDb.CreateDomainAndModel<BasicPocoWithGuidId>();
+			var entitySchema = TestDb.CreateDomainAndSchema<BasicPocoWithGuidId>();
+			var table = entitySchema.EntityTable;
+			var database = new EntityDatabase<BasicPocoWithGuidId>(entitySchema, TestDb.Provider);
 
-			foreach (var table in dataModel.Schema.Tables)
-			{
-				if (!table.Exists(TestDb.Provider))
-					table.Create(TestDb.Provider);
-			}
+			if (TestDb.ExecuteAndRead<int>(table.TableExists()) == 1)
+				TestDb.ExecuteSql(table.DropTable());
+			TestDb.ExecuteSql(table.CreateTable());
 
 			var sourceInstances = new[]
 			{
@@ -25,43 +25,46 @@ namespace Silk.Data.SQL.ORM.Tests
 				new BasicPocoWithGuidId { Data = "Hello World 2" },
 				new BasicPocoWithGuidId { Data = "Hello World 3" }
 			};
-			dataModel.Domain.Insert(sourceInstances)
-				.Execute(TestDb.Provider);
 
-			Assert.AreNotEqual(sourceInstances[0].Id, Guid.Empty);
-			Assert.AreNotEqual(sourceInstances[1].Id, Guid.Empty);
-			Assert.AreNotEqual(sourceInstances[2].Id, Guid.Empty);
+			try
+			{
+				database.Insert(sourceInstances).Execute();
 
-			using (var queryResult = TestDb.Provider.ExecuteReader(
-				QueryExpression.Select(
-					new[] { QueryExpression.All() },
-					from: QueryExpression.Table(dataModel.Schema.Tables.First().TableName),
-					where: QueryExpression.Compare(QueryExpression.Column("Id"), ComparisonOperator.None, QueryExpression.InFunction(sourceInstances.Select(q => (object)q.Id).ToArray())),
-					orderBy: new[] {
+				Assert.AreNotEqual(sourceInstances[0].Id, Guid.Empty);
+				Assert.AreNotEqual(sourceInstances[1].Id, Guid.Empty);
+				Assert.AreNotEqual(sourceInstances[2].Id, Guid.Empty);
+
+				using (var queryResult = TestDb.Provider.ExecuteReader(
+					QueryExpression.Select(
+						new[] { QueryExpression.All() },
+						from: QueryExpression.Table(table.TableName),
+						where: QueryExpression.Compare(QueryExpression.Column("Id"), ComparisonOperator.None, QueryExpression.InFunction(sourceInstances.Select(q => (object)q.Id).ToArray())),
+						orderBy: new[] {
 						QueryExpression.Descending(QueryExpression.Compare(QueryExpression.Column("Id"), ComparisonOperator.AreEqual, QueryExpression.Value(sourceInstances[0].Id))),
 						QueryExpression.Descending(QueryExpression.Compare(QueryExpression.Column("Id"), ComparisonOperator.AreEqual, QueryExpression.Value(sourceInstances[1].Id))),
 						QueryExpression.Descending(QueryExpression.Compare(QueryExpression.Column("Id"), ComparisonOperator.AreEqual, QueryExpression.Value(sourceInstances[2].Id)))
-					}
-				)))
-			{
-				Assert.IsTrue(queryResult.HasRows);
+						}
+					)))
+				{
+					Assert.IsTrue(queryResult.HasRows);
 
-				Assert.IsTrue(queryResult.Read());
-				Assert.AreEqual(sourceInstances[0].Id, queryResult.GetGuid(0));
-				Assert.AreEqual(sourceInstances[0].Data, queryResult.GetString(1));
+					Assert.IsTrue(queryResult.Read());
+					Assert.AreEqual(sourceInstances[0].Id, queryResult.GetGuid(0));
+					Assert.AreEqual(sourceInstances[0].Data, queryResult.GetString(1));
 
-				Assert.IsTrue(queryResult.Read());
-				Assert.AreEqual(sourceInstances[1].Id, queryResult.GetGuid(0));
-				Assert.AreEqual(sourceInstances[1].Data, queryResult.GetString(1));
+					Assert.IsTrue(queryResult.Read());
+					Assert.AreEqual(sourceInstances[1].Id, queryResult.GetGuid(0));
+					Assert.AreEqual(sourceInstances[1].Data, queryResult.GetString(1));
 
-				Assert.IsTrue(queryResult.Read());
-				Assert.AreEqual(sourceInstances[2].Id, queryResult.GetGuid(0));
-				Assert.AreEqual(sourceInstances[2].Data, queryResult.GetString(1));
+					Assert.IsTrue(queryResult.Read());
+					Assert.AreEqual(sourceInstances[2].Id, queryResult.GetGuid(0));
+					Assert.AreEqual(sourceInstances[2].Data, queryResult.GetString(1));
+				}
+
 			}
-
-			foreach (var table in dataModel.Schema.Tables)
+			finally
 			{
-				table.Drop(TestDb.Provider);
+				TestDb.ExecuteSql(table.DropTable());
 			}
 		}
 
