@@ -248,28 +248,24 @@ namespace Silk.Data.SQL.ORM.Modelling
 
 		public IEnumerable<ORMQuery> Insert(params TSource[] sources)
 		{
-			return new InsertQueryBuilder<TSource>(this)
-				.CreateQuery(sources);
+			throw new NotImplementedException();
 		}
 
 		public IEnumerable<ORMQuery> Insert(IEnumerable<TSource> sources)
 		{
-			return new InsertQueryBuilder<TSource>(this)
-				.CreateQuery(sources);
+			throw new NotImplementedException();
 		}
 
 		public IEnumerable<ORMQuery> Insert<TView>(params TView[] sources)
 			where TView : new()
 		{
-			return new InsertQueryBuilder<TSource>(this)
-				.CreateQuery(sources);
+			throw new NotImplementedException();
 		}
 
 		public IEnumerable<ORMQuery> Insert<TView>(IEnumerable<TView> sources)
 			where TView : new()
 		{
-			return new InsertQueryBuilder<TSource>(this)
-				.CreateQuery(sources);
+			throw new NotImplementedException();
 		}
 
 		public IEnumerable<ORMQuery> Update(params TSource[] sources)

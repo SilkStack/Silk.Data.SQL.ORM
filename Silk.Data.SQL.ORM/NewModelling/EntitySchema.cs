@@ -24,6 +24,21 @@ namespace Silk.Data.SQL.ORM.NewModelling
 		{
 			Model = model;
 		}
+
+		/// <summary>
+		/// Gets a projected view of the schema that can be used in queries.
+		/// </summary>
+		/// <param name="model"></param>
+		/// <returns></returns>
+		public abstract Projection GetProjection(Model model);
+
+		/// <summary>
+		/// Gets a projected view of the schema that can be used in queries.
+		/// </summary>
+		/// <typeparam name="TProjection"></typeparam>
+		/// <returns></returns>
+		public abstract Projection<TProjection> GetProjection<TProjection>()
+			where TProjection : new();
 	}
 
 	public class EntitySchema<T> : EntitySchema, IEntitySchema<T>
@@ -34,6 +49,16 @@ namespace Silk.Data.SQL.ORM.NewModelling
 		public EntitySchema(TypedModel<T> model) : base(model)
 		{
 			Model = model;
+		}
+
+		public override Projection GetProjection(Model model)
+		{
+			throw new System.NotImplementedException();
+		}
+
+		public override Projection<TProjection> GetProjection<TProjection>()
+		{
+			throw new System.NotImplementedException();
 		}
 	}
 }
