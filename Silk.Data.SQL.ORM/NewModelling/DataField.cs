@@ -46,13 +46,11 @@ namespace Silk.Data.SQL.ORM.NewModelling
 
 		public SqlDataType SqlType { get; }
 
-		public Type ClrType { get; }
-
 		public bool IsPrimaryKey { get; }
 
 		public bool AutoGenerate { get; }
 
-		public bool IsAutoIncrement => AutoGenerate && (ClrType == typeof(short) || ClrType == typeof(int) || ClrType == typeof(long));
+		public bool IsAutoIncrement => AutoGenerate && (DataType == typeof(short) || DataType == typeof(int) || DataType == typeof(long));
 
 		public bool IsIndex { get; }
 

@@ -39,11 +39,6 @@ namespace Silk.Data.SQL.ORM.NewModelling
 		SqlDataType SqlType { get; }
 
 		/// <summary>
-		/// Gets the field's native CLR type.
-		/// </summary>
-		Type ClrType { get; }
-
-		/// <summary>
 		/// Gets a value indicating if the field is nullable.
 		/// </summary>
 		bool IsNullable { get; }

@@ -44,11 +44,11 @@ namespace Silk.Data.SQL.ORM.Queries
 
 	public class AssignAutoIncrementORMQuery : ORMQuery
 	{
-		private readonly DataField _field;
+		private readonly NewModelling.IDataField _field;
 		private readonly IContainerReadWriter _containerReadWriter;
 
 		public AssignAutoIncrementORMQuery(QueryExpression query, Type mapToType,
-			DataField field, IContainerReadWriter containerReadWriter)
+			NewModelling.IDataField field, IContainerReadWriter containerReadWriter)
 			: base(query, mapToType)
 		{
 			_field = field;

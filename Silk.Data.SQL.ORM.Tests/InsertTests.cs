@@ -71,57 +71,58 @@ namespace Silk.Data.SQL.ORM.Tests
 		[TestMethod]
 		public void InsertIntSimpleModel()
 		{
-			var dataModel = TestDb.CreateDomainAndModel<BasicPocoWithIntId>();
+			var entitySchema = TestDb.CreateDomainAndSchema<BasicPocoWithIntId>();
+			var table = entitySchema.EntityTable;
+			var database = new EntityDatabase<BasicPocoWithIntId>(entitySchema, TestDb.Provider);
 
-			foreach (var table in dataModel.Schema.Tables)
+			if (TestDb.ExecuteAndRead<int>(table.TableExists()) == 1)
+				TestDb.ExecuteSql(table.DropTable());
+			TestDb.ExecuteSql(table.CreateTable());
+
+			try
 			{
-				if (!table.Exists(TestDb.Provider))
-					table.Create(TestDb.Provider);
-			}
+				var sourceInstances = new[]
+				{
+					new BasicPocoWithIntId { Data = "Hello World 1" },
+					new BasicPocoWithIntId { Data = "Hello World 2" },
+					new BasicPocoWithIntId { Data = "Hello World 3" }
+				};
+				database.Insert(sourceInstances).Execute();
 
-			var sourceInstances = new[]
-			{
-				new BasicPocoWithIntId { Data = "Hello World 1" },
-				new BasicPocoWithIntId { Data = "Hello World 2" },
-				new BasicPocoWithIntId { Data = "Hello World 3" }
-			};
-			dataModel.Domain.Insert(sourceInstances)
-				.Execute(TestDb.Provider);
+				Assert.AreNotEqual(sourceInstances[0].Id, 0);
+				Assert.AreNotEqual(sourceInstances[1].Id, 0);
+				Assert.AreNotEqual(sourceInstances[2].Id, 0);
 
-			Assert.AreNotEqual(sourceInstances[0].Id, 0);
-			Assert.AreNotEqual(sourceInstances[1].Id, 0);
-			Assert.AreNotEqual(sourceInstances[2].Id, 0);
-
-			using (var queryResult = TestDb.Provider.ExecuteReader(
-				QueryExpression.Select(
-					new[] { QueryExpression.All() },
-					from: QueryExpression.Table(dataModel.Schema.Tables.First().TableName),
-					where: QueryExpression.Compare(QueryExpression.Column("Id"), ComparisonOperator.None, QueryExpression.InFunction(sourceInstances.Select(q => (object)q.Id).ToArray())),
-					orderBy: new[] {
+				using (var queryResult = TestDb.Provider.ExecuteReader(
+					QueryExpression.Select(
+						new[] { QueryExpression.All() },
+						from: QueryExpression.Table(table.TableName),
+						where: QueryExpression.Compare(QueryExpression.Column("Id"), ComparisonOperator.None, QueryExpression.InFunction(sourceInstances.Select(q => (object)q.Id).ToArray())),
+						orderBy: new[] {
 						QueryExpression.Descending(QueryExpression.Compare(QueryExpression.Column("Id"), ComparisonOperator.AreEqual, QueryExpression.Value(sourceInstances[0].Id))),
 						QueryExpression.Descending(QueryExpression.Compare(QueryExpression.Column("Id"), ComparisonOperator.AreEqual, QueryExpression.Value(sourceInstances[1].Id))),
 						QueryExpression.Descending(QueryExpression.Compare(QueryExpression.Column("Id"), ComparisonOperator.AreEqual, QueryExpression.Value(sourceInstances[2].Id)))
-					}
-				)))
-			{
-				Assert.IsTrue(queryResult.HasRows);
+						}
+					)))
+				{
+					Assert.IsTrue(queryResult.HasRows);
 
-				Assert.IsTrue(queryResult.Read());
-				Assert.AreEqual(sourceInstances[0].Id, queryResult.GetInt32(0));
-				Assert.AreEqual(sourceInstances[0].Data, queryResult.GetString(1));
+					Assert.IsTrue(queryResult.Read());
+					Assert.AreEqual(sourceInstances[0].Id, queryResult.GetInt32(0));
+					Assert.AreEqual(sourceInstances[0].Data, queryResult.GetString(1));
 
-				Assert.IsTrue(queryResult.Read());
-				Assert.AreEqual(sourceInstances[1].Id, queryResult.GetInt32(0));
-				Assert.AreEqual(sourceInstances[1].Data, queryResult.GetString(1));
+					Assert.IsTrue(queryResult.Read());
+					Assert.AreEqual(sourceInstances[1].Id, queryResult.GetInt32(0));
+					Assert.AreEqual(sourceInstances[1].Data, queryResult.GetString(1));
 
-				Assert.IsTrue(queryResult.Read());
-				Assert.AreEqual(sourceInstances[2].Id, queryResult.GetInt32(0));
-				Assert.AreEqual(sourceInstances[2].Data, queryResult.GetString(1));
+					Assert.IsTrue(queryResult.Read());
+					Assert.AreEqual(sourceInstances[2].Id, queryResult.GetInt32(0));
+					Assert.AreEqual(sourceInstances[2].Data, queryResult.GetString(1));
+				}
 			}
-
-			foreach (var table in dataModel.Schema.Tables)
+			finally
 			{
-				table.Drop(TestDb.Provider);
+				TestDb.ExecuteSql(table.DropTable());
 			}
 		}
 

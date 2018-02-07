@@ -69,6 +69,10 @@ namespace Silk.Data.SQL.ORM.Queries
 			if (bulkInserts != null)
 				queries.Add(bulkInserts);
 
+			var autoIncInserts = CreateAutoIncrementQueries(schema, sourceReadWriters);
+			if (autoIncInserts != null)
+				queries.AddRange(autoIncInserts);
+
 			return queries;
 		}
 
@@ -105,9 +109,18 @@ namespace Silk.Data.SQL.ORM.Queries
 						}
 					}
 
-					row.Add(QueryExpression.Value(
-						modelValue
-						));
+					if (field.IsRelationshipKey)
+					{
+						row.Add(new LateReadValueExpression(() =>
+							field.ModelBinding.ReadValue<object>(source)
+							));
+					}
+					else
+					{
+						row.Add(QueryExpression.Value(
+							modelValue
+							));
+					}
 				}
 
 				if (!rowIsAutoIncrement)
@@ -129,6 +142,74 @@ namespace Silk.Data.SQL.ORM.Queries
 						.Select(q => q.Name).ToArray(),
 					rows.ToArray()
 				));
+		}
+
+		private ICollection<ORMQuery> CreateAutoIncrementQueries<TView>(IEntitySchema<TView> schema, ObjectModelReadWriter[] sources)
+			where TView : new()
+		{
+			var autoIncField = schema.EntityTable.PrimaryKeyFields.FirstOrDefault(q => q.IsAutoIncrement);
+			if (autoIncField == null)
+				return null;
+
+			List<ORMQuery> queries = null;
+
+			foreach (var source in sources)
+			{
+				var rowIsAutoIncrement = false;
+				var row = new List<QueryExpression>();
+
+				foreach (var field in schema.Fields)
+				{
+					if (field.IsMappedObject)
+						continue;
+
+					var modelValue = field.ModelBinding.ReadValue<object>(source);
+
+					if (field.IsAutoIncrement)
+					{
+						rowIsAutoIncrement = ValueIsDefault(field, modelValue);
+						if (!rowIsAutoIncrement)
+							break;
+
+						continue;
+					}
+
+					if (field.IsRelationshipKey)
+					{
+						row.Add(new LateReadValueExpression(() =>
+							field.ModelBinding.ReadValue<object>(source)
+							));
+					}
+					else
+					{
+						row.Add(QueryExpression.Value(
+							modelValue
+							));
+					}
+				}
+
+				if (rowIsAutoIncrement)
+				{
+					if (queries == null)
+						queries = new List<ORMQuery>();
+
+					queries.Add(new NoResultORMQuery(
+						QueryExpression.Insert(
+							schema.EntityTable.TableName,
+							schema.Fields
+								.Where(q => !q.IsMappedObject && !q.IsAutoIncrement)
+								.Select(q => q.Name).ToArray(),
+							row.ToArray()
+						)));
+
+					queries.Add(new AssignAutoIncrementORMQuery(
+						QueryExpression.Select(new[] {
+							QueryExpression.LastInsertIdFunction()
+						}), autoIncField.DataType, autoIncField, source));
+				}
+			}
+
+			return queries;
 		}
 
 		private bool ValueIsDefault(IDataField field, object value)
@@ -216,7 +297,7 @@ namespace Silk.Data.SQL.ORM.Queries
 					queries.Add(new AssignAutoIncrementORMQuery(
 						QueryExpression.Select(new[] {
 							QueryExpression.LastInsertIdFunction()
-						}), autoIncField.DataType, autoIncField, sourceReadWriter));
+						}), autoIncField.DataType, null, sourceReadWriter));
 				}
 			}
 

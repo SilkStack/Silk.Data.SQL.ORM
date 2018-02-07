@@ -44,9 +44,9 @@ namespace Silk.Data.SQL.ORM.NewModelling
 					continue;
 
 				var autoIncrement = false;
-				if (field.AutoGenerate && (field.ClrType == typeof(short) ||
-					field.ClrType == typeof(int) ||
-					field.ClrType == typeof(long)))
+				if (field.AutoGenerate && (field.DataType == typeof(short) ||
+					field.DataType == typeof(int) ||
+					field.DataType == typeof(long)))
 					autoIncrement = true;
 
 				columnDefinitions.Add(
