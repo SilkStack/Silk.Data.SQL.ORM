@@ -1,6 +1,7 @@
 ﻿using Silk.Data.Modelling;
 using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Modelling;
+using Silk.Data.SQL.ORM.NewModelling;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,33 +11,94 @@ namespace Silk.Data.SQL.ORM.Queries
 	public class DeleteQueryBuilder<TSource>
 		where TSource : new()
 	{
-		public EntityModel<TSource> DataModel { get; }
+		public EntitySchema<TSource> EntitySchema { get; }
 
-		public DeleteQueryBuilder(EntityModel<TSource> dataModel)
+		public DeleteQueryBuilder(EntitySchema<TSource> entitySchema)
 		{
-			DataModel = dataModel;
+			EntitySchema = entitySchema;
 		}
 
 		public ICollection<ORMQuery> CreateQuery(params TSource[] sources)
 		{
-			return CreateQuery(DataModel, sources);
+			return CreateQuery(EntitySchema, sources);
 		}
 
 		public ICollection<ORMQuery> CreateQuery(IEnumerable<TSource> sources)
 		{
-			return CreateQuery(DataModel, sources);
+			return CreateQuery(EntitySchema, sources);
 		}
 
 		public ICollection<ORMQuery> CreateQuery<TView>(params TView[] sources)
 			where TView : new()
 		{
-			return CreateQuery(DataModel.Domain.GetProjectionModel<TSource,TView>(), sources);
+			return CreateQuery(EntitySchema.GetProjection<TView>(), sources);
 		}
 
 		public ICollection<ORMQuery> CreateQuery<TView>(IEnumerable<TView> sources)
 			where TView : new()
 		{
-			return CreateQuery(DataModel.Domain.GetProjectionModel<TSource, TView>(), sources);
+			return CreateQuery(EntitySchema.GetProjection<TView>(), sources);
+		}
+
+		public ICollection<ORMQuery> CreateQuery<TView>(IEntitySchema<TView> schema, IEnumerable<TView> sources)
+			where TView : new()
+		{
+			if (schema.EntityTable.PrimaryKeyFields.Length == 0)
+				throw new InvalidOperationException("Entities require a primary key to be deleted.");
+
+			var primaryKeyFields = GetPrimaryKeyFields(schema);
+
+			var sourceReadWriters = sources
+				.Select(q => new ObjectModelReadWriter(schema.Model, q))
+				.ToArray();
+
+			QueryExpression whereExpr = null;
+			foreach (var source in sourceReadWriters)
+			{
+				QueryExpression sourceWhere = null;
+				foreach (var field in primaryKeyFields)
+				{
+					var pkCondition = QueryExpression.Compare(
+						QueryExpression.Column(field.Name),
+						ComparisonOperator.AreEqual,
+						QueryExpression.Value(field.ModelBinding.ReadValue<object>(source))
+						);
+
+					if (sourceWhere == null)
+						sourceWhere = pkCondition;
+					else
+						sourceWhere = QueryExpression.AndAlso(sourceWhere, pkCondition);
+				}
+				if (whereExpr == null)
+					whereExpr = sourceWhere;
+				else
+					whereExpr = QueryExpression.OrElse(whereExpr, sourceWhere);
+			}
+
+			return new ORMQuery[] {
+				new NoResultORMQuery(
+					QueryExpression.Delete(
+						QueryExpression.Table(schema.EntityTable.TableName),
+						whereConditions: whereExpr
+					)
+				)
+			};
+		}
+
+		private IDataField[] GetPrimaryKeyFields(IEntitySchema schema)
+		{
+			var tablePrimaryKeyFields = schema.EntityTable.PrimaryKeyFields;
+			var ret = new IDataField[tablePrimaryKeyFields.Length];
+			for (var i = 0; i < ret.Length; i++)
+			{
+				var foundField = schema.Fields.FirstOrDefault(q => q.ModelBinding.ViewFieldPath.SequenceEqual(
+					tablePrimaryKeyFields[i].ModelBinding.ViewFieldPath
+					));
+				if (foundField == null)
+					throw new InvalidOperationException("A primary key is missing from the projection.");
+				ret[i] = foundField;
+			}
+			return ret;
 		}
 
 		private ICollection<ORMQuery> CreateQuery<TView>(EntityModel<TView> model, IEnumerable<TView> sources)
@@ -135,7 +197,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			{
 				new NoResultORMQuery(
 					QueryExpression.Delete(
-						QueryExpression.Table(DataModel.Schema.EntityTable.TableName),
+						QueryExpression.Table(EntitySchema.EntityTable.TableName),
 						whereConditions: where
 					))
 			};

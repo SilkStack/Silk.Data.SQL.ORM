@@ -296,34 +296,29 @@ namespace Silk.Data.SQL.ORM.Modelling
 
 		public IEnumerable<ORMQuery> Delete(params TSource[] sources)
 		{
-			return new DeleteQueryBuilder<TSource>(this)
-				.CreateQuery(sources);
+			throw new NotImplementedException();
 		}
 
 		public IEnumerable<ORMQuery> Delete(IEnumerable<TSource> sources)
 		{
-			return new DeleteQueryBuilder<TSource>(this)
-				.CreateQuery(sources);
+			throw new NotImplementedException();
 		}
 
 		public IEnumerable<ORMQuery> Delete<TView>(params TView[] sources)
 			where TView : new()
 		{
-			return new DeleteQueryBuilder<TSource>(this)
-				.CreateQuery(sources);
+			throw new NotImplementedException();
 		}
 
 		public IEnumerable<ORMQuery> Delete<TView>(IEnumerable<TView> sources)
 			where TView : new()
 		{
-			return new DeleteQueryBuilder<TSource>(this)
-				.CreateQuery(sources);
+			throw new NotImplementedException();
 		}
 
 		public IEnumerable<ORMQuery> Delete(QueryExpression where = null)
 		{
-			return new DeleteQueryBuilder<TSource>(this)
-				.CreateQuery(where: where);
+			throw new NotImplementedException();
 		}
 
 		public ConditionExpression<TSource> Where(Expression<Func<TSource, bool>> expression)

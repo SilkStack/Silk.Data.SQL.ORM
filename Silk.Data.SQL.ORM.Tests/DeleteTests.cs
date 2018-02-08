@@ -12,13 +12,13 @@ namespace Silk.Data.SQL.ORM.Tests
 		[TestMethod]
 		public void DeleteSimpleModel()
 		{
-			var dataModel = TestDb.CreateDomainAndModel<BasicPocoWithGuidId>();
+			var entitySchema = TestDb.CreateDomainAndSchema<BasicPocoWithGuidId>();
+			var table = entitySchema.EntityTable;
+			var database = new EntityDatabase<BasicPocoWithGuidId>(entitySchema, TestDb.Provider);
 
-			foreach (var table in dataModel.Schema.Tables)
-			{
-				if (!table.Exists(TestDb.Provider))
-					table.Create(TestDb.Provider);
-			}
+			if (TestDb.ExecuteAndRead<int>(table.TableExists()) == 1)
+				TestDb.ExecuteSql(table.DropTable());
+			TestDb.ExecuteSql(table.CreateTable());
 
 			try
 			{
@@ -28,15 +28,13 @@ namespace Silk.Data.SQL.ORM.Tests
 					new BasicPocoWithGuidId { Data = "Hello World 2" },
 					new BasicPocoWithGuidId { Data = "Hello World 3" }
 				};
-				dataModel.Domain.Insert(sourceInstances)
-					.Execute(TestDb.Provider);
-				dataModel.Domain.Delete(sourceInstances)
-					.Execute(TestDb.Provider);
+				database.Insert(sourceInstances).Execute();
+				database.Delete(sourceInstances).Execute();
 
 				using (var queryResult = TestDb.Provider.ExecuteReader(
 					QueryExpression.Select(
 						new[] { QueryExpression.All() },
-						from: QueryExpression.Table(dataModel.Schema.Tables.First().TableName),
+						from: QueryExpression.Table(table.TableName),
 						where: QueryExpression.Compare(QueryExpression.Column("Id"), ComparisonOperator.None, QueryExpression.InFunction(sourceInstances.Select(q => (object)q.Id).ToArray()))
 					)))
 				{
@@ -45,23 +43,20 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 			finally
 			{
-				foreach (var table in dataModel.Schema.Tables)
-				{
-					table.Drop(TestDb.Provider);
-				}
+				TestDb.ExecuteSql(table.DropTable());
 			}
 		}
 
 		[TestMethod]
 		public async Task DeleteAll()
 		{
-			var dataModel = TestDb.CreateDomainAndModel<BasicPocoWithGuidId>();
+			var entitySchema = TestDb.CreateDomainAndSchema<BasicPocoWithGuidId>();
+			var table = entitySchema.EntityTable;
+			var database = new EntityDatabase<BasicPocoWithGuidId>(entitySchema, TestDb.Provider);
 
-			foreach (var table in dataModel.Schema.Tables)
-			{
-				if (!table.Exists(TestDb.Provider))
-					await table.CreateAsync(TestDb.Provider);
-			}
+			if (TestDb.ExecuteAndRead<int>(table.TableExists()) == 1)
+				TestDb.ExecuteSql(table.DropTable());
+			TestDb.ExecuteSql(table.CreateTable());
 
 			try
 			{
@@ -71,15 +66,13 @@ namespace Silk.Data.SQL.ORM.Tests
 					new BasicPocoWithGuidId { Data = "Hello World 2" },
 					new BasicPocoWithGuidId { Data = "Hello World 3" }
 				};
-				await dataModel.Domain.Insert(sourceInstances)
-					.ExecuteAsync(TestDb.Provider);
-				await dataModel.Domain.Delete<BasicPocoWithGuidId>()
-					.ExecuteAsync(TestDb.Provider);
+				await database.Insert(sourceInstances).ExecuteAsync();
+				await database.Delete().ExecuteAsync();
 
 				using (var queryResult = TestDb.Provider.ExecuteReader(
 					QueryExpression.Select(
 						new[] { QueryExpression.All() },
-						from: QueryExpression.Table(dataModel.Schema.Tables.First().TableName),
+						from: QueryExpression.Table(table.TableName),
 						where: QueryExpression.Compare(QueryExpression.Column("Id"), ComparisonOperator.None, QueryExpression.InFunction(sourceInstances.Select(q => (object)q.Id).ToArray()))
 					)))
 				{
@@ -88,23 +81,20 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 			finally
 			{
-				foreach (var table in dataModel.Schema.Tables)
-				{
-					await table.DropAsync(TestDb.Provider);
-				}
+				TestDb.ExecuteSql(table.DropTable());
 			}
 		}
 
 		[TestMethod]
 		public async Task DeleteWithWhere()
 		{
-			var dataModel = TestDb.CreateDomainAndModel<BasicPocoWithGuidId>();
+			var entitySchema = TestDb.CreateDomainAndSchema<BasicPocoWithGuidId>();
+			var table = entitySchema.EntityTable;
+			var database = new EntityDatabase<BasicPocoWithGuidId>(entitySchema, TestDb.Provider);
 
-			foreach (var table in dataModel.Schema.Tables)
-			{
-				if (!table.Exists(TestDb.Provider))
-					await table.CreateAsync(TestDb.Provider);
-			}
+			if (TestDb.ExecuteAndRead<int>(table.TableExists()) == 1)
+				TestDb.ExecuteSql(table.DropTable());
+			TestDb.ExecuteSql(table.CreateTable());
 
 			try
 			{
@@ -114,19 +104,18 @@ namespace Silk.Data.SQL.ORM.Tests
 					new BasicPocoWithGuidId { Data = "Hello World 2" },
 					new BasicPocoWithGuidId { Data = "Hello World 3" }
 				};
-				await dataModel.Domain.Insert(sourceInstances)
-					.ExecuteAsync(TestDb.Provider);
-				await dataModel.Domain.Delete<BasicPocoWithGuidId>(
-					QueryExpression.Compare(
+				await database.Insert(sourceInstances).ExecuteAsync();
+				await database.Delete(
+					where: QueryExpression.Compare(
 						QueryExpression.Column("Id"),
 						ComparisonOperator.AreEqual,
 						QueryExpression.Value(sourceInstances[0].Id)
-					)).ExecuteAsync(TestDb.Provider);
+					)).ExecuteAsync();
 
 				using (var queryResult = TestDb.Provider.ExecuteReader(
 					QueryExpression.Select(
 						new[] { QueryExpression.All() },
-						from: QueryExpression.Table(dataModel.Schema.Tables.First().TableName),
+						from: QueryExpression.Table(table.TableName),
 						where: QueryExpression.Compare(QueryExpression.Column("Id"), ComparisonOperator.None, QueryExpression.InFunction(sourceInstances.Select(q => (object)q.Id).ToArray()))
 					)))
 				{
@@ -140,10 +129,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 			finally
 			{
-				foreach (var table in dataModel.Schema.Tables)
-				{
-					await table.DropAsync(TestDb.Provider);
-				}
+				TestDb.ExecuteSql(table.DropTable());
 			}
 		}
 

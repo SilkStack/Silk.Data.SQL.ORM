@@ -26,6 +26,17 @@ namespace Silk.Data.SQL.ORM
 			}
 		}
 
+		private DeleteQueryBuilder<T> _deleteQueryBuilder;
+		protected DeleteQueryBuilder<T> DeleteQueryBuilder
+		{
+			get
+			{
+				if (_deleteQueryBuilder == null)
+					_deleteQueryBuilder = new DeleteQueryBuilder<T>(EntitySchema);
+				return _deleteQueryBuilder;
+			}
+		}
+
 		public EntityDatabase(EntitySchema<T> entitySchema, IDataProvider dataProvider)
 		{
 			EntitySchema = entitySchema;
@@ -55,27 +66,39 @@ namespace Silk.Data.SQL.ORM
 
 		public IEntityDatabase<T> Delete(params T[] sources)
 		{
-			throw new System.NotImplementedException();
+			_queryCollection = _queryCollection.NonResultQuery(
+				DeleteQueryBuilder.CreateQuery(sources).ToArray()
+				);
+			return this;
 		}
 
 		public IEntityDatabase<T> Delete<TProjection>(params TProjection[] sources) where TProjection : new()
 		{
-			throw new System.NotImplementedException();
+			_queryCollection = _queryCollection.NonResultQuery(
+				DeleteQueryBuilder.CreateQuery(sources).ToArray()
+				);
+			return this;
 		}
 
 		public IEntityDatabase<T> Delete(QueryExpression where)
 		{
-			throw new System.NotImplementedException();
+			_queryCollection = _queryCollection.NonResultQuery(
+				DeleteQueryBuilder.CreateQuery(where: where).ToArray()
+				);
+			return this;
 		}
 
 		public void Execute()
 		{
 			_queryCollection.Execute(DataProvider);
+			_queryCollection = new QueryCollection();
 		}
 
-		public Task ExecuteAsync()
+		public async Task ExecuteAsync()
 		{
-			return _queryCollection.ExecuteAsync(DataProvider);
+			await _queryCollection.ExecuteAsync(DataProvider)
+				.ConfigureAwait(false);
+			_queryCollection = new QueryCollection();
 		}
 
 		public IEntityDatabase<T, T> Select(QueryExpression where = null, QueryExpression having = null, QueryExpression[] orderBy = null, QueryExpression[] groupBy = null, int? offset = null, int? limit = null)
