@@ -3,8 +3,8 @@ using Silk.Data.Modelling.Conventions;
 
 namespace Silk.Data.SQL.ORM.Modelling.Conventions
 {
-    public class FlattenPocosConvention : ISchemaConvention
-    {
+	public class FlattenPocosConvention : ISchemaConvention
+	{
 		public void VisitModel(TypedModel model, SchemaBuilder builder)
 		{
 			foreach (var field in model.Fields)
@@ -36,5 +36,5 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 				builder.PopModelOffContext();
 			}
 		}
-    }
+	}
 }
