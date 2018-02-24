@@ -45,6 +45,14 @@ namespace Silk.Data.SQL.ORM.Modelling
 		}
 
 		/// <summary>
+		/// Returns true when the provided type is defined as an entity type.
+		/// </summary>
+		public bool IsEntityType(Type type)
+		{
+			return EntityModels.Any(q => q.DataType == type);
+		}
+
+		/// <summary>
 		/// Gets the <see cref="EntityDefinition"/> for a given type.
 		/// </summary>
 		/// <returns>The entity tyoe's definition or null if it's not present in the domain.</returns>
