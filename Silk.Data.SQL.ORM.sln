@@ -7,8 +7,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Silk.Data.SQL.ORM", "Silk.D
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Silk.Data.SQL.ORM.Tests", "Silk.Data.SQL.ORM.Tests\Silk.Data.SQL.ORM.Tests.csproj", "{9F72E3C8-49C7-436B-A561-65164A7F2080}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Silk.Data.SQL.Base", "Silk.Data.SQL.Base\Silk.Data.SQL.Base\Silk.Data.SQL.Base.csproj", "{BAD747F4-3FE3-46F9-A7C1-D0C622529D5A}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
