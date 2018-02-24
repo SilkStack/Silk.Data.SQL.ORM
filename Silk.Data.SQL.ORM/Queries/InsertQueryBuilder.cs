@@ -46,6 +46,8 @@ namespace Silk.Data.SQL.ORM.Queries
 		public ICollection<ORMQuery> CreateQuery<TView>(IEntitySchema<TView> schema, IEnumerable<TView> sources)
 			where TView : new()
 		{
+			if (schema == null)
+				throw new ArgumentNullException(nameof(schema));
 			if (sources == null)
 				throw new ArgumentNullException(nameof(sources));
 

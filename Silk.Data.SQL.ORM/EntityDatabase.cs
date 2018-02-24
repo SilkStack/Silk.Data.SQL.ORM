@@ -26,6 +26,17 @@ namespace Silk.Data.SQL.ORM
 			}
 		}
 
+		private UpdateQueryBuilder<T> _updateQueryBuilder;
+		protected UpdateQueryBuilder<T> UpdateQueryBuilder
+		{
+			get
+			{
+				if (_updateQueryBuilder == null)
+					_updateQueryBuilder = new UpdateQueryBuilder<T>(EntitySchema);
+				return _updateQueryBuilder;
+			}
+		}
+
 		private DeleteQueryBuilder<T> _deleteQueryBuilder;
 		protected DeleteQueryBuilder<T> DeleteQueryBuilder
 		{
@@ -123,12 +134,18 @@ namespace Silk.Data.SQL.ORM
 
 		public IEntityDatabase<T> Update(params T[] sources)
 		{
-			throw new System.NotImplementedException();
+			_queryCollection = _queryCollection.NonResultQuery(
+				UpdateQueryBuilder.CreateQuery(sources).ToArray()
+				);
+			return this;
 		}
 
 		public IEntityDatabase<T> Update<TProjection>(params TProjection[] sources) where TProjection : new()
 		{
-			throw new System.NotImplementedException();
+			_queryCollection = _queryCollection.NonResultQuery(
+				UpdateQueryBuilder.CreateQuery(sources).ToArray()
+				);
+			return this;
 		}
 	}
 }

@@ -2,6 +2,7 @@
 using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Expressions;
 using Silk.Data.SQL.ORM.Modelling;
+using Silk.Data.SQL.ORM.NewModelling;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -12,36 +13,118 @@ namespace Silk.Data.SQL.ORM.Queries
 	public class UpdateQueryBuilder<TSource>
 		where TSource : new()
 	{
-		public EntityModel<TSource> DataModel { get; }
+		public EntitySchema<TSource> EntitySchema { get; }
 
-		public UpdateQueryBuilder(EntityModel<TSource> dataModel)
+		public UpdateQueryBuilder(EntitySchema<TSource> entitySchema)
 		{
-			DataModel = dataModel;
+			EntitySchema = entitySchema;
 		}
 
 		public ICollection<ORMQuery> CreateQuery(params TSource[] sources)
 		{
-			return CreateQuery(DataModel, sources as IEnumerable<TSource>);
+			return CreateQuery(sources as IEnumerable<TSource>);
 		}
 
 		public ICollection<ORMQuery> CreateQuery(IEnumerable<TSource> sources)
 		{
-			return CreateQuery(DataModel, sources);
+			return CreateQuery(EntitySchema, sources);
 		}
 
 		public ICollection<ORMQuery> CreateQuery<TView>(params TView[] sources)
 			where TView : new()
 		{
-			return CreateQuery(DataModel.Domain.GetProjectionModel<TSource, TView>(), sources as IEnumerable<TView>);
+			return CreateQuery(sources as IEnumerable<TView>);
 		}
 
 		public ICollection<ORMQuery> CreateQuery<TView>(IEnumerable<TView> sources)
 			where TView : new()
 		{
-			return CreateQuery(DataModel.Domain.GetProjectionModel<TSource, TView>(), sources);
+			var projectionModel = EntitySchema.GetProjection<TView>();
+
+			return CreateQuery(projectionModel, sources);
 		}
 
-		private ICollection<ORMQuery> CreateQuery<TView>(EntityModel<TView> model, IEnumerable<TView> sources)
+		public ICollection<ORMQuery> CreateQuery<TView>(IEntitySchema<TView> schema, IEnumerable<TView> sources)
+			where TView : new()
+		{
+			if (schema == null)
+				throw new NullReferenceException(nameof(schema));
+			if (sources == null)
+				throw new NullReferenceException(nameof(sources));
+
+			var primaryKeyFields = schema.EntityTable.PrimaryKeyFields;
+			if (primaryKeyFields == null || primaryKeyFields.Length == 0)
+				throw new InvalidOperationException("Table must have primary keys to update entities.");
+			if (!AreAllFieldsPresent(primaryKeyFields, schema.Fields))
+				throw new InvalidOperationException("Model is missing 1 or more primary key fields.");
+
+			var sourceReadWriters = sources
+				.Select(q => new ObjectModelReadWriter(schema.Model, q))
+				.ToArray();
+
+			var queries = new List<ORMQuery>();
+
+			foreach (var source in sourceReadWriters)
+			{
+				var row = new Dictionary<IDataField, QueryExpression>();
+
+				foreach (var field in schema.Fields)
+				{
+					if (field.IsRelationshipKey)
+					{
+						row.Add(field, new LateReadValueExpression(() =>
+							field.ModelBinding.ReadValue<object>(source)
+							));
+					}
+					else
+					{
+						row.Add(field, QueryExpression.Value(
+							field.ModelBinding.ReadValue<object>(source)
+							));
+					}
+				}
+
+				QueryExpression sourceWhere = null;
+				foreach (var primaryKey in schema.Fields.Where(q => q.IsPrimaryKey))
+				{
+					var pkCondition = QueryExpression.Compare(
+						QueryExpression.Column(primaryKey.Name),
+						ComparisonOperator.AreEqual,
+						QueryExpression.Value(primaryKey.ModelBinding.ReadValue<object>(source))
+						);
+
+					if (sourceWhere == null)
+						sourceWhere = pkCondition;
+					else
+						sourceWhere = QueryExpression.AndAlso(sourceWhere, pkCondition);
+				}
+
+				queries.Add(new NoResultORMQuery(
+					QueryExpression.Update(
+						QueryExpression.Table(schema.EntityTable.TableName),
+						where: sourceWhere,
+						assignments: row.Select(kvp => QueryExpression.Assign(
+							QueryExpression.Column(kvp.Key.Name),
+							kvp.Value
+							)).ToArray()
+					)
+				));
+			}
+
+			return queries;
+		}
+
+		private bool AreAllFieldsPresent(IDataField[] mustBePresent, IDataField[] checkIn)
+		{
+			foreach (var checkForField in mustBePresent)
+			{
+				if (!checkIn.Any(q => q.ModelBinding.ViewFieldPath.SequenceEqual(checkForField.ModelBinding.ViewFieldPath)))
+					return false;
+			}
+			return true;
+		}
+
+		/*private ICollection<ORMQuery> CreateQuery<TView>(EntityModel<TView> model, IEnumerable<TView> sources)
 			where TView : new()
 		{
 			if (sources == null)
@@ -196,6 +279,6 @@ namespace Silk.Data.SQL.ORM.Queries
 			}
 
 			return queries;
-		}
+		}*/
 	}
 }
