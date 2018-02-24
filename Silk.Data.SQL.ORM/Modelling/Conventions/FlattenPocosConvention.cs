@@ -5,9 +5,9 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 {
     public class FlattenPocosConvention : ISchemaConvention
     {
-        public void VisitModel(TypedModel model, SchemaBuilder builder)
-        {
-            foreach (var field in model.Fields)
+		public void VisitModel(TypedModel model, SchemaBuilder builder)
+		{
+			foreach (var field in model.Fields)
 			{
 				//  if the field has already been modelled by a previous convention we can skip it
 				if (builder.IsFieldDefinedInContext(field.Name))
@@ -18,7 +18,7 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 
 				FlattenIntoSchema(model, field, builder);
 			}
-        }
+		}
 
 		private void FlattenIntoSchema(TypedModel model, ModelField field, SchemaBuilder builder)
 		{
