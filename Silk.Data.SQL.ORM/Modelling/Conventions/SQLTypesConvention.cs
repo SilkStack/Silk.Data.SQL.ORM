@@ -22,14 +22,14 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 				if (sqlDataType == null)
 					continue;
 
-				if (builder.IsFieldDefined(model, field.Name))
+				if (builder.IsFieldDefinedInContext(field.Name))
 					continue;
 
 				var bindingDirection = field.CanWrite ? BindingDirection.Bidirectional : BindingDirection.ModelToView;
 				var sqlFieldName = opinions.Name ?? field.Name;
 
-				builder.DefineField(
-					model, sqlFieldName, sqlDataType, field.DataType,
+				builder.DefineFieldInContext(
+					sqlFieldName, sqlDataType, field.DataType,
 					new AssignmentBinding(bindingDirection, new[] { field.Name }, new[] { sqlFieldName }),
 					opinions);
 			}

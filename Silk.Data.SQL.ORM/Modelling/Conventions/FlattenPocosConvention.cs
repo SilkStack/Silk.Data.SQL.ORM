@@ -10,7 +10,7 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
             foreach (var field in model.Fields)
 			{
 				//  if the field has already been modelled by a previous convention we can skip it
-				if (builder.IsFieldDefined(model, field.Name))
+				if (builder.IsFieldDefinedInContext(field.Name))
 					continue;
 				//  if the type is an entity type it needs a relationship modelled using another convention
 				if (builder.IsEntityType(field.DataType))
@@ -23,15 +23,17 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 		private void FlattenIntoSchema(TypedModel model, ModelField field, SchemaBuilder builder)
 		{
 			var dataTypeModel = field.DataTypeModel;
-			foreach (var subField in dataTypeModel.Fields)
+			builder.PushModelOntoContext(dataTypeModel, field.Name);
+			try
 			{
-				var fieldName = $"{field.Name}_{subField.Name}";
-				if (builder.IsFieldDefined(model, fieldName))
-					continue;
-
-				//  I need to visit the other schema conventions using this field here somehow
-				//  so that embedding a full tree, or using relationships etc. all follows the same
-				//  rules as top-level fields
+				foreach (var schemaConvention in builder.Conventions)
+				{
+					schemaConvention.VisitModel(dataTypeModel, builder);
+				}
+			}
+			finally
+			{
+				builder.PopModelOffContext();
 			}
 		}
     }

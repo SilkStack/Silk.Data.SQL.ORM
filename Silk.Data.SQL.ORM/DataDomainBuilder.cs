@@ -66,9 +66,20 @@ namespace Silk.Data.SQL.ORM
 
 				foreach (var entityModel in schemaBuilder.EntityModels)
 				{
-					foreach (var convention in schemaConventions)
+					if (!schemaBuilder.IsContextStackEmpty)
+						throw new InvalidOperationException("Context stack was left in an unclean state.");
+
+					schemaBuilder.PushModelOntoContext(entityModel, null);
+					try
 					{
-						convention.VisitModel(entityModel, schemaBuilder);
+						foreach (var convention in schemaConventions)
+						{
+							convention.VisitModel(entityModel, schemaBuilder);
+						}
+					}
+					finally
+					{
+						schemaBuilder.PopModelOffContext();
 					}
 				}
 
@@ -98,7 +109,7 @@ namespace Silk.Data.SQL.ORM
 			if (projectionConventions == null)
 				projectionConventions = _defaultProjectionConventions;
 
-			var schemaBuilder = new SchemaBuilderWithAlterReset(GetModelOpinions());
+			var schemaBuilder = new SchemaBuilderWithAlterReset(GetModelOpinions(), schemaConventions);
 			var schemaDefinition = BuildSchemaDefinition(schemaConventions, schemaBuilder);
 
 			foreach (var entityHelper in _entityTypes.Values)
@@ -168,8 +179,9 @@ namespace Silk.Data.SQL.ORM
 
 		private class SchemaBuilderWithAlterReset : SchemaBuilder
 		{
-			public SchemaBuilderWithAlterReset(Dictionary<TypedModel, ModelOpinions> modelOpinions)
-				: base(modelOpinions)
+			public SchemaBuilderWithAlterReset(Dictionary<TypedModel, ModelOpinions> modelOpinions,
+				ISchemaConvention[] conventions)
+				: base(modelOpinions, conventions)
 			{
 			}
 

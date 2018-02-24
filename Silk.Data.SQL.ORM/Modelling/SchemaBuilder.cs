@@ -1,8 +1,11 @@
 ﻿using Silk.Data.Modelling;
 using Silk.Data.Modelling.Bindings;
+using Silk.Data.SQL.ORM;
+using Silk.Data.SQL.ORM.Modelling.Conventions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
 namespace Silk.Data.SQL.ORM.Modelling
 {
@@ -17,6 +20,13 @@ namespace Silk.Data.SQL.ORM.Modelling
 		private readonly Dictionary<ModelField, FieldOpinions> _fieldOpinions =
 			new Dictionary<ModelField, FieldOpinions>();
 
+		private readonly Stack<ContextStackEntry> _modelStack = new Stack<ContextStackEntry>();
+
+		/// <summary>
+		/// Gets an array of schema conventions being used to build the schema.
+		/// </summary>
+		public ISchemaConvention[] Conventions { get; }
+
 		/// <summary>
 		/// Gets an array of entity models that will be included in the schema.
 		/// </summary>
@@ -27,8 +37,21 @@ namespace Silk.Data.SQL.ORM.Modelling
 		/// </summary>
 		public bool WasAltered { get; protected set; }
 
-		protected SchemaBuilder(Dictionary<TypedModel,ModelOpinions> modelOpinions)
+		/// <summary>
+		/// Gets a value indicating if the context stack is empty.
+		/// </summary>
+		public bool IsContextStackEmpty => _modelStack.Count == 0;
+
+		/// <summary>
+		/// Gets a value indicating if the current context represents the root model being examined.
+		/// </summary>
+		public bool IsAtContextRoot => _modelStack.Count < 2;
+
+		protected SchemaBuilder(Dictionary<TypedModel,ModelOpinions> modelOpinions,
+			ISchemaConvention[] schemaConventions)
 		{
+			Conventions = schemaConventions;
+
 			EntityModels = modelOpinions.Keys.ToArray();
 
 			foreach (var kvp in modelOpinions)
@@ -42,6 +65,22 @@ namespace Silk.Data.SQL.ORM.Modelling
 					_fieldOpinions.Add(field, kvp.Value.GetFieldOpinions(field));
 				}
 			}
+		}
+
+		/// <summary>
+		/// Pushes a model onto the context for examining sub-models.
+		/// </summary>
+		public void PushModelOntoContext(TypedModel model, string name)
+		{
+			_modelStack.Push(new ContextStackEntry(model, name));
+		}
+
+		/// <summary>
+		/// Pops a model off the context for examining sub-models.
+		/// </summary>
+		public TypedModel PopModelOffContext()
+		{
+			return _modelStack.Pop()?.Model;
 		}
 
 		/// <summary>
@@ -78,6 +117,36 @@ namespace Silk.Data.SQL.ORM.Modelling
 			WasAltered = true;
 		}
 
+		private string MakeContextName(string name)
+		{
+			if (_modelStack.Count < 2)
+				return name;
+
+			var ret = new StringBuilder();
+			foreach (var entry in _modelStack.Reverse().Skip(1))
+			{
+				ret.Append($"{entry.Name}_");
+			}
+			ret.Append(name);
+			return ret.ToString();
+		}
+
+		/// <summary>
+		/// Defines a field for the current entity type in context.
+		/// </summary>
+		public void DefineFieldInContext(string name, SqlDataType sqlDataType,
+			Type clrType, ModelBinding binding,
+			FieldOpinions fieldOpinions)
+		{
+			if (IsContextStackEmpty)
+				throw new InvalidOperationException("Context stack is empty.");
+			var entityType = _modelStack.Last().Model.DataType; //  todo: optimize this? We don't need to enumerate each time, surely.
+			_entityDefinitions[entityType].Fields.Add(
+				FieldDefinition.SimpleMappedField(MakeContextName(name), binding, fieldOpinions, sqlDataType, clrType)
+				);
+			WasAltered = true;
+		}
+
 		/// <summary>
 		/// Gets the existing definition for a field on an entity.
 		/// </summary>
@@ -90,6 +159,18 @@ namespace Silk.Data.SQL.ORM.Modelling
 		}
 
 		/// <summary>
+		/// Gets the existing definition for a field on the current context.
+		/// </summary>
+		public FieldDefinition GetDefinedFieldInContext(string name)
+		{
+			if (IsContextStackEmpty)
+				throw new InvalidOperationException("Context stack is empty.");
+			var entityType = _modelStack.Last().Model.DataType; //  todo: optimize this? We don't need to enumerate each time, surely.
+			var contextName = MakeContextName(name);
+			return _entityDefinitions[entityType].Fields.FirstOrDefault(q => q.Name == contextName);
+		}
+
+		/// <summary>
 		/// Determines if a field is already defined.
 		/// </summary>
 		/// <param name="entityModel"></param>
@@ -98,6 +179,18 @@ namespace Silk.Data.SQL.ORM.Modelling
 		public bool IsFieldDefined(TypedModel entityModel, string name)
 		{
 			return _entityDefinitions[entityModel.DataType].Fields.Any(q => q.Name == name);
+		}
+
+		/// <summary>
+		/// Determines if a field is already defined in the current context.
+		/// </summary>
+		public bool IsFieldDefinedInContext(string name)
+		{
+			if (IsContextStackEmpty)
+				throw new InvalidOperationException("Context stack is empty.");
+			var entityType = _modelStack.Last().Model.DataType; //  todo: optimize this? We don't need to enumerate each time, surely.
+			var contextName = MakeContextName(name);
+			return _entityDefinitions[entityType].Fields.Any(q => q.Name == contextName);
 		}
 
 		/// <summary>
@@ -121,6 +214,18 @@ namespace Silk.Data.SQL.ORM.Modelling
 			var schemaDefinition = new SchemaDefinition();
 			schemaDefinition.Entities.AddRange(_entityDefinitions.Values);
 			return schemaDefinition;
+		}
+
+		private class ContextStackEntry
+		{
+			public TypedModel Model { get; }
+			public string Name { get; }
+
+			public ContextStackEntry(TypedModel model, string name)
+			{
+				Model = model;
+				Name = name;
+			}
 		}
 	}
 }

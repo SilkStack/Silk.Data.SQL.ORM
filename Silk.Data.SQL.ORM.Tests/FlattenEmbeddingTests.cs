@@ -24,15 +24,15 @@ namespace Silk.Data.SQL.ORM.Tests
 					q.ModelBinding.ModelFieldPath.SequenceEqual(new[] { "Id" })
 				));
 			Assert.IsTrue(dataModel.Fields.Any(
-				q => q.Name == "ModelAData" && q.DataType == typeof(string) &&
+				q => q.Name == "ModelA_Data" && q.DataType == typeof(string) &&
 					q.ModelBinding.ModelFieldPath.SequenceEqual(new[] { "ModelA", "Data" })
 				));
 			Assert.IsTrue(dataModel.Fields.Any(
-				q => q.Name == "ModelB1Data" && q.DataType == typeof(int) &&
+				q => q.Name == "ModelB1_Data" && q.DataType == typeof(int) &&
 					q.ModelBinding.ModelFieldPath.SequenceEqual(new[] { "ModelB1", "Data" })
 				));
 			Assert.IsTrue(dataModel.Fields.Any(
-				q => q.Name == "ModelB2Data" && q.DataType == typeof(int) &&
+				q => q.Name == "ModelB2_Data" && q.DataType == typeof(int) &&
 					q.ModelBinding.ModelFieldPath.SequenceEqual(new[] { "ModelB2", "Data" })
 				));
 		}

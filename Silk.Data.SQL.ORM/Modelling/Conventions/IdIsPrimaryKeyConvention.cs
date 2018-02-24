@@ -9,6 +9,9 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 	{
 		public void VisitModel(TypedModel model, SchemaBuilder builder)
 		{
+			if (!builder.IsAtContextRoot)
+				return;
+
 			var entityDefinition = builder.GetEntityDefinition(model.DataType);
 			if (ModelHasPrimaryKey(entityDefinition))
 				return;
