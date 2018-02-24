@@ -119,7 +119,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 
 		private string MakeContextName(string name)
 		{
-			if (_modelStack.Count < 2)
+			if (IsAtContextRoot)
 				return name;
 
 			var ret = new StringBuilder();
@@ -214,6 +214,26 @@ namespace Silk.Data.SQL.ORM.Modelling
 			var schemaDefinition = new SchemaDefinition();
 			schemaDefinition.Entities.AddRange(_entityDefinitions.Values);
 			return schemaDefinition;
+		}
+
+		private string[] MakeContextPath(string fieldName)
+		{
+			if (IsAtContextRoot)
+				return new [] { fieldName };
+
+			var ret = new List<string>();
+			foreach (var entry in _modelStack.Reverse().Skip(1))
+			{
+				ret.Add(entry.Name);
+			}
+			ret.Add(fieldName);
+			return ret.ToArray();
+		}
+
+		public AssignmentBinding CreateAssignmentBindingInContext(BindingDirection bindingDirection,
+			string modelFieldName, string sqlFieldName)
+		{
+			return new AssignmentBinding(bindingDirection, MakeContextPath(modelFieldName), new [] { MakeContextName(sqlFieldName) });
 		}
 
 		private class ContextStackEntry

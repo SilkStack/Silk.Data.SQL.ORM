@@ -30,7 +30,7 @@ namespace Silk.Data.SQL.ORM.Modelling.Conventions
 
 				builder.DefineFieldInContext(
 					sqlFieldName, sqlDataType, field.DataType,
-					new AssignmentBinding(bindingDirection, new[] { field.Name }, new[] { sqlFieldName }),
+					builder.CreateAssignmentBindingInContext(bindingDirection, field.Name, sqlFieldName),
 					opinions);
 			}
 		}
