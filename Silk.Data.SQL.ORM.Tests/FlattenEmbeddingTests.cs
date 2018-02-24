@@ -1,6 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Silk.Data.SQL.Expressions;
-using Silk.Data.SQL.ORM.Modelling;
+using Silk.Data.SQL.ORM.NewModelling;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -10,13 +10,13 @@ namespace Silk.Data.SQL.ORM.Tests
 	[TestClass]
 	public class FlattenEmbeddingTests
 	{
-		private static EntityModel<ObjectWithPocoSubModels> _conventionModel =
-			TestDb.CreateDomainAndModel<ObjectWithPocoSubModels>();
+		private static EntitySchema<ObjectWithPocoSubModels> _entitySchema =
+			TestDb.CreateDomainAndSchema<ObjectWithPocoSubModels>();
 
 		[TestMethod]
-		public void FlattenPocoInDataModelWithConventions()
+		public void FlattenPocoInDataModel()
 		{
-			var dataModel = _conventionModel;
+			var dataModel = _entitySchema;
 
 			Assert.AreEqual(4, dataModel.Fields.Length);
 			Assert.IsTrue(dataModel.Fields.Any(
@@ -38,14 +38,15 @@ namespace Silk.Data.SQL.ORM.Tests
 		}
 
 		[TestMethod]
-		public async Task InsertConventionModelWithoutNulls()
+		public async Task InsertWithoutNulls()
 		{
-			var dataModel = _conventionModel;
+			var dataModel = _entitySchema;
+			var table = _entitySchema.EntityTable;
+			var database = new EntityDatabase<ObjectWithPocoSubModels>(_entitySchema, TestDb.Provider);
 
-			foreach (var table in dataModel.Schema.Tables)
-			{
-				await table.CreateAsync(TestDb.Provider);
-			}
+			if (TestDb.ExecuteAndRead<int>(table.TableExists()) == 1)
+				TestDb.ExecuteSql(table.DropTable());
+			TestDb.ExecuteSql(table.CreateTable());
 
 			try
 			{
@@ -55,13 +56,13 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelB { Data = 5 },
 					ModelB2 = new SubModelB { Data = 10 }
 				};
-				await dataModel.Domain.Insert(modelInstance)
-					.ExecuteAsync(TestDb.Provider);
+				await database.Insert(modelInstance)
+					.ExecuteAsync();
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
 					QueryExpression.Select(
 						new[] { QueryExpression.All() },
-						from: QueryExpression.Table(dataModel.Schema.EntityTable.TableName)
+						from: QueryExpression.Table(table.TableName)
 					)))
 				{
 					Assert.IsTrue(queryResult.HasRows);
@@ -75,22 +76,20 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 			finally
 			{
-				foreach (var table in dataModel.Schema.Tables)
-				{
-					await table.DropAsync(TestDb.Provider);
-				}
+				TestDb.ExecuteSql(table.DropTable());
 			}
 		}
 
 		[TestMethod]
-		public async Task InsertConventionModelWithNulls()
+		public async Task InsertWithNulls()
 		{
-			var dataModel = _conventionModel;
+			var dataModel = _entitySchema;
+			var table = _entitySchema.EntityTable;
+			var database = new EntityDatabase<ObjectWithPocoSubModels>(_entitySchema, TestDb.Provider);
 
-			foreach (var table in dataModel.Schema.Tables)
-			{
-				await table.CreateAsync(TestDb.Provider);
-			}
+			if (TestDb.ExecuteAndRead<int>(table.TableExists()) == 1)
+				TestDb.ExecuteSql(table.DropTable());
+			TestDb.ExecuteSql(table.CreateTable());
 
 			try
 			{
@@ -99,13 +98,13 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelB { Data = 5 },
 					ModelB2 = new SubModelB { Data = 10 }
 				};
-				await dataModel.Domain.Insert(modelInstance)
-					.ExecuteAsync(TestDb.Provider);
+				await database.Insert(modelInstance)
+					.ExecuteAsync();
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
 					QueryExpression.Select(
 						new[] { QueryExpression.All() },
-						from: QueryExpression.Table(dataModel.Schema.EntityTable.TableName)
+						from: QueryExpression.Table(table.TableName)
 					)))
 				{
 					Assert.IsTrue(queryResult.HasRows);
@@ -119,22 +118,20 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 			finally
 			{
-				foreach (var table in dataModel.Schema.Tables)
-				{
-					await table.DropAsync(TestDb.Provider);
-				}
+				TestDb.ExecuteSql(table.DropTable());
 			}
 		}
 
 		[TestMethod]
 		public async Task InsertViewOfObjectWithRequiredProperties()
 		{
-			var dataModel = _conventionModel;
+			var dataModel = _entitySchema;
+			var table = _entitySchema.EntityTable;
+			var database = new EntityDatabase<ObjectWithPocoSubModels>(_entitySchema, TestDb.Provider);
 
-			foreach (var table in dataModel.Schema.Tables)
-			{
-				await table.CreateAsync(TestDb.Provider);
-			}
+			if (TestDb.ExecuteAndRead<int>(table.TableExists()) == 1)
+				TestDb.ExecuteSql(table.DropTable());
+			TestDb.ExecuteSql(table.CreateTable());
 
 			try
 			{
@@ -143,14 +140,14 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelB { Data = 5 },
 					ModelB2 = new SubModelB { Data = 10 }
 				};
-				await dataModel.Domain
-					.Insert<ObjectWithPocoSubModels, ViewOfObjectWithRequiredProperties>(modelInstance)
-					.ExecuteAsync(TestDb.Provider);
+				await database
+					.Insert<ViewOfObjectWithRequiredProperties>(modelInstance)
+					.ExecuteAsync();
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
 					QueryExpression.Select(
 						new[] { QueryExpression.All() },
-						from: QueryExpression.Table(dataModel.Schema.EntityTable.TableName)
+						from: QueryExpression.Table(table.TableName)
 					)))
 				{
 					Assert.IsTrue(queryResult.HasRows);
@@ -164,22 +161,20 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 			finally
 			{
-				foreach (var table in dataModel.Schema.Tables)
-				{
-					await table.DropAsync(TestDb.Provider);
-				}
+				TestDb.ExecuteSql(table.DropTable());
 			}
 		}
 
 		[TestMethod]
 		public async Task InsertViewOfObjectWithRequiredPropertiesAsViews()
 		{
-			var dataModel = _conventionModel;
+			var dataModel = _entitySchema;
+			var table = _entitySchema.EntityTable;
+			var database = new EntityDatabase<ObjectWithPocoSubModels>(_entitySchema, TestDb.Provider);
 
-			foreach (var table in dataModel.Schema.Tables)
-			{
-				await table.CreateAsync(TestDb.Provider);
-			}
+			if (TestDb.ExecuteAndRead<int>(table.TableExists()) == 1)
+				TestDb.ExecuteSql(table.DropTable());
+			TestDb.ExecuteSql(table.CreateTable());
 
 			try
 			{
@@ -188,14 +183,14 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelBView { Data = 5 },
 					ModelB2 = new SubModelBView { Data = 10 }
 				};
-				await dataModel.Domain
-					.Insert<ObjectWithPocoSubModels, ViewOfObjectWithRequiredPropertiesAsViews>(modelInstance)
-					.ExecuteAsync(TestDb.Provider);
+				await database
+					.Insert<ViewOfObjectWithRequiredPropertiesAsViews>(modelInstance)
+					.ExecuteAsync();
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
 					QueryExpression.Select(
 						new[] { QueryExpression.All() },
-						from: QueryExpression.Table(dataModel.Schema.EntityTable.TableName)
+						from: QueryExpression.Table(table.TableName)
 					)))
 				{
 					Assert.IsTrue(queryResult.HasRows);
@@ -209,22 +204,20 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 			finally
 			{
-				foreach (var table in dataModel.Schema.Tables)
-				{
-					await table.DropAsync(TestDb.Provider);
-				}
+				TestDb.ExecuteSql(table.DropTable());
 			}
 		}
 
 		[TestMethod]
-		public async Task InsertFlatViewOfConventionModel()
+		public async Task InsertFlatView()
 		{
-			var dataModel = _conventionModel;
+			var dataModel = _entitySchema;
+			var table = _entitySchema.EntityTable;
+			var database = new EntityDatabase<ObjectWithPocoSubModels>(_entitySchema, TestDb.Provider);
 
-			foreach (var table in dataModel.Schema.Tables)
-			{
-				await table.CreateAsync(TestDb.Provider);
-			}
+			if (TestDb.ExecuteAndRead<int>(table.TableExists()) == 1)
+				TestDb.ExecuteSql(table.DropTable());
+			TestDb.ExecuteSql(table.CreateTable());
 
 			try
 			{
@@ -234,14 +227,14 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1Data = 5,
 					ModelB2Data = 10
 				};
-				await dataModel.Domain
-					.Insert<ObjectWithPocoSubModels, ObjectWithPocoSubModelsView>(modelInstance)
-					.ExecuteAsync(TestDb.Provider);
+				await database
+					.Insert<ObjectWithPocoSubModelsView>(modelInstance)
+					.ExecuteAsync();
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
 					QueryExpression.Select(
 						new[] { QueryExpression.All() },
-						from: QueryExpression.Table(dataModel.Schema.EntityTable.TableName)
+						from: QueryExpression.Table(table.TableName)
 					)))
 				{
 					Assert.IsTrue(queryResult.HasRows);
@@ -255,22 +248,20 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 			finally
 			{
-				foreach (var table in dataModel.Schema.Tables)
-				{
-					await table.DropAsync(TestDb.Provider);
-				}
+				TestDb.ExecuteSql(table.DropTable());
 			}
 		}
 
 		[TestMethod]
-		public async Task UpdateConventionModelWithoutNulls()
+		public async Task UpdateWithoutNulls()
 		{
-			var dataModel = _conventionModel;
+			var dataModel = _entitySchema;
+			var table = _entitySchema.EntityTable;
+			var database = new EntityDatabase<ObjectWithPocoSubModels>(_entitySchema, TestDb.Provider);
 
-			foreach (var table in dataModel.Schema.Tables)
-			{
-				await table.CreateAsync(TestDb.Provider);
-			}
+			if (TestDb.ExecuteAndRead<int>(table.TableExists()) == 1)
+				TestDb.ExecuteSql(table.DropTable());
+			TestDb.ExecuteSql(table.CreateTable());
 
 			try
 			{
@@ -280,18 +271,18 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelB { Data = 5 },
 					ModelB2 = new SubModelB { Data = 10 }
 				};
-				await dataModel.Domain.Insert(modelInstance)
-					.ExecuteAsync(TestDb.Provider);
+				await database.Insert(modelInstance)
+					.ExecuteAsync();
 				modelInstance.ModelA.Data = "Changed World";
 				modelInstance.ModelB1.Data = 15;
 				modelInstance.ModelB2.Data = 20;
-				await dataModel.Domain.Update(modelInstance)
-					.ExecuteAsync(TestDb.Provider);
+				await database.Update(modelInstance)
+					.ExecuteAsync();
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
 					QueryExpression.Select(
 						new[] { QueryExpression.All() },
-						from: QueryExpression.Table(dataModel.Schema.EntityTable.TableName)
+						from: QueryExpression.Table(table.TableName)
 					)))
 				{
 					Assert.IsTrue(queryResult.HasRows);
@@ -305,22 +296,20 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 			finally
 			{
-				foreach (var table in dataModel.Schema.Tables)
-				{
-					await table.DropAsync(TestDb.Provider);
-				}
+				TestDb.ExecuteSql(table.DropTable());
 			}
 		}
 
 		[TestMethod]
-		public async Task UpdateConventionModelWithNulls()
+		public async Task UpdateWithNulls()
 		{
-			var dataModel = _conventionModel;
+			var dataModel = _entitySchema;
+			var table = _entitySchema.EntityTable;
+			var database = new EntityDatabase<ObjectWithPocoSubModels>(_entitySchema, TestDb.Provider);
 
-			foreach (var table in dataModel.Schema.Tables)
-			{
-				await table.CreateAsync(TestDb.Provider);
-			}
+			if (TestDb.ExecuteAndRead<int>(table.TableExists()) == 1)
+				TestDb.ExecuteSql(table.DropTable());
+			TestDb.ExecuteSql(table.CreateTable());
 
 			try
 			{
@@ -330,18 +319,18 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelB { Data = 5 },
 					ModelB2 = new SubModelB { Data = 10 }
 				};
-				await dataModel.Domain.Insert(modelInstance)
-					.ExecuteAsync(TestDb.Provider);
+				await database.Insert(modelInstance)
+					.ExecuteAsync();
 				modelInstance.ModelA = null;
 				modelInstance.ModelB1.Data = 15;
 				modelInstance.ModelB2.Data = 20;
-				await dataModel.Domain.Update(modelInstance)
-					.ExecuteAsync(TestDb.Provider);
+				await database.Update(modelInstance)
+					.ExecuteAsync();
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
 					QueryExpression.Select(
 						new[] { QueryExpression.All() },
-						from: QueryExpression.Table(dataModel.Schema.EntityTable.TableName)
+						from: QueryExpression.Table(table.TableName)
 					)))
 				{
 					Assert.IsTrue(queryResult.HasRows);
@@ -355,22 +344,20 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 			finally
 			{
-				foreach (var table in dataModel.Schema.Tables)
-				{
-					await table.DropAsync(TestDb.Provider);
-				}
+				TestDb.ExecuteSql(table.DropTable());
 			}
 		}
 
 		[TestMethod]
 		public async Task UpdateViewOfObjectWithRequiredProperties()
 		{
-			var dataModel = _conventionModel;
+			var dataModel = _entitySchema;
+			var table = _entitySchema.EntityTable;
+			var database = new EntityDatabase<ObjectWithPocoSubModels>(_entitySchema, TestDb.Provider);
 
-			foreach (var table in dataModel.Schema.Tables)
-			{
-				await table.CreateAsync(TestDb.Provider);
-			}
+			if (TestDb.ExecuteAndRead<int>(table.TableExists()) == 1)
+				TestDb.ExecuteSql(table.DropTable());
+			TestDb.ExecuteSql(table.CreateTable());
 
 			try
 			{
@@ -379,19 +366,19 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelB { Data = 5 },
 					ModelB2 = new SubModelB { Data = 10 }
 				};
-				await dataModel.Domain
-					.Insert<ObjectWithPocoSubModels, ViewOfObjectWithRequiredProperties>(modelInstance)
-					.ExecuteAsync(TestDb.Provider);
+				await database
+					.Insert<ViewOfObjectWithRequiredProperties>(modelInstance)
+					.ExecuteAsync();
 				modelInstance.ModelB1.Data = 15;
 				modelInstance.ModelB2.Data = 20;
-				await dataModel.Domain
-					.Update<ObjectWithPocoSubModels, ViewOfObjectWithRequiredProperties>(modelInstance)
-					.ExecuteAsync(TestDb.Provider);
+				await database
+					.Update<ViewOfObjectWithRequiredProperties>(modelInstance)
+					.ExecuteAsync();
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
 					QueryExpression.Select(
 						new[] { QueryExpression.All() },
-						from: QueryExpression.Table(dataModel.Schema.EntityTable.TableName)
+						from: QueryExpression.Table(table.TableName)
 					)))
 				{
 					Assert.IsTrue(queryResult.HasRows);
@@ -405,22 +392,20 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 			finally
 			{
-				foreach (var table in dataModel.Schema.Tables)
-				{
-					await table.DropAsync(TestDb.Provider);
-				}
+				TestDb.ExecuteSql(table.DropTable());
 			}
 		}
 
 		[TestMethod]
 		public async Task UpdateViewOfObjectWithRequiredPropertiesAsViews()
 		{
-			var dataModel = _conventionModel;
+			var dataModel = _entitySchema;
+			var table = _entitySchema.EntityTable;
+			var database = new EntityDatabase<ObjectWithPocoSubModels>(_entitySchema, TestDb.Provider);
 
-			foreach (var table in dataModel.Schema.Tables)
-			{
-				await table.CreateAsync(TestDb.Provider);
-			}
+			if (TestDb.ExecuteAndRead<int>(table.TableExists()) == 1)
+				TestDb.ExecuteSql(table.DropTable());
+			TestDb.ExecuteSql(table.CreateTable());
 
 			try
 			{
@@ -429,19 +414,19 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelBView { Data = 5 },
 					ModelB2 = new SubModelBView { Data = 10 }
 				};
-				await dataModel.Domain
-					.Insert<ObjectWithPocoSubModels, ViewOfObjectWithRequiredPropertiesAsViews>(modelInstance)
-					.ExecuteAsync(TestDb.Provider);
+				await database
+					.Insert<ViewOfObjectWithRequiredPropertiesAsViews>(modelInstance)
+					.ExecuteAsync();
 				modelInstance.ModelB1.Data = 15;
 				modelInstance.ModelB2.Data = 20;
-				await dataModel.Domain
-					.Update<ObjectWithPocoSubModels, ViewOfObjectWithRequiredPropertiesAsViews>(modelInstance)
-					.ExecuteAsync(TestDb.Provider);
+				await database
+					.Update<ViewOfObjectWithRequiredPropertiesAsViews>(modelInstance)
+					.ExecuteAsync();
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
 					QueryExpression.Select(
 						new[] { QueryExpression.All() },
-						from: QueryExpression.Table(dataModel.Schema.EntityTable.TableName)
+						from: QueryExpression.Table(table.TableName)
 					)))
 				{
 					Assert.IsTrue(queryResult.HasRows);
@@ -455,22 +440,20 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 			finally
 			{
-				foreach (var table in dataModel.Schema.Tables)
-				{
-					await table.DropAsync(TestDb.Provider);
-				}
+				TestDb.ExecuteSql(table.DropTable());
 			}
 		}
 
 		[TestMethod]
-		public async Task UpdateFlatViewOfConventionModel()
+		public async Task UpdateFlatView()
 		{
-			var dataModel = _conventionModel;
+			var dataModel = _entitySchema;
+			var table = _entitySchema.EntityTable;
+			var database = new EntityDatabase<ObjectWithPocoSubModels>(_entitySchema, TestDb.Provider);
 
-			foreach (var table in dataModel.Schema.Tables)
-			{
-				await table.CreateAsync(TestDb.Provider);
-			}
+			if (TestDb.ExecuteAndRead<int>(table.TableExists()) == 1)
+				TestDb.ExecuteSql(table.DropTable());
+			TestDb.ExecuteSql(table.CreateTable());
 
 			try
 			{
@@ -480,20 +463,20 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1Data = 5,
 					ModelB2Data = 10
 				};
-				await dataModel.Domain
-					.Insert<ObjectWithPocoSubModels, ObjectWithPocoSubModelsView>(modelInstance)
-					.ExecuteAsync(TestDb.Provider);
+				await database
+					.Insert<ObjectWithPocoSubModelsView>(modelInstance)
+					.ExecuteAsync();
 				modelInstance.ModelAData = "Changed World!";
 				modelInstance.ModelB1Data = 15;
 				modelInstance.ModelB2Data = 20;
-				await dataModel.Domain
-					.Update<ObjectWithPocoSubModels, ObjectWithPocoSubModelsView>(modelInstance)
-					.ExecuteAsync(TestDb.Provider);
+				await database
+					.Update<ObjectWithPocoSubModelsView>(modelInstance)
+					.ExecuteAsync();
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
 					QueryExpression.Select(
 						new[] { QueryExpression.All() },
-						from: QueryExpression.Table(dataModel.Schema.EntityTable.TableName)
+						from: QueryExpression.Table(table.TableName)
 					)))
 				{
 					Assert.IsTrue(queryResult.HasRows);
@@ -507,22 +490,20 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 			finally
 			{
-				foreach (var table in dataModel.Schema.Tables)
-				{
-					await table.DropAsync(TestDb.Provider);
-				}
+				TestDb.ExecuteSql(table.DropTable());
 			}
 		}
 
 		[TestMethod]
-		public async Task DeleteConventionModel()
+		public async Task Delete()
 		{
-			var dataModel = _conventionModel;
+			var dataModel = _entitySchema;
+			var table = _entitySchema.EntityTable;
+			var database = new EntityDatabase<ObjectWithPocoSubModels>(_entitySchema, TestDb.Provider);
 
-			foreach (var table in dataModel.Schema.Tables)
-			{
-				await table.CreateAsync(TestDb.Provider);
-			}
+			if (TestDb.ExecuteAndRead<int>(table.TableExists()) == 1)
+				TestDb.ExecuteSql(table.DropTable());
+			TestDb.ExecuteSql(table.CreateTable());
 
 			try
 			{
@@ -532,15 +513,15 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelB { Data = 5 },
 					ModelB2 = new SubModelB { Data = 10 }
 				};
-				await dataModel.Domain.Insert(modelInstance)
-					.ExecuteAsync(TestDb.Provider);
-				await dataModel.Domain.Delete(modelInstance)
-					.ExecuteAsync(TestDb.Provider);
+				await database.Insert(modelInstance)
+					.ExecuteAsync();
+				await database.Delete(modelInstance)
+					.ExecuteAsync();
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
 					QueryExpression.Select(
 						new[] { QueryExpression.All() },
-						from: QueryExpression.Table(dataModel.Schema.EntityTable.TableName)
+						from: QueryExpression.Table(table.TableName)
 					)))
 				{
 					Assert.IsFalse(queryResult.HasRows);
@@ -548,22 +529,20 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 			finally
 			{
-				foreach (var table in dataModel.Schema.Tables)
-				{
-					await table.DropAsync(TestDb.Provider);
-				}
+				TestDb.ExecuteSql(table.DropTable());
 			}
 		}
 
 		[TestMethod]
 		public async Task DeleteViewOfObjectWithRequiredProperties()
 		{
-			var dataModel = _conventionModel;
+			var dataModel = _entitySchema;
+			var table = _entitySchema.EntityTable;
+			var database = new EntityDatabase<ObjectWithPocoSubModels>(_entitySchema, TestDb.Provider);
 
-			foreach (var table in dataModel.Schema.Tables)
-			{
-				await table.CreateAsync(TestDb.Provider);
-			}
+			if (TestDb.ExecuteAndRead<int>(table.TableExists()) == 1)
+				TestDb.ExecuteSql(table.DropTable());
+			TestDb.ExecuteSql(table.CreateTable());
 
 			try
 			{
@@ -572,17 +551,17 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelB { Data = 5 },
 					ModelB2 = new SubModelB { Data = 10 }
 				};
-				await dataModel.Domain
-					.Insert<ObjectWithPocoSubModels, ViewOfObjectWithRequiredProperties>(modelInstance)
-					.ExecuteAsync(TestDb.Provider);
-				await dataModel.Domain
-					.Delete<ObjectWithPocoSubModels, ViewOfObjectWithRequiredProperties>(modelInstance)
-					.ExecuteAsync(TestDb.Provider);
+				await database
+					.Insert<ViewOfObjectWithRequiredProperties>(modelInstance)
+					.ExecuteAsync();
+				await database
+					.Delete<ViewOfObjectWithRequiredProperties>(modelInstance)
+					.ExecuteAsync();
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
 					QueryExpression.Select(
 						new[] { QueryExpression.All() },
-						from: QueryExpression.Table(dataModel.Schema.EntityTable.TableName)
+						from: QueryExpression.Table(table.TableName)
 					)))
 				{
 					Assert.IsFalse(queryResult.HasRows);
@@ -590,22 +569,20 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 			finally
 			{
-				foreach (var table in dataModel.Schema.Tables)
-				{
-					await table.DropAsync(TestDb.Provider);
-				}
+				TestDb.ExecuteSql(table.DropTable());
 			}
 		}
 
 		[TestMethod]
 		public async Task DeleteViewOfObjectWithRequiredPropertiesAsViews()
 		{
-			var dataModel = _conventionModel;
+			var dataModel = _entitySchema;
+			var table = _entitySchema.EntityTable;
+			var database = new EntityDatabase<ObjectWithPocoSubModels>(_entitySchema, TestDb.Provider);
 
-			foreach (var table in dataModel.Schema.Tables)
-			{
-				await table.CreateAsync(TestDb.Provider);
-			}
+			if (TestDb.ExecuteAndRead<int>(table.TableExists()) == 1)
+				TestDb.ExecuteSql(table.DropTable());
+			TestDb.ExecuteSql(table.CreateTable());
 
 			try
 			{
@@ -614,17 +591,17 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelBView { Data = 5 },
 					ModelB2 = new SubModelBView { Data = 10 }
 				};
-				await dataModel.Domain
-					.Insert<ObjectWithPocoSubModels, ViewOfObjectWithRequiredPropertiesAsViews>(modelInstance)
-					.ExecuteAsync(TestDb.Provider);
-				await dataModel.Domain
-					.Delete<ObjectWithPocoSubModels, ViewOfObjectWithRequiredPropertiesAsViews>(modelInstance)
-					.ExecuteAsync(TestDb.Provider);
+				await database
+					.Insert<ViewOfObjectWithRequiredPropertiesAsViews>(modelInstance)
+					.ExecuteAsync();
+				await database
+					.Delete<ViewOfObjectWithRequiredPropertiesAsViews>(modelInstance)
+					.ExecuteAsync();
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
 					QueryExpression.Select(
 						new[] { QueryExpression.All() },
-						from: QueryExpression.Table(dataModel.Schema.EntityTable.TableName)
+						from: QueryExpression.Table(table.TableName)
 					)))
 				{
 					Assert.IsFalse(queryResult.HasRows);
@@ -632,22 +609,20 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 			finally
 			{
-				foreach (var table in dataModel.Schema.Tables)
-				{
-					await table.DropAsync(TestDb.Provider);
-				}
+				TestDb.ExecuteSql(table.DropTable());
 			}
 		}
 
 		[TestMethod]
-		public async Task DeleteFlatViewOfConventionModel()
+		public async Task DeleteFlatView()
 		{
-			var dataModel = _conventionModel;
+			var dataModel = _entitySchema;
+			var table = _entitySchema.EntityTable;
+			var database = new EntityDatabase<ObjectWithPocoSubModels>(_entitySchema, TestDb.Provider);
 
-			foreach (var table in dataModel.Schema.Tables)
-			{
-				await table.CreateAsync(TestDb.Provider);
-			}
+			if (TestDb.ExecuteAndRead<int>(table.TableExists()) == 1)
+				TestDb.ExecuteSql(table.DropTable());
+			TestDb.ExecuteSql(table.CreateTable());
 
 			try
 			{
@@ -657,17 +632,17 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1Data = 5,
 					ModelB2Data = 10
 				};
-				await dataModel.Domain
-					.Insert<ObjectWithPocoSubModels, ObjectWithPocoSubModelsView>(modelInstance)
-					.ExecuteAsync(TestDb.Provider);
-				await dataModel.Domain
-					.Delete<ObjectWithPocoSubModels, ObjectWithPocoSubModelsView>(modelInstance)
-					.ExecuteAsync(TestDb.Provider);
+				await database
+					.Insert<ObjectWithPocoSubModelsView>(modelInstance)
+					.ExecuteAsync();
+				await database
+					.Delete<ObjectWithPocoSubModelsView>(modelInstance)
+					.ExecuteAsync();
 
 				using (var queryResult = await TestDb.Provider.ExecuteReaderAsync(
 					QueryExpression.Select(
 						new[] { QueryExpression.All() },
-						from: QueryExpression.Table(dataModel.Schema.EntityTable.TableName)
+						from: QueryExpression.Table(table.TableName)
 					)))
 				{
 					Assert.IsFalse(queryResult.HasRows);
@@ -675,22 +650,20 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 			finally
 			{
-				foreach (var table in dataModel.Schema.Tables)
-				{
-					await table.DropAsync(TestDb.Provider);
-				}
+				TestDb.ExecuteSql(table.DropTable());
 			}
 		}
 
 		[TestMethod]
 		public async Task SelectInflatedPocoWithConventions()
 		{
-			var dataModel = _conventionModel;
+			var dataModel = _entitySchema;
+			var table = _entitySchema.EntityTable;
+			var database = new EntityDatabase<ObjectWithPocoSubModels>(_entitySchema, TestDb.Provider);
 
-			foreach (var table in dataModel.Schema.Tables)
-			{
-				await table.CreateAsync(TestDb.Provider);
-			}
+			if (TestDb.ExecuteAndRead<int>(table.TableExists()) == 1)
+				TestDb.ExecuteSql(table.DropTable());
+			TestDb.ExecuteSql(table.CreateTable());
 
 			try
 			{
@@ -700,11 +673,11 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelB { Data = 5 },
 					ModelB2 = new SubModelB { Data = 10 }
 				};
-				await dataModel.Domain.Insert(modelInstance)
-					.ExecuteAsync(TestDb.Provider);
+				await database.Insert(modelInstance)
+					.ExecuteAsync();
 
-				var selectResults = await dataModel.Domain.Select<ObjectWithPocoSubModels>()
-					.ExecuteAsync(TestDb.Provider);
+				var selectResults = await database.Select<ObjectWithPocoSubModels>()
+					.ExecuteAsync();
 
 				Assert.AreEqual(1, selectResults.Count);
 				var selectedInstance = selectResults.First();
@@ -714,22 +687,20 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 			finally
 			{
-				foreach (var table in dataModel.Schema.Tables)
-				{
-					await table.DropAsync(TestDb.Provider);
-				}
+				TestDb.ExecuteSql(table.DropTable());
 			}
 		}
 
 		[TestMethod]
 		public async Task SelectInflatedPocoWithConventionsWithRequiredProperties()
 		{
-			var dataModel = _conventionModel;
+			var dataModel = _entitySchema;
+			var table = _entitySchema.EntityTable;
+			var database = new EntityDatabase<ObjectWithPocoSubModels>(_entitySchema, TestDb.Provider);
 
-			foreach (var table in dataModel.Schema.Tables)
-			{
-				await table.CreateAsync(TestDb.Provider);
-			}
+			if (TestDb.ExecuteAndRead<int>(table.TableExists()) == 1)
+				TestDb.ExecuteSql(table.DropTable());
+			TestDb.ExecuteSql(table.CreateTable());
 
 			try
 			{
@@ -739,12 +710,12 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelB { Data = 5 },
 					ModelB2 = new SubModelB { Data = 10 }
 				};
-				await dataModel.Domain.Insert(modelInstance)
-					.ExecuteAsync(TestDb.Provider);
+				await database.Insert(modelInstance)
+					.ExecuteAsync();
 
-				var selectResults = await dataModel.Domain
-					.Select<ObjectWithPocoSubModels,ViewOfObjectWithRequiredProperties>()
-					.ExecuteAsync(TestDb.Provider);
+				var selectResults = await database
+					.Select<ViewOfObjectWithRequiredProperties>()
+					.ExecuteAsync();
 
 				Assert.AreEqual(1, selectResults.Count);
 				var selectedInstance = selectResults.First();
@@ -753,22 +724,20 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 			finally
 			{
-				foreach (var table in dataModel.Schema.Tables)
-				{
-					await table.DropAsync(TestDb.Provider);
-				}
+				TestDb.ExecuteSql(table.DropTable());
 			}
 		}
 
 		[TestMethod]
-		public async Task SelectInflatedPocoWithConventionsWithRequiredPropertiesAsViews()
+		public async Task SelectInflatedPocoWithRequiredPropertiesAsViews()
 		{
-			var dataModel = _conventionModel;
+			var dataModel = _entitySchema;
+			var table = _entitySchema.EntityTable;
+			var database = new EntityDatabase<ObjectWithPocoSubModels>(_entitySchema, TestDb.Provider);
 
-			foreach (var table in dataModel.Schema.Tables)
-			{
-				await table.CreateAsync(TestDb.Provider);
-			}
+			if (TestDb.ExecuteAndRead<int>(table.TableExists()) == 1)
+				TestDb.ExecuteSql(table.DropTable());
+			TestDb.ExecuteSql(table.CreateTable());
 
 			try
 			{
@@ -778,12 +747,12 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelB { Data = 5 },
 					ModelB2 = new SubModelB { Data = 10 }
 				};
-				await dataModel.Domain.Insert(modelInstance)
-					.ExecuteAsync(TestDb.Provider);
+				await database.Insert(modelInstance)
+					.ExecuteAsync();
 
-				var selectResults = await dataModel.Domain
-					.Select<ObjectWithPocoSubModels,ViewOfObjectWithRequiredPropertiesAsViews>()
-					.ExecuteAsync(TestDb.Provider);
+				var selectResults = await database
+					.Select<ViewOfObjectWithRequiredPropertiesAsViews>()
+					.ExecuteAsync();
 
 				Assert.AreEqual(1, selectResults.Count);
 				var selectedInstance = selectResults.First();
@@ -792,22 +761,20 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 			finally
 			{
-				foreach (var table in dataModel.Schema.Tables)
-				{
-					await table.DropAsync(TestDb.Provider);
-				}
+				TestDb.ExecuteSql(table.DropTable());
 			}
 		}
 
 		[TestMethod]
 		public async Task SelectFlatPocoWithConventions()
 		{
-			var dataModel = _conventionModel;
+			var dataModel = _entitySchema;
+			var table = _entitySchema.EntityTable;
+			var database = new EntityDatabase<ObjectWithPocoSubModels>(_entitySchema, TestDb.Provider);
 
-			foreach (var table in dataModel.Schema.Tables)
-			{
-				await table.CreateAsync(TestDb.Provider);
-			}
+			if (TestDb.ExecuteAndRead<int>(table.TableExists()) == 1)
+				TestDb.ExecuteSql(table.DropTable());
+			TestDb.ExecuteSql(table.CreateTable());
 
 			try
 			{
@@ -817,11 +784,11 @@ namespace Silk.Data.SQL.ORM.Tests
 					ModelB1 = new SubModelB { Data = 5 },
 					ModelB2 = new SubModelB { Data = 10 }
 				};
-				await dataModel.Domain.Insert(modelInstance)
-					.ExecuteAsync(TestDb.Provider);
+				await database.Insert(modelInstance)
+					.ExecuteAsync();
 
-				var selectResults = await dataModel.Domain.Select<ObjectWithPocoSubModels,ObjectWithPocoSubModelsView>()
-					.ExecuteAsync(TestDb.Provider);
+				var selectResults = await database.Select<ObjectWithPocoSubModelsView>()
+					.ExecuteAsync();
 
 				Assert.AreEqual(1, selectResults.Count);
 				var selectedInstance = selectResults.First();
@@ -831,10 +798,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 			finally
 			{
-				foreach (var table in dataModel.Schema.Tables)
-				{
-					await table.DropAsync(TestDb.Provider);
-				}
+				TestDb.ExecuteSql(table.DropTable());
 			}
 		}
 
