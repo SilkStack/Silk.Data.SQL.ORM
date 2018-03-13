@@ -13,6 +13,12 @@ Part of the SilkStack project.</Description>
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="vold\**" />
+    <EmbeddedResource Remove="vold\**" />
+    <None Remove="vold\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Silk.Data.Modelling" Version="0.0.1" />
     <PackageReference Include="Silk.Data.SQL.Base" Version="0.0.2" />
   </ItemGroup>
