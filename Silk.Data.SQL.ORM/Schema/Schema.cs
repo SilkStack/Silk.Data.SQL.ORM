@@ -8,6 +8,11 @@ namespace Silk.Data.SQL.ORM.Schema
 	{
 		public EntityModelCollection EntityModels { get; }
 
+		public Schema(EntityModelCollection entityModels)
+		{
+			EntityModels = entityModels;
+		}
+
 		public EntityModel<T> GetEntityModel<T>()
 		{
 			return GetEntityModel(typeof(T)) as EntityModel<T>;

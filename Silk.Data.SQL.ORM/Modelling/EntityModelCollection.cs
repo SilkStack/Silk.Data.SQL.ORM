@@ -8,6 +8,11 @@ namespace Silk.Data.SQL.ORM.Modelling
 		private readonly List<EntityModel> _entityModels =
 			new List<EntityModel>();
 
+		public EntityModelCollection(IEnumerable<EntityModel> entityModels)
+		{
+			_entityModels.AddRange(entityModels);
+		}
+
 		public IEnumerator<EntityModel> GetEnumerator()
 		{
 			return _entityModels.GetEnumerator();
