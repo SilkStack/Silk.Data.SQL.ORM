@@ -73,6 +73,36 @@ namespace Silk.Data.SQL.ORM.Tests
 				));
 		}
 
+		[TestMethod]
+		public void EmbedPocoTypeIntoSchema()
+		{
+			throw new NotImplementedException();
+		}
+
+		[TestMethod]
+		public void ModelSingleObjectRelationship()
+		{
+			throw new NotImplementedException();
+		}
+
+		[TestMethod]
+		public void ModelMultipleObjectRelationship()
+		{
+			throw new NotImplementedException();
+		}
+
+		[TestMethod]
+		public void ModelIntegerIdAsAutoIncrementPrimaryKey()
+		{
+			throw new NotImplementedException();
+		}
+
+		[TestMethod]
+		public void ModelGuidIdAsGeneratedPrimaryKey()
+		{
+			throw new NotImplementedException();
+		}
+
 		private class PrimitiveSQLTypes
 		{
 			public bool Bool { get; set; }
