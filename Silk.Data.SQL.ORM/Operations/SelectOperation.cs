@@ -54,7 +54,7 @@ namespace Silk.Data.SQL.ORM.Operations
 				{
 					projectedFieldsExprs.Add(
 						QueryExpression.Alias(
-							QueryExpression.Column(valueField.SqlFieldName, from),
+							QueryExpression.Column(valueField.Column.ColumnName, from),
 							valueField.FieldName
 						));
 				}
@@ -66,7 +66,7 @@ namespace Silk.Data.SQL.ORM.Operations
 						);
 					var joinExpr = QueryExpression.Join(
 						QueryExpression.Column(singleRelationshipField.SqlFieldName, from),
-						QueryExpression.Column(singleRelationshipField.RelatedPrimaryKey.SqlFieldName, joinAlias),
+						QueryExpression.Column(singleRelationshipField.RelatedPrimaryKey.Column.ColumnName, joinAlias),
 						JoinDirection.Left
 						);
 

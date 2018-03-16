@@ -1,22 +1,22 @@
 ﻿using System;
 using Silk.Data.Modelling;
+using Silk.Data.SQL.ORM.Schema;
 
 namespace Silk.Data.SQL.ORM.Modelling
 {
 	public interface IEntityField : IField
 	{
-		SqlDataType SqlDataType { get; }
-		string SqlFieldName { get; }
 	}
 
 	public class ValueField : FieldBase<ValueField>, IEntityField
 	{
-		public SqlDataType SqlDataType => throw new NotImplementedException();
-		public string SqlFieldName => throw new NotImplementedException();
+		public Column Column { get; }
 
-		public ValueField(string fieldName, bool canRead, bool canWrite, bool isEnumerable, Type elementType) :
+		public ValueField(string fieldName, bool canRead, bool canWrite, bool isEnumerable, Type elementType,
+			Column column) :
 			base(fieldName, canRead, canWrite, isEnumerable, elementType)
 		{
+			Column = column;
 		}
 	}
 

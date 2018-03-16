@@ -8,6 +8,11 @@ namespace Silk.Data.SQL.ORM.Schema
 		public abstract bool PerformTransformationPass();
 
 		public abstract EntityModel GetEntityModel();
+
+		public EntityFieldOptions GetFieldOptions(IField field)
+		{
+			return null;
+		}
 	}
 
 	public class EntitySchemaOptions<T> : EntitySchemaOptions
@@ -19,7 +24,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		public EntitySchemaOptions()
 		{
 			EntityTypeModel = TypeModel.GetModelOf<T>();
-			ModelTransformer = new EntityModelTransformer<T>();
+			ModelTransformer = new EntityModelTransformer<T>(this);
 		}
 
 		public override bool PerformTransformationPass()
@@ -33,5 +38,10 @@ namespace Silk.Data.SQL.ORM.Schema
 		{
 			return ModelTransformer.GetEntityModel();
 		}
+	}
+
+	public abstract class EntityFieldOptions
+	{
+		public string ConfiguredColumnName { get; protected set; }
 	}
 }
