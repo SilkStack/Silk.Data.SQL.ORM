@@ -11,7 +11,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 		private readonly static Dictionary<Type, Func<EntityFieldOptions, SqlDataType>> _sqlDataTypes
 			= new Dictionary<Type, Func<EntityFieldOptions, SqlDataType>>
 			{
-				{ typeof(string), options => SqlDataType.Text() },
+				{ typeof(string), options => options?.ConfiguredDataLength == null ? SqlDataType.Text() : SqlDataType.Text(options.ConfiguredDataLength.Value) },
 				{ typeof(bool), options => SqlDataType.Bit() },
 				{ typeof(byte), options => SqlDataType.UnsignedTinyInt() },
 				{ typeof(sbyte), options => SqlDataType.TinyInt() },
@@ -21,9 +21,15 @@ namespace Silk.Data.SQL.ORM.Modelling
 				{ typeof(uint), options => SqlDataType.UnsignedInt() },
 				{ typeof(long), options => SqlDataType.BigInt() },
 				{ typeof(ulong), options => SqlDataType.UnsignedBigInt() },
-				{ typeof(float), options => SqlDataType.Float(SqlDataType.FLOAT_MAX_PRECISION) },
-				{ typeof(double), options => SqlDataType.Float(SqlDataType.DOUBLE_MAX_PRECISION) },
-				{ typeof(decimal), options => SqlDataType.Decimal() },
+				{ typeof(float), options => options.ConfiguredPrecision == null ? SqlDataType.Float(SqlDataType.FLOAT_MAX_PRECISION) : SqlDataType.Float(options.ConfiguredPrecision.Value) },
+				{ typeof(double), options => options.ConfiguredPrecision == null ? SqlDataType.Float(SqlDataType.DOUBLE_MAX_PRECISION) : SqlDataType.Float(options.ConfiguredPrecision.Value) },
+				{ typeof(decimal), options => {
+					if (options.ConfiguredPrecision != null && options.ConfiguredScale != null)
+						return SqlDataType.Decimal(options.ConfiguredPrecision.Value, options.ConfiguredScale.Value);
+					else if (options.ConfiguredPrecision != null)
+						return SqlDataType.Decimal(options.ConfiguredPrecision.Value);
+					return SqlDataType.Decimal();
+					} },
 				{ typeof(Guid), options => SqlDataType.Guid() },
 				{ typeof(DateTime), options => SqlDataType.DateTime() }
 			};
