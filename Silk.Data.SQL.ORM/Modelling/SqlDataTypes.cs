@@ -21,12 +21,12 @@ namespace Silk.Data.SQL.ORM.Modelling
 				{ typeof(uint), options => SqlDataType.UnsignedInt() },
 				{ typeof(long), options => SqlDataType.BigInt() },
 				{ typeof(ulong), options => SqlDataType.UnsignedBigInt() },
-				{ typeof(float), options => options.ConfiguredPrecision == null ? SqlDataType.Float(SqlDataType.FLOAT_MAX_PRECISION) : SqlDataType.Float(options.ConfiguredPrecision.Value) },
-				{ typeof(double), options => options.ConfiguredPrecision == null ? SqlDataType.Float(SqlDataType.DOUBLE_MAX_PRECISION) : SqlDataType.Float(options.ConfiguredPrecision.Value) },
+				{ typeof(float), options => options?.ConfiguredPrecision == null ? SqlDataType.Float(SqlDataType.FLOAT_MAX_PRECISION) : SqlDataType.Float(options.ConfiguredPrecision.Value) },
+				{ typeof(double), options => options?.ConfiguredPrecision == null ? SqlDataType.Float(SqlDataType.DOUBLE_MAX_PRECISION) : SqlDataType.Float(options.ConfiguredPrecision.Value) },
 				{ typeof(decimal), options => {
-					if (options.ConfiguredPrecision != null && options.ConfiguredScale != null)
+					if (options?.ConfiguredPrecision != null && options?.ConfiguredScale != null)
 						return SqlDataType.Decimal(options.ConfiguredPrecision.Value, options.ConfiguredScale.Value);
-					else if (options.ConfiguredPrecision != null)
+					else if (options?.ConfiguredPrecision != null)
 						return SqlDataType.Decimal(options.ConfiguredPrecision.Value);
 					return SqlDataType.Decimal();
 					} },
