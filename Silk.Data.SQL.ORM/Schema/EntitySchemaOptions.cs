@@ -43,5 +43,11 @@ namespace Silk.Data.SQL.ORM.Schema
 	public abstract class EntityFieldOptions
 	{
 		public string ConfiguredColumnName { get; protected set; }
+		public bool IsPrimaryKey { get; protected set; }
+		public bool IsAutoGenerate { get; protected set; }
+		public bool IsIndex { get; protected set; }
+		public int? ConfiguredPrecision { get; protected set; }
+		public int? ConfiguredScale { get; protected set; }
+		public int? ConfiguredDataLength { get; protected set; }
 	}
 }
