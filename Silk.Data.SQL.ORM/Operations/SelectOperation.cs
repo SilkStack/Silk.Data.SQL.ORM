@@ -1,28 +1,62 @@
 ﻿using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Modelling;
+using Silk.Data.SQL.Queries;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Silk.Data.SQL.ORM.Operations
 {
-	public class SelectOperation : DataOperation
+	public class SelectResult<T>
 	{
-		public static SelectOperation Create<TEntity>(EntityModel<TEntity> model)
+	}
+
+	public class SelectOperation<T> : DataOperationWithResult<SelectResult<T>>
+	{
+		private readonly QueryExpression _query;
+
+		public override SelectResult<T> Result => throw new System.NotImplementedException();
+
+		public override bool CanBeBatched => true;
+
+		public SelectOperation(QueryExpression query)
 		{
-			return Create(model);
+			_query = query;
 		}
 
-		public static SelectOperation Create<TEntity, TProjection>(EntityModel<TEntity> model)
+		public override QueryExpression GetQuery()
 		{
-			return Create(model.GetProjection<TProjection>());
+			return _query;
 		}
 
-		private static SelectOperation Create(ProjectionModel model)
+		public override void ProcessResult(QueryResult queryResult)
+		{
+			throw new System.NotImplementedException();
+		}
+
+		public override Task ProcessResultAsync(QueryResult queryResult)
+		{
+			throw new System.NotImplementedException();
+		}
+	}
+
+	public class SelectOperation
+	{
+		public static SelectOperation<TEntity> Create<TEntity>(EntityModel<TEntity> model)
+		{
+			return Create<TEntity>((ProjectionModel)model);
+		}
+
+		public static SelectOperation<TProjection> Create<TEntity, TProjection>(EntityModel<TEntity> model)
+		{
+			return Create<TProjection>(model.GetProjection<TProjection>());
+		}
+
+		private static SelectOperation<TProjection> Create<TProjection>(ProjectionModel model)
 		{
 			var entityTableExpr = QueryExpression.Table(model.EntityTable.TableName);
 			var query = CreateQuery(model, entityTableExpr);
-
-			return null;
+			return new SelectOperation<TProjection>(query);
 		}
 
 		private static QueryExpression CreateQuery(ProjectionModel model, QueryExpression from)
@@ -43,7 +77,7 @@ namespace Silk.Data.SQL.ORM.Operations
 
 			}
 
-			return null;
+			return query;
 		}
 
 		private static void AddFields(ProjectionModel model, List<QueryExpression> projectedFieldsExprs, QueryExpression from, List<JoinExpression> joins)
