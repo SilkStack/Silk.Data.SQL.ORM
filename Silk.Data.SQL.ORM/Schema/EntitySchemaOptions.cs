@@ -5,6 +5,8 @@ namespace Silk.Data.SQL.ORM.Schema
 {
 	public abstract class EntitySchemaOptions
 	{
+		public EntityModelTransformer ModelTransformer { get; protected set; }
+
 		public abstract bool PerformTransformationPass();
 
 		public abstract EntityModel GetEntityModel();
@@ -19,12 +21,13 @@ namespace Silk.Data.SQL.ORM.Schema
 	{
 		public TypeModel<T> EntityTypeModel { get; }
 
-		public EntityModelTransformer<T> ModelTransformer { get; }
+		public new EntityModelTransformer<T> ModelTransformer { get; }
 
-		public EntitySchemaOptions()
+		public EntitySchemaOptions(SchemaBuilder schemaBuilder)
 		{
 			EntityTypeModel = TypeModel.GetModelOf<T>();
-			ModelTransformer = new EntityModelTransformer<T>(this);
+			ModelTransformer = new EntityModelTransformer<T>(this, schemaBuilder);
+			base.ModelTransformer = ModelTransformer;
 		}
 
 		public override bool PerformTransformationPass()

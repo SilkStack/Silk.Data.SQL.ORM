@@ -2,6 +2,7 @@
 using Silk.Data.SQL.ORM.Modelling;
 using Silk.Data.SQL.ORM.Schema;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Tests
@@ -88,6 +89,10 @@ namespace Silk.Data.SQL.ORM.Tests
 		[TestMethod]
 		public void ModelMultipleObjectRelationship()
 		{
+			var builder = new SchemaBuilder();
+			builder.DefineEntity<HasManyPrimitives>();
+			builder.DefineEntity<HasIntId>();
+			var schema = builder.Build();
 			throw new NotImplementedException();
 		}
 
@@ -167,10 +172,16 @@ namespace Silk.Data.SQL.ORM.Tests
 			public Guid Id { get; set; }
 		}
 
-		public enum Enum
+		private enum Enum
 		{
 			Value1,
 			Value2
+		}
+
+		private class HasManyPrimitives
+		{
+			public List<HasIntId> Relationships { get; set; }
+				= new List<HasIntId>();
 		}
 	}
 }

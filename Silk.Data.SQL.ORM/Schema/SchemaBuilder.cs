@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Silk.Data.SQL.ORM.Modelling;
 
@@ -11,9 +12,17 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public EntitySchemaOptions<T> DefineEntity<T>()
 		{
-			var options = new EntitySchemaOptions<T>();
+			var options = new EntitySchemaOptions<T>(this);
 			_entityTypes.Add(options);
 			return options;
+		}
+
+		public EntityModelTransformer GetModelTransformer(Type type)
+		{
+			var options = _entityTypes.FirstOrDefault(q => q.GetEntityModel().EntityType == type);
+			if (options == null)
+				return null;
+			return options.ModelTransformer;
 		}
 
 		public Schema Build()
