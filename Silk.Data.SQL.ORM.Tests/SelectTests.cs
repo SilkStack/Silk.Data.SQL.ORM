@@ -8,7 +8,7 @@ namespace Silk.Data.SQL.ORM.Tests
 	public class SelectTests
 	{
 		[TestMethod]
-		public void SelectFlatPoco()
+		public void GenerateSelectFlatPocoSQL()
 		{
 			var schemaBuilder = new SchemaBuilder();
 			schemaBuilder.DefineEntity<FlatPoco>();
@@ -16,8 +16,10 @@ namespace Silk.Data.SQL.ORM.Tests
 			var model = schema.GetEntityModel<FlatPoco>();
 
 			var select = SelectOperation.Create<FlatPoco>(model);
-
-			throw new System.NotImplementedException();
+			var sql = TestQueryConverter.CleanSql(
+				new TestQueryConverter().ConvertToQuery(select.GetQuery()).SqlText
+				);
+			Assert.AreEqual("SELECT [FlatPoco].[Id] AS [Id], [FlatPoco].[Data] AS [Data] FROM [FlatPoco];", sql);
 		}
 
 		private class FlatPoco
