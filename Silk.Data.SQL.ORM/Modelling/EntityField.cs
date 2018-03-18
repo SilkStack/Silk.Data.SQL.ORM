@@ -9,7 +9,24 @@ namespace Silk.Data.SQL.ORM.Modelling
 	{
 	}
 
-	public class ValueField : FieldBase<ValueField>, IEntityField
+	public interface IValueField : IEntityField
+	{
+		Column Column { get; }
+	}
+
+	public interface ISingleRelatedObjectField : IEntityField
+	{
+		ProjectionModel RelatedObjectModel { get; }
+		IValueField RelatedPrimaryKey { get; }
+		Column LocalColumn { get; }
+	}
+
+	public interface IModelBuildFinalizerField
+	{
+		void FinalizeModelBuild(EntityModelCollection entityModels);
+	}
+
+	public class ValueField<T> : FieldBase<T>, IValueField
 	{
 		public Column Column { get; }
 
@@ -21,14 +38,14 @@ namespace Silk.Data.SQL.ORM.Modelling
 		}
 	}
 
-	public class SingleRelatedObjectField : FieldBase<SingleRelatedObjectField>, IEntityField
+	public class SingleRelatedObjectField<T> : FieldBase<T>, ISingleRelatedObjectField, IModelBuildFinalizerField
 	{
 		public ProjectionModel RelatedObjectModel { get; private set; }
-		public ValueField RelatedPrimaryKey { get; }
+		public IValueField RelatedPrimaryKey { get; }
 		public Column LocalColumn { get; }
 
 		public SingleRelatedObjectField(string fieldName, bool canRead, bool canWrite, bool isEnumerable, Type elementType,
-			ProjectionModel relatedObjectModel, ValueField relatedPrimaryKey, Column localColumn) :
+			ProjectionModel relatedObjectModel, IValueField relatedPrimaryKey, Column localColumn) :
 			base(fieldName, canRead, canWrite, isEnumerable, elementType)
 		{
 			RelatedObjectModel = relatedObjectModel;
@@ -36,7 +53,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 			LocalColumn = localColumn;
 		}
 
-		internal void UpdateRelatedObjectModel(EntityModelCollection entityModels)
+		public void FinalizeModelBuild(EntityModelCollection entityModels)
 		{
 			if (RelatedObjectModel != null)
 				return;

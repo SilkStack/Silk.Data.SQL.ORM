@@ -1,4 +1,6 @@
-﻿using Silk.Data.SQL.Expressions;
+﻿using Silk.Data.Modelling;
+using Silk.Data.Modelling.Mapping;
+using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Modelling;
 using Silk.Data.SQL.Queries;
 using System.Collections.Generic;
@@ -7,21 +9,25 @@ using System.Threading.Tasks;
 
 namespace Silk.Data.SQL.ORM.Operations
 {
-	public class SelectResult<T>
+	public class SelectOperation<T> : DataOperationWithResult<ICollection<T>>
 	{
-	}
+		private readonly static string[] _selfPath = new string[] { "." };
 
-	public class SelectOperation<T> : DataOperationWithResult<SelectResult<T>>
-	{
 		private readonly QueryExpression _query;
+		private readonly Mapping _mapping;
+		private readonly ProjectionModel _projectionModel;
+		private readonly TypeModel<T> _typeModel;
+		private ICollection<T> _result;
 
-		public override SelectResult<T> Result => throw new System.NotImplementedException();
-
+		public override ICollection<T> Result => _result;
 		public override bool CanBeBatched => true;
 
-		public SelectOperation(QueryExpression query)
+		public SelectOperation(QueryExpression query, Mapping mapping, ProjectionModel projectionModel)
 		{
 			_query = query;
+			_mapping = mapping;
+			_projectionModel = projectionModel;
+			_typeModel = TypeModel.GetModelOf<T>();
 		}
 
 		public override QueryExpression GetQuery()
@@ -31,12 +37,28 @@ namespace Silk.Data.SQL.ORM.Operations
 
 		public override void ProcessResult(QueryResult queryResult)
 		{
-			throw new System.NotImplementedException();
+			var result = new List<T>();
+			var reader = new QueryResultReader(_projectionModel, queryResult);
+			while (queryResult.Read())
+			{
+				var writer = new ObjectReadWriter(null, _typeModel, typeof(T));
+				_mapping.PerformMapping(reader, writer);
+				result.Add(writer.ReadField<T>(_selfPath, 0));
+			}
+			_result = result;
 		}
 
-		public override Task ProcessResultAsync(QueryResult queryResult)
+		public override async Task ProcessResultAsync(QueryResult queryResult)
 		{
-			throw new System.NotImplementedException();
+			var result = new List<T>();
+			var reader = new QueryResultReader(_projectionModel, queryResult);
+			while (await queryResult.ReadAsync())
+			{
+				var writer = new ObjectReadWriter(null, _typeModel, typeof(T));
+				_mapping.PerformMapping(reader, writer);
+				result.Add(writer.ReadField<T>(_selfPath, 0));
+			}
+			_result = result;
 		}
 	}
 
@@ -56,7 +78,14 @@ namespace Silk.Data.SQL.ORM.Operations
 		{
 			var entityTableExpr = QueryExpression.Table(model.EntityTable.TableName);
 			var query = CreateQuery(model, entityTableExpr);
-			return new SelectOperation<TProjection>(query);
+
+			var mappingBuilder = new MappingBuilder(model, TypeModel.GetModelOf<TProjection>());
+			mappingBuilder.AddConvention(CreateInstanceAsNeeded.Instance);
+			mappingBuilder.AddConvention(CopySameTypes.Instance);
+
+			var sourceModel = model.TransformToSourceModel();
+
+			return new SelectOperation<TProjection>(query, mappingBuilder.BuildMapping(), model);
 		}
 
 		private static QueryExpression CreateQuery(ProjectionModel model, QueryExpression from)
@@ -85,7 +114,7 @@ namespace Silk.Data.SQL.ORM.Operations
 		{
 			foreach (var field in model.Fields)
 			{
-				if (field is ValueField valueField)
+				if (field is IValueField valueField)
 				{
 					var fieldSource = from;
 					if (fieldSource is AliasExpression aliasExpression)
@@ -96,7 +125,7 @@ namespace Silk.Data.SQL.ORM.Operations
 							$"{fieldPrefix}{valueField.FieldName}"
 						));
 				}
-				else if (field is SingleRelatedObjectField singleRelationshipField)
+				else if (field is ISingleRelatedObjectField singleRelationshipField)
 				{
 					var joinAlias = QueryExpression.Alias(
 						QueryExpression.Table(singleRelationshipField.RelatedObjectModel.EntityTable.TableName),

@@ -67,7 +67,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 
 			_entityColumns.Add(column);
 			_entityFields.Add(field.FieldName,
-				new ValueField(field.FieldName, field.CanRead, field.CanWrite, false, null, column)
+				new ValueField<TData>(field.FieldName, field.CanRead, field.CanWrite, false, null, column)
 				);
 
 			FieldsAdded = true;
@@ -76,7 +76,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 		private void ModelSingleObjectRelationship<TData>(IField<TData> field, EntityFieldOptions options, string sqlColumnName,
 			EntityModelTransformer relatedTypeTransformer)
 		{
-			var primaryKeyField = relatedTypeTransformer.Fields.OfType<ValueField>()
+			var primaryKeyField = relatedTypeTransformer.Fields.OfType<IValueField>()
 				.FirstOrDefault(q => q.Column.IsPrimaryKey);
 			if (primaryKeyField == null)
 			{
@@ -87,7 +87,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 			var localColumn = new Column(sqlColumnName, primaryKeyField.Column.SqlDataType);
 			_entityColumns.Add(localColumn);
 			_entityFields.Add(field.FieldName,
-				new SingleRelatedObjectField(field.FieldName, field.CanRead, field.CanWrite, false, null, null, primaryKeyField, localColumn)
+				new SingleRelatedObjectField<TData>(field.FieldName, field.CanRead, field.CanWrite, false, null, null, primaryKeyField, localColumn)
 				);
 
 			FieldsAdded = true;
@@ -130,7 +130,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 				}
 				else
 				{
-					var primaryKeyField = relatedTypeTransformer.Fields.OfType<ValueField>()
+					var primaryKeyField = relatedTypeTransformer.Fields.OfType<IValueField>()
 						.FirstOrDefault(q => q.Column.IsPrimaryKey);
 					if (primaryKeyField == null)
 						return;

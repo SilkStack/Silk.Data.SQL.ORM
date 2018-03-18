@@ -42,10 +42,10 @@ namespace Silk.Data.SQL.ORM.Schema
 				_entityTypes.Select(q => q.GetEntityModel())
 			);
 
-			foreach (var singleRelatedObjectField in entityModelCollection.SelectMany(q => q.Fields)
-				.OfType<SingleRelatedObjectField>())
+			foreach (var fieldWithBuildFinalizer in entityModelCollection.SelectMany(q => q.Fields)
+				.OfType<IModelBuildFinalizerField>())
 			{
-				singleRelatedObjectField.UpdateRelatedObjectModel(entityModelCollection);
+				fieldWithBuildFinalizer.FinalizeModelBuild(entityModelCollection);
 			}
 
 			return new Schema(entityModelCollection);

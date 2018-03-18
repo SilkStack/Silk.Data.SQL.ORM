@@ -24,52 +24,52 @@ namespace Silk.Data.SQL.ORM.Tests
 			Assert.IsNotNull(model.EntityTable);
 			Assert.AreEqual(16, model.EntityTable.Columns.Length);
 
-			Assert.IsTrue(model.Fields.OfType<ValueField>().Any(field =>
+			Assert.IsTrue(model.Fields.OfType<IValueField>().Any(field =>
 				field.FieldName == nameof(PrimitiveSQLTypes.Bool) && field.Column.SqlDataType.BaseType == SqlBaseType.Bit
 				));
-			Assert.IsTrue(model.Fields.OfType<ValueField>().Any(field =>
+			Assert.IsTrue(model.Fields.OfType<IValueField>().Any(field =>
 				field.FieldName == nameof(PrimitiveSQLTypes.Byte) && field.Column.SqlDataType.BaseType == SqlBaseType.TinyInt && field.Column.SqlDataType.Unsigned
 				));
-			Assert.IsTrue(model.Fields.OfType<ValueField>().Any(field =>
+			Assert.IsTrue(model.Fields.OfType<IValueField>().Any(field =>
 				field.FieldName == nameof(PrimitiveSQLTypes.SByte) && field.Column.SqlDataType.BaseType == SqlBaseType.TinyInt && !field.Column.SqlDataType.Unsigned
 				));
-			Assert.IsTrue(model.Fields.OfType<ValueField>().Any(field =>
+			Assert.IsTrue(model.Fields.OfType<IValueField>().Any(field =>
 				field.FieldName == nameof(PrimitiveSQLTypes.UShort) && field.Column.SqlDataType.BaseType == SqlBaseType.SmallInt && field.Column.SqlDataType.Unsigned
 				));
-			Assert.IsTrue(model.Fields.OfType<ValueField>().Any(field =>
+			Assert.IsTrue(model.Fields.OfType<IValueField>().Any(field =>
 				field.FieldName == nameof(PrimitiveSQLTypes.Short) && field.Column.SqlDataType.BaseType == SqlBaseType.SmallInt && !field.Column.SqlDataType.Unsigned
 				));
-			Assert.IsTrue(model.Fields.OfType<ValueField>().Any(field =>
+			Assert.IsTrue(model.Fields.OfType<IValueField>().Any(field =>
 				field.FieldName == nameof(PrimitiveSQLTypes.UInt) && field.Column.SqlDataType.BaseType == SqlBaseType.Int && field.Column.SqlDataType.Unsigned
 				));
-			Assert.IsTrue(model.Fields.OfType<ValueField>().Any(field =>
+			Assert.IsTrue(model.Fields.OfType<IValueField>().Any(field =>
 				field.FieldName == nameof(PrimitiveSQLTypes.Int) && field.Column.SqlDataType.BaseType == SqlBaseType.Int && !field.Column.SqlDataType.Unsigned
 				));
-			Assert.IsTrue(model.Fields.OfType<ValueField>().Any(field =>
+			Assert.IsTrue(model.Fields.OfType<IValueField>().Any(field =>
 				field.FieldName == nameof(PrimitiveSQLTypes.ULong) && field.Column.SqlDataType.BaseType == SqlBaseType.BigInt && field.Column.SqlDataType.Unsigned
 				));
-			Assert.IsTrue(model.Fields.OfType<ValueField>().Any(field =>
+			Assert.IsTrue(model.Fields.OfType<IValueField>().Any(field =>
 				field.FieldName == nameof(PrimitiveSQLTypes.Long) && field.Column.SqlDataType.BaseType == SqlBaseType.BigInt && !field.Column.SqlDataType.Unsigned
 				));
-			Assert.IsTrue(model.Fields.OfType<ValueField>().Any(field =>
+			Assert.IsTrue(model.Fields.OfType<IValueField>().Any(field =>
 				field.FieldName == nameof(PrimitiveSQLTypes.Float) && field.Column.SqlDataType.BaseType == SqlBaseType.Float
 				));
-			Assert.IsTrue(model.Fields.OfType<ValueField>().Any(field =>
+			Assert.IsTrue(model.Fields.OfType<IValueField>().Any(field =>
 				field.FieldName == nameof(PrimitiveSQLTypes.Double) && field.Column.SqlDataType.BaseType == SqlBaseType.Float
 				));
-			Assert.IsTrue(model.Fields.OfType<ValueField>().Any(field =>
+			Assert.IsTrue(model.Fields.OfType<IValueField>().Any(field =>
 				field.FieldName == nameof(PrimitiveSQLTypes.Decimal) && field.Column.SqlDataType.BaseType == SqlBaseType.Decimal
 				));
-			Assert.IsTrue(model.Fields.OfType<ValueField>().Any(field =>
+			Assert.IsTrue(model.Fields.OfType<IValueField>().Any(field =>
 				field.FieldName == nameof(PrimitiveSQLTypes.DateTime) && field.Column.SqlDataType.BaseType == SqlBaseType.DateTime
 				));
-			Assert.IsTrue(model.Fields.OfType<ValueField>().Any(field =>
+			Assert.IsTrue(model.Fields.OfType<IValueField>().Any(field =>
 				field.FieldName == nameof(PrimitiveSQLTypes.Guid) && field.Column.SqlDataType.BaseType == SqlBaseType.Guid
 				));
-			Assert.IsTrue(model.Fields.OfType<ValueField>().Any(field =>
+			Assert.IsTrue(model.Fields.OfType<IValueField>().Any(field =>
 				field.FieldName == nameof(PrimitiveSQLTypes.String) && field.Column.SqlDataType.BaseType == SqlBaseType.Text
 				));
-			Assert.IsTrue(model.Fields.OfType<ValueField>().Any(field =>
+			Assert.IsTrue(model.Fields.OfType<IValueField>().Any(field =>
 				field.FieldName == nameof(PrimitiveSQLTypes.Enum) && field.Column.SqlDataType.BaseType == SqlBaseType.Int
 				));
 		}
@@ -89,15 +89,15 @@ namespace Silk.Data.SQL.ORM.Tests
 			var schema = builder.Build();
 			var model = schema.GetEntityModel<HasSingleRelationship>();
 			var relatedModel = schema.GetEntityModel<HasIntId>();
-			var primaryKeyField = relatedModel.Fields.OfType<ValueField>().First(q => q.Column.IsPrimaryKey);
+			var primaryKeyField = relatedModel.Fields.OfType<IValueField>().First(q => q.Column.IsPrimaryKey);
 
 			Assert.AreEqual(1, model.Fields.Length);
 			Assert.AreEqual(1, model.EntityTable.Columns.Length);
 			Assert.AreEqual(primaryKeyField.Column.SqlDataType.BaseType, model.EntityTable.Columns[0].SqlDataType.BaseType);
 			var field = model.Fields.First();
-			Assert.IsInstanceOfType(field, typeof(SingleRelatedObjectField));
+			Assert.IsInstanceOfType(field, typeof(ISingleRelatedObjectField));
 
-			var relatedObjectField = field as SingleRelatedObjectField;
+			var relatedObjectField = field as ISingleRelatedObjectField;
 			Assert.ReferenceEquals(relatedModel, relatedObjectField.RelatedObjectModel);
 			Assert.ReferenceEquals(primaryKeyField, relatedObjectField.RelatedPrimaryKey);
 		}
@@ -121,17 +121,17 @@ namespace Silk.Data.SQL.ORM.Tests
 			builder.DefineEntity<HasLongId>();
 			var schema = builder.Build();
 			EntityModel model = schema.GetEntityModel<HasShortId>();
-			var field = model.Fields.OfType<ValueField>().First();
+			var field = model.Fields.OfType<IValueField>().First();
 			Assert.IsTrue(field.Column.IsPrimaryKey);
 			Assert.IsTrue(field.Column.IsAutoIncrement);
 
 			model = schema.GetEntityModel<HasIntId>();
-			field = model.Fields.OfType<ValueField>().First();
+			field = model.Fields.OfType<IValueField>().First();
 			Assert.IsTrue(field.Column.IsPrimaryKey);
 			Assert.IsTrue(field.Column.IsAutoIncrement);
 
 			model = schema.GetEntityModel<HasLongId>();
-			field = model.Fields.OfType<ValueField>().First();
+			field = model.Fields.OfType<IValueField>().First();
 			Assert.IsTrue(field.Column.IsPrimaryKey);
 			Assert.IsTrue(field.Column.IsAutoIncrement);
 		}
@@ -143,7 +143,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			builder.DefineEntity<HasGuidId>();
 			var schema = builder.Build();
 			var model = schema.GetEntityModel<HasGuidId>();
-			var field = model.Fields.OfType<ValueField>().First();
+			var field = model.Fields.OfType<IValueField>().First();
 			Assert.IsTrue(field.Column.IsPrimaryKey);
 			Assert.IsTrue(field.Column.IsAutoGenerated);
 		}
