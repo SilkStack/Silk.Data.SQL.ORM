@@ -15,7 +15,6 @@ namespace Silk.Data.SQL.ORM.Operations
 		private readonly static string[] _selfPath = new string[] { "." };
 
 		private readonly QueryExpression _query;
-		private readonly Mapping _mapping;
 		private readonly ProjectionModel _projectionModel;
 		private readonly TypeModel<T> _typeModel;
 		private ICollection<T> _result;
@@ -23,10 +22,9 @@ namespace Silk.Data.SQL.ORM.Operations
 		public override ICollection<T> Result => _result;
 		public override bool CanBeBatched => true;
 
-		public SelectOperation(QueryExpression query, Mapping mapping, ProjectionModel projectionModel)
+		public SelectOperation(QueryExpression query, ProjectionModel projectionModel)
 		{
 			_query = query;
-			_mapping = mapping;
 			_projectionModel = projectionModel;
 			_typeModel = TypeModel.GetModelOf<T>();
 		}
@@ -43,7 +41,7 @@ namespace Silk.Data.SQL.ORM.Operations
 			while (queryResult.Read())
 			{
 				var writer = new ObjectReadWriter(null, _typeModel, typeof(T));
-				_mapping.PerformMapping(reader, writer);
+				_projectionModel.Mapping.PerformMapping(reader, writer);
 				result.Add(writer.ReadField<T>(_selfPath, 0));
 			}
 			_result = result;
@@ -56,7 +54,7 @@ namespace Silk.Data.SQL.ORM.Operations
 			while (await queryResult.ReadAsync())
 			{
 				var writer = new ObjectReadWriter(null, _typeModel, typeof(T));
-				_mapping.PerformMapping(reader, writer);
+				_projectionModel.Mapping.PerformMapping(reader, writer);
 				result.Add(writer.ReadField<T>(_selfPath, 0));
 			}
 			_result = result;
@@ -80,12 +78,7 @@ namespace Silk.Data.SQL.ORM.Operations
 			var entityTableExpr = QueryExpression.Table(model.EntityTable.TableName);
 			var query = CreateQuery(model, entityTableExpr);
 
-			var mappingBuilder = new MappingBuilder(model, TypeModel.GetModelOf<TProjection>());
-			mappingBuilder.AddConvention(CreateInstanceAsNeeded.Instance);
-			mappingBuilder.AddConvention(CreateInstancesOfPropertiesAsNeeded.Instance);
-			mappingBuilder.AddConvention(CopyValueFields.Instance);
-
-			return new SelectOperation<TProjection>(query, mappingBuilder.BuildMapping(), model);
+			return new SelectOperation<TProjection>(query, model);
 		}
 
 		private static QueryExpression CreateQuery(ProjectionModel model, QueryExpression from)

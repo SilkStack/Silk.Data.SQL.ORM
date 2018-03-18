@@ -1,4 +1,7 @@
 ﻿using System;
+using Silk.Data.Modelling;
+using Silk.Data.Modelling.Mapping;
+using Silk.Data.SQL.ORM.Modelling.Binding;
 using Silk.Data.SQL.ORM.Schema;
 
 namespace Silk.Data.SQL.ORM.Modelling
@@ -19,11 +22,21 @@ namespace Silk.Data.SQL.ORM.Modelling
 		}
 	}
 
-	public class EntityModel<T> : EntityModel
+	public class EntityModel<T> : EntityModel, IModelBuilderFinalizer
 	{
 		public EntityModel(IEntityField[] fields, Table entityTable) :
 			base(typeof(T), fields, entityTable)
 		{
+		}
+
+		public void FinalizeBuiltModel(Schema.Schema finalizingSchema)
+		{
+			var mappingBuilder = new MappingBuilder(this, TypeModel.GetModelOf<T>());
+			mappingBuilder.AddConvention(CreateInstanceAsNeeded.Instance);
+			mappingBuilder.AddConvention(CreateInstancesOfPropertiesAsNeeded.Instance);
+			mappingBuilder.AddConvention(CopyValueFields.Instance);
+
+			Mapping = mappingBuilder.BuildMapping();
 		}
 	}
 }

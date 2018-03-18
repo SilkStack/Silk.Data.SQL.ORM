@@ -23,7 +23,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 
 	public interface IModelBuildFinalizerField
 	{
-		void FinalizeModelBuild(EntityModelCollection entityModels);
+		void FinalizeModelBuild(Schema.Schema finalizingSchema);
 	}
 
 	public class ValueField<T> : FieldBase<T>, IValueField
@@ -53,11 +53,11 @@ namespace Silk.Data.SQL.ORM.Modelling
 			LocalColumn = localColumn;
 		}
 
-		public void FinalizeModelBuild(EntityModelCollection entityModels)
+		public void FinalizeModelBuild(Schema.Schema finalizingSchema)
 		{
 			if (RelatedObjectModel != null)
 				return;
-			RelatedObjectModel = entityModels.FirstOrDefault(
+			RelatedObjectModel = finalizingSchema.EntityModels.FirstOrDefault(
 				entityModel => entityModel.Fields.Contains(RelatedPrimaryKey)
 				);
 		}
