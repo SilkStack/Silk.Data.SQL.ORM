@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Silk.Data.Modelling;
 using Silk.Data.SQL.ORM.Schema;
 
@@ -22,14 +23,26 @@ namespace Silk.Data.SQL.ORM.Modelling
 
 	public class SingleRelatedObjectField : FieldBase<SingleRelatedObjectField>, IEntityField
 	{
-		public ProjectionModel RelatedObjectModel { get; }
+		public ProjectionModel RelatedObjectModel { get; private set; }
 		public ValueField RelatedPrimaryKey { get; }
-		public SqlDataType SqlDataType => throw new NotImplementedException();
-		public string SqlFieldName => throw new NotImplementedException();
+		public Column LocalColumn { get; }
 
-		public SingleRelatedObjectField(string fieldName, bool canRead, bool canWrite, bool isEnumerable, Type elementType) :
+		public SingleRelatedObjectField(string fieldName, bool canRead, bool canWrite, bool isEnumerable, Type elementType,
+			ProjectionModel relatedObjectModel, ValueField relatedPrimaryKey, Column localColumn) :
 			base(fieldName, canRead, canWrite, isEnumerable, elementType)
 		{
+			RelatedObjectModel = relatedObjectModel;
+			RelatedPrimaryKey = relatedPrimaryKey;
+			LocalColumn = localColumn;
+		}
+
+		internal void UpdateRelatedObjectModel(EntityModelCollection entityModels)
+		{
+			if (RelatedObjectModel != null)
+				return;
+			RelatedObjectModel = entityModels.FirstOrDefault(
+				entityModel => entityModel.Fields.Contains(RelatedPrimaryKey)
+				);
 		}
 	}
 

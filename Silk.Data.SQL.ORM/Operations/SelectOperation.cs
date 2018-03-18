@@ -80,16 +80,20 @@ namespace Silk.Data.SQL.ORM.Operations
 			return query;
 		}
 
-		private static void AddFields(ProjectionModel model, List<QueryExpression> projectedFieldsExprs, QueryExpression from, List<JoinExpression> joins)
+		private static void AddFields(ProjectionModel model, List<QueryExpression> projectedFieldsExprs, QueryExpression from, List<JoinExpression> joins,
+			string fieldPrefix = "")
 		{
 			foreach (var field in model.Fields)
 			{
 				if (field is ValueField valueField)
 				{
+					var fieldSource = from;
+					if (fieldSource is AliasExpression aliasExpression)
+						fieldSource = aliasExpression.Identifier;
 					projectedFieldsExprs.Add(
 						QueryExpression.Alias(
-							QueryExpression.Column(valueField.Column.ColumnName, from),
-							valueField.FieldName
+							QueryExpression.Column(valueField.Column.ColumnName, fieldSource),
+							$"{fieldPrefix}{valueField.FieldName}"
 						));
 				}
 				else if (field is SingleRelatedObjectField singleRelationshipField)
@@ -99,13 +103,13 @@ namespace Silk.Data.SQL.ORM.Operations
 						singleRelationshipField.FieldName
 						);
 					var joinExpr = QueryExpression.Join(
-						QueryExpression.Column(singleRelationshipField.SqlFieldName, from),
+						QueryExpression.Column(singleRelationshipField.LocalColumn.ColumnName, from),
 						QueryExpression.Column(singleRelationshipField.RelatedPrimaryKey.Column.ColumnName, joinAlias),
 						JoinDirection.Left
 						);
 
 					joins.Add(joinExpr);
-					AddFields(singleRelationshipField.RelatedObjectModel, projectedFieldsExprs, joinAlias, joins);
+					AddFields(singleRelationshipField.RelatedObjectModel, projectedFieldsExprs, joinAlias, joins, $"{fieldPrefix}{field.FieldName}_");
 				}
 			}
 		}

@@ -42,6 +42,12 @@ namespace Silk.Data.SQL.ORM.Schema
 				_entityTypes.Select(q => q.GetEntityModel())
 			);
 
+			foreach (var singleRelatedObjectField in entityModelCollection.SelectMany(q => q.Fields)
+				.OfType<SingleRelatedObjectField>())
+			{
+				singleRelatedObjectField.UpdateRelatedObjectModel(entityModelCollection);
+			}
+
 			return new Schema(entityModelCollection);
 		}
 	}

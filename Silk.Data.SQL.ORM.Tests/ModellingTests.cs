@@ -83,7 +83,23 @@ namespace Silk.Data.SQL.ORM.Tests
 		[TestMethod]
 		public void ModelSingleObjectRelationship()
 		{
-			throw new NotImplementedException();
+			var builder = new SchemaBuilder();
+			builder.DefineEntity<HasSingleRelationship>();
+			builder.DefineEntity<HasIntId>();
+			var schema = builder.Build();
+			var model = schema.GetEntityModel<HasSingleRelationship>();
+			var relatedModel = schema.GetEntityModel<HasIntId>();
+			var primaryKeyField = relatedModel.Fields.OfType<ValueField>().First(q => q.Column.IsPrimaryKey);
+
+			Assert.AreEqual(1, model.Fields.Length);
+			Assert.AreEqual(1, model.EntityTable.Columns.Length);
+			Assert.AreEqual(primaryKeyField.Column.SqlDataType.BaseType, model.EntityTable.Columns[0].SqlDataType.BaseType);
+			var field = model.Fields.First();
+			Assert.IsInstanceOfType(field, typeof(SingleRelatedObjectField));
+
+			var relatedObjectField = field as SingleRelatedObjectField;
+			Assert.ReferenceEquals(relatedModel, relatedObjectField.RelatedObjectModel);
+			Assert.ReferenceEquals(primaryKeyField, relatedObjectField.RelatedPrimaryKey);
 		}
 
 		[TestMethod]
@@ -176,6 +192,11 @@ namespace Silk.Data.SQL.ORM.Tests
 		{
 			Value1,
 			Value2
+		}
+
+		private class HasSingleRelationship
+		{
+			public HasIntId Relationship { get; set; }
 		}
 
 		private class HasManyPrimitives
