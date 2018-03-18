@@ -33,7 +33,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 		{
 			var mappingBuilder = new MappingBuilder(this, TypeModel.GetModelOf<T>());
 			mappingBuilder.AddConvention(CreateInstanceAsNeeded.Instance);
-			mappingBuilder.AddConvention(CreateInstancesOfPropertiesAsNeeded.Instance);
+			mappingBuilder.AddConvention(CreateSingleRelatedInstanceWhenPresent.Instance);
 			mappingBuilder.AddConvention(CopyValueFields.Instance);
 
 			Mapping = mappingBuilder.BuildMapping();

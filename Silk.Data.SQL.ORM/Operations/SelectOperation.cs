@@ -1,8 +1,6 @@
 ﻿using Silk.Data.Modelling;
-using Silk.Data.Modelling.Mapping;
 using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Modelling;
-using Silk.Data.SQL.ORM.Modelling.Binding;
 using Silk.Data.SQL.Queries;
 using System.Collections.Generic;
 using System.Linq;
@@ -96,7 +94,6 @@ namespace Silk.Data.SQL.ORM.Operations
 
 			foreach (var field in model.Fields.OfType<ManyRelatedObjectField>())
 			{
-
 			}
 
 			return query;
@@ -105,21 +102,28 @@ namespace Silk.Data.SQL.ORM.Operations
 		private static void AddFields(ProjectionModel model, List<QueryExpression> projectedFieldsExprs, QueryExpression from, List<JoinExpression> joins,
 			string fieldPrefix = "")
 		{
+			var fromSource = from;
+			if (fromSource is AliasExpression aliasExpression)
+				fromSource = aliasExpression.Identifier;
+
 			foreach (var field in model.Fields)
 			{
 				if (field is IValueField valueField)
 				{
-					var fieldSource = from;
-					if (fieldSource is AliasExpression aliasExpression)
-						fieldSource = aliasExpression.Identifier;
 					projectedFieldsExprs.Add(
 						QueryExpression.Alias(
-							QueryExpression.Column(valueField.Column.ColumnName, fieldSource),
+							QueryExpression.Column(valueField.Column.ColumnName, fromSource),
 							$"{fieldPrefix}{valueField.FieldName}"
 						));
 				}
 				else if (field is ISingleRelatedObjectField singleRelationshipField)
 				{
+					projectedFieldsExprs.Add(
+						QueryExpression.Alias(
+							QueryExpression.Column(singleRelationshipField.LocalColumn.ColumnName, fromSource),
+							$"{fieldPrefix}{singleRelationshipField.FieldName}"
+						));
+
 					var joinAlias = QueryExpression.Alias(
 						QueryExpression.Table(singleRelationshipField.RelatedObjectModel.EntityTable.TableName),
 						singleRelationshipField.FieldName

@@ -1,7 +1,9 @@
 ﻿using Silk.Data.Modelling;
+using Silk.Data.SQL.ORM.Modelling;
 using Silk.Data.SQL.Queries;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Operations
 {
@@ -32,13 +34,40 @@ namespace Silk.Data.SQL.ORM.Operations
 			_queryResult = queryResult;
 		}
 
+		private IField GetField(string[] path, int startOffset)
+		{
+			IField ret = null;
+			var model = Model;
+			for (var i = startOffset; i < path.Length; i++)
+			{
+				ret = model.Fields.FirstOrDefault(q => q.FieldName == path[i]);
+				if (ret == null)
+					break;
+				if (ret is ISingleRelatedObjectField singleRelatedObjectField)
+					model = singleRelatedObjectField.RelatedObjectModel;
+			}
+			return ret;
+		}
+
 		public T ReadField<T>(string[] path, int offset)
 		{
-			if (!_typeReaders.TryGetValue(typeof(T), out var readFunc))
+			var field = GetField(path, offset);
+			if (field == null)
+				throw new Exception("Unknown field on model.");
+
+			Type dataType = null;
+			if (field is IValueField valueField)
+				dataType = field.FieldType;
+			else if (field is ISingleRelatedObjectField singleRelatedObjectField)
+				dataType = singleRelatedObjectField.RelatedPrimaryKey.FieldType;
+
+			if (!_typeReaders.TryGetValue(dataType, out var readFunc))
 				return default(T);
 
 			var fieldAlias = string.Join("_", path);
 			var ord = _queryResult.GetOrdinal(fieldAlias);
+			if (_queryResult.IsDBNull(ord))
+				return default(T);
 			return (T)readFunc(_queryResult, ord);
 		}
 

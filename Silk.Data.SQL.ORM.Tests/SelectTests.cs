@@ -75,7 +75,7 @@ FROM [FlatPoco];", sql);
 			var sql = TestQueryConverter.CleanSql(
 				new TestQueryConverter().ConvertToQuery(select.GetQuery()).SqlText
 				);
-			Assert.AreEqual(@"SELECT [PocoWithSingleRelationship].[Id] AS [Id], [Data].[Id] AS [Data_Id], [Data].[Data] AS [Data_Data]
+			Assert.AreEqual(@"SELECT [PocoWithSingleRelationship].[Id] AS [Id], [PocoWithSingleRelationship].[Data] AS [Data], [Data].[Id] AS [Data_Id], [Data].[Data] AS [Data_Data]
 FROM [PocoWithSingleRelationship]
 LEFT OUTER JOIN [FlatPoco] AS [Data] ON [PocoWithSingleRelationship].[Data] = [Data].[Id];", sql);
 		}
@@ -94,7 +94,7 @@ LEFT OUTER JOIN [FlatPoco] AS [Data] ON [PocoWithSingleRelationship].[Data] = [D
 				sqlProvider.ExecuteNonQuery(QueryExpression.CreateTable(
 					"PocoWithSingleRelationship",
 					QueryExpression.DefineColumn(nameof(PocoWithSingleRelationship.Id), SqlDataType.Int(), isAutoIncrement: true, isPrimaryKey: true),
-					QueryExpression.DefineColumn(nameof(PocoWithSingleRelationship.Data), SqlDataType.Int())
+					QueryExpression.DefineColumn(nameof(PocoWithSingleRelationship.Data), SqlDataType.Int(), isNullable: true)
 					));
 
 				sqlProvider.ExecuteNonQuery(QueryExpression.Insert(
@@ -106,7 +106,8 @@ LEFT OUTER JOIN [FlatPoco] AS [Data] ON [PocoWithSingleRelationship].[Data] = [D
 				sqlProvider.ExecuteNonQuery(QueryExpression.Insert(
 					"PocoWithSingleRelationship", new[] { nameof(PocoWithSingleRelationship.Data) },
 					new[] { (object)1 },
-					new[] { (object)2 }
+					new[] { (object)2 },
+					new[] { default(object) }
 					));
 
 				var schemaBuilder = new SchemaBuilder();
@@ -123,9 +124,10 @@ LEFT OUTER JOIN [FlatPoco] AS [Data] ON [PocoWithSingleRelationship].[Data] = [D
 				var result = select.Result;
 
 				Assert.IsNotNull(result);
-				Assert.AreEqual(2, result.Count);
+				Assert.AreEqual(3, result.Count);
 				Assert.IsTrue(result.Any(q => q.Id == 1 && q.Data.Data == "Hello"));
 				Assert.IsTrue(result.Any(q => q.Id == 2 && q.Data.Data == "World"));
+				Assert.IsTrue(result.Any(q => q.Id == 3 && q.Data == null));
 			}
 		}
 
