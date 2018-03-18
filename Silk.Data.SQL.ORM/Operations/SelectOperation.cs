@@ -2,6 +2,7 @@
 using Silk.Data.Modelling.Mapping;
 using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Modelling;
+using Silk.Data.SQL.ORM.Modelling.Binding;
 using Silk.Data.SQL.Queries;
 using System.Collections.Generic;
 using System.Linq;
@@ -81,9 +82,8 @@ namespace Silk.Data.SQL.ORM.Operations
 
 			var mappingBuilder = new MappingBuilder(model, TypeModel.GetModelOf<TProjection>());
 			mappingBuilder.AddConvention(CreateInstanceAsNeeded.Instance);
-			mappingBuilder.AddConvention(CopySameTypes.Instance);
-
-			var sourceModel = model.TransformToSourceModel();
+			mappingBuilder.AddConvention(CreateInstancesOfPropertiesAsNeeded.Instance);
+			mappingBuilder.AddConvention(CopyValueFields.Instance);
 
 			return new SelectOperation<TProjection>(query, mappingBuilder.BuildMapping(), model);
 		}

@@ -35,10 +35,10 @@ namespace Silk.Data.SQL.ORM.Operations
 		public T ReadField<T>(string[] path, int offset)
 		{
 			if (!_typeReaders.TryGetValue(typeof(T), out var readFunc))
-				throw new Exception("Trying to read unsupported type.");
+				return default(T);
 
-			var fieldName = path[offset];
-			var ord = _queryResult.GetOrdinal(fieldName);
+			var fieldAlias = string.Join("_", path);
+			var ord = _queryResult.GetOrdinal(fieldAlias);
 			return (T)readFunc(_queryResult, ord);
 		}
 
