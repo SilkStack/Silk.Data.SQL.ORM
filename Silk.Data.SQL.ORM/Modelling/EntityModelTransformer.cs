@@ -24,10 +24,11 @@ namespace Silk.Data.SQL.ORM.Modelling
 
 		public override IEntityField[] Fields => _entityFields.Values.ToArray();
 
+		private string _columnNamePrefix = "";
 		private string _entityTableName;
 		private readonly List<Column> _entityColumns =
 			new List<Column>();
-		private readonly Dictionary<string, IEntityField> _entityFields =
+		private Dictionary<string, IEntityField> _entityFields =
 			new Dictionary<string, IEntityField>();
 		private readonly EntitySchemaOptions<T> _schemaOptions;
 		private readonly SchemaBuilder _schemaBuilder;
@@ -93,6 +94,54 @@ namespace Silk.Data.SQL.ORM.Modelling
 			FieldsAdded = true;
 		}
 
+		private void ModelEmbeddedObject<TData>(IField<TData> field, EntityFieldOptions options, string columnPrefix)
+		{
+			var existingColumnPrefix = _columnNamePrefix;
+			var existingEntityFields = _entityFields;
+
+			_columnNamePrefix = columnPrefix;
+			_entityFields = new Dictionary<string, IEntityField>();
+
+			foreach (var subField in field.FieldTypeModel.Fields)
+			{
+				subField.Transform(this);
+			}
+			var subObjectFields = _entityFields;
+
+			_entityFields = existingEntityFields;
+			_columnNamePrefix = existingColumnPrefix;
+
+			var nullCheckColumn = new Column(columnPrefix.TrimEnd('_'), SqlDataType.Bit());
+			_entityColumns.Add(nullCheckColumn);
+			_entityFields.Add(field.FieldName,
+				new EmbeddedObjectField<TData>(field.FieldName, field.CanRead, field.CanWrite, false, null, subObjectFields.Values, nullCheckColumn)
+				);
+		}
+
+		private void RevisitEmbeddedObject<TData>(IField<TData> field, EntityFieldOptions options, string columnPrefix, IEmbeddedObjectField embeddedObjectField)
+		{
+			var existingColumnPrefix = _columnNamePrefix;
+			var existingEntityFields = _entityFields;
+
+			_columnNamePrefix = columnPrefix;
+			_entityFields = embeddedObjectField.EmbeddedFields.ToDictionary(q => q.FieldName);
+
+			foreach (var subField in field.FieldTypeModel.Fields)
+			{
+				subField.Transform(this);
+			}
+
+			var subObjectFields = _entityFields;
+
+			_entityFields = existingEntityFields;
+			_columnNamePrefix = existingColumnPrefix;
+
+			_entityFields.Remove(field.FieldName);
+			_entityFields.Add(field.FieldName,
+				new EmbeddedObjectField<TData>(field.FieldName, field.CanRead, field.CanWrite, false, null, subObjectFields.Values, embeddedObjectField.NullCheckColumn)
+				);
+		}
+
 		public void VisitField<TData>(IField<TData> field)
 		{
 			if (!field.CanRead)
@@ -101,10 +150,16 @@ namespace Silk.Data.SQL.ORM.Modelling
 			var options = _schemaOptions.GetFieldOptions(field);
 			var sqlColumnName = options?.ConfiguredColumnName;
 			if (string.IsNullOrWhiteSpace(sqlColumnName))
-				sqlColumnName = field.FieldName;
+				sqlColumnName = $"{_columnNamePrefix}{field.FieldName}";
 
-			if (_entityFields.ContainsKey(field.FieldName))
+			if (_entityFields.TryGetValue(field.FieldName, out var existingField))
+			{
+				if (existingField is IEmbeddedObjectField embeddedObjectField)
+				{
+					RevisitEmbeddedObject<TData>(field, options, $"{sqlColumnName}_", embeddedObjectField);
+				}
 				return;
+			}
 
 			if (!field.IsEnumerable)
 			{
@@ -116,7 +171,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 				var relatedTypeTransformer = _schemaBuilder.GetModelTransformer(field.FieldType);
 				if (relatedTypeTransformer == null)
 				{
-					//  embed type recursively
+					ModelEmbeddedObject<TData>(field, options, $"{sqlColumnName}_");
 					return;
 				}
 				ModelSingleObjectRelationship(field, options, sqlColumnName, relatedTypeTransformer);

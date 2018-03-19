@@ -6,10 +6,10 @@ using System.Reflection;
 
 namespace Silk.Data.SQL.ORM.Modelling.Binding
 {
-	public class CreateSingleRelatedInstanceWhenPresent : IMappingConvention
+	public class CreateEmbeddedInstanceUsingNotNullColumn : IMappingConvention
 	{
-		public static CreateSingleRelatedInstanceWhenPresent Instance { get; }
-			= new CreateSingleRelatedInstanceWhenPresent();
+		public static CreateEmbeddedInstanceUsingNotNullColumn Instance { get; }
+			= new CreateEmbeddedInstanceUsingNotNullColumn();
 
 		public void CreateBindings(SourceModel fromModel, TargetModel toModel, MappingBuilder builder)
 		{
@@ -29,6 +29,18 @@ namespace Silk.Data.SQL.ORM.Modelling.Binding
 
 				if (entityField is IEmbeddedObjectField embeddedObjectField)
 				{
+					if (!builder.IsBound(toField))
+					{
+						var ctor = toField.FieldType.GetTypeInfo().DeclaredConstructors
+							.FirstOrDefault(q => q.GetParameters().Length == 0);
+						if (ctor != null)
+						{
+							builder
+								.Bind(toField)
+								.AssignUsing<CreateEmbeddedInstanceIfPresent, ConstructorInfo>(ctor);
+						}
+					}
+
 					foreach (var subField in embeddedObjectField.EmbeddedFields)
 					{
 						var subPath = path.Concat(new[] { subField.FieldName }).ToArray();
@@ -38,20 +50,6 @@ namespace Silk.Data.SQL.ORM.Modelling.Binding
 						{
 							HandleField(subToField);
 						}
-					}
-				}
-				else if (entityField is ISingleRelatedObjectField singleRelatedObjectField)
-				{
-					if (!builder.IsBound(toField))
-					{
-						var ctor = toField.FieldType.GetTypeInfo().DeclaredConstructors
-							.FirstOrDefault(q => q.GetParameters().Length == 0);
-						if (ctor == null)
-							return;
-
-						builder
-							.Bind(toField)
-							.AssignUsing<CreateSingleRelatedInstanceIfPresent, ConstructorInfo>(ctor);
 					}
 				}
 			}
@@ -75,27 +73,27 @@ namespace Silk.Data.SQL.ORM.Modelling.Binding
 		}
 	}
 
-	public class CreateSingleRelatedInstanceIfPresent : IAssignmentBindingFactory<ConstructorInfo>
+	public class CreateEmbeddedInstanceIfPresent : IAssignmentBindingFactory<ConstructorInfo>
 	{
 		public AssignmentBinding CreateBinding<TTo>(ITargetField toField, ConstructorInfo bindingOption)
 		{
-			return new CreateSingleRelatedInstanceIfPresent<TTo>(bindingOption, toField.FieldPath);
+			return new CreateEmbeddedInstanceIfPresent<TTo>(bindingOption, toField.FieldPath);
 		}
 	}
 
-	public class CreateSingleRelatedInstanceIfPresent<T> : AssignmentBinding
+	public class CreateEmbeddedInstanceIfPresent<T> : AssignmentBinding
 	{
 		private readonly CreateInstanceIfNull<T> _impl;
 
-		public CreateSingleRelatedInstanceIfPresent(ConstructorInfo constructorInfo, string[] toPath) : base(toPath)
+		public CreateEmbeddedInstanceIfPresent(ConstructorInfo constructorInfo, string[] toPath) : base(toPath)
 		{
 			_impl = new CreateInstanceIfNull<T>(constructorInfo, toPath);
 		}
 
 		public override void AssignBindingValue(IModelReadWriter from, IModelReadWriter to)
 		{
-			var nullCheckObj = from.ReadField<object>(ToPath, 0);
-			if (nullCheckObj != null)
+			var nullCheckObj = from.ReadField<bool>(ToPath, 0);
+			if (nullCheckObj)
 				_impl.PerformBinding(from, to);
 		}
 	}

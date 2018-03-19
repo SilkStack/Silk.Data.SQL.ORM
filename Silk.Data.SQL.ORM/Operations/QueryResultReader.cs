@@ -37,14 +37,16 @@ namespace Silk.Data.SQL.ORM.Operations
 		private IField GetField(string[] path, int startOffset)
 		{
 			IField ret = null;
-			var model = Model;
+			var fields = Model.Fields;
 			for (var i = startOffset; i < path.Length; i++)
 			{
-				ret = model.Fields.FirstOrDefault(q => q.FieldName == path[i]);
+				ret = fields.FirstOrDefault(q => q.FieldName == path[i]);
 				if (ret == null)
 					break;
 				if (ret is ISingleRelatedObjectField singleRelatedObjectField)
-					model = singleRelatedObjectField.RelatedObjectModel;
+					fields = singleRelatedObjectField.RelatedObjectModel.Fields;
+				else if (ret is IEmbeddedObjectField embeddedObjectField)
+					fields = embeddedObjectField.EmbeddedFields;
 			}
 			return ret;
 		}
@@ -60,6 +62,11 @@ namespace Silk.Data.SQL.ORM.Operations
 				dataType = field.FieldType;
 			else if (field is ISingleRelatedObjectField singleRelatedObjectField)
 				dataType = singleRelatedObjectField.RelatedPrimaryKey.FieldType;
+			else if (field is IEmbeddedObjectField embeddedObjectField)
+				dataType = typeof(bool); // null check for the embedded object
+
+			if (dataType == null)
+				return default(T);
 
 			if (!_typeReaders.TryGetValue(dataType, out var readFunc))
 				return default(T);

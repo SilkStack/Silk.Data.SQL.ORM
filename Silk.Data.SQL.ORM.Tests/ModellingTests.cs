@@ -77,7 +77,41 @@ namespace Silk.Data.SQL.ORM.Tests
 		[TestMethod]
 		public void EmbedPocoTypeIntoSchema()
 		{
-			throw new NotImplementedException();
+			var builder = new SchemaBuilder();
+			builder.DefineEntity<ClassWithEmbeddedPoco>();
+			builder.DefineEntity<HasIntId>();
+			var schema = builder.Build();
+			var model = schema.GetEntityModel<ClassWithEmbeddedPoco>();
+
+			Assert.AreEqual(2, model.Fields.Length);
+			Assert.AreEqual(6, model.EntityTable.Columns.Length);
+			var tableColumns = model.EntityTable.Columns;
+
+			Assert.IsTrue(model.Fields.OfType<IValueField>().Any(q => q.FieldName == "Data"));
+			var embeddedField = model.Fields.OfType<IEmbeddedObjectField>().FirstOrDefault();
+			Assert.IsNotNull(embeddedField);
+			Assert.AreEqual("Embedded", embeddedField.FieldName);
+			Assert.AreEqual(2, embeddedField.EmbeddedFields.Length);
+			Assert.IsTrue(tableColumns.Any(q => q.ColumnName == "Data" && q.SqlDataType.BaseType == SqlBaseType.Text));
+			Assert.IsTrue(tableColumns.Any(q => q.ColumnName == "Embedded" && q.SqlDataType.BaseType == SqlBaseType.Bit));
+
+			Assert.IsTrue(embeddedField.EmbeddedFields.OfType<IValueField>().Any(q => q.FieldName == "Data"));
+			embeddedField = embeddedField.EmbeddedFields.OfType<IEmbeddedObjectField>().FirstOrDefault();
+			Assert.IsNotNull(embeddedField);
+			Assert.AreEqual("SubEmbedded", embeddedField.FieldName);
+			Assert.AreEqual(2, embeddedField.EmbeddedFields.Length);
+			Assert.IsTrue(tableColumns.Any(q => q.ColumnName == "Embedded_Data" && q.SqlDataType.BaseType == SqlBaseType.Text));
+			Assert.IsTrue(tableColumns.Any(q => q.ColumnName == "Embedded_SubEmbedded" && q.SqlDataType.BaseType == SqlBaseType.Bit));
+
+			Assert.IsTrue(embeddedField.EmbeddedFields.OfType<IValueField>().Any(q => q.FieldName == "Data"));
+			var singleRelatedObjectField = embeddedField.EmbeddedFields.OfType<ISingleRelatedObjectField>().FirstOrDefault();
+			var dataField = embeddedField.EmbeddedFields.OfType<IValueField>().FirstOrDefault();
+			Assert.IsNotNull(singleRelatedObjectField);
+			Assert.IsNotNull(dataField);
+			Assert.AreEqual("Relationship", singleRelatedObjectField.FieldName);
+			Assert.AreEqual("Data", dataField.FieldName);
+			Assert.IsTrue(tableColumns.Any(q => q.ColumnName == "Embedded_SubEmbedded_Data" && q.SqlDataType.BaseType == SqlBaseType.Text));
+			Assert.IsTrue(tableColumns.Any(q => q.ColumnName == "Embedded_SubEmbedded_Relationship" && q.SqlDataType.BaseType == SqlBaseType.Int));
 		}
 
 		[TestMethod]
@@ -203,6 +237,24 @@ namespace Silk.Data.SQL.ORM.Tests
 		{
 			public List<HasIntId> Relationships { get; set; }
 				= new List<HasIntId>();
+		}
+
+		private class ClassWithEmbeddedPoco
+		{
+			public EmbeddedPocoTier1 Embedded { get; set; }
+			public string Data { get; set; }
+		}
+
+		private class EmbeddedPocoTier1
+		{
+			public EmbeddedPocoTier2 SubEmbedded { get; set; }
+			public string Data { get; set; }
+		}
+
+		private class EmbeddedPocoTier2
+		{
+			public HasIntId Relationship { get; set; }
+			public string Data { get; set; }
 		}
 	}
 }

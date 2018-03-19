@@ -102,41 +102,57 @@ namespace Silk.Data.SQL.ORM.Operations
 		private static void AddFields(ProjectionModel model, List<QueryExpression> projectedFieldsExprs, QueryExpression from, List<JoinExpression> joins,
 			string fieldPrefix = "")
 		{
+			foreach (var field in model.Fields)
+			{
+				AddField(field, from, projectedFieldsExprs, joins, fieldPrefix);
+			}
+		}
+
+		private static void AddField(IEntityField field, QueryExpression from, List<QueryExpression> projectedFieldsExprs, List<JoinExpression> joins, string fieldPrefix)
+		{
 			var fromSource = from;
 			if (fromSource is AliasExpression aliasExpression)
 				fromSource = aliasExpression.Identifier;
 
-			foreach (var field in model.Fields)
+			if (field is IValueField valueField)
 			{
-				if (field is IValueField valueField)
-				{
-					projectedFieldsExprs.Add(
-						QueryExpression.Alias(
-							QueryExpression.Column(valueField.Column.ColumnName, fromSource),
-							$"{fieldPrefix}{valueField.FieldName}"
-						));
-				}
-				else if (field is ISingleRelatedObjectField singleRelationshipField)
-				{
-					projectedFieldsExprs.Add(
-						QueryExpression.Alias(
-							QueryExpression.Column(singleRelationshipField.LocalColumn.ColumnName, fromSource),
-							$"{fieldPrefix}{singleRelationshipField.FieldName}"
-						));
+				projectedFieldsExprs.Add(
+					QueryExpression.Alias(
+						QueryExpression.Column(valueField.Column.ColumnName, fromSource),
+						$"{fieldPrefix}{valueField.FieldName}"
+					));
+			}
+			else if (field is IEmbeddedObjectField embeddedObjectField)
+			{
+				projectedFieldsExprs.Add(
+					QueryExpression.Alias(
+						QueryExpression.Column(embeddedObjectField.NullCheckColumn.ColumnName, fromSource),
+						$"{fieldPrefix}{embeddedObjectField.FieldName}"
+					));
 
-					var joinAlias = QueryExpression.Alias(
-						QueryExpression.Table(singleRelationshipField.RelatedObjectModel.EntityTable.TableName),
-						singleRelationshipField.FieldName
-						);
-					var joinExpr = QueryExpression.Join(
-						QueryExpression.Column(singleRelationshipField.LocalColumn.ColumnName, from),
-						QueryExpression.Column(singleRelationshipField.RelatedPrimaryKey.Column.ColumnName, joinAlias),
-						JoinDirection.Left
-						);
+				foreach (var subField in embeddedObjectField.EmbeddedFields)
+					AddField(subField, from, projectedFieldsExprs, joins, $"{fieldPrefix}{field.FieldName}_");
+			}
+			else if (field is ISingleRelatedObjectField singleRelationshipField)
+			{
+				projectedFieldsExprs.Add(
+					QueryExpression.Alias(
+						QueryExpression.Column(singleRelationshipField.LocalColumn.ColumnName, fromSource),
+						$"{fieldPrefix}{singleRelationshipField.FieldName}"
+					));
 
-					joins.Add(joinExpr);
-					AddFields(singleRelationshipField.RelatedObjectModel, projectedFieldsExprs, joinAlias, joins, $"{fieldPrefix}{field.FieldName}_");
-				}
+				var joinAlias = QueryExpression.Alias(
+					QueryExpression.Table(singleRelationshipField.RelatedObjectModel.EntityTable.TableName),
+					$"{fieldPrefix}{singleRelationshipField.FieldName}"
+					);
+				var joinExpr = QueryExpression.Join(
+					QueryExpression.Column(singleRelationshipField.LocalColumn.ColumnName, from),
+					QueryExpression.Column(singleRelationshipField.RelatedPrimaryKey.Column.ColumnName, joinAlias),
+					JoinDirection.Left
+					);
+
+				joins.Add(joinExpr);
+				AddFields(singleRelationshipField.RelatedObjectModel, projectedFieldsExprs, joinAlias, joins, $"{fieldPrefix}{field.FieldName}_");
 			}
 		}
 	}

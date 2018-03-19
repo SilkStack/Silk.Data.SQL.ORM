@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Silk.Data.Modelling;
 using Silk.Data.SQL.ORM.Schema;
@@ -12,6 +13,12 @@ namespace Silk.Data.SQL.ORM.Modelling
 	public interface IValueField : IEntityField
 	{
 		Column Column { get; }
+	}
+
+	public interface IEmbeddedObjectField : IEntityField
+	{
+		Column NullCheckColumn { get; }
+		IEntityField[] EmbeddedFields { get; }
 	}
 
 	public interface ISingleRelatedObjectField : IEntityField
@@ -35,6 +42,26 @@ namespace Silk.Data.SQL.ORM.Modelling
 			base(fieldName, canRead, canWrite, isEnumerable, elementType)
 		{
 			Column = column;
+		}
+	}
+
+	public class EmbeddedObjectField<T> : FieldBase<T>, IEmbeddedObjectField, IModelBuildFinalizerField
+	{
+		public Column NullCheckColumn { get; }
+		public IEntityField[] EmbeddedFields { get; }
+
+		public EmbeddedObjectField(string fieldName, bool canRead, bool canWrite, bool isEnumerable, Type elementType,
+			IEnumerable<IEntityField> embeddedFields, Column nullCheckColumn) :
+			base(fieldName, canRead, canWrite, isEnumerable, elementType)
+		{
+			EmbeddedFields = embeddedFields.ToArray();
+			NullCheckColumn = nullCheckColumn;
+		}
+
+		public void FinalizeModelBuild(Schema.Schema finalizingSchema)
+		{
+			foreach (var finalizerField in EmbeddedFields.OfType<IModelBuildFinalizerField>())
+				finalizerField.FinalizeModelBuild(finalizingSchema);
 		}
 	}
 
