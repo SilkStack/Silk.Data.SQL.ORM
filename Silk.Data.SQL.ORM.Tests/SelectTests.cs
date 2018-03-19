@@ -76,7 +76,7 @@ FROM [FlatPoco];", sql);
 			var sql = TestQueryConverter.CleanSql(
 				new TestQueryConverter().ConvertToQuery(select.GetQuery()).SqlText
 				);
-			Assert.AreEqual(@"SELECT [PocoWithSingleRelationship].[Id] AS [Id], [PocoWithSingleRelationship].[Data] AS [Data], [Data].[Id] AS [Data_Id], [Data].[Data] AS [Data_Data]
+			Assert.AreEqual(@"SELECT [PocoWithSingleRelationship].[Data] AS [Data], [PocoWithSingleRelationship].[Id] AS [Id], [Data].[Id] AS [Data_Id], [Data].[Data] AS [Data_Data]
 FROM [PocoWithSingleRelationship]
 LEFT OUTER JOIN [FlatPoco] AS [Data] ON [PocoWithSingleRelationship].[Data] = [Data].[Id];", sql);
 		}
@@ -145,7 +145,7 @@ LEFT OUTER JOIN [FlatPoco] AS [Data] ON [PocoWithSingleRelationship].[Data] = [D
 			var sql = TestQueryConverter.CleanSql(
 				new TestQueryConverter().ConvertToQuery(select.GetQuery()).SqlText
 				);
-			Assert.AreEqual(@"SELECT [ClassWithEmbeddedPoco].[Embedded] AS [Embedded], [ClassWithEmbeddedPoco].[Embedded_SubEmbedded] AS [Embedded_SubEmbedded], [ClassWithEmbeddedPoco].[Embedded_SubEmbedded_Data] AS [Embedded_SubEmbedded_Data], [ClassWithEmbeddedPoco].[Embedded_SubEmbedded_Relationship] AS [Embedded_SubEmbedded_Relationship], [Embedded_SubEmbedded_Relationship].[Id] AS [Embedded_SubEmbedded_Relationship_Id], [Embedded_SubEmbedded_Relationship].[Data] AS [Embedded_SubEmbedded_Relationship_Data], [ClassWithEmbeddedPoco].[Embedded_Data] AS [Embedded_Data], [ClassWithEmbeddedPoco].[Data] AS [Data]
+			Assert.AreEqual(@"SELECT [ClassWithEmbeddedPoco].[Embedded_SubEmbedded_Relationship] AS [Embedded_SubEmbedded_Relationship], [ClassWithEmbeddedPoco].[Embedded] AS [Embedded], [ClassWithEmbeddedPoco].[Embedded_SubEmbedded] AS [Embedded_SubEmbedded], [ClassWithEmbeddedPoco].[Embedded_SubEmbedded_Data] AS [Embedded_SubEmbedded_Data], [Embedded_SubEmbedded_Relationship].[Id] AS [Embedded_SubEmbedded_Relationship_Id], [Embedded_SubEmbedded_Relationship].[Data] AS [Embedded_SubEmbedded_Relationship_Data], [ClassWithEmbeddedPoco].[Embedded_Data] AS [Embedded_Data], [ClassWithEmbeddedPoco].[Data] AS [Data]
 FROM [ClassWithEmbeddedPoco]
 LEFT OUTER JOIN [FlatPoco] AS [Embedded_SubEmbedded_Relationship] ON [ClassWithEmbeddedPoco].[Embedded_SubEmbedded_Relationship] = [Embedded_SubEmbedded_Relationship].[Id];", sql);
 		}

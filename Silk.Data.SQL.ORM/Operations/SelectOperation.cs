@@ -88,23 +88,23 @@ namespace Silk.Data.SQL.ORM.Operations
 	{
 		public static SelectOperation<TEntity> Create<TEntity>(EntityModel<TEntity> model)
 		{
-			return Create<TEntity>((ProjectionModel)model);
+			return Create<TEntity>(model, model);
 		}
 
 		public static SelectOperation<TProjection> Create<TEntity, TProjection>(EntityModel<TEntity> model)
 		{
-			return Create<TProjection>(model.GetProjection<TProjection>());
+			return Create<TProjection>(model.GetProjection<TProjection>(), model);
 		}
 
-		private static SelectOperation<TProjection> Create<TProjection>(ProjectionModel model)
+		private static SelectOperation<TProjection> Create<TProjection>(ProjectionModel projectionModel, EntityModel entityModel)
 		{
-			var entityTableExpr = QueryExpression.Table(model.EntityTable.TableName);
-			var query = CreateQuery(model, entityTableExpr);
+			var entityTableExpr = QueryExpression.Table(projectionModel.EntityTable.TableName);
+			var query = CreateQuery(projectionModel, entityModel, entityTableExpr);
 
-			return new SelectOperation<TProjection>(query, model);
+			return new SelectOperation<TProjection>(query, projectionModel);
 		}
 
-		private static QueryExpression CreateQuery(ProjectionModel model, QueryExpression from)
+		private static QueryExpression CreateQuery(ProjectionModel projectionModel, EntityModel entityModel, QueryExpression from)
 		{
 			var queries = new List<QueryExpression>();
 			var projectedFieldsExprs = new List<QueryExpression>();
@@ -112,7 +112,8 @@ namespace Silk.Data.SQL.ORM.Operations
 			QueryExpression where = null;
 			QueryExpression having = null;
 
-			AddFields(model, projectedFieldsExprs, from, joinExprs);
+			AddJoins(entityModel, projectedFieldsExprs, from, joinExprs);
+			AddFields(projectionModel, projectedFieldsExprs, from, joinExprs);
 
 			var query = QueryExpression.Select(
 				projectedFieldsExprs.ToArray(),
@@ -123,11 +124,12 @@ namespace Silk.Data.SQL.ORM.Operations
 				);
 			queries.Add(query);
 
-			foreach (var field in model.Fields.OfType<IManyRelatedObjectField>())
+			foreach (var field in projectionModel.Fields.OfType<IManyRelatedObjectField>())
 			{
 				projectedFieldsExprs.Clear();
 				joinExprs.Clear();
 
+				AddJoin(field, from, projectedFieldsExprs, joinExprs, "");
 				AddField(field, from, projectedFieldsExprs, joinExprs, "");
 
 				query = QueryExpression.Select(
@@ -183,6 +185,53 @@ namespace Silk.Data.SQL.ORM.Operations
 			}
 			else if (field is ISingleRelatedObjectField singleRelationshipField)
 			{
+				var joinAlias = QueryExpression.Alias(
+					QueryExpression.Table(singleRelationshipField.RelatedObjectModel.EntityTable.TableName),
+					$"{fieldPrefix}{singleRelationshipField.FieldName}"
+					);
+
+				AddFields(singleRelationshipField.RelatedObjectModel, projectedFieldsExprs, joinAlias, joins, $"{fieldPrefix}{field.FieldName}_");
+			}
+			else if (field is IManyRelatedObjectField manyRelationshipField)
+			{
+				var junctionJoinAlias = QueryExpression.Alias(
+					QueryExpression.Table(manyRelationshipField.JunctionTable.TableName),
+					$"__JUNCTION__{fieldPrefix}{manyRelationshipField.FieldName}"
+					);
+
+				var objectJoinAlias = QueryExpression.Alias(
+					QueryExpression.Table(manyRelationshipField.RelatedObjectModel.EntityTable.TableName),
+					$"{fieldPrefix}{manyRelationshipField.FieldName}"
+					);
+
+				AddFields(manyRelationshipField.RelatedObjectModel, projectedFieldsExprs, objectJoinAlias, joins, "");
+			}
+		}
+
+		private static void AddJoins(ProjectionModel model, List<QueryExpression> projectedFieldsExprs, QueryExpression from, List<JoinExpression> joins,
+			string fieldPrefix = "")
+		{
+			foreach (var field in model.Fields)
+			{
+				if (field is IManyRelatedObjectField)
+					continue;
+				AddJoin(field, from, projectedFieldsExprs, joins, fieldPrefix);
+			}
+		}
+
+		private static void AddJoin(IEntityField field, QueryExpression from, List<QueryExpression> projectedFieldsExprs, List<JoinExpression> joins, string fieldPrefix)
+		{
+			var fromSource = from;
+			if (fromSource is AliasExpression aliasExpression)
+				fromSource = aliasExpression.Identifier;
+
+			if (field is IEmbeddedObjectField embeddedObjectField)
+			{
+				foreach (var subField in embeddedObjectField.EmbeddedFields)
+					AddJoin(subField, from, projectedFieldsExprs, joins, $"{fieldPrefix}{field.FieldName}_");
+			}
+			if (field is ISingleRelatedObjectField singleRelationshipField)
+			{
 				projectedFieldsExprs.Add(
 					QueryExpression.Alias(
 						QueryExpression.Column(singleRelationshipField.LocalColumn.ColumnName, fromSource),
@@ -200,7 +249,7 @@ namespace Silk.Data.SQL.ORM.Operations
 					);
 
 				joins.Add(joinExpr);
-				AddFields(singleRelationshipField.RelatedObjectModel, projectedFieldsExprs, joinAlias, joins, $"{fieldPrefix}{field.FieldName}_");
+				AddJoins(singleRelationshipField.RelatedObjectModel, projectedFieldsExprs, joinAlias, joins, $"{fieldPrefix}{field.FieldName}_");
 			}
 			else if (field is IManyRelatedObjectField manyRelationshipField)
 			{
@@ -232,7 +281,7 @@ namespace Silk.Data.SQL.ORM.Operations
 					);
 				joins.Add(objectJoin);
 
-				AddFields(manyRelationshipField.RelatedObjectModel, projectedFieldsExprs, objectJoinAlias, joins, "");
+				AddJoins(manyRelationshipField.RelatedObjectModel, projectedFieldsExprs, objectJoinAlias, joins, "");
 			}
 		}
 	}
