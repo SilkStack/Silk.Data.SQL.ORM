@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using Silk.Data.Modelling;
+using Silk.Data.Modelling.Mapping;
+using Silk.Data.SQL.ORM.Modelling.Binding;
+using Silk.Data.SQL.ORM.Operations;
 using Silk.Data.SQL.ORM.Schema;
 
 namespace Silk.Data.SQL.ORM.Modelling
@@ -28,9 +31,24 @@ namespace Silk.Data.SQL.ORM.Modelling
 		Column LocalColumn { get; }
 	}
 
+	public interface IManyRelatedObjectField : IEntityField
+	{
+		Column LocalColumn { get; }
+		Table JunctionTable { get; }
+		Column LocalJunctionColumn { get; }
+		Column RelatedJunctionColumn { get; }
+		ProjectionModel RelatedObjectModel { get; }
+		IValueField RelatedPrimaryKey { get; }
+		TypeModel ElementModel { get; }
+		Mapping Mapping { get; }
+		IValueField LocalIdentifierField { get; }
+
+		MultipleObjectMapper CreateObjectMapper(string identityFieldName);
+	}
+
 	public interface IModelBuildFinalizerField
 	{
-		void FinalizeModelBuild(Schema.Schema finalizingSchema);
+		void FinalizeModelBuild(Schema.Schema finalizingSchema, List<Table> tables);
 	}
 
 	public class ValueField<T> : FieldBase<T>, IValueField
@@ -58,10 +76,10 @@ namespace Silk.Data.SQL.ORM.Modelling
 			NullCheckColumn = nullCheckColumn;
 		}
 
-		public void FinalizeModelBuild(Schema.Schema finalizingSchema)
+		public void FinalizeModelBuild(Schema.Schema finalizingSchema, List<Table> tables)
 		{
 			foreach (var finalizerField in EmbeddedFields.OfType<IModelBuildFinalizerField>())
-				finalizerField.FinalizeModelBuild(finalizingSchema);
+				finalizerField.FinalizeModelBuild(finalizingSchema, tables);
 		}
 	}
 
@@ -80,7 +98,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 			LocalColumn = localColumn;
 		}
 
-		public void FinalizeModelBuild(Schema.Schema finalizingSchema)
+		public void FinalizeModelBuild(Schema.Schema finalizingSchema, List<Table> tables)
 		{
 			if (RelatedObjectModel != null)
 				return;
@@ -90,14 +108,73 @@ namespace Silk.Data.SQL.ORM.Modelling
 		}
 	}
 
-	public class ManyRelatedObjectField : FieldBase<ManyRelatedObjectField>, IEntityField
+	public class ManyRelatedObjectField<T, TElement, TIdentifier> : FieldBase<T>, IManyRelatedObjectField, IModelBuildFinalizerField
+		where T : class, IEnumerable<TElement>
 	{
-		public SqlDataType SqlDataType => throw new NotImplementedException();
-		public string SqlFieldName => throw new NotImplementedException();
+		public Column LocalColumn { get; private set; }
+		public Table JunctionTable { get; private set; }
+		public Column LocalJunctionColumn { get; private set; }
+		public ProjectionModel RelatedObjectModel { get; private set; }
+		public IValueField RelatedPrimaryKey { get; private set; }
+		public Column RelatedJunctionColumn { get; private set; }
+		public Mapping Mapping { get; private set; }
+		public TypeModel ElementModel { get; private set; }
+		public IValueField LocalIdentifierField { get; private set; }
 
-		public ManyRelatedObjectField(string fieldName, bool canRead, bool canWrite, bool isEnumerable, Type elementType) :
+		public ManyRelatedObjectField(string fieldName, bool canRead, bool canWrite, bool isEnumerable, Type elementType,
+			Column localColumn, Table junctionTable, Column localJunctionColumn, Column relatedJunctionColumn,
+			ProjectionModel relatedObjectModel, IValueField relatedPrimaryKey, IValueField localIdentifierField) :
 			base(fieldName, canRead, canWrite, isEnumerable, elementType)
 		{
+			LocalColumn = localColumn;
+			JunctionTable = junctionTable;
+			LocalJunctionColumn = localJunctionColumn;
+			RelatedObjectModel = relatedObjectModel;
+			RelatedPrimaryKey = relatedPrimaryKey;
+			RelatedJunctionColumn = relatedJunctionColumn;
+			ElementModel = TypeModel.GetModelOf(elementType);
+			LocalIdentifierField = localIdentifierField;
+		}
+
+		public void FinalizeModelBuild(Schema.Schema finalizingSchema, List<Table> tables)
+		{
+			if (RelatedObjectModel == null)
+			{
+				RelatedObjectModel = finalizingSchema.EntityModels.FirstOrDefault(
+					entityModel => entityModel.Fields.Contains(RelatedPrimaryKey)
+					);
+			}
+
+			if (JunctionTable == null)
+			{
+				var entityModel = finalizingSchema.EntityModels.First(
+					q => q.Fields.Contains(this)
+					);
+
+				LocalJunctionColumn = new Column("LocalKey", LocalColumn.SqlDataType);
+				RelatedJunctionColumn = new Column("RemoteKey", RelatedPrimaryKey.Column.SqlDataType);
+				JunctionTable = new Table($"{entityModel.EntityTable.TableName}_{FieldName}To{RelatedObjectModel.EntityTable.TableName}", new[]
+					{
+						LocalJunctionColumn, RelatedJunctionColumn
+					});
+				tables.Add(JunctionTable);
+			}
+
+			if (Mapping == null)
+			{
+				var mappingBuilder = new MappingBuilder(RelatedObjectModel, ElementModel);
+				mappingBuilder.AddConvention(CreateInstanceAsNeeded.Instance);
+				mappingBuilder.AddConvention(CreateEmbeddedInstanceUsingNotNullColumn.Instance);
+				mappingBuilder.AddConvention(CreateSingleRelatedInstanceWhenPresent.Instance);
+				mappingBuilder.AddConvention(CopyValueFields.Instance);
+
+				Mapping = mappingBuilder.BuildMapping();
+			}
+		}
+
+		public MultipleObjectMapper CreateObjectMapper(string identityFieldName)
+		{
+			return new MultipleObjectMapper<T, TElement, TIdentifier>(identityFieldName, this);
 		}
 	}
 }

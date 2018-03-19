@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Silk.Data.Modelling;
 using Silk.Data.Modelling.Mapping;
 using Silk.Data.SQL.ORM.Modelling.Binding;
@@ -9,6 +11,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 	public abstract class EntityModel : ProjectionModel
 	{
 		public Type EntityType { get; }
+		public Table[] JunctionTables { get; protected set; }
 
 		public EntityModel(Type entityType, IEntityField[] fields, Table entityTable) :
 			base(fields, entityTable)
@@ -29,7 +32,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 		{
 		}
 
-		public void FinalizeBuiltModel(Schema.Schema finalizingSchema)
+		public void FinalizeBuiltModel(Schema.Schema finalizingSchema, List<Table> tables)
 		{
 			var mappingBuilder = new MappingBuilder(this, TypeModel.GetModelOf<T>());
 			mappingBuilder.AddConvention(CreateInstanceAsNeeded.Instance);
@@ -38,6 +41,9 @@ namespace Silk.Data.SQL.ORM.Modelling
 			mappingBuilder.AddConvention(CopyValueFields.Instance);
 
 			Mapping = mappingBuilder.BuildMapping();
+
+			JunctionTables = Fields.OfType<IManyRelatedObjectField>()
+				.Select(q => q.JunctionTable).ToArray();
 		}
 	}
 }

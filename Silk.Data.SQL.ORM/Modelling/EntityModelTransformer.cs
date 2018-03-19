@@ -142,6 +142,27 @@ namespace Silk.Data.SQL.ORM.Modelling
 				);
 		}
 
+		private void ModelManyObjectRelationship<TData>(IField<TData> field, EntityFieldOptions options, string sqlColumnName,
+			EntityModelTransformer relatedTypeTransformer)
+		{
+			var localPrimaryKey = _entityFields.Select(q => q.Value).OfType<IValueField>().FirstOrDefault(q => q.Column.IsPrimaryKey);
+			if (localPrimaryKey == null)
+				return;
+
+			var objectPrimaryKey = relatedTypeTransformer.Fields.OfType<IValueField>()
+						.FirstOrDefault(q => q.Column.IsPrimaryKey);
+			if (objectPrimaryKey == null)
+				return;
+
+			var objectFieldType = typeof(ManyRelatedObjectField<,,>)
+				.MakeGenericType(typeof(TData), field.ElementType, localPrimaryKey.FieldType);
+
+			_entityFields.Add(field.FieldName,
+				Activator.CreateInstance(objectFieldType, field.FieldName, field.CanRead, field.CanWrite, true, field.ElementType, localPrimaryKey.Column, null, null, null,
+					null, objectPrimaryKey, localPrimaryKey) as IEntityField
+				);
+		}
+
 		public void VisitField<TData>(IField<TData> field)
 		{
 			if (!field.CanRead)
@@ -182,13 +203,11 @@ namespace Silk.Data.SQL.ORM.Modelling
 				var relatedTypeTransformer = _schemaBuilder.GetModelTransformer(field.ElementType);
 				if (relatedTypeTransformer == null)
 				{
+					//  todo: decide if I want to handle this use case or not
 				}
 				else
 				{
-					var primaryKeyField = relatedTypeTransformer.Fields.OfType<IValueField>()
-						.FirstOrDefault(q => q.Column.IsPrimaryKey);
-					if (primaryKeyField == null)
-						return;
+					ModelManyObjectRelationship<TData>(field, options, sqlColumnName, relatedTypeTransformer);
 				}
 			}
 		}

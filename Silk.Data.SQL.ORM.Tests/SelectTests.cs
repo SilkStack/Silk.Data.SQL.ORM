@@ -3,6 +3,7 @@ using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Operations;
 using Silk.Data.SQL.ORM.Schema;
 using Silk.Data.SQL.SQLite3;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Tests
@@ -227,6 +228,112 @@ LEFT OUTER JOIN [FlatPoco] AS [Embedded_SubEmbedded_Relationship] ON [ClassWithE
 			}
 		}
 
+		[TestMethod]
+		public void GenerateSelectPocoWithMultileRelatedObjectsSQL()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<PocoWithManyRelationship>();
+			schemaBuilder.DefineEntity<FlatPoco>();
+			var schema = schemaBuilder.Build();
+			var model = schema.GetEntityModel<PocoWithManyRelationship>();
+
+			var select = SelectOperation.Create<PocoWithManyRelationship>(model);
+			var sql = TestQueryConverter.CleanSql(
+				new TestQueryConverter().ConvertToQuery(select.GetQuery()).SqlText
+				);
+			Assert.AreEqual(@"SELECT [PocoWithManyRelationship].[Id] AS [Id]
+FROM [PocoWithManyRelationship];
+SELECT [PocoWithManyRelationship].[Id] AS [__IDENT__Data], [Data].[Id] AS [Id], [Data].[Data] AS [Data]
+FROM [PocoWithManyRelationship]
+INNER JOIN [PocoWithManyRelationship_DataToFlatPoco] AS [__JUNCTION__Data] ON [PocoWithManyRelationship].[Id] = [__JUNCTION__Data].[LocalKey]
+INNER JOIN [FlatPoco] AS [Data] ON [__JUNCTION__Data].[RemoteKey] = [Data].[Id];", sql);
+		}
+
+		[TestMethod]
+		public void QuerySelectPocoWithMultileRelatedObjects()
+		{
+			using (var sqlProvider = new SQLite3DataProvider(":memory:"))
+			{
+				sqlProvider.ExecuteNonQuery(QueryExpression.CreateTable(
+					"FlatPoco",
+					QueryExpression.DefineColumn(nameof(FlatPoco.Id), SqlDataType.Int(), isAutoIncrement: true, isPrimaryKey: true),
+					QueryExpression.DefineColumn(nameof(FlatPoco.Data), SqlDataType.Text())
+					));
+
+				sqlProvider.ExecuteNonQuery(QueryExpression.CreateTable(
+					"PocoWithManyRelationship",
+					QueryExpression.DefineColumn(nameof(PocoWithManyRelationship.Id), SqlDataType.Int(), isAutoIncrement: true, isPrimaryKey: true)
+					));
+
+				sqlProvider.ExecuteNonQuery(QueryExpression.CreateTable(
+					"PocoWithManyRelationship_DataToFlatPoco",
+					QueryExpression.DefineColumn("LocalKey", SqlDataType.Int()),
+					QueryExpression.DefineColumn("RemoteKey", SqlDataType.Int())
+					));
+
+				sqlProvider.ExecuteNonQuery(QueryExpression.Insert(
+					"FlatPoco", new[] { nameof(FlatPoco.Data) },
+					new[] { "Hello" },
+					new[] { "World" }
+					));
+
+				sqlProvider.ExecuteNonQuery(QueryExpression.Insert(
+					"PocoWithManyRelationship", new[] { nameof(PocoWithManyRelationship.Id) },
+					new[] { default(object) },
+					new[] { default(object) },
+					new[] { default(object) }
+					));
+
+				sqlProvider.ExecuteNonQuery(QueryExpression.Insert(
+					"PocoWithManyRelationship_DataToFlatPoco",
+					new[] { "LocalKey", "RemoteKey" },
+					new[] { (object)1, (object)1 },
+					new[] { (object)1, (object)2 },
+					new[] { (object)2, (object)1 }
+					));
+
+				var schemaBuilder = new SchemaBuilder();
+				schemaBuilder.DefineEntity<FlatPoco>();
+				schemaBuilder.DefineEntity<PocoWithManyRelationship>();
+				var schema = schemaBuilder.Build();
+				var model = schema.GetEntityModel<PocoWithManyRelationship>();
+
+				var select = SelectOperation.Create<PocoWithManyRelationship>(model);
+				using (var queryResult = sqlProvider.ExecuteReader(select.GetQuery()))
+				{
+					select.ProcessResult(queryResult);
+				}
+				var result = select.Result.ToArray();
+
+				Assert.IsNotNull(result);
+				Assert.AreEqual(3, result.Length);
+
+				var instance = result.FirstOrDefault(q => q.Id == 1);
+				Assert.IsNotNull(instance);
+				Assert.IsNotNull(instance.Data);
+				Assert.AreEqual(2, instance.Data.Count);
+				var subInstance = instance.Data.FirstOrDefault(q => q.Id == 1);
+				Assert.IsNotNull(subInstance);
+				Assert.AreEqual("Hello", subInstance.Data);
+				subInstance = instance.Data.FirstOrDefault(q => q.Id == 2);
+				Assert.IsNotNull(subInstance);
+				Assert.AreEqual("World", subInstance.Data);
+
+				instance = result.FirstOrDefault(q => q.Id == 2);
+				Assert.IsNotNull(instance);
+				Assert.IsNotNull(instance.Data);
+				Assert.AreEqual(1, instance.Data.Count);
+				subInstance = instance.Data.FirstOrDefault(q => q.Id == 1);
+				Assert.IsNotNull(subInstance);
+				Assert.AreEqual("Hello", subInstance.Data);
+
+				instance = result.FirstOrDefault(q => q.Id == 3);
+				Assert.IsNotNull(instance);
+				Assert.IsNotNull(instance.Data);
+				Assert.AreEqual(0, instance.Data.Count);
+			}
+		}
+
 		private class FlatPoco
 		{
 			public int Id { get; set; }
@@ -237,6 +344,12 @@ LEFT OUTER JOIN [FlatPoco] AS [Embedded_SubEmbedded_Relationship] ON [ClassWithE
 		{
 			public int Id { get; set; }
 			public FlatPoco Data { get; set; }
+		}
+
+		private class PocoWithManyRelationship
+		{
+			public int Id { get; set; }
+			public List<FlatPoco> Data { get; set; }
 		}
 
 		private class ClassWithEmbeddedPoco

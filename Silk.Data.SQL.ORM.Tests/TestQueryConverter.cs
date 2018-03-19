@@ -31,7 +31,9 @@ namespace Silk.Data.SQL.ORM.Tests
 				var word = words[i];
 				if (i > 0)
 				{
-					if (word == "SELECT" || word == "FROM" || word == "WHERE" || words.Skip(i).Take(3).SequenceEqual(new[] { "LEFT", "OUTER", "JOIN" }))
+					if (word == "SELECT" || word == "FROM" || word == "WHERE" ||
+						words.Skip(i).Take(3).SequenceEqual(new[] { "LEFT", "OUTER", "JOIN" }) ||
+						words.Skip(i).Take(2).SequenceEqual(new[] { "INNER", "JOIN" }))
 						output.AppendLine();
 					else
 						output.Append(" ");

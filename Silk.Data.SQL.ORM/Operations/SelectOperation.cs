@@ -1,6 +1,7 @@
 ﻿using Silk.Data.Modelling;
 using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Modelling;
+using Silk.Data.SQL.ORM.Operations.Expressions;
 using Silk.Data.SQL.Queries;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,28 +35,52 @@ namespace Silk.Data.SQL.ORM.Operations
 
 		public override void ProcessResult(QueryResult queryResult)
 		{
-			var result = new List<T>();
+			var result = new List<IModelReadWriter>();
 			var reader = new QueryResultReader(_projectionModel, queryResult);
 			while (queryResult.Read())
 			{
 				var writer = new ObjectReadWriter(null, _typeModel, typeof(T));
 				_projectionModel.Mapping.PerformMapping(reader, writer);
-				result.Add(writer.ReadField<T>(_selfPath, 0));
+				result.Add(writer);
 			}
-			_result = result;
+
+			foreach (var manyRelatedObjectField in _projectionModel.Fields.OfType<IManyRelatedObjectField>())
+			{
+				queryResult.NextResult();
+				if (!queryResult.HasRows)
+					continue;
+
+				reader = new QueryResultReader(manyRelatedObjectField.RelatedObjectModel, queryResult);
+				var mapper = manyRelatedObjectField.CreateObjectMapper($"__IDENT__{manyRelatedObjectField.FieldName}");
+				mapper.PerformMapping(queryResult, reader, result);
+			}
+
+			_result = result.Select(q => q.ReadField<T>(_selfPath, 0)).ToArray();
 		}
 
 		public override async Task ProcessResultAsync(QueryResult queryResult)
 		{
-			var result = new List<T>();
+			var result = new List<IModelReadWriter>();
 			var reader = new QueryResultReader(_projectionModel, queryResult);
 			while (await queryResult.ReadAsync())
 			{
 				var writer = new ObjectReadWriter(null, _typeModel, typeof(T));
 				_projectionModel.Mapping.PerformMapping(reader, writer);
-				result.Add(writer.ReadField<T>(_selfPath, 0));
+				result.Add(writer);
 			}
-			_result = result;
+
+			foreach (var manyRelatedObjectField in _projectionModel.Fields.OfType<IManyRelatedObjectField>())
+			{
+				await queryResult.NextResultAsync();
+				if (!queryResult.HasRows)
+					continue;
+
+				reader = new QueryResultReader(manyRelatedObjectField.RelatedObjectModel, queryResult);
+				var mapper = manyRelatedObjectField.CreateObjectMapper($"__IDENT__{manyRelatedObjectField.FieldName}");
+				await mapper.PerformMappingAsync(queryResult, reader, result);
+			}
+
+			_result = result.Select(q => q.ReadField<T>(_selfPath, 0)).ToArray();
 		}
 	}
 
@@ -81,22 +106,43 @@ namespace Silk.Data.SQL.ORM.Operations
 
 		private static QueryExpression CreateQuery(ProjectionModel model, QueryExpression from)
 		{
+			var queries = new List<QueryExpression>();
 			var projectedFieldsExprs = new List<QueryExpression>();
 			var joinExprs = new List<JoinExpression>();
+			QueryExpression where = null;
+			QueryExpression having = null;
 
 			AddFields(model, projectedFieldsExprs, from, joinExprs);
 
 			var query = QueryExpression.Select(
 				projectedFieldsExprs.ToArray(),
 				from: from,
-				joins: joinExprs.Count < 1 ? null : joinExprs.ToArray()
+				joins: joinExprs.Count < 1 ? null : joinExprs.ToArray(),
+				where: where,
+				having: having
 				);
+			queries.Add(query);
 
-			foreach (var field in model.Fields.OfType<ManyRelatedObjectField>())
+			foreach (var field in model.Fields.OfType<IManyRelatedObjectField>())
 			{
+				projectedFieldsExprs.Clear();
+				joinExprs.Clear();
+
+				AddField(field, from, projectedFieldsExprs, joinExprs, "");
+
+				query = QueryExpression.Select(
+					projectedFieldsExprs.ToArray(),
+					from: from,
+					joins: joinExprs.Count < 1 ? null : joinExprs.ToArray(),
+					where: where,
+					having: having
+					);
+				queries.Add(query);
 			}
 
-			return query;
+			if (queries.Count == 1)
+				return queries[0];
+			return new CompositeQueryExpression(queries.ToArray());
 		}
 
 		private static void AddFields(ProjectionModel model, List<QueryExpression> projectedFieldsExprs, QueryExpression from, List<JoinExpression> joins,
@@ -104,6 +150,8 @@ namespace Silk.Data.SQL.ORM.Operations
 		{
 			foreach (var field in model.Fields)
 			{
+				if (field is IManyRelatedObjectField)
+					continue;
 				AddField(field, from, projectedFieldsExprs, joins, fieldPrefix);
 			}
 		}
@@ -153,6 +201,38 @@ namespace Silk.Data.SQL.ORM.Operations
 
 				joins.Add(joinExpr);
 				AddFields(singleRelationshipField.RelatedObjectModel, projectedFieldsExprs, joinAlias, joins, $"{fieldPrefix}{field.FieldName}_");
+			}
+			else if (field is IManyRelatedObjectField manyRelationshipField)
+			{
+				projectedFieldsExprs.Add(
+					QueryExpression.Alias(
+						QueryExpression.Column(manyRelationshipField.LocalColumn.ColumnName, fromSource),
+						$"__IDENT__{fieldPrefix}{manyRelationshipField.FieldName}"
+					));
+
+				var junctionJoinAlias = QueryExpression.Alias(
+					QueryExpression.Table(manyRelationshipField.JunctionTable.TableName),
+					$"__JUNCTION__{fieldPrefix}{manyRelationshipField.FieldName}"
+					);
+				var junctionJoin = QueryExpression.Join(
+					QueryExpression.Column(manyRelationshipField.LocalColumn.ColumnName, from),
+					QueryExpression.Column(manyRelationshipField.LocalJunctionColumn.ColumnName, junctionJoinAlias),
+					JoinDirection.Inner
+					);
+				joins.Add(junctionJoin);
+
+				var objectJoinAlias = QueryExpression.Alias(
+					QueryExpression.Table(manyRelationshipField.RelatedObjectModel.EntityTable.TableName),
+					$"{fieldPrefix}{manyRelationshipField.FieldName}"
+					);
+				var objectJoin = QueryExpression.Join(
+					QueryExpression.Column(manyRelationshipField.RelatedJunctionColumn.ColumnName, junctionJoinAlias),
+					QueryExpression.Column(manyRelationshipField.RelatedPrimaryKey.Column.ColumnName, objectJoinAlias),
+					JoinDirection.Inner
+					);
+				joins.Add(objectJoin);
+
+				AddFields(manyRelationshipField.RelatedObjectModel, projectedFieldsExprs, objectJoinAlias, joins, "");
 			}
 		}
 	}

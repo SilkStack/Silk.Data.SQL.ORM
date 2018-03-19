@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Silk.Data.Modelling;
 using Silk.Data.SQL.ORM.Modelling;
 using Silk.Data.SQL.ORM.Schema;
 using System;
@@ -143,7 +144,24 @@ namespace Silk.Data.SQL.ORM.Tests
 			builder.DefineEntity<HasManyPrimitives>();
 			builder.DefineEntity<HasIntId>();
 			var schema = builder.Build();
-			throw new NotImplementedException();
+			var model = schema.GetEntityModel<HasManyPrimitives>();
+
+			Assert.AreEqual(2, model.Fields.Length);
+			var field = model.Fields.OfType<IManyRelatedObjectField>().FirstOrDefault();
+			Assert.IsInstanceOfType(field, typeof(ManyRelatedObjectField<List<HasIntId>, HasIntId, int>));
+			Assert.IsNotNull(field);
+			Assert.AreEqual("Relationships", field.FieldName);
+			Assert.AreEqual(typeof(HasIntId), field.ElementType);
+			Assert.ReferenceEquals(TypeModel.GetModelOf<HasIntId>(), field.ElementModel);
+			Assert.IsNotNull(field.JunctionTable);
+			Assert.IsNotNull(field.LocalColumn);
+			Assert.IsNotNull(field.LocalJunctionColumn);
+			Assert.IsNotNull(field.LocalIdentifierField);
+			Assert.IsNotNull(field.Mapping);
+			Assert.IsNotNull(field.RelatedJunctionColumn);
+			Assert.IsNotNull(field.RelatedObjectModel);
+			Assert.ReferenceEquals(TypeModel.GetModelOf<HasIntId>(), field.RelatedObjectModel);
+			Assert.IsNotNull(field.RelatedPrimaryKey);
 		}
 
 		[TestMethod]
@@ -235,6 +253,7 @@ namespace Silk.Data.SQL.ORM.Tests
 
 		private class HasManyPrimitives
 		{
+			public int Id { get; set; }
 			public List<HasIntId> Relationships { get; set; }
 				= new List<HasIntId>();
 		}

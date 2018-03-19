@@ -42,18 +42,22 @@ namespace Silk.Data.SQL.ORM.Schema
 				_entityTypes.Select(q => q.GetEntityModel())
 			);
 
+			var tables = new List<Table>(
+				entityModelCollection.Select(q => q.EntityTable)
+				);
 			var schema = new Schema(entityModelCollection);
 			foreach (var fieldWithBuildFinalizer in entityModelCollection.SelectMany(q => q.Fields)
 				.OfType<IModelBuildFinalizerField>())
 			{
-				fieldWithBuildFinalizer.FinalizeModelBuild(schema);
+				fieldWithBuildFinalizer.FinalizeModelBuild(schema, tables);
 			}
 
 			foreach (var modelWithBuildFinalizer in entityModelCollection.OfType<IModelBuilderFinalizer>())
 			{
-				modelWithBuildFinalizer.FinalizeBuiltModel(schema);
+				modelWithBuildFinalizer.FinalizeBuiltModel(schema, tables);
 			}
 
+			schema.SetTables(tables);
 			return schema;
 		}
 	}
