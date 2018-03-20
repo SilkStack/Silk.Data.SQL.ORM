@@ -27,6 +27,12 @@ namespace Silk.Data.SQL.ORM.Modelling
 		private readonly List<IEntityField> _entityFields
 			= new List<IEntityField>();
 
+		private MappingBinding FindBinding(IEnumerable<string> matchPath)
+		{
+			return _mapping.Bindings.OfType<MappingBinding>()
+				.FirstOrDefault(q => q.FromPath.SequenceEqual(matchPath));
+		}
+
 		public void VisitField<T>(IField<T> field)
 		{
 			if (field is IEntityField entityField)
@@ -40,20 +46,28 @@ namespace Silk.Data.SQL.ORM.Modelling
 			_path.Push(field.FieldName);
 
 			var matchPath = _path.Reverse();
+			var binding = _mapping.Bindings.OfType<MappingBinding>().FirstOrDefault(q => q.FromPath.SequenceEqual(matchPath));
 
 			if (field is IValueField valueField)
 			{
-				var binding = _mapping.Bindings.OfType<MappingBinding>().FirstOrDefault(q => q.FromPath.SequenceEqual(matchPath));
 				if (binding != null)
 				{
-					_entityFields.Add(
-						new ProjectionField<T>(string.Join("_", binding.ToPath), field.CanRead, field.CanWrite, field.IsEnumerable, field.ElementType, _fieldPath.Reverse())
-						);
+					if (binding.FromPath.SequenceEqual(binding.ToPath))
+					{
+						_entityFields.Add(
+							new ValueField<T>(field.FieldName, field.CanRead, field.CanWrite, field.IsEnumerable, field.ElementType, valueField.Column)
+							);
+					}
+					else
+					{
+						_entityFields.Add(
+							new ProjectionField<T>(string.Join("_", binding.ToPath), field.CanRead, field.CanWrite, field.IsEnumerable, field.ElementType, _fieldPath.Reverse())
+							);
+					}
 				}
 			}
 			else if (field is IEmbeddedObjectField embeddedObjectField)
 			{
-				var binding = _mapping.Bindings.OfType<MappingBinding>().FirstOrDefault(q => q.FromPath.SequenceEqual(matchPath));
 				if (binding != null)
 				{
 					_entityFields.Add(
@@ -66,7 +80,6 @@ namespace Silk.Data.SQL.ORM.Modelling
 			}
 			else if (field is ISingleRelatedObjectField singleRelatedObjectField)
 			{
-				var binding = _mapping.Bindings.OfType<MappingBinding>().FirstOrDefault(q => q.FromPath.SequenceEqual(matchPath));
 				if (binding != null)
 				{
 					_entityFields.Add(

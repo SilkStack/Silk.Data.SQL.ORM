@@ -36,11 +36,7 @@ namespace Silk.Data.SQL.ORM.Operations
 		public override void ProcessResult(QueryResult queryResult)
 		{
 			var result = new List<IModelReadWriter>();
-			QueryResultReader reader;
-			if (_projectionModel is EntityModel)
-				reader = new EntityQueryResultReader(_projectionModel, queryResult);
-			else
-				reader = new ProjectionQueryResultReader(_projectionModel, queryResult);
+			var reader = new QueryResultReader(_projectionModel, queryResult);
 
 			while (queryResult.Read())
 			{
@@ -55,10 +51,7 @@ namespace Silk.Data.SQL.ORM.Operations
 				if (!queryResult.HasRows)
 					continue;
 
-				if (manyRelatedObjectField.RelatedObjectModel is EntityModel)
-					reader = new EntityQueryResultReader(manyRelatedObjectField.RelatedObjectModel, queryResult);
-				else
-					reader = new ProjectionQueryResultReader(manyRelatedObjectField.RelatedObjectModel, queryResult);
+				reader = new QueryResultReader(manyRelatedObjectField.RelatedObjectModel, queryResult);
 				var mapper = manyRelatedObjectField.CreateObjectMapper($"__IDENT__{manyRelatedObjectField.FieldName}");
 				mapper.PerformMapping(queryResult, reader, result);
 			}
@@ -69,11 +62,8 @@ namespace Silk.Data.SQL.ORM.Operations
 		public override async Task ProcessResultAsync(QueryResult queryResult)
 		{
 			var result = new List<IModelReadWriter>();
-			QueryResultReader reader;
-			if (_projectionModel is EntityModel)
-				reader = new EntityQueryResultReader(_projectionModel, queryResult);
-			else
-				reader = new ProjectionQueryResultReader(_projectionModel, queryResult);
+			var reader = new QueryResultReader(_projectionModel, queryResult);
+
 			while (await queryResult.ReadAsync())
 			{
 				var writer = new ObjectReadWriter(null, _typeModel, typeof(T));
@@ -87,10 +77,7 @@ namespace Silk.Data.SQL.ORM.Operations
 				if (!queryResult.HasRows)
 					continue;
 
-				if (manyRelatedObjectField.RelatedObjectModel is EntityModel)
-					reader = new EntityQueryResultReader(manyRelatedObjectField.RelatedObjectModel, queryResult);
-				else
-					reader = new ProjectionQueryResultReader(manyRelatedObjectField.RelatedObjectModel, queryResult);
+				reader = new QueryResultReader(manyRelatedObjectField.RelatedObjectModel, queryResult);
 				var mapper = manyRelatedObjectField.CreateObjectMapper($"__IDENT__{manyRelatedObjectField.FieldName}");
 				await mapper.PerformMappingAsync(queryResult, reader, result);
 			}
