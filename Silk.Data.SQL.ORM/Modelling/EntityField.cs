@@ -27,6 +27,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 	public interface ISingleRelatedObjectField : IEntityField
 	{
 		ProjectionModel RelatedObjectModel { get; }
+		ProjectionModel RelatedObjectProjection { get; }
 		IValueField RelatedPrimaryKey { get; }
 		Column LocalColumn { get; }
 	}
@@ -38,6 +39,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 		Column LocalJunctionColumn { get; }
 		Column RelatedJunctionColumn { get; }
 		ProjectionModel RelatedObjectModel { get; }
+		ProjectionModel RelatedObjectProjection { get; }
 		IValueField RelatedPrimaryKey { get; }
 		TypeModel ElementModel { get; }
 		Mapping Mapping { get; }
@@ -86,16 +88,18 @@ namespace Silk.Data.SQL.ORM.Modelling
 	public class SingleRelatedObjectField<T> : FieldBase<T>, ISingleRelatedObjectField, IModelBuildFinalizerField
 	{
 		public ProjectionModel RelatedObjectModel { get; private set; }
+		public ProjectionModel RelatedObjectProjection { get; private set; }
 		public IValueField RelatedPrimaryKey { get; }
 		public Column LocalColumn { get; }
 
 		public SingleRelatedObjectField(string fieldName, bool canRead, bool canWrite, bool isEnumerable, Type elementType,
-			ProjectionModel relatedObjectModel, IValueField relatedPrimaryKey, Column localColumn) :
+			ProjectionModel relatedObjectModel, IValueField relatedPrimaryKey, Column localColumn, ProjectionModel relatedObjectProjection) :
 			base(fieldName, canRead, canWrite, isEnumerable, elementType)
 		{
 			RelatedObjectModel = relatedObjectModel;
 			RelatedPrimaryKey = relatedPrimaryKey;
 			LocalColumn = localColumn;
+			RelatedObjectProjection = relatedObjectProjection;
 		}
 
 		public void FinalizeModelBuild(Schema.Schema finalizingSchema, List<Table> tables)
@@ -105,6 +109,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 			RelatedObjectModel = finalizingSchema.EntityModels.FirstOrDefault(
 				entityModel => entityModel.Fields.Contains(RelatedPrimaryKey)
 				);
+			RelatedObjectProjection = RelatedObjectModel;
 		}
 	}
 
@@ -120,10 +125,11 @@ namespace Silk.Data.SQL.ORM.Modelling
 		public Mapping Mapping { get; private set; }
 		public TypeModel ElementModel { get; private set; }
 		public IValueField LocalIdentifierField { get; private set; }
+		public ProjectionModel RelatedObjectProjection { get; private set; }
 
 		public ManyRelatedObjectField(string fieldName, bool canRead, bool canWrite, bool isEnumerable, Type elementType,
 			Column localColumn, Table junctionTable, Column localJunctionColumn, Column relatedJunctionColumn,
-			ProjectionModel relatedObjectModel, IValueField relatedPrimaryKey, IValueField localIdentifierField) :
+			ProjectionModel relatedObjectModel, IValueField relatedPrimaryKey, IValueField localIdentifierField, ProjectionModel relatedObjectProjection) :
 			base(fieldName, canRead, canWrite, isEnumerable, elementType)
 		{
 			LocalColumn = localColumn;
@@ -134,6 +140,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 			RelatedJunctionColumn = relatedJunctionColumn;
 			ElementModel = TypeModel.GetModelOf(elementType);
 			LocalIdentifierField = localIdentifierField;
+			RelatedObjectProjection = relatedObjectProjection;
 		}
 
 		public void FinalizeModelBuild(Schema.Schema finalizingSchema, List<Table> tables)
@@ -143,6 +150,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 				RelatedObjectModel = finalizingSchema.EntityModels.FirstOrDefault(
 					entityModel => entityModel.Fields.Contains(RelatedPrimaryKey)
 					);
+				RelatedObjectProjection = RelatedObjectModel;
 			}
 
 			if (JunctionTable == null)

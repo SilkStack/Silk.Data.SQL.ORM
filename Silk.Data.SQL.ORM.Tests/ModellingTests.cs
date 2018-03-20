@@ -107,6 +107,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			Assert.IsTrue(embeddedField.EmbeddedFields.OfType<IValueField>().Any(q => q.FieldName == "Data"));
 			var singleRelatedObjectField = embeddedField.EmbeddedFields.OfType<ISingleRelatedObjectField>().FirstOrDefault();
 			var dataField = embeddedField.EmbeddedFields.OfType<IValueField>().FirstOrDefault();
+			Assert.ReferenceEquals(singleRelatedObjectField.RelatedObjectProjection, singleRelatedObjectField.RelatedObjectModel);
 			Assert.IsNotNull(singleRelatedObjectField);
 			Assert.IsNotNull(dataField);
 			Assert.AreEqual("Relationship", singleRelatedObjectField.FieldName);
@@ -133,6 +134,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			Assert.IsInstanceOfType(field, typeof(ISingleRelatedObjectField));
 
 			var relatedObjectField = field as ISingleRelatedObjectField;
+			Assert.ReferenceEquals(relatedObjectField.RelatedObjectProjection, relatedObjectField.RelatedObjectModel);
 			Assert.ReferenceEquals(relatedModel, relatedObjectField.RelatedObjectModel);
 			Assert.ReferenceEquals(primaryKeyField, relatedObjectField.RelatedPrimaryKey);
 		}
@@ -162,6 +164,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			Assert.IsNotNull(field.RelatedObjectModel);
 			Assert.ReferenceEquals(TypeModel.GetModelOf<HasIntId>(), field.RelatedObjectModel);
 			Assert.IsNotNull(field.RelatedPrimaryKey);
+			Assert.ReferenceEquals(field.RelatedObjectProjection, field.RelatedObjectModel);
 		}
 
 		[TestMethod]

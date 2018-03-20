@@ -190,7 +190,7 @@ namespace Silk.Data.SQL.ORM.Operations
 					$"{fieldPrefix}{singleRelationshipField.FieldName}"
 					);
 
-				AddFields(singleRelationshipField.RelatedObjectModel, projectedFieldsExprs, joinAlias, joins, $"{fieldPrefix}{field.FieldName}_");
+				AddFields(singleRelationshipField.RelatedObjectProjection, projectedFieldsExprs, joinAlias, joins, $"{fieldPrefix}{field.FieldName}_");
 			}
 			else if (field is IManyRelatedObjectField manyRelationshipField)
 			{
@@ -204,7 +204,7 @@ namespace Silk.Data.SQL.ORM.Operations
 					$"{fieldPrefix}{manyRelationshipField.FieldName}"
 					);
 
-				AddFields(manyRelationshipField.RelatedObjectModel, projectedFieldsExprs, objectJoinAlias, joins, "");
+				AddFields(manyRelationshipField.RelatedObjectProjection, projectedFieldsExprs, objectJoinAlias, joins, "");
 			}
 		}
 

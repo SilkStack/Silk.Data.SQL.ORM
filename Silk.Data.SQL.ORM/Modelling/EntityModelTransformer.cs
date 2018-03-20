@@ -88,7 +88,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 			var localColumn = new Column(sqlColumnName, primaryKeyField.Column.SqlDataType);
 			_entityColumns.Add(localColumn);
 			_entityFields.Add(field.FieldName,
-				new SingleRelatedObjectField<TData>(field.FieldName, field.CanRead, field.CanWrite, false, null, null, primaryKeyField, localColumn)
+				new SingleRelatedObjectField<TData>(field.FieldName, field.CanRead, field.CanWrite, false, null, null, primaryKeyField, localColumn, null)
 				);
 
 			FieldsAdded = true;
@@ -159,7 +159,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 
 			_entityFields.Add(field.FieldName,
 				Activator.CreateInstance(objectFieldType, field.FieldName, field.CanRead, field.CanWrite, true, field.ElementType, localPrimaryKey.Column, null, null, null,
-					null, objectPrimaryKey, localPrimaryKey) as IEntityField
+					null, objectPrimaryKey, localPrimaryKey, null) as IEntityField
 				);
 		}
 
