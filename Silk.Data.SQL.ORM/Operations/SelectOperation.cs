@@ -98,7 +98,7 @@ namespace Silk.Data.SQL.ORM.Operations
 
 		private static SelectOperation<TProjection> Create<TProjection>(ProjectionModel projectionModel, EntityModel entityModel)
 		{
-			var entityTableExpr = QueryExpression.Table(projectionModel.EntityTable.TableName);
+			var entityTableExpr = QueryExpression.Table(entityModel.EntityTable.TableName);
 			var query = CreateQuery(projectionModel, entityModel, entityTableExpr);
 
 			return new SelectOperation<TProjection>(query, projectionModel);
