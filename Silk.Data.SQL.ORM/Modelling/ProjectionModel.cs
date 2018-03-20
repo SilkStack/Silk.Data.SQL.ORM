@@ -11,10 +11,17 @@ namespace Silk.Data.SQL.ORM.Modelling
 
 		public override IEntityField[] Fields { get; }
 
-		public ProjectionModel(IEntityField[] fields, Table entityTable)
+		protected ProjectionModel(IEntityField[] fields, Table entityTable)
 		{
 			EntityTable = entityTable;
 			Fields = fields;
+		}
+
+		public ProjectionModel(IEntityField[] fields, Table entityTable, Mapping mapping)
+		{
+			EntityTable = entityTable;
+			Fields = fields;
+			Mapping = mapping;
 		}
 	}
 }

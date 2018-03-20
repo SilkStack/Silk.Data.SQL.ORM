@@ -10,6 +10,9 @@ namespace Silk.Data.SQL.ORM.Modelling
 {
 	public abstract class EntityModel : ProjectionModel
 	{
+		private readonly Dictionary<Type, ProjectionModel> _projectionCache
+			= new Dictionary<Type, ProjectionModel>();
+
 		public Type EntityType { get; }
 		public Table[] JunctionTables { get; protected set; }
 
@@ -21,7 +24,22 @@ namespace Silk.Data.SQL.ORM.Modelling
 
 		public ProjectionModel GetProjection<TProjection>()
 		{
-			return null;
+			var type = typeof(TProjection);
+			if (_projectionCache.TryGetValue(type, out var projection))
+				return projection;
+
+			lock (_projectionCache)
+			{
+				if (_projectionCache.TryGetValue(type, out projection))
+					return projection;
+
+				var transformer = new ProjectionModelTransformer<TProjection>();
+				Transform(transformer);
+				projection = transformer.GetProjectionModel();
+				_projectionCache.Add(type, projection);
+
+				return projection;
+			}
 		}
 	}
 

@@ -48,6 +48,11 @@ namespace Silk.Data.SQL.ORM.Modelling
 		MultipleObjectMapper CreateObjectMapper(string identityFieldName);
 	}
 
+	public interface IProjectionField : IEntityField
+	{
+		IEntityField[] FieldPath { get; }
+	}
+
 	public interface IModelBuildFinalizerField
 	{
 		void FinalizeModelBuild(Schema.Schema finalizingSchema, List<Table> tables);
@@ -183,6 +188,17 @@ namespace Silk.Data.SQL.ORM.Modelling
 		public MultipleObjectMapper CreateObjectMapper(string identityFieldName)
 		{
 			return new MultipleObjectMapper<T, TElement, TIdentifier>(identityFieldName, this);
+		}
+	}
+
+	public class ProjectionField<T> : FieldBase<T>, IProjectionField
+	{
+		public IEntityField[] FieldPath { get; }
+
+		public ProjectionField(string fieldName, bool canRead, bool canWrite, bool isEnumerable, Type elementType, IEnumerable<IEntityField> fieldPath) :
+			base(fieldName, canRead, canWrite, isEnumerable, elementType)
+		{
+			FieldPath = fieldPath.ToArray();
 		}
 	}
 }

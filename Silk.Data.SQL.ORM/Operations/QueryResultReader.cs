@@ -51,19 +51,26 @@ namespace Silk.Data.SQL.ORM.Operations
 			return ret;
 		}
 
+		private Type GetDataType(IField field)
+		{
+			if (field is IValueField valueField)
+				return field.FieldType;
+			else if (field is ISingleRelatedObjectField singleRelatedObjectField)
+				return singleRelatedObjectField.RelatedPrimaryKey.FieldType;
+			else if (field is IEmbeddedObjectField embeddedObjectField)
+				return typeof(bool); // null check for the embedded object
+			else if (field is IProjectionField projectionField)
+				return GetDataType(projectionField.FieldPath.Last());
+			return null;
+		}
+
 		public T ReadField<T>(string[] path, int offset)
 		{
 			var field = GetField(path, offset);
 			if (field == null)
 				throw new Exception("Unknown field on model.");
 
-			Type dataType = null;
-			if (field is IValueField valueField)
-				dataType = field.FieldType;
-			else if (field is ISingleRelatedObjectField singleRelatedObjectField)
-				dataType = singleRelatedObjectField.RelatedPrimaryKey.FieldType;
-			else if (field is IEmbeddedObjectField embeddedObjectField)
-				dataType = typeof(bool); // null check for the embedded object
+			var dataType = GetDataType(field);
 
 			if (dataType == null)
 				return default(T);

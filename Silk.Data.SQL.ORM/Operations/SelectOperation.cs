@@ -206,6 +206,20 @@ namespace Silk.Data.SQL.ORM.Operations
 
 				AddFields(manyRelationshipField.RelatedObjectProjection, projectedFieldsExprs, objectJoinAlias, joins, "");
 			}
+			else if (field is IProjectionField projectionField)
+			{
+				foreach (var pathField in projectionField.FieldPath)
+				{
+					if (pathField is IValueField pathValueField)
+					{
+						projectedFieldsExprs.Add(
+							QueryExpression.Alias(
+								QueryExpression.Column(pathValueField.Column.ColumnName, fromSource),
+								projectionField.FieldName
+							));
+					}
+				}
+			}
 		}
 
 		private static void AddJoins(ProjectionModel model, List<QueryExpression> projectedFieldsExprs, QueryExpression from, List<JoinExpression> joins,

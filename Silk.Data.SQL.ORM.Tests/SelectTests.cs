@@ -334,9 +334,66 @@ INNER JOIN [FlatPoco] AS [Data] ON [__JUNCTION__Data].[RemoteKey] = [Data].[Id];
 			}
 		}
 
+		[TestMethod]
+		public void ProjectionGenerateSelectFlatPocoSQL()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<FlatPoco>();
+			var schema = schemaBuilder.Build();
+			var model = schema.GetEntityModel<FlatPoco>();
+
+			var select = SelectOperation.Create<FlatPoco, FlatPocoProjection>(model);
+			var sql = TestQueryConverter.CleanSql(
+				new TestQueryConverter().ConvertToQuery(select.GetQuery()).SqlText
+				);
+			Assert.AreEqual(@"SELECT [FlatPoco].[Data] AS [Data]
+FROM [FlatPoco];", sql);
+		}
+
+		[TestMethod]
+		public void ProjectionQuerySelectFlatPoco()
+		{
+			using (var sqlProvider = new SQLite3DataProvider(":memory:"))
+			{
+				sqlProvider.ExecuteNonQuery(QueryExpression.CreateTable(
+					"FlatPoco",
+					QueryExpression.DefineColumn(nameof(FlatPoco.Id), SqlDataType.Int(), isAutoIncrement: true, isPrimaryKey: true),
+					QueryExpression.DefineColumn(nameof(FlatPoco.Data), SqlDataType.Text())
+					));
+
+				sqlProvider.ExecuteNonQuery(QueryExpression.Insert(
+					"FlatPoco", new[] { nameof(FlatPoco.Data) },
+					new[] { "Hello" },
+					new[] { "World" }
+					));
+
+				var schemaBuilder = new SchemaBuilder();
+				schemaBuilder.DefineEntity<FlatPoco>();
+				var schema = schemaBuilder.Build();
+				var model = schema.GetEntityModel<FlatPoco>();
+
+				var select = SelectOperation.Create<FlatPoco, FlatPocoProjection>(model);
+				using (var queryResult = sqlProvider.ExecuteReader(select.GetQuery()))
+				{
+					select.ProcessResult(queryResult);
+				}
+				var result = select.Result;
+
+				Assert.IsNotNull(result);
+				Assert.AreEqual(2, result.Count);
+				Assert.IsTrue(result.Any(q => q.Data == "Hello"));
+				Assert.IsTrue(result.Any(q => q.Data == "World"));
+			}
+		}
+
 		private class FlatPoco
 		{
 			public int Id { get; set; }
+			public string Data { get; set; }
+		}
+
+		private class FlatPocoProjection
+		{
 			public string Data { get; set; }
 		}
 
