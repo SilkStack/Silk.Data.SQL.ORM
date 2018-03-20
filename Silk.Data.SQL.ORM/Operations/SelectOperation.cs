@@ -224,6 +224,7 @@ namespace Silk.Data.SQL.ORM.Operations
 			else if (field is IProjectionField projectionField)
 			{
 				var projectionSource = fromSource;
+				var projectionPrefix = fieldPrefix;
 				foreach (var pathField in projectionField.FieldPath)
 				{
 					if (pathField is IValueField pathValueField)
@@ -234,11 +235,15 @@ namespace Silk.Data.SQL.ORM.Operations
 								projectionField.FieldName
 							));
 					}
+					else if (pathField is IEmbeddedObjectField projectionEmbeddedObjectField)
+					{
+						projectionPrefix += $"{projectionEmbeddedObjectField.FieldName}_";
+					}
 					else if (pathField is ISingleRelatedObjectField singleRelatedObjectField)
 					{
 						var joinAlias = QueryExpression.Alias(
 							QueryExpression.Table(singleRelatedObjectField.RelatedObjectModel.EntityTable.TableName),
-							$"{fieldPrefix}{singleRelatedObjectField.FieldName}"
+							$"{projectionPrefix}{singleRelatedObjectField.FieldName}"
 							);
 						projectionSource = joinAlias.Identifier;
 					}

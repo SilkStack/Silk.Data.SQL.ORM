@@ -387,7 +387,7 @@ FROM [FlatPoco];", sql);
 		}
 
 		[TestMethod]
-		public void ProjectionGenerateSelectPocoWithSingleRelationshipSQL()
+		public void FlattenedProjectionGenerateSelectPocoWithSingleRelationshipSQL()
 		{
 			var schemaBuilder = new SchemaBuilder();
 			schemaBuilder.DefineEntity<PocoWithSingleRelationship>();
@@ -405,7 +405,7 @@ LEFT OUTER JOIN [FlatPoco] AS [Data] ON [PocoWithSingleRelationship].[Data] = [D
 		}
 
 		[TestMethod]
-		public void ProjectionQuerySelectPocoWithSingleRelationship()
+		public void FlattenedProjectionQuerySelectPocoWithSingleRelationship()
 		{
 			using (var sqlProvider = new SQLite3DataProvider(":memory:"))
 			{
@@ -455,6 +455,103 @@ LEFT OUTER JOIN [FlatPoco] AS [Data] ON [PocoWithSingleRelationship].[Data] = [D
 			}
 		}
 
+		[TestMethod]
+		public void FlattenedProjectionGenerateSelectPocoWithEmbeddedTypesSQL()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<ClassWithEmbeddedPoco>();
+			schemaBuilder.DefineEntity<FlatPoco>();
+			var schema = schemaBuilder.Build();
+			var model = schema.GetEntityModel<ClassWithEmbeddedPoco>();
+
+			var select = SelectOperation.Create<ClassWithEmbeddedPoco, FlatProjectionClassWithEmbeddedPoco>(model);
+			var sql = TestQueryConverter.CleanSql(
+				new TestQueryConverter().ConvertToQuery(select.GetQuery()).SqlText
+				);
+			Assert.AreEqual(@"SELECT [ClassWithEmbeddedPoco].[Embedded_SubEmbedded_Relationship] AS [Embedded_SubEmbedded_Relationship], [ClassWithEmbeddedPoco].[Embedded_SubEmbedded_Data] AS [EmbeddedSubEmbeddedData], [Embedded_SubEmbedded_Relationship].[Data] AS [EmbeddedSubEmbeddedRelationshipData], [ClassWithEmbeddedPoco].[Embedded_Data] AS [EmbeddedData], [ClassWithEmbeddedPoco].[Data] AS [Data]
+FROM [ClassWithEmbeddedPoco]
+LEFT OUTER JOIN [FlatPoco] AS [Embedded_SubEmbedded_Relationship] ON [ClassWithEmbeddedPoco].[Embedded_SubEmbedded_Relationship] = [Embedded_SubEmbedded_Relationship].[Id];", sql);
+		}
+
+		[TestMethod]
+		public void FlattenedProjectionQuerySelectPocoWithEmbeddedTypes()
+		{
+			using (var sqlProvider = new SQLite3DataProvider(":memory:"))
+			{
+				sqlProvider.ExecuteNonQuery(QueryExpression.CreateTable(
+					"FlatPoco",
+					QueryExpression.DefineColumn(nameof(FlatPoco.Id), SqlDataType.Int(), isAutoIncrement: true, isPrimaryKey: true),
+					QueryExpression.DefineColumn(nameof(FlatPoco.Data), SqlDataType.Text())
+					));
+
+				sqlProvider.ExecuteNonQuery(QueryExpression.CreateTable(
+					"ClassWithEmbeddedPoco",
+					QueryExpression.DefineColumn("Embedded", SqlDataType.Bit()),
+					QueryExpression.DefineColumn("Data", SqlDataType.Text(), isNullable: true),
+					QueryExpression.DefineColumn("Embedded_SubEmbedded", SqlDataType.Bit()),
+					QueryExpression.DefineColumn("Embedded_Data", SqlDataType.Text(), isNullable: true),
+					QueryExpression.DefineColumn("Embedded_SubEmbedded_Relationship", SqlDataType.Int(), isNullable: true),
+					QueryExpression.DefineColumn("Embedded_SubEmbedded_Data", SqlDataType.Text(), isNullable: true)
+					));
+
+				sqlProvider.ExecuteNonQuery(QueryExpression.Insert(
+					"FlatPoco", new[] { nameof(FlatPoco.Data) },
+					new[] { "Hello" }
+					));
+
+				sqlProvider.ExecuteNonQuery(QueryExpression.Insert(
+					"ClassWithEmbeddedPoco",
+					new[] { "Embedded", "Data", "Embedded_SubEmbedded", "Embedded_Data", "Embedded_SubEmbedded_Relationship", "Embedded_SubEmbedded_Data" },
+					new[] { (object)1, "Hello World", (object)1, "Hello Embedded World", (object)1, "Hello SubEmbedded World" },
+					new[] { (object)1, "Hello World", (object)1, "Hello Embedded World", default(object), "Hello SubEmbedded World" },
+					new[] { (object)1, "Hello World", (object)0, "Hello Embedded World", default(object), default(object) }
+					));
+
+				var schemaBuilder = new SchemaBuilder();
+				schemaBuilder.DefineEntity<FlatPoco>();
+				schemaBuilder.DefineEntity<ClassWithEmbeddedPoco>();
+				var schema = schemaBuilder.Build();
+				var model = schema.GetEntityModel<ClassWithEmbeddedPoco>();
+
+				var select = SelectOperation.Create<ClassWithEmbeddedPoco, FlatProjectionClassWithEmbeddedPoco>(model);
+				using (var queryResult = sqlProvider.ExecuteReader(select.GetQuery()))
+				{
+					select.ProcessResult(queryResult);
+				}
+				var result = select.Result.ToArray();
+
+				Assert.IsNotNull(result);
+				Assert.AreEqual(3, result.Length);
+
+				var instance = result[0];
+				Assert.IsNotNull(instance);
+				Assert.AreEqual("Hello World", instance.Data);
+				Assert.IsNotNull(instance.EmbeddedData);
+				Assert.AreEqual("Hello Embedded World", instance.EmbeddedData);
+				Assert.IsNotNull(instance.EmbeddedSubEmbeddedData);
+				Assert.AreEqual("Hello SubEmbedded World", instance.EmbeddedSubEmbeddedData);
+				Assert.IsNotNull(instance.EmbeddedSubEmbeddedRelationshipData);
+				Assert.AreEqual("Hello", instance.EmbeddedSubEmbeddedRelationshipData);
+
+				instance = result[1];
+				Assert.IsNotNull(instance);
+				Assert.AreEqual("Hello World", instance.Data);
+				Assert.IsNotNull(instance.EmbeddedData);
+				Assert.AreEqual("Hello Embedded World", instance.EmbeddedData);
+				Assert.IsNotNull(instance.EmbeddedSubEmbeddedData);
+				Assert.AreEqual("Hello SubEmbedded World", instance.EmbeddedSubEmbeddedData);
+				Assert.IsNull(instance.EmbeddedSubEmbeddedRelationshipData);
+
+				instance = result[2];
+				Assert.IsNotNull(instance);
+				Assert.AreEqual("Hello World", instance.Data);
+				Assert.IsNotNull(instance.EmbeddedData);
+				Assert.AreEqual("Hello Embedded World", instance.EmbeddedData);
+				Assert.IsNull(instance.EmbeddedSubEmbeddedData);
+				Assert.IsNull(instance.EmbeddedSubEmbeddedRelationshipData);
+			}
+		}
+
 		private class FlatPoco
 		{
 			public int Id { get; set; }
@@ -487,6 +584,14 @@ LEFT OUTER JOIN [FlatPoco] AS [Data] ON [PocoWithSingleRelationship].[Data] = [D
 		private class ClassWithEmbeddedPoco
 		{
 			public EmbeddedPocoTier1 Embedded { get; set; }
+			public string Data { get; set; }
+		}
+
+		private class FlatProjectionClassWithEmbeddedPoco
+		{
+			public string EmbeddedData { get; set; }
+			public string EmbeddedSubEmbeddedData { get; set; }
+			public string EmbeddedSubEmbeddedRelationshipData { get; set; }
 			public string Data { get; set; }
 		}
 
