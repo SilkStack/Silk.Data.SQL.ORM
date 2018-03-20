@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Operations
 {
-	public class QueryResultReader : IModelReadWriter
+	public abstract class QueryResultReader : IModelReadWriter
 	{
 		private static readonly Dictionary<Type, Func<QueryResult, int, object>> _typeReaders =
 			new Dictionary<Type, Func<QueryResult, int, object>>()
@@ -28,28 +28,14 @@ namespace Silk.Data.SQL.ORM.Operations
 		private readonly QueryResult _queryResult;
 		public IModel Model { get; }
 
-		public QueryResultReader(IModel model, QueryResult queryResult)
+		protected QueryResultReader(IModel model, QueryResult queryResult)
 		{
 			Model = model;
 			_queryResult = queryResult;
 		}
 
-		private IField GetField(string[] path, int startOffset)
-		{
-			IField ret = null;
-			var fields = Model.Fields;
-			for (var i = startOffset; i < path.Length; i++)
-			{
-				ret = fields.FirstOrDefault(q => q.FieldName == path[i]);
-				if (ret == null)
-					break;
-				if (ret is ISingleRelatedObjectField singleRelatedObjectField)
-					fields = singleRelatedObjectField.RelatedObjectModel.Fields;
-				else if (ret is IEmbeddedObjectField embeddedObjectField)
-					fields = embeddedObjectField.EmbeddedFields;
-			}
-			return ret;
-		}
+		protected abstract IField GetField(string[] path, int startOffset);
+		protected abstract string GetFieldAlias(IField field, string[] path);
 
 		private Type GetDataType(IField field)
 		{
@@ -78,7 +64,7 @@ namespace Silk.Data.SQL.ORM.Operations
 			if (!_typeReaders.TryGetValue(dataType, out var readFunc))
 				return default(T);
 
-			var fieldAlias = string.Join("_", path);
+			var fieldAlias = GetFieldAlias(field, path);
 			var ord = _queryResult.GetOrdinal(fieldAlias);
 			if (_queryResult.IsDBNull(ord))
 				return default(T);
@@ -88,6 +74,55 @@ namespace Silk.Data.SQL.ORM.Operations
 		public void WriteField<T>(string[] path, int offset, T value)
 		{
 			throw new System.NotImplementedException();
+		}
+	}
+
+	public class EntityQueryResultReader : QueryResultReader
+	{
+		public EntityQueryResultReader(IModel model, QueryResult queryResult) :
+			base(model, queryResult)
+		{
+		}
+
+		protected override IField GetField(string[] path, int startOffset)
+		{
+			IField ret = null;
+			var fields = Model.Fields;
+			for (var i = startOffset; i < path.Length; i++)
+			{
+				ret = fields.FirstOrDefault(q => q.FieldName == path[i]);
+				if (ret == null)
+					break;
+				if (ret is ISingleRelatedObjectField singleRelatedObjectField)
+					fields = singleRelatedObjectField.RelatedObjectModel.Fields;
+				else if (ret is IEmbeddedObjectField embeddedObjectField)
+					fields = embeddedObjectField.EmbeddedFields;
+			}
+			return ret;
+		}
+
+		protected override string GetFieldAlias(IField field, string[] path)
+		{
+			return string.Join("_", path);
+		}
+	}
+
+	public class ProjectionQueryResultReader : QueryResultReader
+	{
+		public ProjectionQueryResultReader(IModel model, QueryResult queryResult) :
+			base(model, queryResult)
+		{
+		}
+
+		protected override IField GetField(string[] path, int startOffset)
+		{
+			return Model.Fields.OfType<IProjectionField>()
+				.FirstOrDefault(q => q.MapFromPath.SequenceEqual(path));
+		}
+
+		protected override string GetFieldAlias(IField field, string[] path)
+		{
+			return field.FieldName;
 		}
 	}
 }

@@ -36,7 +36,12 @@ namespace Silk.Data.SQL.ORM.Operations
 		public override void ProcessResult(QueryResult queryResult)
 		{
 			var result = new List<IModelReadWriter>();
-			var reader = new QueryResultReader(_projectionModel, queryResult);
+			QueryResultReader reader;
+			if (_projectionModel is EntityModel)
+				reader = new EntityQueryResultReader(_projectionModel, queryResult);
+			else
+				reader = new ProjectionQueryResultReader(_projectionModel, queryResult);
+
 			while (queryResult.Read())
 			{
 				var writer = new ObjectReadWriter(null, _typeModel, typeof(T));
@@ -50,7 +55,10 @@ namespace Silk.Data.SQL.ORM.Operations
 				if (!queryResult.HasRows)
 					continue;
 
-				reader = new QueryResultReader(manyRelatedObjectField.RelatedObjectModel, queryResult);
+				if (manyRelatedObjectField.RelatedObjectModel is EntityModel)
+					reader = new EntityQueryResultReader(manyRelatedObjectField.RelatedObjectModel, queryResult);
+				else
+					reader = new ProjectionQueryResultReader(manyRelatedObjectField.RelatedObjectModel, queryResult);
 				var mapper = manyRelatedObjectField.CreateObjectMapper($"__IDENT__{manyRelatedObjectField.FieldName}");
 				mapper.PerformMapping(queryResult, reader, result);
 			}
@@ -61,7 +69,11 @@ namespace Silk.Data.SQL.ORM.Operations
 		public override async Task ProcessResultAsync(QueryResult queryResult)
 		{
 			var result = new List<IModelReadWriter>();
-			var reader = new QueryResultReader(_projectionModel, queryResult);
+			QueryResultReader reader;
+			if (_projectionModel is EntityModel)
+				reader = new EntityQueryResultReader(_projectionModel, queryResult);
+			else
+				reader = new ProjectionQueryResultReader(_projectionModel, queryResult);
 			while (await queryResult.ReadAsync())
 			{
 				var writer = new ObjectReadWriter(null, _typeModel, typeof(T));
@@ -75,7 +87,10 @@ namespace Silk.Data.SQL.ORM.Operations
 				if (!queryResult.HasRows)
 					continue;
 
-				reader = new QueryResultReader(manyRelatedObjectField.RelatedObjectModel, queryResult);
+				if (manyRelatedObjectField.RelatedObjectModel is EntityModel)
+					reader = new EntityQueryResultReader(manyRelatedObjectField.RelatedObjectModel, queryResult);
+				else
+					reader = new ProjectionQueryResultReader(manyRelatedObjectField.RelatedObjectModel, queryResult);
 				var mapper = manyRelatedObjectField.CreateObjectMapper($"__IDENT__{manyRelatedObjectField.FieldName}");
 				await mapper.PerformMappingAsync(queryResult, reader, result);
 			}
@@ -208,15 +223,24 @@ namespace Silk.Data.SQL.ORM.Operations
 			}
 			else if (field is IProjectionField projectionField)
 			{
+				var projectionSource = fromSource;
 				foreach (var pathField in projectionField.FieldPath)
 				{
 					if (pathField is IValueField pathValueField)
 					{
 						projectedFieldsExprs.Add(
 							QueryExpression.Alias(
-								QueryExpression.Column(pathValueField.Column.ColumnName, fromSource),
+								QueryExpression.Column(pathValueField.Column.ColumnName, projectionSource),
 								projectionField.FieldName
 							));
+					}
+					else if (pathField is ISingleRelatedObjectField singleRelatedObjectField)
+					{
+						var joinAlias = QueryExpression.Alias(
+							QueryExpression.Table(singleRelatedObjectField.RelatedObjectModel.EntityTable.TableName),
+							$"{fieldPrefix}{singleRelatedObjectField.FieldName}"
+							);
+						projectionSource = joinAlias.Identifier;
 					}
 				}
 			}

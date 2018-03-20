@@ -47,7 +47,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 				if (binding != null)
 				{
 					_entityFields.Add(
-						new ProjectionField<T>(string.Join("_", binding.ToPath), field.CanRead, field.CanWrite, field.IsEnumerable, field.ElementType, _fieldPath)
+						new ProjectionField<T>(string.Join("_", binding.ToPath), field.CanRead, field.CanWrite, field.IsEnumerable, field.ElementType, _fieldPath.Reverse())
 						);
 				}
 			}
@@ -57,7 +57,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 				if (binding != null)
 				{
 					_entityFields.Add(
-						new ProjectionField<T>(string.Join("_", binding.ToPath), field.CanRead, field.CanWrite, field.IsEnumerable, field.ElementType, _fieldPath)
+						new ProjectionField<T>(string.Join("_", binding.ToPath), field.CanRead, field.CanWrite, field.IsEnumerable, field.ElementType, _fieldPath.Reverse())
 						);
 				}
 
@@ -66,7 +66,16 @@ namespace Silk.Data.SQL.ORM.Modelling
 			}
 			else if (field is ISingleRelatedObjectField singleRelatedObjectField)
 			{
+				var binding = _mapping.Bindings.OfType<MappingBinding>().FirstOrDefault(q => q.FromPath.SequenceEqual(matchPath));
+				if (binding != null)
+				{
+					_entityFields.Add(
+						new ProjectionField<T>(string.Join("_", binding.ToPath), field.CanRead, field.CanWrite, field.IsEnumerable, field.ElementType, _fieldPath.Reverse())
+						);
+				}
 
+				foreach (var subField in singleRelatedObjectField.RelatedObjectModel.Fields)
+					subField.Transform(this);
 			}
 			else if (field is IManyRelatedObjectField manyRelatedObjectField)
 			{

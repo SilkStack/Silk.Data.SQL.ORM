@@ -386,6 +386,75 @@ FROM [FlatPoco];", sql);
 			}
 		}
 
+		[TestMethod]
+		public void ProjectionGenerateSelectPocoWithSingleRelationshipSQL()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<PocoWithSingleRelationship>();
+			schemaBuilder.DefineEntity<FlatPoco>();
+			var schema = schemaBuilder.Build();
+			var model = schema.GetEntityModel<PocoWithSingleRelationship>();
+
+			var select = SelectOperation.Create<PocoWithSingleRelationship, ProjectionPocoWithSingleRelationship>(model);
+			var sql = TestQueryConverter.CleanSql(
+				new TestQueryConverter().ConvertToQuery(select.GetQuery()).SqlText
+				);
+			Assert.AreEqual(@"SELECT [PocoWithSingleRelationship].[Data] AS [Data], [PocoWithSingleRelationship].[Id] AS [Id], [Data].[Data] AS [DataData]
+FROM [PocoWithSingleRelationship]
+LEFT OUTER JOIN [FlatPoco] AS [Data] ON [PocoWithSingleRelationship].[Data] = [Data].[Id];", sql);
+		}
+
+		[TestMethod]
+		public void ProjectionQuerySelectPocoWithSingleRelationship()
+		{
+			using (var sqlProvider = new SQLite3DataProvider(":memory:"))
+			{
+				sqlProvider.ExecuteNonQuery(QueryExpression.CreateTable(
+					"FlatPoco",
+					QueryExpression.DefineColumn(nameof(FlatPoco.Id), SqlDataType.Int(), isAutoIncrement: true, isPrimaryKey: true),
+					QueryExpression.DefineColumn(nameof(FlatPoco.Data), SqlDataType.Text())
+					));
+
+				sqlProvider.ExecuteNonQuery(QueryExpression.CreateTable(
+					"PocoWithSingleRelationship",
+					QueryExpression.DefineColumn(nameof(PocoWithSingleRelationship.Id), SqlDataType.Int(), isAutoIncrement: true, isPrimaryKey: true),
+					QueryExpression.DefineColumn(nameof(PocoWithSingleRelationship.Data), SqlDataType.Int(), isNullable: true)
+					));
+
+				sqlProvider.ExecuteNonQuery(QueryExpression.Insert(
+					"FlatPoco", new[] { nameof(FlatPoco.Data) },
+					new[] { "Hello" },
+					new[] { "World" }
+					));
+
+				sqlProvider.ExecuteNonQuery(QueryExpression.Insert(
+					"PocoWithSingleRelationship", new[] { nameof(PocoWithSingleRelationship.Data) },
+					new[] { (object)1 },
+					new[] { (object)2 },
+					new[] { default(object) }
+					));
+
+				var schemaBuilder = new SchemaBuilder();
+				schemaBuilder.DefineEntity<FlatPoco>();
+				schemaBuilder.DefineEntity<PocoWithSingleRelationship>();
+				var schema = schemaBuilder.Build();
+				var model = schema.GetEntityModel<PocoWithSingleRelationship>();
+
+				var select = SelectOperation.Create<PocoWithSingleRelationship, ProjectionPocoWithSingleRelationship>(model);
+				using (var queryResult = sqlProvider.ExecuteReader(select.GetQuery()))
+				{
+					select.ProcessResult(queryResult);
+				}
+				var result = select.Result;
+
+				Assert.IsNotNull(result);
+				Assert.AreEqual(3, result.Count);
+				Assert.IsTrue(result.Any(q => q.Id == 1 && q.DataData == "Hello"));
+				Assert.IsTrue(result.Any(q => q.Id == 2 && q.DataData == "World"));
+				Assert.IsTrue(result.Any(q => q.Id == 3 && q.DataData == null));
+			}
+		}
+
 		private class FlatPoco
 		{
 			public int Id { get; set; }
@@ -401,6 +470,12 @@ FROM [FlatPoco];", sql);
 		{
 			public int Id { get; set; }
 			public FlatPoco Data { get; set; }
+		}
+
+		private class ProjectionPocoWithSingleRelationship
+		{
+			public int Id { get; set; }
+			public string DataData { get; set; }
 		}
 
 		private class PocoWithManyRelationship

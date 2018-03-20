@@ -12,6 +12,7 @@ namespace Silk.Data.SQL.ORM.Tests
 		{
 			var schemaBuilder = new SchemaBuilder();
 			schemaBuilder.DefineEntity<Entity>();
+			schemaBuilder.DefineEntity<RelatedPoco>();
 			var schema = schemaBuilder.Build();
 			var model = schema.GetEntityModel<Entity>();
 			var projection = model.GetProjection<DataProjection>();
@@ -22,10 +23,26 @@ namespace Silk.Data.SQL.ORM.Tests
 		}
 
 		[TestMethod]
-		public void ProjectEmbeddedSameType()
+		public void ProjectFlattenedRelatedSameType()
 		{
 			var schemaBuilder = new SchemaBuilder();
 			schemaBuilder.DefineEntity<Entity>();
+			schemaBuilder.DefineEntity<RelatedPoco>();
+			var schema = schemaBuilder.Build();
+			var model = schema.GetEntityModel<Entity>();
+			var projection = model.GetProjection<RelatedDataProjection>();
+
+			Assert.IsNotNull(projection);
+
+			throw new NotImplementedException();
+		}
+
+		[TestMethod]
+		public void ProjectFlattenedEmbeddedSameType()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<Entity>();
+			schemaBuilder.DefineEntity<RelatedPoco>();
 			var schema = schemaBuilder.Build();
 			var model = schema.GetEntityModel<Entity>();
 			var projection = model.GetProjection<EmbeddedStrProjection>();
@@ -39,6 +56,7 @@ namespace Silk.Data.SQL.ORM.Tests
 		{
 			public Guid Id { get; set; }
 			public string Data { get; set; }
+			public RelatedPoco Related { get; set; }
 			public EmbeddedPoco Embedded { get; set; }
 		}
 
@@ -48,9 +66,20 @@ namespace Silk.Data.SQL.ORM.Tests
 			public string Str { get; set; }
 		}
 
+		private class RelatedPoco
+		{
+			public int Id { get; set; }
+			public string Data { get; set; }
+		}
+
 		private class DataProjection
 		{
 			public string Data { get; set; }
+		}
+
+		private class RelatedDataProjection
+		{
+			public string RelatedData { get; set; }
 		}
 
 		private class EmbeddedStrProjection
