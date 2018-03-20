@@ -208,34 +208,6 @@ namespace Silk.Data.SQL.ORM.Operations
 
 				AddFields(manyRelationshipField.RelatedObjectProjection, projectedFieldsExprs, objectJoinAlias, joins, "");
 			}
-			else if (field is IProjectionField projectionField)
-			{
-				var projectionSource = fromSource;
-				var projectionPrefix = fieldPrefix;
-				foreach (var pathField in projectionField.FieldPath)
-				{
-					if (pathField is IValueField pathValueField)
-					{
-						projectedFieldsExprs.Add(
-							QueryExpression.Alias(
-								QueryExpression.Column(pathValueField.Column.ColumnName, projectionSource),
-								projectionField.FieldName
-							));
-					}
-					else if (pathField is IEmbeddedObjectField projectionEmbeddedObjectField)
-					{
-						projectionPrefix += $"{projectionEmbeddedObjectField.FieldName}_";
-					}
-					else if (pathField is ISingleRelatedObjectField singleRelatedObjectField)
-					{
-						var joinAlias = QueryExpression.Alias(
-							QueryExpression.Table(singleRelatedObjectField.RelatedObjectModel.EntityTable.TableName),
-							$"{projectionPrefix}{singleRelatedObjectField.FieldName}"
-							);
-						projectionSource = joinAlias.Identifier;
-					}
-				}
-			}
 		}
 
 		private static void AddJoins(ProjectionModel model, List<QueryExpression> projectedFieldsExprs, QueryExpression from, List<JoinExpression> joins,

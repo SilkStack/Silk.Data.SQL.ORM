@@ -59,8 +59,6 @@ namespace Silk.Data.SQL.ORM.Operations
 				return singleRelatedObjectField.RelatedPrimaryKey.FieldType;
 			else if (field is IEmbeddedObjectField embeddedObjectField)
 				return typeof(bool); // null check for the embedded object
-			else if (field is IProjectionField projectionField)
-				return GetDataType(projectionField.FieldPath.Last());
 			return null;
 		}
 

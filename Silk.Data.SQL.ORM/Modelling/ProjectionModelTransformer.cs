@@ -33,6 +33,24 @@ namespace Silk.Data.SQL.ORM.Modelling
 				.FirstOrDefault(q => q.FromPath.SequenceEqual(matchPath));
 		}
 
+		private void ModelPrimitiveField<T>(IValueField valueField)
+		{
+			var matchPath = _path.Reverse();
+			var binding = _mapping.Bindings.OfType<MappingBinding>().FirstOrDefault(q => q.FromPath.SequenceEqual(matchPath));
+
+			if (binding != null)
+			{
+				_entityFields.Add(
+					new ValueField<T>(valueField.FieldName, valueField.CanRead, valueField.CanWrite, valueField.IsEnumerable, valueField.ElementType, valueField.Column)
+					);
+			}
+		}
+
+		private void ModelSingleRelationshipField<T>(ISingleRelatedObjectField singleRelatedObjectField)
+		{
+
+		}
+
 		public void VisitField<T>(IField<T> field)
 		{
 			if (field is IEntityField entityField)
@@ -45,55 +63,42 @@ namespace Silk.Data.SQL.ORM.Modelling
 			}
 			_path.Push(field.FieldName);
 
-			var matchPath = _path.Reverse();
-			var binding = _mapping.Bindings.OfType<MappingBinding>().FirstOrDefault(q => q.FromPath.SequenceEqual(matchPath));
-
 			if (field is IValueField valueField)
 			{
-				if (binding != null)
-				{
-					if (binding.FromPath.SequenceEqual(binding.ToPath))
-					{
-						_entityFields.Add(
-							new ValueField<T>(field.FieldName, field.CanRead, field.CanWrite, field.IsEnumerable, field.ElementType, valueField.Column)
-							);
-					}
-					else
-					{
-						_entityFields.Add(
-							new ProjectionField<T>(string.Join("_", binding.ToPath), field.CanRead, field.CanWrite, field.IsEnumerable, field.ElementType, _fieldPath.Reverse())
-							);
-					}
-				}
-			}
-			else if (field is IEmbeddedObjectField embeddedObjectField)
-			{
-				if (binding != null)
-				{
-					_entityFields.Add(
-						new ProjectionField<T>(string.Join("_", binding.ToPath), field.CanRead, field.CanWrite, field.IsEnumerable, field.ElementType, _fieldPath.Reverse())
-						);
-				}
-
-				foreach (var subField in embeddedObjectField.EmbeddedFields)
-					subField.Transform(this);
+				ModelPrimitiveField<T>(valueField);
 			}
 			else if (field is ISingleRelatedObjectField singleRelatedObjectField)
 			{
-				if (binding != null)
-				{
-					_entityFields.Add(
-						new ProjectionField<T>(string.Join("_", binding.ToPath), field.CanRead, field.CanWrite, field.IsEnumerable, field.ElementType, _fieldPath.Reverse())
-						);
-				}
-
-				foreach (var subField in singleRelatedObjectField.RelatedObjectModel.Fields)
-					subField.Transform(this);
+				ModelSingleRelationshipField<T>(singleRelatedObjectField);
 			}
-			else if (field is IManyRelatedObjectField manyRelatedObjectField)
-			{
+			//else if (field is IEmbeddedObjectField embeddedObjectField)
+			//{
+			//	if (binding != null)
+			//	{
+			//		_entityFields.Add(
+			//			new ProjectionField<T>(string.Join("_", binding.ToPath), field.CanRead, field.CanWrite, field.IsEnumerable, field.ElementType, _fieldPath.Reverse())
+			//			);
+			//	}
 
-			}
+			//	foreach (var subField in embeddedObjectField.EmbeddedFields)
+			//		subField.Transform(this);
+			//}
+			//else if (field is ISingleRelatedObjectField singleRelatedObjectField)
+			//{
+			//	if (binding != null)
+			//	{
+			//		_entityFields.Add(
+			//			new ProjectionField<T>(string.Join("_", binding.ToPath), field.CanRead, field.CanWrite, field.IsEnumerable, field.ElementType, _fieldPath.Reverse())
+			//			);
+			//	}
+
+			//	foreach (var subField in singleRelatedObjectField.RelatedObjectModel.Fields)
+			//		subField.Transform(this);
+			//}
+			//else if (field is IManyRelatedObjectField manyRelatedObjectField)
+			//{
+
+			//}
 
 			_fieldPath.Pop();
 			_path.Pop();
