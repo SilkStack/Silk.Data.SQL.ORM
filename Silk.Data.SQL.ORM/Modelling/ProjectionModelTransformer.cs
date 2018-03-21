@@ -1,12 +1,13 @@
 ﻿using Silk.Data.Modelling;
 using Silk.Data.Modelling.Mapping;
 using Silk.Data.Modelling.Mapping.Binding;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Modelling
 {
-	public class ProjectionModelTransformer<TProjection> : IModelTransformer
+	public class ProjectionModelTransformer : IModelTransformer
 	{
 		private readonly static IMappingConvention[] _projectionConventions = new IMappingConvention[]
 		{
@@ -24,8 +25,14 @@ namespace Silk.Data.SQL.ORM.Modelling
 		private Mapping _mapping;
 		private readonly Stack<string> _path = new Stack<string>();
 		private readonly Stack<IEntityField> _fieldPath = new Stack<IEntityField>();
-		private readonly List<IEntityField> _entityFields
+		private List<IEntityField> _entityFields
 			= new List<IEntityField>();
+		private readonly Type _projectionType;
+
+		public ProjectionModelTransformer(Type projectionType)
+		{
+			_projectionType = projectionType;
+		}
 
 		private MappingBinding FindBinding(IEnumerable<string> matchPath)
 		{
@@ -40,15 +47,57 @@ namespace Silk.Data.SQL.ORM.Modelling
 
 			if (binding != null)
 			{
-				_entityFields.Add(
-					new ValueField<T>(valueField.FieldName, valueField.CanRead, valueField.CanWrite, valueField.IsEnumerable, valueField.ElementType, valueField.Column)
-					);
+				_entityFields.Add(valueField);
 			}
 		}
 
 		private void ModelSingleRelationshipField<T>(ISingleRelatedObjectField singleRelatedObjectField)
 		{
+			var existingFields = _entityFields;
+			_entityFields = new List<IEntityField>();
 
+			foreach (var field in singleRelatedObjectField.RelatedObjectModel.Fields)
+			{
+				field.Transform(this);
+			}
+
+			var entityFields = _entityFields;
+			_entityFields = existingFields;
+
+			if (entityFields.Count < 1)
+				return;
+			var projectedModel = new ProjectionModel(entityFields.ToArray(), singleRelatedObjectField.RelatedObjectModel.EntityTable, null);
+
+			_entityFields.Add(
+				new SingleRelatedObjectField<T>(
+					singleRelatedObjectField.FieldName, singleRelatedObjectField.CanRead, singleRelatedObjectField.CanWrite,
+					singleRelatedObjectField.IsEnumerable, singleRelatedObjectField.ElementType, singleRelatedObjectField.RelatedObjectModel,
+					singleRelatedObjectField.RelatedPrimaryKey, singleRelatedObjectField.LocalColumn, projectedModel
+				));
+		}
+
+		private void ModelEmbeddedObjectField<T>(IEmbeddedObjectField embeddedObjectField)
+		{
+			var existingFields = _entityFields;
+			_entityFields = new List<IEntityField>();
+
+			foreach (var field in embeddedObjectField.EmbeddedFields)
+			{
+				field.Transform(this);
+			}
+
+			var fields = _entityFields;
+			_entityFields = existingFields;
+
+			if (fields.Count < 1)
+				return;
+
+			_entityFields.Add(
+				new EmbeddedObjectField<T>(
+					embeddedObjectField.FieldName, embeddedObjectField.CanRead, embeddedObjectField.CanWrite,
+					embeddedObjectField.IsEnumerable, embeddedObjectField.ElementType, fields,
+					embeddedObjectField.NullCheckColumn
+				));
 		}
 
 		public void VisitField<T>(IField<T> field)
@@ -59,7 +108,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 			}
 			else
 			{
-				throw new System.InvalidOperationException("Non entity field encountered.");
+				throw new InvalidOperationException("Non entity field encountered.");
 			}
 			_path.Push(field.FieldName);
 
@@ -71,34 +120,10 @@ namespace Silk.Data.SQL.ORM.Modelling
 			{
 				ModelSingleRelationshipField<T>(singleRelatedObjectField);
 			}
-			//else if (field is IEmbeddedObjectField embeddedObjectField)
-			//{
-			//	if (binding != null)
-			//	{
-			//		_entityFields.Add(
-			//			new ProjectionField<T>(string.Join("_", binding.ToPath), field.CanRead, field.CanWrite, field.IsEnumerable, field.ElementType, _fieldPath.Reverse())
-			//			);
-			//	}
-
-			//	foreach (var subField in embeddedObjectField.EmbeddedFields)
-			//		subField.Transform(this);
-			//}
-			//else if (field is ISingleRelatedObjectField singleRelatedObjectField)
-			//{
-			//	if (binding != null)
-			//	{
-			//		_entityFields.Add(
-			//			new ProjectionField<T>(string.Join("_", binding.ToPath), field.CanRead, field.CanWrite, field.IsEnumerable, field.ElementType, _fieldPath.Reverse())
-			//			);
-			//	}
-
-			//	foreach (var subField in singleRelatedObjectField.RelatedObjectModel.Fields)
-			//		subField.Transform(this);
-			//}
-			//else if (field is IManyRelatedObjectField manyRelatedObjectField)
-			//{
-
-			//}
+			else if (field is IEmbeddedObjectField embeddedObjectField)
+			{
+				ModelEmbeddedObjectField<T>(embeddedObjectField);
+			}
 
 			_fieldPath.Pop();
 			_path.Pop();
@@ -109,7 +134,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 			_entityModel = model as EntityModel;
 			if (_entityModel == null)
 				throw new System.InvalidOperationException("Projections can only be built from EntityModel instances.");
-			var mappingBuilder = new MappingBuilder(model, TypeModel.GetModelOf<TProjection>());
+			var mappingBuilder = new MappingBuilder(model, TypeModel.GetModelOf(_projectionType));
 			foreach (var convention in _projectionConventions)
 				mappingBuilder.AddConvention(convention);
 			_mapping = mappingBuilder.BuildMapping();

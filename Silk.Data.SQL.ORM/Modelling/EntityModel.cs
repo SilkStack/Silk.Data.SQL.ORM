@@ -33,7 +33,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 				if (_projectionCache.TryGetValue(type, out projection))
 					return projection;
 
-				var transformer = new ProjectionModelTransformer<TProjection>();
+				var transformer = new ProjectionModelTransformer(typeof(TProjection));
 				Transform(transformer);
 				projection = transformer.GetProjectionModel();
 				_projectionCache.Add(type, projection);
