@@ -1,6 +1,7 @@
 ﻿using Silk.Data.Modelling;
 using Silk.Data.Modelling.Mapping;
 using Silk.Data.Modelling.Mapping.Binding;
+using Silk.Data.SQL.ORM.Modelling.Binding;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,13 +13,9 @@ namespace Silk.Data.SQL.ORM.Modelling
 		private readonly static IMappingConvention[] _projectionConventions = new IMappingConvention[]
 		{
 			CreateInstanceAsNeeded.Instance,
-			CopyExplicitCast.Instance,
-			MapReferenceTypes.Instance,
-			CreateInstancesOfPropertiesAsNeeded.Instance,
-			CopySameTypes.Instance,
-			CastNumericTypes.Instance,
-			ConvertToStringWithToString.Instance,
-			CopyTryParse.Instance
+			CreateEmbeddedInstanceUsingNotNullColumn.Instance,
+			CreateSingleRelatedInstanceWhenPresent.Instance,
+			CopyValueFields.Instance
 		};
 
 		private EntityModel _entityModel;
