@@ -1,6 +1,8 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Silk.Data.SQL.ORM.Modelling;
 using Silk.Data.SQL.ORM.Schema;
 using System;
+using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Tests
 {
@@ -18,8 +20,10 @@ namespace Silk.Data.SQL.ORM.Tests
 			var projection = model.GetProjection<DataProjection>();
 
 			Assert.IsNotNull(projection);
-
-			throw new NotImplementedException();
+			Assert.AreEqual(1, projection.Fields.Length);
+			var field = projection.Fields.OfType<IValueField>().FirstOrDefault();
+			Assert.IsNotNull(field);
+			Assert.AreEqual("Data", field.FieldName);
 		}
 
 		[TestMethod]
@@ -33,8 +37,14 @@ namespace Silk.Data.SQL.ORM.Tests
 			var projection = model.GetProjection<RelatedDataProjection>();
 
 			Assert.IsNotNull(projection);
-
-			throw new NotImplementedException();
+			Assert.AreEqual(1, projection.Fields.Length);
+			var field = projection.Fields.OfType<ISingleRelatedObjectField>().FirstOrDefault();
+			Assert.IsNotNull(field);
+			Assert.AreEqual("Related", field.FieldName);
+			Assert.AreEqual(1, field.RelatedObjectProjection.Fields.Length);
+			var valueField = field.RelatedObjectProjection.Fields.OfType<IValueField>().FirstOrDefault();
+			Assert.IsNotNull(valueField);
+			Assert.AreEqual("Data", valueField.FieldName);
 		}
 
 		[TestMethod]
@@ -48,8 +58,14 @@ namespace Silk.Data.SQL.ORM.Tests
 			var projection = model.GetProjection<EmbeddedStrProjection>();
 
 			Assert.IsNotNull(projection);
-
-			throw new NotImplementedException();
+			Assert.AreEqual(1, projection.Fields.Length);
+			var field = projection.Fields.OfType<IEmbeddedObjectField>().FirstOrDefault();
+			Assert.IsNotNull(field);
+			Assert.AreEqual("Embedded", field.FieldName);
+			Assert.AreEqual(1, field.EmbeddedFields.Length);
+			var valueField = field.EmbeddedFields.OfType<IValueField>().FirstOrDefault();
+			Assert.IsNotNull(valueField);
+			Assert.AreEqual("Str", valueField.FieldName);
 		}
 
 		private class Entity
