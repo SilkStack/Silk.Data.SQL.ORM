@@ -130,7 +130,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 		{
 			_entityModel = model as EntityModel;
 			if (_entityModel == null)
-				throw new System.InvalidOperationException("Projections can only be built from EntityModel instances.");
+				throw new InvalidOperationException("Projections can only be built from EntityModel instances.");
 			var mappingBuilder = new MappingBuilder(model, TypeModel.GetModelOf(_projectionType));
 			foreach (var convention in _projectionConventions)
 				mappingBuilder.AddConvention(convention);

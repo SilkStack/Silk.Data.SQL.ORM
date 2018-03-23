@@ -1,5 +1,7 @@
 ﻿using Silk.Data.Modelling.Mapping;
 using Silk.Data.Modelling.Mapping.Binding;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Modelling.Binding
@@ -14,36 +16,26 @@ namespace Silk.Data.SQL.ORM.Modelling.Binding
 			if (fromProjectionModel == null)
 				return;
 
-			foreach (var (fromField, toField) in ConventionUtilities.GetBindCandidatePairs(fromModel, toModel, builder))
+			foreach (var fromField in fromModel.Fields.Where(q => q.CanRead && !q.IsEnumerable))
 			{
-				HandleFieldPair(fromField, toField);
+				HandleField(fromField);
 			}
 
-			void HandleFieldPair(ISourceField fromField, ITargetField toField)
+			void HandleField(ISourceField fromField)
 			{
 				var path = fromField.FieldPath;
 				var entityField = GetField(fromProjectionModel, path);
-				if (entityField is IValueField)
-				{
-					if (!builder.IsBound(toField))
-					{
-						builder
-							.Bind(toField)
-							.From(fromField)
-							.MapUsing<CopyBinding>();
-					}
-				}
-				else if (entityField is IEmbeddedObjectField embeddedObjectField)
+
+				if (entityField is IEmbeddedObjectField embeddedObjectField)
 				{
 					foreach (var subField in embeddedObjectField.EmbeddedFields)
 					{
 						var subPath = path.Concat(new[] { subField.FieldName }).ToArray();
-						var subToField = toModel.GetField(subPath);
-						var subFromField = fromModel.GetField(subPath);
+						var subToField = fromModel.GetField(subPath);
 
-						if (subToField != null && subFromField != null)
+						if (subToField != null)
 						{
-							HandleFieldPair(subFromField, subToField);
+							HandleField(subToField);
 						}
 					}
 				}
@@ -52,19 +44,42 @@ namespace Silk.Data.SQL.ORM.Modelling.Binding
 					foreach (var subField in singleRelatedObjectField.RelatedObjectModel.Fields)
 					{
 						var subPath = path.Concat(new[] { subField.FieldName }).ToArray();
-						var subToField = toModel.GetField(subPath);
-						var subFromField = fromModel.GetField(subPath);
+						var subToField = fromModel.GetField(subPath);
 
-						if (subToField != null && subFromField != null)
+						if (subToField != null)
 						{
-							HandleFieldPair(subFromField, subToField);
+							HandleField(subToField);
 						}
+					}
+				}
+				else if (entityField is IValueField valueField)
+				{
+					var toField = toModel.GetField(path);
+					if (toField == null)
+					{
+						var flatPath = string.Join("", path);
+						var candidatePaths = ConventionUtilities.GetPaths(flatPath);
+						foreach (var candidatePath in candidatePaths)
+						{
+							toField = toModel.GetField(candidatePath);
+							if (toField != null)
+								break;
+						}
+					}
+					if (toField == null)
+						return;
+					if (!builder.IsBound(toField))
+					{
+						builder
+							.Bind(toField)
+							.From(fromField)
+							.MapUsing<CopyBinding>();
 					}
 				}
 			}
 		}
 
-		private IEntityField GetField(ProjectionModel model, string[] path)
+		private static IEntityField GetField(ProjectionModel model, string[] path)
 		{
 			IEntityField ret = null;
 			var fields = model.Fields;

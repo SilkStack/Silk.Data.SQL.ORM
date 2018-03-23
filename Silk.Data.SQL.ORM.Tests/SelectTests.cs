@@ -648,6 +648,102 @@ LEFT OUTER JOIN [FlatPoco] AS [Embedded_SubEmbedded_Relationship] ON [ClassWithE
 			}
 		}
 
+		[TestMethod]
+		public void SubProjectGenerateSelectPocoWithEmbeddedTypesSQL()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<ClassWithEmbeddedPoco>();
+			schemaBuilder.DefineEntity<FlatPoco>();
+			var schema = schemaBuilder.Build();
+			var model = schema.GetEntityModel<ClassWithEmbeddedPoco>();
+
+			var select = SelectOperation.Create<ClassWithEmbeddedPoco, ProjectionClassWithEmbeddedPoco>(model);
+			var sql = TestQueryConverter.CleanSql(
+				new TestQueryConverter().ConvertToQuery(select.GetQuery()).SqlText
+				);
+			Assert.AreEqual(@"SELECT [ClassWithEmbeddedPoco].[Embedded_SubEmbedded_Relationship] AS [Embedded_SubEmbedded_Relationship], [ClassWithEmbeddedPoco].[Embedded] AS [Embedded], [ClassWithEmbeddedPoco].[Embedded_SubEmbedded] AS [Embedded_SubEmbedded], [ClassWithEmbeddedPoco].[Embedded_SubEmbedded_Data] AS [Embedded_SubEmbedded_Data], [Embedded_SubEmbedded_Relationship].[Id] AS [Embedded_SubEmbedded_Relationship_Id], [Embedded_SubEmbedded_Relationship].[Data] AS [Embedded_SubEmbedded_Relationship_Data]
+FROM [ClassWithEmbeddedPoco]
+LEFT OUTER JOIN [FlatPoco] AS [Embedded_SubEmbedded_Relationship] ON [ClassWithEmbeddedPoco].[Embedded_SubEmbedded_Relationship] = [Embedded_SubEmbedded_Relationship].[Id];", sql);
+		}
+
+		[TestMethod]
+		public void SubProjectQuerySelectPocoWithEmbeddedTypes()
+		{
+			using (var sqlProvider = new SQLite3DataProvider(":memory:"))
+			{
+				sqlProvider.ExecuteNonQuery(QueryExpression.CreateTable(
+					"FlatPoco",
+					QueryExpression.DefineColumn(nameof(FlatPoco.Id), SqlDataType.Int(), isAutoIncrement: true, isPrimaryKey: true),
+					QueryExpression.DefineColumn(nameof(FlatPoco.Data), SqlDataType.Text())
+					));
+
+				sqlProvider.ExecuteNonQuery(QueryExpression.CreateTable(
+					"ClassWithEmbeddedPoco",
+					QueryExpression.DefineColumn("Embedded", SqlDataType.Bit()),
+					QueryExpression.DefineColumn("Data", SqlDataType.Text(), isNullable: true),
+					QueryExpression.DefineColumn("Embedded_SubEmbedded", SqlDataType.Bit()),
+					QueryExpression.DefineColumn("Embedded_Data", SqlDataType.Text(), isNullable: true),
+					QueryExpression.DefineColumn("Embedded_SubEmbedded_Relationship", SqlDataType.Int(), isNullable: true),
+					QueryExpression.DefineColumn("Embedded_SubEmbedded_Data", SqlDataType.Text(), isNullable: true)
+					));
+
+				sqlProvider.ExecuteNonQuery(QueryExpression.Insert(
+					"FlatPoco", new[] { nameof(FlatPoco.Data) },
+					new[] { "Hello" }
+					));
+
+				sqlProvider.ExecuteNonQuery(QueryExpression.Insert(
+					"ClassWithEmbeddedPoco",
+					new[] { "Embedded", "Data", "Embedded_SubEmbedded", "Embedded_Data", "Embedded_SubEmbedded_Relationship", "Embedded_SubEmbedded_Data" },
+					new[] { (object)1, "Hello World", (object)1, "Hello Embedded World", (object)1, "Hello SubEmbedded World" },
+					new[] { (object)1, "Hello World", (object)1, "Hello Embedded World", default(object), "Hello SubEmbedded World" },
+					new[] { (object)1, "Hello World", (object)0, "Hello Embedded World", default(object), default(object) }
+					));
+
+				var schemaBuilder = new SchemaBuilder();
+				schemaBuilder.DefineEntity<FlatPoco>();
+				schemaBuilder.DefineEntity<ClassWithEmbeddedPoco>();
+				var schema = schemaBuilder.Build();
+				var model = schema.GetEntityModel<ClassWithEmbeddedPoco>();
+
+				var select = SelectOperation.Create<ClassWithEmbeddedPoco, ProjectionClassWithEmbeddedPoco>(model);
+				using (var queryResult = sqlProvider.ExecuteReader(select.GetQuery()))
+				{
+					select.ProcessResult(queryResult);
+				}
+				var result = select.Result.ToArray();
+
+				Assert.IsNotNull(result);
+				Assert.AreEqual(3, result.Length);
+
+				//var instance = result[0];
+				//Assert.IsNotNull(instance);
+				//Assert.AreEqual("Hello World", instance.Data);
+				//Assert.IsNotNull(instance.Embedded);
+				//Assert.AreEqual("Hello Embedded World", instance.Embedded.Data);
+				//Assert.IsNotNull(instance.Embedded.SubEmbedded);
+				//Assert.AreEqual("Hello SubEmbedded World", instance.Embedded.SubEmbedded.Data);
+				//Assert.IsNotNull(instance.Embedded.SubEmbedded.Relationship);
+				//Assert.AreEqual("Hello", instance.Embedded.SubEmbedded.Relationship.Data);
+
+				//instance = result[1];
+				//Assert.IsNotNull(instance);
+				//Assert.AreEqual("Hello World", instance.Data);
+				//Assert.IsNotNull(instance.Embedded);
+				//Assert.AreEqual("Hello Embedded World", instance.Embedded.Data);
+				//Assert.IsNotNull(instance.Embedded.SubEmbedded);
+				//Assert.AreEqual("Hello SubEmbedded World", instance.Embedded.SubEmbedded.Data);
+				//Assert.IsNull(instance.Embedded.SubEmbedded.Relationship);
+
+				//instance = result[2];
+				//Assert.IsNotNull(instance);
+				//Assert.AreEqual("Hello World", instance.Data);
+				//Assert.IsNotNull(instance.Embedded);
+				//Assert.AreEqual("Hello Embedded World", instance.Embedded.Data);
+				//Assert.IsNull(instance.Embedded.SubEmbedded);
+			}
+		}
+
 		private class FlatPoco
 		{
 			public int Id { get; set; }
@@ -687,6 +783,17 @@ LEFT OUTER JOIN [FlatPoco] AS [Embedded_SubEmbedded_Relationship] ON [ClassWithE
 		{
 			public EmbeddedPocoTier1 Embedded { get; set; }
 			public string Data { get; set; }
+		}
+
+		private class ProjectionClassWithEmbeddedPoco
+		{
+			public ProjectionEmbeddedPocoTier1 Embedded { get; set; }
+		}
+
+		private class ProjectionEmbeddedPocoTier1
+		{
+			public FlatPoco SubEmbeddedRelationship { get; set; }
+			public string SubEmbeddedData { get; set; }
 		}
 
 		private class FlatProjectionClassWithEmbeddedPoco
