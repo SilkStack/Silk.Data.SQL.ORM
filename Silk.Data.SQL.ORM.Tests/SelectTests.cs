@@ -716,31 +716,21 @@ LEFT OUTER JOIN [FlatPoco] AS [Embedded_SubEmbedded_Relationship] ON [ClassWithE
 				Assert.IsNotNull(result);
 				Assert.AreEqual(3, result.Length);
 
-				//var instance = result[0];
-				//Assert.IsNotNull(instance);
-				//Assert.AreEqual("Hello World", instance.Data);
-				//Assert.IsNotNull(instance.Embedded);
-				//Assert.AreEqual("Hello Embedded World", instance.Embedded.Data);
-				//Assert.IsNotNull(instance.Embedded.SubEmbedded);
-				//Assert.AreEqual("Hello SubEmbedded World", instance.Embedded.SubEmbedded.Data);
-				//Assert.IsNotNull(instance.Embedded.SubEmbedded.Relationship);
-				//Assert.AreEqual("Hello", instance.Embedded.SubEmbedded.Relationship.Data);
+				var instance = result[0];
+				Assert.IsNotNull(instance);
+				Assert.AreEqual("Hello SubEmbedded World", instance.Embedded.SubEmbeddedData);
+				Assert.IsNotNull(instance.Embedded.SubEmbeddedRelationship);
+				Assert.AreEqual("Hello", instance.Embedded.SubEmbeddedRelationship.Data);
 
-				//instance = result[1];
-				//Assert.IsNotNull(instance);
-				//Assert.AreEqual("Hello World", instance.Data);
-				//Assert.IsNotNull(instance.Embedded);
-				//Assert.AreEqual("Hello Embedded World", instance.Embedded.Data);
-				//Assert.IsNotNull(instance.Embedded.SubEmbedded);
-				//Assert.AreEqual("Hello SubEmbedded World", instance.Embedded.SubEmbedded.Data);
-				//Assert.IsNull(instance.Embedded.SubEmbedded.Relationship);
+				instance = result[1];
+				Assert.IsNotNull(instance);
+				Assert.AreEqual("Hello SubEmbedded World", instance.Embedded.SubEmbeddedData);
+				Assert.IsNull(instance.Embedded.SubEmbeddedRelationship);
 
-				//instance = result[2];
-				//Assert.IsNotNull(instance);
-				//Assert.AreEqual("Hello World", instance.Data);
-				//Assert.IsNotNull(instance.Embedded);
-				//Assert.AreEqual("Hello Embedded World", instance.Embedded.Data);
-				//Assert.IsNull(instance.Embedded.SubEmbedded);
+				instance = result[2];
+				Assert.IsNotNull(instance);
+				Assert.IsNull(instance.Embedded.SubEmbeddedData);
+				Assert.IsNull(instance.Embedded.SubEmbeddedRelationship);
 			}
 		}
 
