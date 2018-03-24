@@ -734,6 +734,47 @@ LEFT OUTER JOIN [FlatPoco] AS [Embedded_SubEmbedded_Relationship] ON [ClassWithE
 			}
 		}
 
+		[TestMethod]
+		public void QuerySelectPocoWithNullable()
+		{
+			using (var sqlProvider = new SQLite3DataProvider(":memory:"))
+			{
+				sqlProvider.ExecuteNonQuery(QueryExpression.CreateTable(
+					"PocoWithNullable",
+					QueryExpression.DefineColumn(nameof(PocoWithNullable.NullableInt), SqlDataType.Int(), isNullable: true)
+					));
+
+				sqlProvider.ExecuteNonQuery(QueryExpression.Insert(
+					"PocoWithNullable", new[] { nameof(PocoWithNullable.NullableInt) },
+					new[] { (object)1 },
+					new[] { default(object) }
+					));
+
+				var schemaBuilder = new SchemaBuilder();
+				schemaBuilder.DefineEntity<PocoWithNullable>();
+				var schema = schemaBuilder.Build();
+				var model = schema.GetEntityModel<PocoWithNullable>();
+
+				var select = SelectOperation.Create<PocoWithNullable>(model);
+				using (var queryResult = sqlProvider.ExecuteReader(select.GetQuery()))
+				{
+					select.ProcessResult(queryResult);
+				}
+				var result = select.Result.ToArray();
+
+				Assert.IsNotNull(result);
+				Assert.AreEqual(2, result.Length);
+
+				var instance = result[0];
+				Assert.IsNotNull(instance);
+				Assert.AreEqual(1, instance.NullableInt);
+
+				instance = result[1];
+				Assert.IsNotNull(instance);
+				Assert.IsNull(instance.NullableInt);
+			}
+		}
+
 		private class FlatPoco
 		{
 			public int Id { get; set; }
@@ -804,6 +845,11 @@ LEFT OUTER JOIN [FlatPoco] AS [Embedded_SubEmbedded_Relationship] ON [ClassWithE
 		{
 			public FlatPoco Relationship { get; set; }
 			public string Data { get; set; }
+		}
+
+		private class PocoWithNullable
+		{
+			public int? NullableInt { get; set; }
 		}
 	}
 }

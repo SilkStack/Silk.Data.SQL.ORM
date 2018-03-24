@@ -23,6 +23,16 @@ namespace Silk.Data.SQL.ORM.Operations
 				{ typeof(string), (q,o) => q.GetString(o) },
 				{ typeof(Guid), (q,o) => q.GetGuid(o) },
 				{ typeof(DateTime), (q,o) => q.GetDateTime(o) },
+				{ typeof(bool?), (q,o) => q.GetBoolean(o) },
+				{ typeof(byte?), (q,o) => q.GetByte(o) },
+				{ typeof(short?), (q,o) => q.GetInt16(o) },
+				{ typeof(int?), (q,o) => q.GetInt32(o) },
+				{ typeof(long?), (q,o) => q.GetInt64(o) },
+				{ typeof(float?), (q,o) => q.GetFloat(o) },
+				{ typeof(double?), (q,o) => q.GetDouble(o) },
+				{ typeof(decimal?), (q,o) => q.GetDecimal(o) },
+				{ typeof(Guid?), (q,o) => q.GetGuid(o) },
+				{ typeof(DateTime?), (q,o) => q.GetDateTime(o) },
 			};
 
 		private readonly QueryResult _queryResult;
