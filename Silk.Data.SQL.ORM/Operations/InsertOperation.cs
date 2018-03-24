@@ -102,7 +102,7 @@ namespace Silk.Data.SQL.ORM.Operations
 				var i = 0;
 				foreach (var column in columns)
 				{
-					row[i] = column.GetColumnExpression(readWriter);
+					row[i++] = column.GetColumnExpression(readWriter);
 				}
 				bulkInsertRows.Add(row);
 			}
