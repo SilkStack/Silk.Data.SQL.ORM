@@ -121,6 +121,7 @@ namespace Silk.Data.SQL.ORM.Operations
 			var primaryKeyField = entityModel.Fields.OfType<IValueField>().FirstOrDefault(q => q.Column.IsPrimaryKey);
 			var primaryKeyIsOnProjection = false;
 			var primaryKeyIsServerGenerated = primaryKeyField?.Column.IsServerGenerated ?? false;
+			ServerGeneratedValue serverGeneratedPrimaryKey = null;
 			if (primaryKeyField != null)
 			{
 				primaryKeyIsOnProjection = projectionModel.Fields.OfType<IValueField>().Any(q => q.Column.ColumnName == primaryKeyField.Column.ColumnName);
@@ -140,6 +141,8 @@ namespace Silk.Data.SQL.ORM.Operations
 				if (transformer.Current != null)
 					columns.Add(transformer.Current);
 			}
+			if (primaryKeyField != null)
+				serverGeneratedPrimaryKey = columns.OfType<ServerGeneratedValue>().FirstOrDefault(q => q.ColumnName == primaryKeyField.Column.ColumnName);
 
 			var bulkInsertRows = new List<QueryExpression[]>();
 			foreach (var obj in projections)
@@ -152,7 +155,13 @@ namespace Silk.Data.SQL.ORM.Operations
 					row[i++] = column.GetColumnExpression(readWriter);
 				}
 
-				if (primaryKeyIsServerGenerated)
+				var mapBackPrimaryKey = false;
+				if (primaryKeyIsOnProjection && primaryKeyIsServerGenerated)
+				{
+					mapBackPrimaryKey = !serverGeneratedPrimaryKey.HasValue(readWriter);
+				}
+
+				if (mapBackPrimaryKey)
 				{
 					individualInsertExpressions.Add(new CompositeQueryExpression(
 						QueryExpression.Insert(entityModel.EntityTable.TableName, columns.Select(q => q.ColumnName).ToArray(), row),
@@ -236,6 +245,8 @@ namespace Silk.Data.SQL.ORM.Operations
 			{
 			}
 
+			public abstract bool HasValue(IModelReadWriter modelReadWriter);
+
 			public abstract void ReadResultValue(QueryResult queryResult, IModelReadWriter modelReadWriter);
 		}
 
@@ -258,6 +269,12 @@ namespace Silk.Data.SQL.ORM.Operations
 					return QueryExpression.Value(value);
 
 				return QueryExpression.Value(null);
+			}
+
+			public override bool HasValue(IModelReadWriter modelReadWriter)
+			{
+				var value = modelReadWriter.ReadField<T>(_fieldPath, 0);
+				return !EqualityComparer<T>.Default.Equals(value, default(T));
 			}
 
 			public override void ReadResultValue(QueryResult queryResult, IModelReadWriter modelReadWriter)

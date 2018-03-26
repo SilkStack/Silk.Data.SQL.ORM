@@ -321,7 +321,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			Assert.AreNotEqual(0, data[0].Id);
 
 			var insert = InsertOperation.Create<PocoWithIntPK>(model, data);
-			Assert.IsFalse(insert.CanBeBatched);
+			Assert.IsTrue(insert.CanBeBatched);
 			var query = insert.GetQuery();
 			var builtQuery = new TestQueryConverter().ConvertToQuery(query);
 
@@ -366,7 +366,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			};
 
 			var insert = InsertOperation.Create<PocoWithIntPK, PocoWithIntPKView>(model, data);
-			Assert.IsFalse(insert.CanBeBatched);
+			Assert.IsTrue(insert.CanBeBatched);
 			var query = insert.GetQuery();
 			var builtQuery = new TestQueryConverter().ConvertToQuery(query);
 
