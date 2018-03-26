@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Silk.Data.Modelling;
@@ -83,15 +84,19 @@ namespace Silk.Data.SQL.ORM.Operations
 				primaryKeyIsOnProjection = projectionModel.Fields.OfType<IValueField>().Any(q => q.Column.ColumnName == primaryKeyField.Column.ColumnName);
 			}
 
-			var transformer = new ColumnHelperTransformer();
+			var transformer = new ColumnHelperTransformer(projectionModel);
 			var columns = new List<ColumnHelper>();
 			foreach (var projectionField in projectionModel.Fields)
 			{
-				if (projectionField is IValueField valueField)
-				{
-					valueField.Transform(transformer);
+				projectionField.Transform(transformer);
+				if (transformer.Current != null)
 					columns.Add(transformer.Current);
-				}
+			}
+			if (!primaryKeyIsOnProjection && primaryKeyField != null)
+			{
+				primaryKeyField.Transform(transformer);
+				if (transformer.Current != null)
+					columns.Add(transformer.Current);
 			}
 
 			var bulkInsertRows = new List<QueryExpression[]>();
@@ -126,30 +131,80 @@ namespace Silk.Data.SQL.ORM.Operations
 
 		private class ColumnValueReader<T> : ColumnHelper
 		{
-			private readonly string _fieldName;
+			private readonly string[] _fieldPath;
 
-			public ColumnValueReader(string columnName, string fieldName) : base(columnName)
+			public ColumnValueReader(string columnName, string[] fieldPath) : base(columnName)
 			{
-				_fieldName = fieldName;
+				_fieldPath = fieldPath;
 			}
 
 			public override QueryExpression GetColumnExpression(IModelReadWriter modelReadWriter)
 			{
 				return QueryExpression.Value(
-					modelReadWriter.ReadField<T>(new[] { _fieldName }, 0)
+					modelReadWriter.ReadField<T>(_fieldPath, 0)
 					);
+			}
+		}
+
+		private class ClientGeneratedValue<T> : ColumnHelper
+		{
+			private readonly string[] _fieldPath;
+
+			public ClientGeneratedValue(string columnName, string[] fieldPath) : base(columnName)
+			{
+				if (typeof(T) != typeof(Guid))
+					throw new InvalidOperationException($"Non-supported generated value type: {typeof(T).FullName}.");
+				_fieldPath = fieldPath;
+			}
+
+			public override QueryExpression GetColumnExpression(IModelReadWriter modelReadWriter)
+			{
+				if (_fieldPath == null)
+					return QueryExpression.Value(Guid.NewGuid());
+
+				var value = modelReadWriter.ReadField<T>(_fieldPath, 0);
+				if (!EqualityComparer<T>.Default.Equals(value, default(T)))
+					return QueryExpression.Value(value);
+
+				var newId = Guid.NewGuid();
+				modelReadWriter.WriteField<Guid>(_fieldPath, 0, newId);
+				return QueryExpression.Value(newId);
 			}
 		}
 
 		private class ColumnHelperTransformer : IModelTransformer
 		{
+			private readonly ProjectionModel _projectionModel;
+
 			public ColumnHelper Current { get; private set; }
+
+			public ColumnHelperTransformer(ProjectionModel projectionModel)
+			{
+				_projectionModel = projectionModel;
+			}
+
+			private bool FieldIsOnModel(IField field)
+			{
+				var foundField = _projectionModel.Fields.FirstOrDefault(q => q.FieldName == field.FieldName);
+				return foundField != null;
+			}
 
 			public void VisitField<T>(IField<T> field)
 			{
+				Current = null;
+
 				if (field is IValueField valueField)
 				{
-					Current = new ColumnValueReader<T>(valueField.Column.ColumnName, valueField.FieldName);
+					var column = valueField.Column;
+					var fieldPath = new[] { valueField.FieldName };
+					if (!FieldIsOnModel(field))
+						fieldPath = null;
+					if (column.IsClientGenerated)
+						Current = new ClientGeneratedValue<T>(valueField.Column.ColumnName, fieldPath);
+					else if (column.IsServerGenerated)
+						Current = null;
+					else
+						Current = new ColumnValueReader<T>(valueField.Column.ColumnName, fieldPath);
 				}
 			}
 

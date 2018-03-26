@@ -3,6 +3,7 @@ using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Operations;
 using Silk.Data.SQL.ORM.Schema;
 using Silk.Data.SQL.SQLite3;
+using System;
 
 namespace Silk.Data.SQL.ORM.Tests
 {
@@ -148,6 +149,108 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 		}
 
+		[TestMethod]
+		public void GenerateGuidPK()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<PocoWithGuidPK>();
+			var schema = schemaBuilder.Build();
+			var model = schema.GetEntityModel<PocoWithGuidPK>();
+			var data = new PocoWithGuidPK { Data = "Hello" };
+			Assert.AreEqual(Guid.Empty, data.Id);
+
+			var insert = InsertOperation.Create<PocoWithGuidPK>(model, data);
+			var query = insert.GetQuery();
+
+			using (var provider = new SQLite3DataProvider(":memory:"))
+			{
+				provider.ExecuteNonQuery(QueryExpression.CreateTable(
+					"PocoWithGuidPK",
+					QueryExpression.DefineColumn(nameof(PocoWithGuidPK.Id), SqlDataType.Guid()),
+					QueryExpression.DefineColumn(nameof(PocoWithGuidPK.Data), SqlDataType.Text())
+					));
+
+				provider.ExecuteNonQuery(query);
+
+				Assert.AreNotEqual(Guid.Empty, data.Id);
+
+				using (var queryResult = provider.ExecuteReader(QueryExpression.Select(new[] { QueryExpression.All() }, QueryExpression.Table("PocoWithGuidPK"))))
+				{
+					Assert.IsTrue(queryResult.HasRows);
+					Assert.IsTrue(queryResult.Read());
+					Assert.AreEqual(data.Id, queryResult.GetGuid(0));
+					Assert.AreEqual(data.Data, queryResult.GetString(1));
+				}
+			}
+		}
+
+		[TestMethod]
+		public void UseProvidedGuidPK()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<PocoWithGuidPK>();
+			var schema = schemaBuilder.Build();
+			var model = schema.GetEntityModel<PocoWithGuidPK>();
+			var data = new PocoWithGuidPK(Guid.NewGuid()) { Data = "Hello" };
+			var specifiedId = data.Id;
+
+			var insert = InsertOperation.Create<PocoWithGuidPK>(model, data);
+			var query = insert.GetQuery();
+
+			using (var provider = new SQLite3DataProvider(":memory:"))
+			{
+				provider.ExecuteNonQuery(QueryExpression.CreateTable(
+					"PocoWithGuidPK",
+					QueryExpression.DefineColumn(nameof(PocoWithGuidPK.Id), SqlDataType.Guid()),
+					QueryExpression.DefineColumn(nameof(PocoWithGuidPK.Data), SqlDataType.Text())
+					));
+
+				provider.ExecuteNonQuery(query);
+
+				Assert.AreEqual(specifiedId, data.Id);
+
+				using (var queryResult = provider.ExecuteReader(QueryExpression.Select(new[] { QueryExpression.All() }, QueryExpression.Table("PocoWithGuidPK"))))
+				{
+					Assert.IsTrue(queryResult.HasRows);
+					Assert.IsTrue(queryResult.Read());
+					Assert.AreEqual(specifiedId, queryResult.GetGuid(0));
+					Assert.AreEqual(data.Data, queryResult.GetString(1));
+				}
+			}
+		}
+
+		[TestMethod]
+		public void GenerateGuidPKWhenAbsentFromView()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<PocoWithGuidPK>();
+			var schema = schemaBuilder.Build();
+			var model = schema.GetEntityModel<PocoWithGuidPK>();
+			var data = new PocoWithGuidPKView { Data = "Hello" };
+
+			var insert = InsertOperation.Create<PocoWithGuidPK, PocoWithGuidPKView>(model, data);
+			var query = insert.GetQuery();
+
+			using (var provider = new SQLite3DataProvider(":memory:"))
+			{
+				provider.ExecuteNonQuery(QueryExpression.CreateTable(
+					"PocoWithGuidPK",
+					QueryExpression.DefineColumn(nameof(PocoWithGuidPK.Id), SqlDataType.Guid()),
+					QueryExpression.DefineColumn(nameof(PocoWithGuidPK.Data), SqlDataType.Text())
+					));
+
+				provider.ExecuteNonQuery(query);
+
+				using (var queryResult = provider.ExecuteReader(QueryExpression.Select(new[] { QueryExpression.All() }, QueryExpression.Table("PocoWithGuidPK"))))
+				{
+					Assert.IsTrue(queryResult.HasRows);
+					Assert.IsTrue(queryResult.Read());
+					Assert.AreNotEqual(Guid.Empty, queryResult.GetGuid(0));
+					Assert.AreEqual(data.Data, queryResult.GetString(1));
+				}
+			}
+		}
+
 		private class SimplePoco
 		{
 			public int? Int { get; set; }
@@ -155,6 +258,21 @@ namespace Silk.Data.SQL.ORM.Tests
 		}
 
 		private class SimplePocoDataView
+		{
+			public string Data { get; set; }
+		}
+
+		private class PocoWithGuidPK
+		{
+			public Guid Id { get; private set; }
+			public string Data { get; set; }
+
+			public PocoWithGuidPK() { }
+
+			public PocoWithGuidPK(Guid id) { Id = id; }
+		}
+
+		private class PocoWithGuidPKView
 		{
 			public string Data { get; set; }
 		}
