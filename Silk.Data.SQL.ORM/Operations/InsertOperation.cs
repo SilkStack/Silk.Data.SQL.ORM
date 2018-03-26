@@ -15,89 +15,56 @@ namespace Silk.Data.SQL.ORM.Operations
 		public bool GeneratesValuesServerSide { get; private set; }
 
 		private readonly QueryExpression _bulkInsertExpression;
-		private readonly List<QueryExpression> _individualInsertExpressions;
+		private readonly List<IndividualInsert> _individualInserts;
 		private readonly ServerGeneratedValue[] _serverGeneratedValues;
-		private readonly List<object> _objects;
-		private readonly Type _objectType;
-		private readonly ProjectionModel _projectionModel;
 
 		public override bool CanBeBatched => !GeneratesValuesServerSide;
 
 		private InsertOperation(QueryExpression bulkInsertExpression,
-			List<QueryExpression> individualInsertExpressions,
-			ServerGeneratedValue[] serverGeneratedValues,
-			List<object> objects, Type objectType, ProjectionModel projectionModel)
+			List<IndividualInsert> individualInserts)
 		{
-			GeneratesValuesServerSide = individualInsertExpressions.Count > 0;
+			GeneratesValuesServerSide = individualInserts.Count > 0;
 			_bulkInsertExpression = bulkInsertExpression;
-			_individualInsertExpressions = individualInsertExpressions;
-			_serverGeneratedValues = serverGeneratedValues;
-			_objects = objects.ToList();
-			_objectType = objectType;
-			_projectionModel = projectionModel;
+			_individualInserts = individualInserts;
 		}
 
 		public override QueryExpression GetQuery()
 		{
-			if (_individualInsertExpressions == null || _individualInsertExpressions.Count < 1)
+			if (_individualInserts == null || _individualInserts.Count < 1)
 				return _bulkInsertExpression;
 
 			if (_bulkInsertExpression != null)
 				return new CompositeQueryExpression(
-					_individualInsertExpressions.Concat(new[] { _bulkInsertExpression }).ToArray()
+					_individualInserts.Select(q => q.Query).Concat(new[] { _bulkInsertExpression }).ToArray()
 					);
 			return new CompositeQueryExpression(
-				_individualInsertExpressions.ToArray()
+				_individualInserts.Select(q => q.Query).ToArray()
 				);
 		}
 
 		public override void ProcessResult(QueryResult queryResult)
 		{
-			if (_individualInsertExpressions == null || _individualInsertExpressions.Count < 1)
+			if (_individualInserts == null || _individualInserts.Count < 1)
 				return;
 
-			using (var insertEnumerator = _individualInsertExpressions.GetEnumerator())
-			using (var objsEnumerator = _objects.GetEnumerator())
+			foreach (var individualInsert in _individualInserts)
 			{
-				while (insertEnumerator.MoveNext() && objsEnumerator.MoveNext())
-				{
-					if (_serverGeneratedValues.Length > 0)
-					{
-						queryResult.Read();
-						var obj = objsEnumerator.Current;
-						var readWriter = new ObjectReadWriter(obj, _projectionModel, _objectType);
-						foreach (var serverGeneratedValue in _serverGeneratedValues)
-						{
-							serverGeneratedValue.ReadResultValue(queryResult, readWriter);
-						}
-					}
-					queryResult.NextResult();
-				}
+				queryResult.Read();
+				individualInsert.MapOntoObject(queryResult);
+				queryResult.NextResult();
 			}
 		}
 
 		public override async Task ProcessResultAsync(QueryResult queryResult)
 		{
-			if (_individualInsertExpressions == null || _individualInsertExpressions.Count < 1)
+			if (_individualInserts == null || _individualInserts.Count < 1)
 				return;
 
-			using (var insertEnumerator = _individualInsertExpressions.GetEnumerator())
-			using (var objsEnumerator = _objects.GetEnumerator())
+			foreach (var individualInsert in _individualInserts)
 			{
-				while (insertEnumerator.MoveNext() && objsEnumerator.MoveNext())
-				{
-					if (_serverGeneratedValues.Length > 0)
-					{
-						await queryResult.ReadAsync();
-						var obj = objsEnumerator.Current;
-						var readWriter = new ObjectReadWriter(obj, _projectionModel, _objectType);
-						foreach (var serverGeneratedValue in _serverGeneratedValues)
-						{
-							serverGeneratedValue.ReadResultValue(queryResult, readWriter);
-						}
-					}
-					await queryResult.NextResultAsync();
-				}
+				await queryResult.ReadAsync();
+				individualInsert.MapOntoObject(queryResult);
+				await queryResult.NextResultAsync();
 			}
 		}
 
@@ -116,7 +83,7 @@ namespace Silk.Data.SQL.ORM.Operations
 		private static InsertOperation Create<TProjection>(ProjectionModel projectionModel, EntityModel entityModel, params TProjection[] projections)
 			where TProjection : class
 		{
-			List<QueryExpression> individualInsertExpressions = new List<QueryExpression>();
+			var individualInsertExpressions = new List<IndividualInsert>();
 
 			var primaryKeyField = entityModel.Fields.OfType<IValueField>().FirstOrDefault(q => q.Column.IsPrimaryKey);
 			var primaryKeyIsOnProjection = false;
@@ -163,13 +130,13 @@ namespace Silk.Data.SQL.ORM.Operations
 
 				if (mapBackPrimaryKey)
 				{
-					individualInsertExpressions.Add(new CompositeQueryExpression(
+					individualInsertExpressions.Add(new IndividualInsert(new CompositeQueryExpression(
 						QueryExpression.Insert(entityModel.EntityTable.TableName, columns.Select(q => q.ColumnName).ToArray(), row),
 						QueryExpression.Select(
 							new[] {
 								QueryExpression.Alias(QueryExpression.LastInsertIdFunction(), primaryKeyField.Column.ColumnName)
 							}
-						)));
+						)), readWriter, serverGeneratedPrimaryKey));
 				}
 				else
 				{
@@ -179,9 +146,31 @@ namespace Silk.Data.SQL.ORM.Operations
 
 			return new InsertOperation(
 				bulkInsertRows.Count > 0 ? QueryExpression.Insert(entityModel.EntityTable.TableName, columns.Select(q => q.ColumnName).ToArray(), bulkInsertRows.ToArray()) : null,
-				individualInsertExpressions,
-				columns.OfType<ServerGeneratedValue>().ToArray(),
-				projections.OfType<object>().ToList(), typeof(TProjection), projectionModel);
+				individualInsertExpressions);
+		}
+
+		private class IndividualInsert
+		{
+			public QueryExpression Query { get; }
+
+			private readonly IModelReadWriter _modelReadWriter;
+			private readonly ServerGeneratedValue[] _serverGeneratedValues;
+
+			public IndividualInsert(QueryExpression query, IModelReadWriter modelReadWriter,
+				params ServerGeneratedValue[] serverGeneratedValues)
+			{
+				Query = query;
+				_modelReadWriter = modelReadWriter;
+				_serverGeneratedValues = serverGeneratedValues;
+			}
+
+			public void MapOntoObject(QueryResult queryResult)
+			{
+				foreach (var serverGeneratedValue in _serverGeneratedValues)
+				{
+					serverGeneratedValue.ReadResultValue(queryResult, _modelReadWriter);
+				}
+			}
 		}
 
 		private abstract class ColumnHelper

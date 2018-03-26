@@ -4,6 +4,7 @@ using Silk.Data.SQL.ORM.Operations;
 using Silk.Data.SQL.ORM.Schema;
 using Silk.Data.SQL.SQLite3;
 using System;
+using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Tests
 {
@@ -349,6 +350,61 @@ namespace Silk.Data.SQL.ORM.Tests
 						Assert.AreEqual(obj.Id, queryResult.GetInt32(0));
 						Assert.AreEqual(obj.Data, queryResult.GetString(1));
 					}
+				}
+			}
+		}
+
+		[TestMethod]
+		public void MixedProvidedAndGeneratedIntPK()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<PocoWithIntPK>();
+			var schema = schemaBuilder.Build();
+			var model = schema.GetEntityModel<PocoWithIntPK>();
+			var data = new PocoWithIntPK[] {
+				new PocoWithIntPK(5) { Data = "Hello" },
+				new PocoWithIntPK(6) { Data = "World" },
+				new PocoWithIntPK() { Data = "Redux" }
+			};
+			Assert.AreEqual(5, data[0].Id);
+			Assert.AreEqual(6, data[1].Id);
+			Assert.AreEqual(0, data[2].Id);
+
+			var insert = InsertOperation.Create<PocoWithIntPK>(model, data);
+			Assert.IsFalse(insert.CanBeBatched);
+			var query = insert.GetQuery();
+			var builtQuery = new TestQueryConverter().ConvertToQuery(query);
+
+			using (var provider = new SQLite3DataProvider(":memory:"))
+			{
+				provider.ExecuteNonQuery(QueryExpression.CreateTable(
+					"PocoWithIntPK",
+					QueryExpression.DefineColumn(nameof(PocoWithIntPK.Id), SqlDataType.Int(), isAutoIncrement: true, isPrimaryKey: true),
+					QueryExpression.DefineColumn(nameof(PocoWithIntPK.Data), SqlDataType.Text())
+					));
+
+				using (var queryReuslt = provider.ExecuteReader(query))
+				{
+					insert.ProcessResult(queryReuslt);
+				}
+
+				Assert.AreEqual(5, data[0].Id);
+				Assert.AreEqual(6, data[1].Id);
+				Assert.AreNotEqual(0, data[2].Id);
+
+				using (var queryResult = provider.ExecuteReader(QueryExpression.Select(new[] { QueryExpression.All() }, QueryExpression.Table("PocoWithIntPK"))))
+				{
+					Assert.IsTrue(queryResult.HasRows);
+					var rowCount = 0;
+					while (queryResult.Read())
+					{
+						rowCount++;
+						var id = queryResult.GetInt32(0);
+						var obj = data.FirstOrDefault(q => q.Id == id);
+						Assert.IsNotNull(obj);
+						Assert.AreEqual(obj.Data, queryResult.GetString(1));
+					}
+					Assert.AreEqual(data.Length, rowCount);
 				}
 			}
 		}
