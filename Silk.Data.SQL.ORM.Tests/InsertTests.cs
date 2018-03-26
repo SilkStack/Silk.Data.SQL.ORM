@@ -25,6 +25,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			};
 
 			var insert = InsertOperation.Create<SimplePoco>(model, data);
+			Assert.IsTrue(insert.CanBeBatched);
 			var insertExpression = insert.GetQuery() as InsertExpression;
 			Assert.IsNotNull(insertExpression);
 			var query = new TestQueryConverter().ConvertToQuery(insertExpression);
@@ -64,6 +65,7 @@ namespace Silk.Data.SQL.ORM.Tests
 				};
 
 				var insert = InsertOperation.Create<SimplePoco>(model, data);
+				Assert.IsTrue(insert.CanBeBatched);
 				using (var queryResult = provider.ExecuteReader(insert.GetQuery()))
 				{
 					insert.ProcessResult(queryResult);
@@ -97,6 +99,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			};
 
 			var insert = InsertOperation.Create<SimplePoco, SimplePocoDataView>(model, data);
+			Assert.IsTrue(insert.CanBeBatched);
 			var insertExpression = insert.GetQuery() as InsertExpression;
 			Assert.IsNotNull(insertExpression);
 			var query = new TestQueryConverter().ConvertToQuery(insertExpression);
@@ -132,6 +135,7 @@ namespace Silk.Data.SQL.ORM.Tests
 				};
 
 				var insert = InsertOperation.Create<SimplePoco, SimplePocoDataView>(model, data);
+				Assert.IsTrue(insert.CanBeBatched);
 				using (var queryResult = provider.ExecuteReader(insert.GetQuery()))
 				{
 					insert.ProcessResult(queryResult);
@@ -160,6 +164,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			Assert.AreEqual(Guid.Empty, data.Id);
 
 			var insert = InsertOperation.Create<PocoWithGuidPK>(model, data);
+			Assert.IsTrue(insert.CanBeBatched);
 			var query = insert.GetQuery();
 
 			using (var provider = new SQLite3DataProvider(":memory:"))
@@ -195,6 +200,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			var specifiedId = data.Id;
 
 			var insert = InsertOperation.Create<PocoWithGuidPK>(model, data);
+			Assert.IsTrue(insert.CanBeBatched);
 			var query = insert.GetQuery();
 
 			using (var provider = new SQLite3DataProvider(":memory:"))
@@ -229,6 +235,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			var data = new PocoWithGuidPKView { Data = "Hello" };
 
 			var insert = InsertOperation.Create<PocoWithGuidPK, PocoWithGuidPKView>(model, data);
+			Assert.IsTrue(insert.CanBeBatched);
 			var query = insert.GetQuery();
 
 			using (var provider = new SQLite3DataProvider(":memory:"))
@@ -247,6 +254,145 @@ namespace Silk.Data.SQL.ORM.Tests
 					Assert.IsTrue(queryResult.Read());
 					Assert.AreNotEqual(Guid.Empty, queryResult.GetGuid(0));
 					Assert.AreEqual(data.Data, queryResult.GetString(1));
+				}
+			}
+		}
+
+		[TestMethod]
+		public void GenerateIntPK()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<PocoWithIntPK>();
+			var schema = schemaBuilder.Build();
+			var model = schema.GetEntityModel<PocoWithIntPK>();
+			var data = new PocoWithIntPK[] {
+				new PocoWithIntPK { Data = "Hello" },
+				new PocoWithIntPK { Data = "World" }
+			};
+			Assert.AreEqual(0, data[0].Id);
+			Assert.AreEqual(0, data[1].Id);
+
+			var insert = InsertOperation.Create<PocoWithIntPK>(model, data);
+			Assert.IsFalse(insert.CanBeBatched);
+			var query = insert.GetQuery();
+			var builtQuery = new TestQueryConverter().ConvertToQuery(query);
+
+			using (var provider = new SQLite3DataProvider(":memory:"))
+			{
+				provider.ExecuteNonQuery(QueryExpression.CreateTable(
+					"PocoWithIntPK",
+					QueryExpression.DefineColumn(nameof(PocoWithIntPK.Id), SqlDataType.Int(), isAutoIncrement: true, isPrimaryKey: true),
+					QueryExpression.DefineColumn(nameof(PocoWithIntPK.Data), SqlDataType.Text())
+					));
+
+				using (var queryReuslt = provider.ExecuteReader(query))
+				{
+					insert.ProcessResult(queryReuslt);
+				}
+
+				Assert.AreNotEqual(0, data[0].Id);
+				Assert.AreNotEqual(0, data[1].Id);
+				Assert.AreNotEqual(data[0].Id, data[1].Id);
+
+				using (var queryResult = provider.ExecuteReader(QueryExpression.Select(new[] { QueryExpression.All() }, QueryExpression.Table("PocoWithIntPK"))))
+				{
+					Assert.IsTrue(queryResult.HasRows);
+					foreach (var obj in data)
+					{
+						Assert.IsTrue(queryResult.Read());
+						Assert.AreEqual(obj.Id, queryResult.GetInt32(0));
+						Assert.AreEqual(obj.Data, queryResult.GetString(1));
+					}
+				}
+			}
+		}
+
+		[TestMethod]
+		public void UseProvidedIntPK()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<PocoWithIntPK>();
+			var schema = schemaBuilder.Build();
+			var model = schema.GetEntityModel<PocoWithIntPK>();
+			var data = new PocoWithIntPK[] {
+				new PocoWithIntPK(5) { Data = "Hello" }
+			};
+			var specifiedId = data[0].Id;
+			Assert.AreNotEqual(0, data[0].Id);
+
+			var insert = InsertOperation.Create<PocoWithIntPK>(model, data);
+			Assert.IsFalse(insert.CanBeBatched);
+			var query = insert.GetQuery();
+			var builtQuery = new TestQueryConverter().ConvertToQuery(query);
+
+			using (var provider = new SQLite3DataProvider(":memory:"))
+			{
+				provider.ExecuteNonQuery(QueryExpression.CreateTable(
+					"PocoWithIntPK",
+					QueryExpression.DefineColumn(nameof(PocoWithIntPK.Id), SqlDataType.Int(), isAutoIncrement: true, isPrimaryKey: true),
+					QueryExpression.DefineColumn(nameof(PocoWithIntPK.Data), SqlDataType.Text())
+					));
+
+				using (var queryReuslt = provider.ExecuteReader(query))
+				{
+					insert.ProcessResult(queryReuslt);
+				}
+
+				Assert.AreEqual(specifiedId, data[0].Id);
+
+				using (var queryResult = provider.ExecuteReader(QueryExpression.Select(new[] { QueryExpression.All() }, QueryExpression.Table("PocoWithIntPK"))))
+				{
+					Assert.IsTrue(queryResult.HasRows);
+					foreach (var obj in data)
+					{
+						Assert.IsTrue(queryResult.Read());
+						Assert.AreEqual(obj.Id, queryResult.GetInt32(0));
+						Assert.AreEqual(obj.Data, queryResult.GetString(1));
+					}
+				}
+			}
+		}
+
+		[TestMethod]
+		public void GenerateIntPKWhenAbsentFromView()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<PocoWithIntPK>();
+			var schema = schemaBuilder.Build();
+			var model = schema.GetEntityModel<PocoWithIntPK>();
+			var data = new PocoWithIntPKView[] {
+				new PocoWithIntPKView { Data = "Hello" },
+				new PocoWithIntPKView { Data = "World" }
+			};
+
+			var insert = InsertOperation.Create<PocoWithIntPK, PocoWithIntPKView>(model, data);
+			Assert.IsFalse(insert.CanBeBatched);
+			var query = insert.GetQuery();
+			var builtQuery = new TestQueryConverter().ConvertToQuery(query);
+
+			using (var provider = new SQLite3DataProvider(":memory:"))
+			{
+				provider.ExecuteNonQuery(QueryExpression.CreateTable(
+					"PocoWithIntPK",
+					QueryExpression.DefineColumn(nameof(PocoWithIntPK.Id), SqlDataType.Int(), isAutoIncrement: true, isPrimaryKey: true),
+					QueryExpression.DefineColumn(nameof(PocoWithIntPK.Data), SqlDataType.Text())
+					));
+
+				using (var queryReuslt = provider.ExecuteReader(query))
+				{
+					insert.ProcessResult(queryReuslt);
+				}
+
+				using (var queryResult = provider.ExecuteReader(QueryExpression.Select(new[] { QueryExpression.All() }, QueryExpression.Table("PocoWithIntPK"))))
+				{
+					Assert.IsTrue(queryResult.HasRows);
+					var i = 0;
+					foreach (var obj in data)
+					{
+						Assert.IsTrue(queryResult.Read());
+						Assert.AreEqual(++i, queryResult.GetInt32(0));
+						Assert.AreEqual(obj.Data, queryResult.GetString(1));
+					}
 				}
 			}
 		}
@@ -273,6 +419,21 @@ namespace Silk.Data.SQL.ORM.Tests
 		}
 
 		private class PocoWithGuidPKView
+		{
+			public string Data { get; set; }
+		}
+
+		private class PocoWithIntPK
+		{
+			public int Id { get; private set; }
+			public string Data { get; set; }
+
+			public PocoWithIntPK() { }
+
+			public PocoWithIntPK(int id) { Id = id; }
+		}
+
+		private class PocoWithIntPKView
 		{
 			public string Data { get; set; }
 		}

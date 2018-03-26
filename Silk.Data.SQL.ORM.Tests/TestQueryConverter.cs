@@ -1,4 +1,5 @@
-﻿using Silk.Data.SQL.Queries;
+﻿using Silk.Data.SQL.Expressions;
+using Silk.Data.SQL.Queries;
 using System.Linq;
 using System.Text;
 
@@ -13,6 +14,20 @@ namespace Silk.Data.SQL.ORM.Tests
 		protected override string GetDbDatatype(SqlDataType sqlDataType)
 		{
 			return $"{sqlDataType.BaseType}({string.Join(",", sqlDataType.Parameters)})";
+		}
+
+		protected override void WriteFunctionToSql(QueryExpression queryExpression)
+		{
+			switch (queryExpression)
+			{
+				case LastInsertIdFunctionExpression lastInsertIdExpression:
+					Sql.Append("last_insert_rowid()");
+					return;
+				case TableExistsVirtualFunctionExpression tableExistsExpression:
+					Sql.Append($"tableExists({tableExistsExpression.Table.TableName})");
+					return;
+			}
+			base.WriteFunctionToSql(queryExpression);
 		}
 
 		protected override string QuoteIdentifier(string schemaComponent)
