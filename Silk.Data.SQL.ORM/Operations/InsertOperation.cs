@@ -299,34 +299,94 @@ namespace Silk.Data.SQL.ORM.Operations
 				_projectionModel = projectionModel;
 			}
 
-			private bool FieldIsOnModel(IField field)
+			private bool FieldIsOnModel(string[] path)
 			{
-				var foundField = _projectionModel.Fields.FirstOrDefault(q => q.FieldName == field.FieldName);
-				return foundField != null;
+				var fields = _projectionModel.Fields;
+				foreach (var segment in path)
+				{
+					var field = fields.FirstOrDefault(q => q.FieldName == segment);
+					if (field == null)
+						return false;
+					switch (field)
+					{
+						case IValueField valueField:
+							fields = new IEntityField[0];
+							break;
+						case ISingleRelatedObjectField singleRelatedObjectField:
+							fields = singleRelatedObjectField.RelatedObjectProjection.Fields;
+							break;
+						case IManyRelatedObjectField manyRelatedObjectField:
+							fields = manyRelatedObjectField.RelatedObjectProjection.Fields;
+							break;
+						case IEmbeddedObjectField embeddedObjectField:
+							fields = embeddedObjectField.EmbeddedFields;
+							break;
+					}
+				}
+				return true;
 			}
 
 			public void VisitField<T>(IField<T> field)
 			{
 				Current = null;
 
-				if (field is IValueField valueField)
+				switch (field)
 				{
-					var column = valueField.Column;
-					var fieldPath = new[] { valueField.FieldName };
-					if (!FieldIsOnModel(field))
-						fieldPath = null;
-					if (column.IsClientGenerated)
-						Current = new ClientGeneratedValue<T>(valueField.Column.ColumnName, fieldPath);
-					else if (column.IsServerGenerated)
-						Current = new ServerGeneratedValue<T>(valueField.Column.ColumnName, fieldPath);
-					else
-						Current = new ColumnValueReader<T>(valueField.Column.ColumnName, fieldPath);
+					case IValueField valueField:
+						{
+							var column = valueField.Column;
+							var fieldPath = new[] { valueField.FieldName };
+							if (!FieldIsOnModel(fieldPath))
+								fieldPath = null;
+							if (column.IsClientGenerated)
+								Current = new ClientGeneratedValue<T>(valueField.Column.ColumnName, fieldPath);
+							else if (column.IsServerGenerated)
+								Current = new ServerGeneratedValue<T>(valueField.Column.ColumnName, fieldPath);
+							else
+								Current = new ColumnValueReader<T>(valueField.Column.ColumnName, fieldPath);
+						}
+						break;
+					case ISingleRelatedObjectField singleRelatedObjectField:
+						{
+							var visitor = new SingleObjectFieldVisitor(this, singleRelatedObjectField);
+							singleRelatedObjectField.RelatedPrimaryKey.Transform(visitor);
+						}
+						break;
 				}
 			}
 
 			public void VisitModel<TField>(IModel<TField> model) where TField : IField
 			{
 				throw new System.NotImplementedException();
+			}
+
+			private class SingleObjectFieldVisitor : IModelTransformer
+			{
+				private readonly ColumnHelperTransformer _parent;
+				private readonly ISingleRelatedObjectField _field;
+
+				public SingleObjectFieldVisitor(ColumnHelperTransformer parent, ISingleRelatedObjectField singleRelatedObjectField)
+				{
+					_parent = parent;
+					_field = singleRelatedObjectField;
+				}
+
+				public void VisitField<T>(IField<T> field)
+				{
+					if (!(field is IValueField valueField))
+						return;
+
+					var column = valueField.Column;
+					var fieldPath = new[] { _field.FieldName, valueField.FieldName };
+					if (!_parent.FieldIsOnModel(fieldPath))
+						fieldPath = null;
+					_parent.Current = new ColumnValueReader<T>(_field.LocalColumn.ColumnName, fieldPath);
+				}
+
+				public void VisitModel<TField>(IModel<TField> model) where TField : IField
+				{
+					throw new NotImplementedException();
+				}
 			}
 		}
 	}

@@ -453,6 +453,80 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 		}
 
+		[TestMethod]
+		public void InsertSingleRelationship()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<RelationshipPoco>();
+			schemaBuilder.DefineEntity<PocoWithSingleRelationship>();
+			var schema = schemaBuilder.Build();
+			var relationshipModel = schema.GetEntityModel<RelationshipPoco>();
+			var mainModel = schema.GetEntityModel<PocoWithSingleRelationship>();
+
+			using (var provider = new SQLite3DataProvider(":memory:"))
+			{
+				provider.ExecuteNonQuery(QueryExpression.CreateTable(
+					nameof(PocoWithSingleRelationship),
+					QueryExpression.DefineColumn(nameof(PocoWithSingleRelationship.Id), SqlDataType.Int(), isAutoIncrement: true, isPrimaryKey: true),
+					QueryExpression.DefineColumn(nameof(PocoWithSingleRelationship.LocalData), SqlDataType.Text(), isNullable: true),
+					QueryExpression.DefineColumn(nameof(PocoWithSingleRelationship.Relationship), SqlDataType.Int(), isNullable: true)
+					));
+				provider.ExecuteNonQuery(QueryExpression.CreateTable(
+					nameof(RelationshipPoco),
+					QueryExpression.DefineColumn(nameof(RelationshipPoco.Id), SqlDataType.Int(), isAutoIncrement: true, isPrimaryKey: true),
+					QueryExpression.DefineColumn(nameof(RelationshipPoco.RelatedData), SqlDataType.Text(), isNullable: true)
+					));
+
+				var relatedObject = new RelationshipPoco
+				{
+					RelatedData = "World"
+				};
+				var insert = InsertOperation.Create<RelationshipPoco>(relationshipModel, relatedObject);
+				using (var queryResult = provider.ExecuteReader(insert.GetQuery()))
+					insert.ProcessResult(queryResult);
+				Assert.AreNotEqual(0, relatedObject.Id);
+
+				//  1. insert with the full model objects
+				var fullInstance = new PocoWithSingleRelationship
+				{
+					LocalData = "Hello",
+					Relationship = relatedObject
+				};
+				insert = InsertOperation.Create<PocoWithSingleRelationship>(mainModel, fullInstance);
+				using (var queryResult = provider.ExecuteReader(insert.GetQuery()))
+					insert.ProcessResult(queryResult);
+				Assert.AreNotEqual(0, fullInstance.Id);
+				using (var queryResult = provider.ExecuteReader(QueryExpression.Select(
+					new[] { QueryExpression.All() }, from: QueryExpression.Table(nameof(PocoWithSingleRelationship))
+					)))
+				{
+					Assert.IsTrue(queryResult.HasRows);
+					Assert.IsTrue(queryResult.Read());
+
+					Assert.AreEqual(fullInstance.Id, queryResult.GetInt32(0));
+					Assert.AreEqual(fullInstance.LocalData, queryResult.GetString(1));
+					Assert.AreEqual(relatedObject.Id, queryResult.GetInt32(2));
+				}
+
+				//  2. insert when a projection contains the full related object
+				//  3. insert when a projection contains a projection of the related object
+				//  4. insert when a projection contains a projection of the related objects primary key
+				throw new NotImplementedException();
+			}
+		}
+
+		[TestMethod]
+		public void InsertManyRelationships()
+		{
+			throw new NotImplementedException();
+		}
+
+		[TestMethod]
+		public void InsertEmbeddedObject()
+		{
+			throw new NotImplementedException();
+		}
+
 		private class SimplePoco
 		{
 			public int? Int { get; set; }
@@ -492,6 +566,19 @@ namespace Silk.Data.SQL.ORM.Tests
 		private class PocoWithIntPKView
 		{
 			public string Data { get; set; }
+		}
+
+		private class PocoWithSingleRelationship
+		{
+			public int Id { get; private set; }
+			public string LocalData { get; set; }
+			public RelationshipPoco Relationship { get; set; }
+		}
+
+		private class RelationshipPoco
+		{
+			public int Id { get; private set; }
+			public string RelatedData { get; set; }
 		}
 	}
 }
