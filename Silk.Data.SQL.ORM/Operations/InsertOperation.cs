@@ -82,6 +82,7 @@ namespace Silk.Data.SQL.ORM.Operations
 		private static InsertOperation Create<TProjection>(ProjectionModel projectionModel, EntityModel entityModel, params TProjection[] projections)
 			where TProjection : class
 		{
+			var typeModel = TypeModel.GetModelOf<TProjection>();
 			var individualInsertExpressions = new List<IndividualInsert>();
 
 			var primaryKeyField = entityModel.Fields.OfType<IValueField>().FirstOrDefault(q => q.Column.IsPrimaryKey);
@@ -113,7 +114,7 @@ namespace Silk.Data.SQL.ORM.Operations
 			var bulkInsertRows = new List<QueryExpression[]>();
 			foreach (var obj in projections)
 			{
-				var readWriter = new ObjectReadWriter(obj, projectionModel, typeof(TProjection));
+				var readWriter = new ObjectReadWriter(obj, typeModel, typeof(TProjection));
 				var row = new QueryExpression[columns.Count];
 				var i = 0;
 				foreach (var column in columns)
@@ -331,6 +332,22 @@ namespace Silk.Data.SQL.ORM.Operations
 
 				switch (field)
 				{
+					case IProjectedValueField projectedValueField:
+						{
+							var column = projectedValueField.Column;
+							var fieldPath = new[] { projectedValueField.FieldName };
+							if (!FieldIsOnModel(fieldPath))
+								fieldPath = null;
+							if (fieldPath != null)
+								fieldPath = projectedValueField.Path;
+							if (column.IsClientGenerated)
+								Current = new ClientGeneratedValue<T>(projectedValueField.Column.ColumnName, fieldPath);
+							else if (column.IsServerGenerated)
+								Current = new ServerGeneratedValue<T>(projectedValueField.Column.ColumnName, fieldPath);
+							else
+								Current = new ColumnValueReader<T>(projectedValueField.Column.ColumnName, fieldPath);
+						}
+						break;
 					case IValueField valueField:
 						{
 							var column = valueField.Column;
@@ -375,10 +392,14 @@ namespace Silk.Data.SQL.ORM.Operations
 					if (!(field is IValueField valueField))
 						return;
 
+					var projectedField = field as IProjectedValueField;
+
 					var column = valueField.Column;
-					var fieldPath = new[] { _field.FieldName, valueField.FieldName };
+					var fieldPath =  new[] { _field.FieldName, valueField.FieldName };
 					if (!_parent.FieldIsOnModel(fieldPath))
 						fieldPath = null;
+					if (fieldPath != null && projectedField != null)
+						fieldPath = projectedField.Path;
 					_parent.Current = new ColumnValueReader<T>(_field.LocalColumn.ColumnName, fieldPath);
 				}
 

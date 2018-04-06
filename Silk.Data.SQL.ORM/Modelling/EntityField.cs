@@ -18,6 +18,11 @@ namespace Silk.Data.SQL.ORM.Modelling
 		Column Column { get; }
 	}
 
+	public interface IProjectedValueField : IValueField
+	{
+		string[] Path { get; }
+	}
+
 	public interface IEmbeddedObjectField : IEntityField
 	{
 		Column NullCheckColumn { get; }

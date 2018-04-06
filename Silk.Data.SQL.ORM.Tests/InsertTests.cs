@@ -553,9 +553,30 @@ namespace Silk.Data.SQL.ORM.Tests
 					Assert.AreEqual(projectionWithProjectedRelationship.LocalData, queryResult.GetString(1));
 					Assert.AreEqual(relatedObject.Id, queryResult.GetInt32(2));
 				}
+				provider.ExecuteNonQuery(QueryExpression.Delete(QueryExpression.Table(nameof(PocoWithSingleRelationship))));
 
 				//  4. insert when a projection contains a projection of the related objects primary key
-				throw new NotImplementedException();
+				var projectionWithFlatRelationship = new PocoWithFlatSingleRelationshipProjection
+				{
+					LocalData = "Hello",
+					RelationshipId = relatedObject.Id
+				};
+				insert = InsertOperation.Create(mainModel, projectionWithFlatRelationship);
+				using (var queryResult = provider.ExecuteReader(insert.GetQuery()))
+					insert.ProcessResult(queryResult);
+				Assert.AreNotEqual(0, projectionWithFlatRelationship.Id);
+				using (var queryResult = provider.ExecuteReader(QueryExpression.Select(
+					new[] { QueryExpression.All() }, from: QueryExpression.Table(nameof(PocoWithSingleRelationship))
+					)))
+				{
+					Assert.IsTrue(queryResult.HasRows);
+					Assert.IsTrue(queryResult.Read());
+
+					Assert.AreEqual(projectionWithFlatRelationship.Id, queryResult.GetInt32(0));
+					Assert.AreEqual(projectionWithFlatRelationship.LocalData, queryResult.GetString(1));
+					Assert.AreEqual(relatedObject.Id, queryResult.GetInt32(2));
+				}
+				provider.ExecuteNonQuery(QueryExpression.Delete(QueryExpression.Table(nameof(PocoWithSingleRelationship))));
 			}
 		}
 
@@ -642,6 +663,13 @@ namespace Silk.Data.SQL.ORM.Tests
 			public int Id { get; private set; }
 			public string LocalData { get; set; }
 			public RelationshipPocoProjection Relationship { get; set; }
+		}
+
+		private class PocoWithFlatSingleRelationshipProjection
+		{
+			public int Id { get; private set; }
+			public string LocalData { get; set; }
+			public int RelationshipId { get; set; }
 		}
 	}
 }

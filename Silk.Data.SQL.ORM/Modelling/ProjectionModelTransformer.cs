@@ -2,6 +2,7 @@
 using Silk.Data.Modelling.Mapping;
 using Silk.Data.Modelling.Mapping.Binding;
 using Silk.Data.SQL.ORM.Modelling.Binding;
+using Silk.Data.SQL.ORM.Schema;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -45,7 +46,10 @@ namespace Silk.Data.SQL.ORM.Modelling
 
 			if (binding != null)
 			{
-				_entityFields.Add(valueField);
+				_entityFields.Add(new ProjectedValueField<T>(
+					valueField.FieldName, valueField.CanRead, valueField.CanWrite, valueField.IsEnumerable,
+					valueField.ElementType, valueField.Column, binding.ToPath
+					));
 			}
 		}
 
@@ -65,13 +69,23 @@ namespace Silk.Data.SQL.ORM.Modelling
 
 			if (entityFields.Count < 1)
 				return;
-			var projectedModel = new ViewModel(entityFields.ToArray(), singleRelatedObjectField.RelatedObjectModel.EntityTable, toField.FieldType);
+			var projectedModel = new ViewModel(entityFields.ToArray(), singleRelatedObjectField.RelatedObjectModel.EntityTable, toField?.FieldType);
+
+			IValueField primaryKeyField = singleRelatedObjectField.RelatedPrimaryKey;
+			if (primaryKeyField != null)
+			{
+				existingFields = _entityFields;
+				_entityFields = new List<IEntityField>();
+				primaryKeyField.Transform(this);
+				primaryKeyField = _entityFields.OfType<IValueField>().FirstOrDefault();
+				_entityFields = existingFields;
+			}
 
 			_entityFields.Add(
 				new SingleRelatedObjectField<T>(
 					singleRelatedObjectField.FieldName, singleRelatedObjectField.CanRead, singleRelatedObjectField.CanWrite,
 					singleRelatedObjectField.IsEnumerable, singleRelatedObjectField.ElementType, singleRelatedObjectField.RelatedObjectModel,
-					singleRelatedObjectField.RelatedPrimaryKey, singleRelatedObjectField.LocalColumn, projectedModel
+					primaryKeyField, singleRelatedObjectField.LocalColumn, projectedModel
 				));
 		}
 
@@ -143,6 +157,20 @@ namespace Silk.Data.SQL.ORM.Modelling
 		public ProjectionModel GetProjectionModel()
 		{
 			return new ProjectionModel(_entityFields.ToArray(), _entityModel.EntityTable, _mapping);
+		}
+
+		private class ProjectedValueField<T> : FieldBase<T>, IProjectedValueField
+		{
+			public string[] Path { get; }
+			public Column Column { get; }
+
+			public ProjectedValueField(string fieldName, bool canRead, bool canWrite,
+				bool isEnumerable, Type elementType, Column column, string[] path) :
+				base(fieldName, canRead, canWrite, isEnumerable, elementType)
+			{
+				Path = path;
+				Column = column;
+			}
 		}
 	}
 }
