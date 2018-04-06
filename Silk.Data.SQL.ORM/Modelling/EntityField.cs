@@ -87,6 +87,16 @@ namespace Silk.Data.SQL.ORM.Modelling
 
 	public class SingleRelatedObjectField<T> : FieldBase<T>, ISingleRelatedObjectField, IModelBuildFinalizerField
 	{
+		Type IField.FieldType
+		{
+			get
+			{
+				if (RelatedObjectProjection is ViewModel viewModel)
+					return viewModel.ViewType;
+				return typeof(T);
+			}
+		}
+
 		public ProjectionModel RelatedObjectModel { get; private set; }
 		public ProjectionModel RelatedObjectProjection { get; private set; }
 		public IValueField RelatedPrimaryKey { get; }

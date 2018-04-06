@@ -16,7 +16,6 @@ namespace Silk.Data.SQL.ORM.Operations
 
 		private readonly QueryExpression _bulkInsertExpression;
 		private readonly List<IndividualInsert> _individualInserts;
-		private readonly ServerGeneratedValue[] _serverGeneratedValues;
 
 		public override bool CanBeBatched => !GeneratesValuesServerSide;
 

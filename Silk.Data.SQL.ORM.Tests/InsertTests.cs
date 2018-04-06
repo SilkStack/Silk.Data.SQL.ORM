@@ -507,9 +507,53 @@ namespace Silk.Data.SQL.ORM.Tests
 					Assert.AreEqual(fullInstance.LocalData, queryResult.GetString(1));
 					Assert.AreEqual(relatedObject.Id, queryResult.GetInt32(2));
 				}
+				provider.ExecuteNonQuery(QueryExpression.Delete(QueryExpression.Table(nameof(PocoWithSingleRelationship))));
 
 				//  2. insert when a projection contains the full related object
+				var projectionWithFullRelationship = new PocoWithSingleRelationshipProjection
+				{
+					LocalData = "Hello",
+					Relationship = relatedObject
+				};
+				insert = InsertOperation.Create(mainModel, projectionWithFullRelationship);
+				using (var queryResult = provider.ExecuteReader(insert.GetQuery()))
+					insert.ProcessResult(queryResult);
+				Assert.AreNotEqual(0, projectionWithFullRelationship.Id);
+				using (var queryResult = provider.ExecuteReader(QueryExpression.Select(
+					new[] { QueryExpression.All() }, from: QueryExpression.Table(nameof(PocoWithSingleRelationship))
+					)))
+				{
+					Assert.IsTrue(queryResult.HasRows);
+					Assert.IsTrue(queryResult.Read());
+
+					Assert.AreEqual(projectionWithFullRelationship.Id, queryResult.GetInt32(0));
+					Assert.AreEqual(projectionWithFullRelationship.LocalData, queryResult.GetString(1));
+					Assert.AreEqual(relatedObject.Id, queryResult.GetInt32(2));
+				}
+				provider.ExecuteNonQuery(QueryExpression.Delete(QueryExpression.Table(nameof(PocoWithSingleRelationship))));
+
 				//  3. insert when a projection contains a projection of the related object
+				var projectionWithProjectedRelationship = new PocoWithSingleRelationshipProjectionProjection
+				{
+					LocalData = "Hello",
+					Relationship = new RelationshipPocoProjection { Id = relatedObject.Id }
+				};
+				insert = InsertOperation.Create(mainModel, projectionWithProjectedRelationship);
+				using (var queryResult = provider.ExecuteReader(insert.GetQuery()))
+					insert.ProcessResult(queryResult);
+				Assert.AreNotEqual(0, projectionWithProjectedRelationship.Id);
+				using (var queryResult = provider.ExecuteReader(QueryExpression.Select(
+					new[] { QueryExpression.All() }, from: QueryExpression.Table(nameof(PocoWithSingleRelationship))
+					)))
+				{
+					Assert.IsTrue(queryResult.HasRows);
+					Assert.IsTrue(queryResult.Read());
+
+					Assert.AreEqual(projectionWithProjectedRelationship.Id, queryResult.GetInt32(0));
+					Assert.AreEqual(projectionWithProjectedRelationship.LocalData, queryResult.GetString(1));
+					Assert.AreEqual(relatedObject.Id, queryResult.GetInt32(2));
+				}
+
 				//  4. insert when a projection contains a projection of the related objects primary key
 				throw new NotImplementedException();
 			}
@@ -579,6 +623,25 @@ namespace Silk.Data.SQL.ORM.Tests
 		{
 			public int Id { get; private set; }
 			public string RelatedData { get; set; }
+		}
+
+		private class RelationshipPocoProjection
+		{
+			public int Id { get; set; }
+		}
+
+		private class PocoWithSingleRelationshipProjection
+		{
+			public int Id { get; private set; }
+			public string LocalData { get; set; }
+			public RelationshipPoco Relationship { get; set; }
+		}
+
+		private class PocoWithSingleRelationshipProjectionProjection
+		{
+			public int Id { get; private set; }
+			public string LocalData { get; set; }
+			public RelationshipPocoProjection Relationship { get; set; }
 		}
 	}
 }

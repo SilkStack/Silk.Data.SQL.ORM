@@ -24,6 +24,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 		private readonly Stack<IEntityField> _fieldPath = new Stack<IEntityField>();
 		private List<IEntityField> _entityFields
 			= new List<IEntityField>();
+		private TargetModel _toModel;
 		private readonly Type _projectionType;
 
 		public ProjectionModelTransformer(Type projectionType)
@@ -39,8 +40,8 @@ namespace Silk.Data.SQL.ORM.Modelling
 
 		private void ModelPrimitiveField<T>(IValueField valueField)
 		{
-			var matchPath = _path.Reverse();
-			var binding = _mapping.Bindings.OfType<MappingBinding>().FirstOrDefault(q => q.FromPath.SequenceEqual(matchPath));
+			var binding = _mapping.Bindings.OfType<MappingBinding>()
+				.FirstOrDefault(q => q.FromPath.SequenceEqual(_path.Reverse()));
 
 			if (binding != null)
 			{
@@ -50,6 +51,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 
 		private void ModelSingleRelationshipField<T>(ISingleRelatedObjectField singleRelatedObjectField)
 		{
+			var toField = _toModel.GetField(_path.Reverse().ToArray());
 			var existingFields = _entityFields;
 			_entityFields = new List<IEntityField>();
 
@@ -63,7 +65,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 
 			if (entityFields.Count < 1)
 				return;
-			var projectedModel = new ProjectionModel(entityFields.ToArray(), singleRelatedObjectField.RelatedObjectModel.EntityTable, null);
+			var projectedModel = new ViewModel(entityFields.ToArray(), singleRelatedObjectField.RelatedObjectModel.EntityTable, toField.FieldType);
 
 			_entityFields.Add(
 				new SingleRelatedObjectField<T>(
@@ -131,6 +133,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 			_entityModel = model as EntityModel;
 			if (_entityModel == null)
 				throw new InvalidOperationException("Projections can only be built from EntityModel instances.");
+			_toModel = TypeModel.GetModelOf(_projectionType).TransformToTargetModel();
 			var mappingBuilder = new MappingBuilder(model, TypeModel.GetModelOf(_projectionType));
 			foreach (var convention in _projectionConventions)
 				mappingBuilder.AddConvention(convention);
