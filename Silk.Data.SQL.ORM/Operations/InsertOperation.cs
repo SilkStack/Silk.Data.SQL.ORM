@@ -99,14 +99,13 @@ namespace Silk.Data.SQL.ORM.Operations
 			foreach (var projectionField in projectionModel.Fields)
 			{
 				projectionField.Transform(transformer);
-				if (transformer.Current != null)
-					columns.Add(transformer.Current);
 			}
+			columns.AddRange(transformer.Current.Where(q => q != null));
+			transformer.Current.Clear();
 			if (!primaryKeyIsOnProjection && primaryKeyField != null)
 			{
 				primaryKeyField.Transform(transformer);
-				if (transformer.Current != null)
-					columns.Add(transformer.Current);
+				columns.AddRange(transformer.Current.Where(q => q != null));
 			}
 			if (primaryKeyField != null)
 				serverGeneratedPrimaryKey = columns.OfType<ServerGeneratedValue>().FirstOrDefault(q => q.ColumnName == primaryKeyField.Column.ColumnName);
@@ -291,8 +290,9 @@ namespace Silk.Data.SQL.ORM.Operations
 		private class ColumnHelperTransformer : IModelTransformer
 		{
 			private readonly ProjectionModel _projectionModel;
+			private readonly Stack<string> _fieldStack = new Stack<string>();
 
-			public ColumnHelper Current { get; private set; }
+			public List<ColumnHelper> Current { get; } = new List<ColumnHelper>();
 
 			public ColumnHelperTransformer(ProjectionModel projectionModel)
 			{
@@ -328,47 +328,57 @@ namespace Silk.Data.SQL.ORM.Operations
 
 			public void VisitField<T>(IField<T> field)
 			{
-				Current = null;
+				_fieldStack.Push(field.FieldName);
 
 				switch (field)
 				{
 					case IProjectedValueField projectedValueField:
 						{
 							var column = projectedValueField.Column;
-							var fieldPath = new[] { projectedValueField.FieldName };
+							var fieldPath = _fieldStack.Reverse().ToArray();
 							if (!FieldIsOnModel(fieldPath))
 								fieldPath = null;
 							if (fieldPath != null)
 								fieldPath = projectedValueField.Path;
 							if (column.IsClientGenerated)
-								Current = new ClientGeneratedValue<T>(projectedValueField.Column.ColumnName, fieldPath);
+								Current.Add(new ClientGeneratedValue<T>(projectedValueField.Column.ColumnName, fieldPath));
 							else if (column.IsServerGenerated)
-								Current = new ServerGeneratedValue<T>(projectedValueField.Column.ColumnName, fieldPath);
+								Current.Add(new ServerGeneratedValue<T>(projectedValueField.Column.ColumnName, fieldPath));
 							else
-								Current = new ColumnValueReader<T>(projectedValueField.Column.ColumnName, fieldPath);
+								Current.Add(new ColumnValueReader<T>(projectedValueField.Column.ColumnName, fieldPath));
 						}
 						break;
 					case IValueField valueField:
 						{
 							var column = valueField.Column;
-							var fieldPath = new[] { valueField.FieldName };
+							var fieldPath = _fieldStack.Reverse().ToArray();
 							if (!FieldIsOnModel(fieldPath))
 								fieldPath = null;
 							if (column.IsClientGenerated)
-								Current = new ClientGeneratedValue<T>(valueField.Column.ColumnName, fieldPath);
+								Current.Add(new ClientGeneratedValue<T>(valueField.Column.ColumnName, fieldPath));
 							else if (column.IsServerGenerated)
-								Current = new ServerGeneratedValue<T>(valueField.Column.ColumnName, fieldPath);
+								Current.Add(new ServerGeneratedValue<T>(valueField.Column.ColumnName, fieldPath));
 							else
-								Current = new ColumnValueReader<T>(valueField.Column.ColumnName, fieldPath);
+								Current.Add(new ColumnValueReader<T>(valueField.Column.ColumnName, fieldPath));
 						}
 						break;
 					case ISingleRelatedObjectField singleRelatedObjectField:
 						{
-							var visitor = new SingleObjectFieldVisitor(this, singleRelatedObjectField);
+							var visitor = new SingleObjectFieldVisitor(this, _fieldStack, singleRelatedObjectField);
 							singleRelatedObjectField.RelatedPrimaryKey.Transform(visitor);
 						}
 						break;
+					case IEmbeddedObjectField embeddedObjectField:
+						{
+							foreach (var embeddedField in embeddedObjectField.EmbeddedFields)
+							{
+								embeddedField.Transform(this);
+							}
+						}
+						break;
 				}
+
+				_fieldStack.Pop();
 			}
 
 			public void VisitModel<TField>(IModel<TField> model) where TField : IField
@@ -379,11 +389,14 @@ namespace Silk.Data.SQL.ORM.Operations
 			private class SingleObjectFieldVisitor : IModelTransformer
 			{
 				private readonly ColumnHelperTransformer _parent;
+				private readonly Stack<string> _fieldStack;
 				private readonly ISingleRelatedObjectField _field;
 
-				public SingleObjectFieldVisitor(ColumnHelperTransformer parent, ISingleRelatedObjectField singleRelatedObjectField)
+				public SingleObjectFieldVisitor(ColumnHelperTransformer parent, Stack<string> fieldStack,
+					ISingleRelatedObjectField singleRelatedObjectField)
 				{
 					_parent = parent;
+					_fieldStack = fieldStack;
 					_field = singleRelatedObjectField;
 				}
 
@@ -395,12 +408,12 @@ namespace Silk.Data.SQL.ORM.Operations
 					var projectedField = field as IProjectedValueField;
 
 					var column = valueField.Column;
-					var fieldPath =  new[] { _field.FieldName, valueField.FieldName };
+					var fieldPath =  _fieldStack.Reverse().Concat(new[] { valueField.FieldName }).ToArray();
 					if (!_parent.FieldIsOnModel(fieldPath))
 						fieldPath = null;
 					if (fieldPath != null && projectedField != null)
 						fieldPath = projectedField.Path;
-					_parent.Current = new ColumnValueReader<T>(_field.LocalColumn.ColumnName, fieldPath);
+					_parent.Current.Add(new ColumnValueReader<T>(_field.LocalColumn.ColumnName, fieldPath));
 				}
 
 				public void VisitModel<TField>(IModel<TField> model) where TField : IField

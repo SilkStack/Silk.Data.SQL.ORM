@@ -589,7 +589,33 @@ namespace Silk.Data.SQL.ORM.Tests
 		[TestMethod]
 		public void InsertEmbeddedObject()
 		{
-			throw new NotImplementedException();
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<PocoWithSingleRelationship>();
+			var schema = schemaBuilder.Build();
+			var mainModel = schema.GetEntityModel<PocoWithSingleRelationship>();
+
+			using (var provider = new SQLite3DataProvider(":memory:"))
+			{
+				provider.ExecuteNonQuery(QueryExpression.CreateTable(
+					nameof(PocoWithSingleRelationship),
+					QueryExpression.DefineColumn(nameof(PocoWithSingleRelationship.Id), SqlDataType.Int(), isAutoIncrement: true, isPrimaryKey: true),
+					QueryExpression.DefineColumn(nameof(PocoWithSingleRelationship.LocalData), SqlDataType.Text(), isNullable: true),
+					QueryExpression.DefineColumn(nameof(PocoWithSingleRelationship.Relationship) + "_" + nameof(RelationshipPoco.Id), SqlDataType.Int()),
+					QueryExpression.DefineColumn(nameof(PocoWithSingleRelationship.Relationship) + "_" + nameof(RelationshipPoco.RelatedData), SqlDataType.Text(), isNullable: true)
+					));
+
+				var instance = new PocoWithSingleRelationship
+				{
+					LocalData = "Hello",
+					Relationship = new RelationshipPoco
+					{
+						RelatedData = "World"
+					}
+				};
+				var insertOperation = InsertOperation.Create<PocoWithSingleRelationship>(mainModel, instance);
+				using (var queryResult = provider.ExecuteReader(insertOperation.GetQuery()))
+					insertOperation.ProcessResult(queryResult);
+			}
 		}
 
 		private class SimplePoco
