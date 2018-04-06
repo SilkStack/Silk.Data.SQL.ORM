@@ -604,7 +604,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					QueryExpression.DefineColumn(nameof(PocoWithSingleRelationship.Relationship) + "_" + nameof(RelationshipPoco.RelatedData), SqlDataType.Text(), isNullable: true)
 					));
 
-				var instance = new PocoWithSingleRelationship
+				var fullInstance = new PocoWithSingleRelationship
 				{
 					LocalData = "Hello",
 					Relationship = new RelationshipPoco
@@ -612,9 +612,95 @@ namespace Silk.Data.SQL.ORM.Tests
 						RelatedData = "World"
 					}
 				};
-				var insertOperation = InsertOperation.Create<PocoWithSingleRelationship>(mainModel, instance);
-				using (var queryResult = provider.ExecuteReader(insertOperation.GetQuery()))
-					insertOperation.ProcessResult(queryResult);
+				var insert = InsertOperation.Create<PocoWithSingleRelationship>(mainModel, fullInstance);
+				using (var queryResult = provider.ExecuteReader(insert.GetQuery()))
+					insert.ProcessResult(queryResult);
+				Assert.AreNotEqual(0, fullInstance.Id);
+				using (var queryResult = provider.ExecuteReader(QueryExpression.Select(
+					new[] { QueryExpression.All() }, from: QueryExpression.Table(nameof(PocoWithSingleRelationship))
+					)))
+				{
+					Assert.IsTrue(queryResult.HasRows);
+					Assert.IsTrue(queryResult.Read());
+
+					Assert.AreEqual(fullInstance.Id, queryResult.GetInt32(0));
+					Assert.AreEqual(fullInstance.LocalData, queryResult.GetString(1));
+					Assert.AreEqual(fullInstance.Relationship.Id, queryResult.GetInt32(2));
+					Assert.AreEqual(fullInstance.Relationship.RelatedData, queryResult.GetString(3));
+				}
+				provider.ExecuteNonQuery(QueryExpression.Delete(QueryExpression.Table(nameof(PocoWithSingleRelationship))));
+
+				var projectionWithFullRelationship = new PocoWithSingleRelationshipProjection
+				{
+					LocalData = "Hello",
+					Relationship = new RelationshipPoco
+					{
+						RelatedData = "World"
+					}
+				};
+				insert = InsertOperation.Create(mainModel, projectionWithFullRelationship);
+				using (var queryResult = provider.ExecuteReader(insert.GetQuery()))
+					insert.ProcessResult(queryResult);
+				Assert.AreNotEqual(0, projectionWithFullRelationship.Id);
+				using (var queryResult = provider.ExecuteReader(QueryExpression.Select(
+					new[] { QueryExpression.All() }, from: QueryExpression.Table(nameof(PocoWithSingleRelationship))
+					)))
+				{
+					Assert.IsTrue(queryResult.HasRows);
+					Assert.IsTrue(queryResult.Read());
+
+					Assert.AreEqual(projectionWithFullRelationship.Id, queryResult.GetInt32(0));
+					Assert.AreEqual(projectionWithFullRelationship.LocalData, queryResult.GetString(1));
+					Assert.AreEqual(projectionWithFullRelationship.Relationship.Id, queryResult.GetInt32(2));
+					Assert.AreEqual(fullInstance.Relationship.RelatedData, queryResult.GetString(3));
+				}
+				provider.ExecuteNonQuery(QueryExpression.Delete(QueryExpression.Table(nameof(PocoWithSingleRelationship))));
+
+				var projectionWithProjectedRelationship = new PocoWithSingleRelationshipProjectionProjection
+				{
+					LocalData = "Hello",
+					Relationship = new RelationshipPocoProjection { Id = 2 }
+				};
+				insert = InsertOperation.Create(mainModel, projectionWithProjectedRelationship);
+				using (var queryResult = provider.ExecuteReader(insert.GetQuery()))
+					insert.ProcessResult(queryResult);
+				Assert.AreNotEqual(0, projectionWithProjectedRelationship.Id);
+				using (var queryResult = provider.ExecuteReader(QueryExpression.Select(
+					new[] { QueryExpression.All() }, from: QueryExpression.Table(nameof(PocoWithSingleRelationship))
+					)))
+				{
+					Assert.IsTrue(queryResult.HasRows);
+					Assert.IsTrue(queryResult.Read());
+
+					Assert.AreEqual(projectionWithProjectedRelationship.Id, queryResult.GetInt32(0));
+					Assert.AreEqual(projectionWithProjectedRelationship.LocalData, queryResult.GetString(1));
+					Assert.AreEqual(projectionWithProjectedRelationship.Relationship.Id, queryResult.GetInt32(2));
+					Assert.IsTrue(queryResult.IsDBNull(3));
+				}
+				provider.ExecuteNonQuery(QueryExpression.Delete(QueryExpression.Table(nameof(PocoWithSingleRelationship))));
+
+				var projectionWithFlatRelationship = new PocoWithFlatSingleRelationshipProjection
+				{
+					LocalData = "Hello",
+					RelationshipId = 3
+				};
+				insert = InsertOperation.Create(mainModel, projectionWithFlatRelationship);
+				using (var queryResult = provider.ExecuteReader(insert.GetQuery()))
+					insert.ProcessResult(queryResult);
+				Assert.AreNotEqual(0, projectionWithFlatRelationship.Id);
+				using (var queryResult = provider.ExecuteReader(QueryExpression.Select(
+					new[] { QueryExpression.All() }, from: QueryExpression.Table(nameof(PocoWithSingleRelationship))
+					)))
+				{
+					Assert.IsTrue(queryResult.HasRows);
+					Assert.IsTrue(queryResult.Read());
+
+					Assert.AreEqual(projectionWithFlatRelationship.Id, queryResult.GetInt32(0));
+					Assert.AreEqual(projectionWithFlatRelationship.LocalData, queryResult.GetString(1));
+					Assert.AreEqual(projectionWithFlatRelationship.RelationshipId, queryResult.GetInt32(2));
+					Assert.IsTrue(queryResult.IsDBNull(3));
+				}
+				provider.ExecuteNonQuery(QueryExpression.Delete(QueryExpression.Table(nameof(PocoWithSingleRelationship))));
 			}
 		}
 
