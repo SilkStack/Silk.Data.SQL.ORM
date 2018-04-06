@@ -4,6 +4,7 @@ using Silk.Data.SQL.ORM.Operations;
 using Silk.Data.SQL.ORM.Schema;
 using Silk.Data.SQL.SQLite3;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Tests
@@ -583,7 +584,78 @@ namespace Silk.Data.SQL.ORM.Tests
 		[TestMethod]
 		public void InsertManyRelationships()
 		{
-			throw new NotImplementedException();
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<RelationshipPoco>();
+			schemaBuilder.DefineEntity<PocoWithManyRelationships>();
+			var schema = schemaBuilder.Build();
+			var relationshipModel = schema.GetEntityModel<RelationshipPoco>();
+			var mainModel = schema.GetEntityModel<PocoWithManyRelationships>();
+
+			using (var provider = new SQLite3DataProvider(":memory:"))
+			{
+				provider.ExecuteNonQuery(QueryExpression.CreateTable(
+					nameof(PocoWithManyRelationships),
+					QueryExpression.DefineColumn(nameof(PocoWithSingleRelationship.Id), SqlDataType.Int(), isAutoIncrement: true, isPrimaryKey: true),
+					QueryExpression.DefineColumn(nameof(PocoWithSingleRelationship.LocalData), SqlDataType.Text(), isNullable: true)
+					));
+				provider.ExecuteNonQuery(QueryExpression.CreateTable(
+					"PocoWithManyRelationships_RelationshipsToRelationshipPoco",
+					QueryExpression.DefineColumn("LocalKey", SqlDataType.Int()),
+					QueryExpression.DefineColumn("RemoteKey", SqlDataType.Int())
+					));
+				provider.ExecuteNonQuery(QueryExpression.CreateTable(
+					nameof(RelationshipPoco),
+					QueryExpression.DefineColumn(nameof(RelationshipPoco.Id), SqlDataType.Int(), isAutoIncrement: true, isPrimaryKey: true),
+					QueryExpression.DefineColumn(nameof(RelationshipPoco.RelatedData), SqlDataType.Text(), isNullable: true)
+					));
+
+				var relatedObjects = new[]
+				{
+					new RelationshipPoco { RelatedData = "Hello" },
+					new RelationshipPoco { RelatedData = "World" }
+				};
+				var insert = InsertOperation.Create<RelationshipPoco>(relationshipModel, relatedObjects);
+				using (var queryResult = provider.ExecuteReader(insert.GetQuery()))
+					insert.ProcessResult(queryResult);
+
+				Assert.AreNotEqual(0, relatedObjects[0].Id);
+				Assert.AreNotEqual(0, relatedObjects[1].Id);
+				Assert.AreNotEqual(relatedObjects[0].Id, relatedObjects[1].Id);
+
+				var fullInstance = new PocoWithManyRelationships
+				{
+					LocalData = "Hello",
+					Relationships = { relatedObjects[0], relatedObjects[1] }
+				};
+				insert = InsertOperation.Create<PocoWithManyRelationships>(mainModel, fullInstance);
+				using (var queryResult = provider.ExecuteReader(insert.GetQuery()))
+					insert.ProcessResult(queryResult);
+				Assert.AreNotEqual(0, fullInstance.Id);
+				using (var queryResult = provider.ExecuteReader(QueryExpression.Select(
+					new[] { QueryExpression.All() },
+					from: QueryExpression.Table(nameof(PocoWithManyRelationships)),
+					joins: new[]
+					{
+						QueryExpression.Join(
+							QueryExpression.Column(nameof(PocoWithManyRelationships.Id), QueryExpression.Table(nameof(PocoWithManyRelationships))),
+							QueryExpression.Column("LocalKey", QueryExpression.Table("PocoWithManyRelationships_RelationshipsToRelationshipPoco"))
+						),
+						QueryExpression.Join(
+							QueryExpression.Column("RemoteKey", QueryExpression.Table("PocoWithManyRelationships_RelationshipsToRelationshipPoco")),
+							QueryExpression.Column(nameof(RelationshipPoco.Id), QueryExpression.Table(nameof(RelationshipPoco)))
+						)
+					}
+					)))
+				{
+					Assert.IsTrue(queryResult.HasRows);
+					Assert.IsTrue(queryResult.Read());
+
+					Assert.AreEqual(fullInstance.Id, queryResult.GetInt32(0));
+					Assert.AreEqual(fullInstance.LocalData, queryResult.GetString(1));
+					//Assert.AreEqual(relatedObject.Id, queryResult.GetInt32(2));
+				}
+				provider.ExecuteNonQuery(QueryExpression.Delete(QueryExpression.Table(nameof(PocoWithSingleRelationship))));
+			}
 		}
 
 		[TestMethod]
@@ -782,6 +854,14 @@ namespace Silk.Data.SQL.ORM.Tests
 			public int Id { get; private set; }
 			public string LocalData { get; set; }
 			public int RelationshipId { get; set; }
+		}
+
+		private class PocoWithManyRelationships
+		{
+			public int Id { get; private set; }
+			public string LocalData { get; set; }
+			public List<RelationshipPoco> Relationships { get; set; }
+				= new List<RelationshipPoco>();
 		}
 	}
 }
