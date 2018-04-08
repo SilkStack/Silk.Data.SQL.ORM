@@ -12,75 +12,41 @@ namespace Silk.Data.SQL.ORM
 		where T : class
 	{
 		private readonly EntityModel<T> _entityModel;
+		private readonly IEntityOperations<T> _entityOperations;
 
-		public Schema.Schema DataSchema { get; }
 		public IDataProvider DataProvider { get; }
 
-		public EntityDatabase(Schema.Schema schema, IDataProvider dataProvider)
+		public EntityDatabase(IEntityOperations<T> entityOperations, IDataProvider dataProvider)
 		{
+			_entityOperations = entityOperations;
 			DataProvider = dataProvider;
-			DataSchema = schema;
-
-			_entityModel = DataSchema.GetEntityModel<T>();
-			if (_entityModel == null)
-				throw new InvalidOperationException($"Knowledge of entity type {typeof(T).FullName} not present in provided schema.");
 		}
 
-		private InsertOperation CreateInsertOperation(IEnumerable<T> entities)
+		public EntityDatabase(Schema.Schema schema, IDataProvider dataProvider) :
+			this(new EntityOperations<T>(schema), dataProvider)
 		{
-			return InsertOperation.Create<T>(_entityModel, entities.ToArray());
-		}
-
-		private InsertOperation CreateInsertOperation<TView>(IEnumerable<TView> entities)
-			where TView : class
-		{
-			return InsertOperation.Create<T, TView>(_entityModel, entities.ToArray());
-		}
-
-		private void ExecuteInsertOperation(InsertOperation operation)
-		{
-			if (!operation.GeneratesValuesServerSide)
-			{
-				DataProvider.ExecuteNonQuery(operation.GetQuery());
-				return;
-			}
-
-			using (var queryResult = DataProvider.ExecuteReader(operation.GetQuery()))
-				operation.ProcessResult(queryResult);
-		}
-
-		private async Task ExecuteInsertOperationAsync(InsertOperation operation)
-		{
-			if (!operation.GeneratesValuesServerSide)
-			{
-				await DataProvider.ExecuteNonQueryAsync(operation.GetQuery());
-				return;
-			}
-
-			using (var queryResult = await DataProvider.ExecuteReaderAsync(operation.GetQuery()))
-				await operation.ProcessResultAsync(queryResult);
 		}
 
 		public void Insert(IEnumerable<T> entities)
 		{
-			ExecuteInsertOperation(CreateInsertOperation(entities));
+			DataProvider.Insert(_entityOperations.CreateInsert(entities));
 		}
 
 		public void Insert<TView>(IEnumerable<TView> entities)
 			where TView : class
 		{
-			ExecuteInsertOperation(CreateInsertOperation(entities));
+			DataProvider.Insert(_entityOperations.CreateInsert(entities));
 		}
 
 		public Task InsertAsync(IEnumerable<T> entities)
 		{
-			return ExecuteInsertOperationAsync(CreateInsertOperation(entities));
+			return DataProvider.InsertAsync(_entityOperations.CreateInsert(entities));
 		}
 
 		public Task InsertAsync<TView>(IEnumerable<TView> entities)
 			where TView : class
 		{
-			return ExecuteInsertOperationAsync(CreateInsertOperation(entities));
+			return DataProvider.InsertAsync(_entityOperations.CreateInsert(entities));
 		}
 	}
 }

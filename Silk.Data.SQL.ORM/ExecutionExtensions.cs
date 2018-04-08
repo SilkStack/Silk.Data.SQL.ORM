@@ -52,5 +52,29 @@ namespace Silk.Data.SQL.ORM
 		{
 			return (await dataProvider.GetAsync(select)).FirstOrDefault();
 		}
+
+		public static void Insert(this IDataProvider dataProvider, InsertOperation insert)
+		{
+			if (!insert.GeneratesValuesServerSide)
+			{
+				dataProvider.ExecuteNonReader(insert);
+				return;
+			}
+
+			using (var queryResult = dataProvider.ExecuteReader(insert.GetQuery()))
+				insert.ProcessResult(queryResult);
+		}
+
+		public static async Task InsertAsync(this IDataProvider dataProvider, InsertOperation insert)
+		{
+			if (!insert.GeneratesValuesServerSide)
+			{
+				await dataProvider.ExecuteNonReaderAsync(insert);
+				return;
+			}
+
+			using (var queryResult = await dataProvider.ExecuteReaderAsync(insert.GetQuery()))
+				await insert.ProcessResultAsync(queryResult);
+		}
 	}
 }

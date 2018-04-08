@@ -11,10 +11,6 @@ namespace Silk.Data.SQL.ORM
 	public interface IDatabase<T> where T : class
 	{
 		/// <summary>
-		/// Gets the schema that contains knowledge of the entity type.
-		/// </summary>
-		Schema.Schema DataSchema { get; }
-		/// <summary>
 		/// Gets the data provider used to execute queries.
 		/// </summary>
 		IDataProvider DataProvider { get; }
