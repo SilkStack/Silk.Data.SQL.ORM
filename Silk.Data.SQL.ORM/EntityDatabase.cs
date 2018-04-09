@@ -1,7 +1,6 @@
-﻿using Silk.Data.SQL.Providers;
-using System;
+﻿using Silk.Data.SQL.ORM.Modelling;
+using Silk.Data.SQL.Providers;
 using System.Collections.Generic;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
 
 namespace Silk.Data.SQL.ORM
@@ -12,6 +11,8 @@ namespace Silk.Data.SQL.ORM
 		private readonly IEntityOperations<T> _entityOperations;
 
 		public IDataProvider DataProvider { get; }
+
+		public EntityModel<T> EntityModel => _entityOperations.EntityModel;
 
 		public EntityDatabase(IEntityOperations<T> entityOperations, IDataProvider dataProvider)
 		{

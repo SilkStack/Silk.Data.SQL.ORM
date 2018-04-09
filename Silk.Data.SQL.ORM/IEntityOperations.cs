@@ -1,4 +1,5 @@
-﻿using Silk.Data.SQL.ORM.Operations;
+﻿using Silk.Data.SQL.ORM.Modelling;
+using Silk.Data.SQL.ORM.Operations;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
@@ -11,6 +12,8 @@ namespace Silk.Data.SQL.ORM
 	/// <typeparam name="T"></typeparam>
 	public interface IEntityOperations<T> where T : class
 	{
+		EntityModel<T> EntityModel { get; }
+
 		InsertOperation CreateInsert(IEnumerable<T> entities);
 		InsertOperation CreateInsert(params T[] entities);
 		InsertOperation CreateInsert<TView>(IEnumerable<TView> entities)

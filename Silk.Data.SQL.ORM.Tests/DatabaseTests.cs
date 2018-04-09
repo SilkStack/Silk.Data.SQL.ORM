@@ -31,7 +31,12 @@ namespace Silk.Data.SQL.ORM.Tests
 
 				database.Insert(entities);
 
-				var retrievedEntities = database.Query();
+				var retrievedEntities = database.Query(
+					where: database
+						.Condition(q => q.Id == entities[0].Id)
+						.Or(q => q.Id == entities[1].Id)
+						.Build()
+					);
 
 				Assert.AreEqual(entities.Length, retrievedEntities.Count);
 				foreach (var entity in entities)

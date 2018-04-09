@@ -10,13 +10,13 @@ namespace Silk.Data.SQL.ORM
 	public class EntityOperations<T> : IEntityOperations<T>
 		where T : class
 	{
-		private readonly EntityModel<T> _entityModel;
+		public EntityModel<T> EntityModel { get; }
 
 		public EntityOperations(Schema.Schema schema)
 		{
-			_entityModel = schema.GetEntityModel<T>();
+			EntityModel = schema.GetEntityModel<T>();
 
-			if (_entityModel == null)
+			if (EntityModel == null)
 				throw new InvalidOperationException($"Knowledge of entity type {typeof(T).FullName} not present in provided schema.");
 		}
 
@@ -27,7 +27,7 @@ namespace Silk.Data.SQL.ORM
 
 		public InsertOperation CreateInsert(params T[] entities)
 		{
-			return InsertOperation.Create<T>(_entityModel, entities);
+			return InsertOperation.Create<T>(EntityModel, entities);
 		}
 
 		public InsertOperation CreateInsert<TView>(IEnumerable<TView> entities) where TView : class
@@ -37,12 +37,12 @@ namespace Silk.Data.SQL.ORM
 
 		public InsertOperation CreateInsert<TView>(params TView[] entities) where TView : class
 		{
-			return InsertOperation.Create<T, TView>(_entityModel, entities);
+			return InsertOperation.Create<T, TView>(EntityModel, entities);
 		}
 
 		public SelectOperation<T> CreateSelect(Condition where = null, Condition having = null, OrderBy orderBy = null, GroupBy groupBy = null, int? offset = null, int? limit = null)
 		{
-			return SelectOperation.Create<T>(_entityModel, where, having, orderBy, groupBy, offset, limit);
+			return SelectOperation.Create<T>(EntityModel, where, having, orderBy, groupBy, offset, limit);
 		}
 	}
 }

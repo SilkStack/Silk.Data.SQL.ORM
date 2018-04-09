@@ -1,4 +1,5 @@
-﻿using Silk.Data.SQL.Providers;
+﻿using Silk.Data.SQL.ORM.Modelling;
+using Silk.Data.SQL.Providers;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
@@ -16,6 +17,11 @@ namespace Silk.Data.SQL.ORM
 		/// Gets the data provider used to execute queries.
 		/// </summary>
 		IDataProvider DataProvider { get; }
+
+		/// <summary>
+		/// Gets the model of the entity type stored in the database.
+		/// </summary>
+		EntityModel<T> EntityModel { get; }
 
 		void Insert(IEnumerable<T> entities);
 		void Insert<TView>(IEnumerable<TView> entities) where TView : class;
