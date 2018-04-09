@@ -110,6 +110,8 @@ namespace Silk.Data.SQL.ORM.Operations
 			if (primaryKeyField != null)
 				serverGeneratedPrimaryKey = columns.OfType<ServerGeneratedValue>().FirstOrDefault(q => q.ColumnName == primaryKeyField.Column.ColumnName);
 
+			var manyRelationshipFields = projectionModel.Fields.OfType<IManyRelatedObjectField>().ToArray();
+
 			var bulkInsertRows = new List<QueryExpression[]>();
 			foreach (var obj in projections)
 			{

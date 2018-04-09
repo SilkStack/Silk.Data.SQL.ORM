@@ -1,9 +1,7 @@
-﻿using Silk.Data.SQL.ORM.Modelling;
-using Silk.Data.SQL.ORM.Operations;
-using Silk.Data.SQL.Providers;
+﻿using Silk.Data.SQL.Providers;
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 
 namespace Silk.Data.SQL.ORM
@@ -11,7 +9,6 @@ namespace Silk.Data.SQL.ORM
 	public class EntityDatabase<T> : IDatabase<T>
 		where T : class
 	{
-		private readonly EntityModel<T> _entityModel;
 		private readonly IEntityOperations<T> _entityOperations;
 
 		public IDataProvider DataProvider { get; }
@@ -47,6 +44,21 @@ namespace Silk.Data.SQL.ORM
 			where TView : class
 		{
 			return DataProvider.InsertAsync(_entityOperations.CreateInsert(entities));
+		}
+
+		public ICollection<T> Query(Condition where = null, Condition having = null, OrderBy orderBy = null,
+			GroupBy groupBy = null, int? offset = null, int? limit = null)
+		{
+			return DataProvider.Get(_entityOperations.CreateSelect(
+				where, having, orderBy, groupBy, offset, limit
+				));
+		}
+
+		public Task<ICollection<T>> QueryAsync(Condition where = null, Condition having = null, OrderBy orderBy = null, GroupBy groupBy = null, int? offset = null, int? limit = null)
+		{
+			return DataProvider.GetAsync(_entityOperations.CreateSelect(
+				where, having, orderBy, groupBy, offset, limit
+				));
 		}
 	}
 }

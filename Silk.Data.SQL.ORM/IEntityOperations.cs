@@ -18,6 +18,7 @@ namespace Silk.Data.SQL.ORM
 		InsertOperation CreateInsert<TView>(params TView[] entities)
 			where TView : class;
 
-		SelectOperation<T> CreateSelect(Expression<Func<T, bool>> where = null);
+		SelectOperation<T> CreateSelect(Condition where = null, Condition having = null, OrderBy orderBy = null,
+			GroupBy groupBy = null, int? offset = null, int? limit = null);
 	}
 }

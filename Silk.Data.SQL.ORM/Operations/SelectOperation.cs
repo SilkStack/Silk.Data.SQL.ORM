@@ -88,31 +88,47 @@ namespace Silk.Data.SQL.ORM.Operations
 
 	public class SelectOperation
 	{
-		public static SelectOperation<TEntity> Create<TEntity>(EntityModel<TEntity> model)
+		public static SelectOperation<TEntity> Create<TEntity>(EntityModel<TEntity> model,
+			Condition where = null, Condition having = null,
+			OrderBy orderBy = null, GroupBy groupBy = null,
+			int? offset = null, int? limit = null)
 		{
-			return Create<TEntity>(model, model);
+			return Create<TEntity>(model, model, where, having, orderBy, groupBy, offset, limit);
 		}
 
-		public static SelectOperation<TProjection> Create<TEntity, TProjection>(EntityModel<TEntity> model)
+		public static SelectOperation<TProjection> Create<TEntity, TProjection>(EntityModel<TEntity> model,
+			Condition where = null, Condition having = null,
+			OrderBy orderBy = null, GroupBy groupBy = null,
+			int? offset = null, int? limit = null)
 		{
-			return Create<TProjection>(model.GetProjection<TProjection>(), model);
+			return Create<TProjection>(model.GetProjection<TProjection>(), model, where, having, orderBy, groupBy, offset, limit);
 		}
 
-		private static SelectOperation<TProjection> Create<TProjection>(ProjectionModel projectionModel, EntityModel entityModel)
+		private static SelectOperation<TProjection> Create<TProjection>(ProjectionModel projectionModel, EntityModel entityModel,
+			Condition where = null, Condition having = null,
+			OrderBy orderBy = null, GroupBy groupBy = null,
+			int? offset = null, int? limit = null)
 		{
-			var entityTableExpr = QueryExpression.Table(entityModel.EntityTable.TableName);
-			var query = CreateQuery(projectionModel, entityModel, entityTableExpr);
+			var query = CreateQuery(projectionModel, entityModel, where, having, orderBy, groupBy, offset, limit);
 
 			return new SelectOperation<TProjection>(query, projectionModel);
 		}
 
-		private static QueryExpression CreateQuery(ProjectionModel projectionModel, EntityModel entityModel, QueryExpression from)
+		private static QueryExpression CreateQuery(ProjectionModel projectionModel, EntityModel entityModel,
+			Condition where = null, Condition having = null,
+			OrderBy orderBy = null, GroupBy groupBy = null,
+			int? offset = null, int? limit = null)
 		{
+			var from = QueryExpression.Table(entityModel.EntityTable.TableName);
 			var queries = new List<QueryExpression>();
 			var projectedFieldsExprs = new List<QueryExpression>();
 			var joinExprs = new List<JoinExpression>();
-			QueryExpression where = null;
-			QueryExpression having = null;
+			var whereExpr = where?.GetExpression();
+			var havingExpr = having?.GetExpression();
+			var offsetExpr = offset == null ? null : QueryExpression.Value(offset.Value);
+			var limitExpr = limit == null ? null : QueryExpression.Value(limit.Value);
+			var orderByExprs = orderBy?.GetExpressions();
+			var groupByExprs = groupBy?.GetExpressions();
 
 			AddJoins(entityModel, projectedFieldsExprs, from, joinExprs);
 			AddFields(projectionModel, projectedFieldsExprs, from, joinExprs);
@@ -121,8 +137,12 @@ namespace Silk.Data.SQL.ORM.Operations
 				projectedFieldsExprs.ToArray(),
 				from: from,
 				joins: joinExprs.Count < 1 ? null : joinExprs.ToArray(),
-				where: where,
-				having: having
+				where: whereExpr,
+				having: havingExpr,
+				offset: offsetExpr,
+				limit: limitExpr,
+				orderBy: orderByExprs,
+				groupBy: groupByExprs
 				);
 			queries.Add(query);
 
@@ -138,8 +158,8 @@ namespace Silk.Data.SQL.ORM.Operations
 					projectedFieldsExprs.ToArray(),
 					from: from,
 					joins: joinExprs.Count < 1 ? null : joinExprs.ToArray(),
-					where: where,
-					having: having
+					where: whereExpr,
+					having: havingExpr
 					);
 				queries.Add(query);
 			}
