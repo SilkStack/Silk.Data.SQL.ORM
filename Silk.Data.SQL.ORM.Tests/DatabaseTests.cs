@@ -33,8 +33,7 @@ namespace Silk.Data.SQL.ORM.Tests
 
 				var retrievedEntities = database.Query(
 					where: database
-						.Condition(q => q.Id == entities[0].Id)
-						.Or(q => q.Id == entities[1].Id)
+						.Condition(q => q.Id == entities[0].Id || q.Id == entities[1].Id)
 						.Build()
 					);
 
