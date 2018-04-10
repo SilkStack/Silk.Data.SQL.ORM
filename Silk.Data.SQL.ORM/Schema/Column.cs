@@ -8,10 +8,11 @@ namespace Silk.Data.SQL.ORM.Schema
 		public bool IsServerGenerated { get; }
 		public bool IsClientGenerated { get; }
 		public bool IsNullable { get; }
+		public Index Index { get; }
 
 		public Column(string columnName, SqlDataType sqlDataType,
 			bool isPrimaryKey = false, bool isServerGenerated = false, bool isClientGenerated = false,
-			bool isNullable = false)
+			bool isNullable = false, Index index = null)
 		{
 			ColumnName = columnName;
 			SqlDataType = sqlDataType;
@@ -19,6 +20,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			IsClientGenerated = isClientGenerated;
 			IsServerGenerated = isServerGenerated;
 			IsNullable = isNullable;
+			Index = index;
 		}
 	}
 }
