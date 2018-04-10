@@ -32,6 +32,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 			new Dictionary<string, IEntityField>();
 		private readonly EntitySchemaOptions<T> _schemaOptions;
 		private readonly SchemaBuilder _schemaBuilder;
+		private readonly Stack<string> _pathStack = new Stack<string>();
 
 		public EntityModelTransformer(EntitySchemaOptions<T> schemaOptions, SchemaBuilder schemaBuilder)
 		{
@@ -167,7 +168,8 @@ namespace Silk.Data.SQL.ORM.Modelling
 			if (!field.CanRead)
 				return;
 
-			var options = _schemaOptions.GetFieldOptions(field);
+			_pathStack.Push(field.FieldName);
+			var options = _schemaOptions.GetFieldOptions(_pathStack.Reverse().ToArray());
 			var sqlColumnName = options?.ConfiguredColumnName;
 			if (string.IsNullOrWhiteSpace(sqlColumnName))
 				sqlColumnName = $"{_columnNamePrefix}{field.FieldName}";
@@ -209,6 +211,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 					ModelManyObjectRelationship<TData>(field, options, sqlColumnName, relatedTypeTransformer);
 				}
 			}
+			_pathStack.Pop();
 		}
 
 		public void VisitModel<TField>(IModel<TField> model) where TField : IField
@@ -225,7 +228,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 		public EntityModel<T> GetEntityModel()
 		{
 			return new EntityModel<T>(_entityFields.Values.ToArray(),
-				new Table(_entityTableName, _entityColumns));
+				new Table(_schemaOptions.ConfiguredTableName ?? _entityTableName, _entityColumns));
 		}
 	}
 }
