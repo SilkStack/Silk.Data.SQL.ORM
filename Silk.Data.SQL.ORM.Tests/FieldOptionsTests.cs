@@ -136,6 +136,36 @@ namespace Silk.Data.SQL.ORM.Tests
 			Assert.IsTrue(embeddedField.EmbeddedFields.OfType<IValueField>().Any(q => q.FieldName == "EmbeddedField" && q.Column.ColumnName == "Custom"));
 		}
 
+		[TestMethod]
+		public void CreateIndex()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			var entityOptions = schemaBuilder.DefineEntity<SingleFieldPoco<int>>();
+			entityOptions.For(q => q.Field).Index();
+			var schema = schemaBuilder.Build();
+
+			var model = schema.GetEntityModel<SingleFieldPoco<int>>();
+			var field = model.Fields.OfType<IValueField>().First();
+			Assert.IsNotNull(field.Column.Index);
+		}
+
+		[TestMethod]
+		public void CreateCompositeIndex()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			var entityOptions = schemaBuilder.DefineEntity<TwoFieldPoco>();
+			entityOptions.For(q => q.Alpha).Index("CompositeIdx");
+			entityOptions.For(q => q.Bravo).Index("CompositeIdx");
+			var schema = schemaBuilder.Build();
+
+			var model = schema.GetEntityModel<TwoFieldPoco>();
+			var field1 = model.Fields.OfType<IValueField>().First();
+			var field2 = model.Fields.OfType<IValueField>().Skip(1).First();
+			Assert.IsNotNull(field1.Column.Index);
+			Assert.IsNotNull(field2.Column.Index);
+			Assert.AreEqual(field1.Column.Index.Name, field2.Column.Index.Name);
+		}
+
 		private class SingleFieldPoco<T>
 		{
 			public T Field { get; set; }
@@ -144,6 +174,12 @@ namespace Silk.Data.SQL.ORM.Tests
 		private class EmbeddedFieldPoco
 		{
 			public int EmbeddedField { get; set; }
+		}
+
+		private class TwoFieldPoco
+		{
+			public int Alpha { get; set; }
+			public int Bravo { get; set; }
 		}
 	}
 }

@@ -174,44 +174,50 @@ namespace Silk.Data.SQL.ORM.Modelling
 			if (string.IsNullOrWhiteSpace(sqlColumnName))
 				sqlColumnName = $"{_columnNamePrefix}{field.FieldName}";
 
-			if (_entityFields.TryGetValue(field.FieldName, out var existingField))
+			try
 			{
-				if (existingField is IEmbeddedObjectField embeddedObjectField)
+				if (_entityFields.TryGetValue(field.FieldName, out var existingField))
 				{
-					RevisitEmbeddedObject<TData>(field, options, $"{sqlColumnName}_", embeddedObjectField);
+					if (existingField is IEmbeddedObjectField embeddedObjectField)
+					{
+						RevisitEmbeddedObject<TData>(field, options, $"{sqlColumnName}_", embeddedObjectField);
+					}
+					return;
 				}
-				return;
-			}
 
-			if (!field.IsEnumerable)
-			{
-				if (SqlDataTypes.IsSQLPrimitiveType(field.FieldType))
+				if (!field.IsEnumerable)
 				{
-					ModelPrimitiveField(field, options, sqlColumnName);
+					if (SqlDataTypes.IsSQLPrimitiveType(field.FieldType))
+					{
+						ModelPrimitiveField(field, options, sqlColumnName);
+						return;
+					}
+					var relatedTypeTransformer = _schemaBuilder.GetModelTransformer(field.FieldType);
+					if (relatedTypeTransformer == null)
+					{
+						ModelEmbeddedObject<TData>(field, options, $"{sqlColumnName}_");
+						return;
+					}
+					ModelSingleObjectRelationship(field, options, sqlColumnName, relatedTypeTransformer);
 					return;
-				}
-				var relatedTypeTransformer = _schemaBuilder.GetModelTransformer(field.FieldType);
-				if (relatedTypeTransformer == null)
-				{
-					ModelEmbeddedObject<TData>(field, options, $"{sqlColumnName}_");
-					return;
-				}
-				ModelSingleObjectRelationship(field, options, sqlColumnName, relatedTypeTransformer);
-				return;
-			}
-			else
-			{
-				var relatedTypeTransformer = _schemaBuilder.GetModelTransformer(field.ElementType);
-				if (relatedTypeTransformer == null)
-				{
-					//  todo: decide if I want to handle this use case or not
 				}
 				else
 				{
-					ModelManyObjectRelationship<TData>(field, options, sqlColumnName, relatedTypeTransformer);
+					var relatedTypeTransformer = _schemaBuilder.GetModelTransformer(field.ElementType);
+					if (relatedTypeTransformer == null)
+					{
+						//  todo: decide if I want to handle this use case or not
+					}
+					else
+					{
+						ModelManyObjectRelationship<TData>(field, options, sqlColumnName, relatedTypeTransformer);
+					}
 				}
 			}
-			_pathStack.Pop();
+			finally
+			{
+				_pathStack.Pop();
+			}
 		}
 
 		public void VisitModel<TField>(IModel<TField> model) where TField : IField

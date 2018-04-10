@@ -112,6 +112,8 @@ namespace Silk.Data.SQL.ORM.Schema
 		public bool IsPrimaryKey { get; protected set; }
 		public bool IsAutoGenerate { get; protected set; }
 		public bool IsIndex { get; protected set; }
+		public string IndexName { get; protected set; }
+		public IndexOption IndexOption { get; protected set; }
 		public int? ConfiguredPrecision { get; protected set; }
 		public int? ConfiguredScale { get; protected set; }
 		public int? ConfiguredDataLength { get; protected set; }
@@ -124,6 +126,14 @@ namespace Silk.Data.SQL.ORM.Schema
 		{
 			TypeModelField = field;
 			Path = path.ToArray();
+		}
+
+		public EntityFieldOptions<T> Index(string name = null, IndexOption indexOption = IndexOption.None)
+		{
+			IsIndex = true;
+			IndexName = name;
+			IndexOption = indexOption;
+			return this;
 		}
 
 		public EntityFieldOptions<T> ColumnName(string columnName)

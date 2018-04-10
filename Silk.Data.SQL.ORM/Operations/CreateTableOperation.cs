@@ -40,7 +40,17 @@ namespace Silk.Data.SQL.ORM.Operations
 				return new CreateTableOperation(createTableExpression);
 
 			var queries = new List<QueryExpression>();
-			foreach (var group in table.Columns.Where(q => q.Index != null)
+
+			foreach (var column in table.Columns.Where(q => q.Index != null && string.IsNullOrEmpty(q.Index.Name)))
+			{
+				queries.Add(QueryExpression.CreateIndex(
+					table.TableName,
+					uniqueConstraint: column.Index.Option == IndexOption.Unique,
+					columns: column.ColumnName
+					));
+			}
+
+			foreach (var group in table.Columns.Where(q => q.Index != null && !string.IsNullOrEmpty(q.Index.Name))
 				.GroupBy(q => q.Index.Name))
 			{
 				queries.Add(QueryExpression.CreateIndex(
