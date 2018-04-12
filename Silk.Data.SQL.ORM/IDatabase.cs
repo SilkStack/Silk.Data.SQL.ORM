@@ -38,5 +38,8 @@ namespace Silk.Data.SQL.ORM
 		Task<ICollection<TView>> QueryAsync<TView>(Condition where = null, Condition having = null, OrderBy orderBy = null,
 			GroupBy groupBy = null, int? offset = null, int? limit = null)
 			where TView : class;
+
+		void Delete(IEnumerable<T> entities);
+		Task DeleteAsync(IEnumerable<T> entities);
 	}
 }

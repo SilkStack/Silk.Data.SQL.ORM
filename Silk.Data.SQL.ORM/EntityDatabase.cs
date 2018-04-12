@@ -75,5 +75,19 @@ namespace Silk.Data.SQL.ORM
 				where, having, orderBy, groupBy, offset, limit
 				));
 		}
+
+		public void Delete(IEnumerable<T> entities)
+		{
+			DataProvider.ExecuteNonReader(_entityOperations.CreateDelete(
+				entities
+				));
+		}
+
+		public Task DeleteAsync(IEnumerable<T> entities)
+		{
+			return DataProvider.ExecuteNonReaderAsync(_entityOperations.CreateDelete(
+				entities
+				));
+		}
 	}
 }

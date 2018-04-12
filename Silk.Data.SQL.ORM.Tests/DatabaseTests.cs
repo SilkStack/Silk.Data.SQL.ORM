@@ -48,6 +48,33 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 		}
 
+		[TestMethod]
+		public void DeleteEntities()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<SimplePoco>();
+			var schema = schemaBuilder.Build();
+			var model = schema.GetEntityModel<SimplePoco>();
+			using (var dataProvider = new SQLite3DataProvider(":memory:"))
+			{
+				dataProvider.ExecuteNonReader(CreateTableOperation.Create(model.EntityTable));
+
+				var entities = new[]
+				{
+					new SimplePoco { Data = "Hello" },
+					new SimplePoco { Data = "World" }
+				};
+
+				var database = new EntityDatabase<SimplePoco>(schema, dataProvider);
+
+				database.Insert(entities);
+				database.Delete(entities.Take(1));
+
+				var queriedEntities = database.Query();
+				Assert.AreEqual(1, queriedEntities.Count);
+			}
+		}
+
 		private class SimplePoco
 		{
 			public Guid Id { get; private set; }

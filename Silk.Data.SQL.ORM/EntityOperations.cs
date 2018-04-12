@@ -49,5 +49,15 @@ namespace Silk.Data.SQL.ORM
 		{
 			return SelectOperation.Create<T, TView>(EntityModel, where, having, orderBy, groupBy, offset, limit);
 		}
+
+		public DeleteOperation CreateDelete(IEnumerable<T> entities)
+		{
+			return CreateDelete(entities.ToArray());
+		}
+
+		public DeleteOperation CreateDelete(params T[] entities)
+		{
+			return DeleteOperation.Create<T>(EntityModel, entities);
+		}
 	}
 }
