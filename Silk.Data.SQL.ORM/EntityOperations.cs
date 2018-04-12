@@ -44,5 +44,10 @@ namespace Silk.Data.SQL.ORM
 		{
 			return SelectOperation.Create<T>(EntityModel, where, having, orderBy, groupBy, offset, limit);
 		}
+
+		public SelectOperation<TView> CreateSelect<TView>(Condition where = null, Condition having = null, OrderBy orderBy = null, GroupBy groupBy = null, int? offset = null, int? limit = null) where TView : class
+		{
+			return SelectOperation.Create<T, TView>(EntityModel, where, having, orderBy, groupBy, offset, limit);
+		}
 	}
 }

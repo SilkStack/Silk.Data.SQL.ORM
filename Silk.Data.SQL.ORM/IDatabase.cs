@@ -32,5 +32,11 @@ namespace Silk.Data.SQL.ORM
 			GroupBy groupBy = null, int? offset = null, int? limit = null);
 		Task<ICollection<T>> QueryAsync(Condition where = null, Condition having = null, OrderBy orderBy = null,
 			GroupBy groupBy = null, int? offset = null, int? limit = null);
+		ICollection<TView> Query<TView>(Condition where = null, Condition having = null, OrderBy orderBy = null,
+			GroupBy groupBy = null, int? offset = null, int? limit = null)
+			where TView : class;
+		Task<ICollection<TView>> QueryAsync<TView>(Condition where = null, Condition having = null, OrderBy orderBy = null,
+			GroupBy groupBy = null, int? offset = null, int? limit = null)
+			where TView : class;
 	}
 }

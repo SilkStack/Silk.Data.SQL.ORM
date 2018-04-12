@@ -61,5 +61,19 @@ namespace Silk.Data.SQL.ORM
 				where, having, orderBy, groupBy, offset, limit
 				));
 		}
+
+		public ICollection<TView> Query<TView>(Condition where = null, Condition having = null, OrderBy orderBy = null, GroupBy groupBy = null, int? offset = null, int? limit = null) where TView : class
+		{
+			return DataProvider.Get(_entityOperations.CreateSelect<TView>(
+				where, having, orderBy, groupBy, offset, limit
+				));
+		}
+
+		public Task<ICollection<TView>> QueryAsync<TView>(Condition where = null, Condition having = null, OrderBy orderBy = null, GroupBy groupBy = null, int? offset = null, int? limit = null) where TView : class
+		{
+			return DataProvider.GetAsync(_entityOperations.CreateSelect<TView>(
+				where, having, orderBy, groupBy, offset, limit
+				));
+		}
 	}
 }
