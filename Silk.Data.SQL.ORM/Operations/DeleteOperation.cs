@@ -31,6 +31,9 @@ namespace Silk.Data.SQL.ORM.Operations
 		public static DeleteOperation Create<TEntity>(EntityModel<TEntity> model, params TEntity[] entities)
 			where TEntity : class
 		{
+			if (entities == null || entities.Length == 0)
+				return new DeleteOperation(null);
+
 			var primaryKeyFields = model.Fields.OfType<IValueField>().Where(q => q.Column.IsPrimaryKey)
 				.ToArray();
 			if (primaryKeyFields.Length == 0)
@@ -65,9 +68,14 @@ namespace Silk.Data.SQL.ORM.Operations
 				conditionBuilder.Or(entityConditionBuilder.Build());
 			}
 
+			return Create(model, conditionBuilder.Build());
+		}
+
+		public static DeleteOperation Create(EntityModel model, Condition where = null)
+		{
 			return new DeleteOperation(QueryExpression.Delete(
 				QueryExpression.Table(model.EntityTable.TableName),
-				conditionBuilder.Build().GetExpression()
+				where?.GetExpression()
 				));
 		}
 	}

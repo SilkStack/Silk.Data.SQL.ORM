@@ -29,5 +29,6 @@ namespace Silk.Data.SQL.ORM
 
 		DeleteOperation CreateDelete(IEnumerable<T> entities);
 		DeleteOperation CreateDelete(params T[] entities);
+		DeleteOperation CreateDelete(Condition where);
 	}
 }

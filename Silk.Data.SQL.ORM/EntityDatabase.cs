@@ -89,5 +89,15 @@ namespace Silk.Data.SQL.ORM
 				entities
 				));
 		}
+
+		public void Delete(Condition where)
+		{
+			DataProvider.ExecuteNonReader(_entityOperations.CreateDelete(where));
+		}
+
+		public Task DeleteAsync(Condition where)
+		{
+			return DataProvider.ExecuteNonReaderAsync(_entityOperations.CreateDelete(where));
+		}
 	}
 }

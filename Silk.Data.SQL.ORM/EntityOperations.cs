@@ -59,5 +59,10 @@ namespace Silk.Data.SQL.ORM
 		{
 			return DeleteOperation.Create<T>(EntityModel, entities);
 		}
+
+		public DeleteOperation CreateDelete(Condition where)
+		{
+			return DeleteOperation.Create(EntityModel, where);
+		}
 	}
 }

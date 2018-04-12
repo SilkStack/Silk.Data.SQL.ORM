@@ -11,12 +11,17 @@ namespace Silk.Data.SQL.ORM
 	{
 		public static void ExecuteNonReader(this IDataProvider dataProvider, DataOperation operation)
 		{
-			dataProvider.ExecuteNonQuery(operation.GetQuery());
+			var query = operation.GetQuery();
+			if (query != null)
+				dataProvider.ExecuteNonQuery(query);
 		}
 
 		public static Task ExecuteNonReaderAsync(this IDataProvider dataProvider, DataOperation operation)
 		{
-			return dataProvider.ExecuteNonQueryAsync(operation.GetQuery());
+			var query = operation.GetQuery();
+			if (query != null)
+				return dataProvider.ExecuteNonQueryAsync(operation.GetQuery());
+			return Task.CompletedTask;
 		}
 
 		public static void ExecuteReader<T>(this IDataProvider dataProvider, DataOperationWithResult<T> operation)

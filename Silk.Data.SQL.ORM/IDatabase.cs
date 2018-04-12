@@ -41,5 +41,7 @@ namespace Silk.Data.SQL.ORM
 
 		void Delete(IEnumerable<T> entities);
 		Task DeleteAsync(IEnumerable<T> entities);
+		void Delete(Condition where);
+		Task DeleteAsync(Condition where);
 	}
 }
