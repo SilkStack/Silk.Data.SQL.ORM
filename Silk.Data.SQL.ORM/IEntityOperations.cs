@@ -30,5 +30,10 @@ namespace Silk.Data.SQL.ORM
 		DeleteOperation CreateDelete(IEnumerable<T> entities);
 		DeleteOperation CreateDelete(params T[] entities);
 		DeleteOperation CreateDelete(Condition where);
+
+		UpdateOperation CreateUpdate(IEnumerable<T> entities);
+		UpdateOperation CreateUpdate(params T[] entities);
+		UpdateOperation CreateUpdate<TView>(TView view, Condition condition)
+			where TView : class;
 	}
 }

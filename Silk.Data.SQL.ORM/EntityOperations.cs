@@ -64,5 +64,21 @@ namespace Silk.Data.SQL.ORM
 		{
 			return DeleteOperation.Create(EntityModel, where);
 		}
+
+		public UpdateOperation CreateUpdate(IEnumerable<T> entities)
+		{
+			return CreateUpdate(entities.ToArray());
+		}
+
+		public UpdateOperation CreateUpdate(params T[] entities)
+		{
+			return UpdateOperation.Create<T>(EntityModel, entities);
+		}
+
+		public UpdateOperation CreateUpdate<TView>(TView view, Condition condition)
+			where TView : class
+		{
+			return UpdateOperation.Create(EntityModel, view, condition);
+		}
 	}
 }

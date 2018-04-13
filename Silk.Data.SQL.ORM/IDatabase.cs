@@ -43,5 +43,12 @@ namespace Silk.Data.SQL.ORM
 		Task DeleteAsync(IEnumerable<T> entities);
 		void Delete(Condition where);
 		Task DeleteAsync(Condition where);
+
+		void Update(IEnumerable<T> entities);
+		Task UpdateAsync(IEnumerable<T> entities);
+		void Update<TView>(TView view, Condition where)
+			where TView : class;
+		Task UpdateAsync<TView>(TView view, Condition where)
+			where TView : class;
 	}
 }

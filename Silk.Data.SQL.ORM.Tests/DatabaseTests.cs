@@ -75,6 +75,44 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 		}
 
+		[TestMethod]
+		public void UpdateEntities()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<SimplePoco>();
+			var schema = schemaBuilder.Build();
+			var model = schema.GetEntityModel<SimplePoco>();
+			using (var dataProvider = new SQLite3DataProvider(":memory:"))
+			{
+				dataProvider.ExecuteNonReader(CreateTableOperation.Create(model.EntityTable));
+
+				var entities = new[]
+				{
+					new SimplePoco { Data = "Hello" },
+					new SimplePoco { Data = "World" }
+				};
+
+				var database = new EntityDatabase<SimplePoco>(schema, dataProvider);
+
+				database.Insert(entities);
+
+				var queriedEntities = database.Query().ToArray();
+				queriedEntities[0].Data = "Hello Update";
+				queriedEntities[1].Data = "World Update";
+				database.Update(queriedEntities);
+
+				var updatedQueriedEntities = database.Query();
+				Assert.AreEqual(entities.Length, updatedQueriedEntities.Count);
+				foreach (var entity in entities)
+				{
+					Assert.AreNotEqual(Guid.Empty, entity.Id);
+					var retrievedEntity = updatedQueriedEntities.FirstOrDefault(q => q.Id == entity.Id);
+					Assert.IsNotNull(retrievedEntity);
+					Assert.AreEqual($"{entity.Data} Update", retrievedEntity.Data);
+				}
+			}
+		}
+
 		private class SimplePoco
 		{
 			public Guid Id { get; private set; }

@@ -99,5 +99,27 @@ namespace Silk.Data.SQL.ORM
 		{
 			return DataProvider.ExecuteNonReaderAsync(_entityOperations.CreateDelete(where));
 		}
+
+		public void Update(IEnumerable<T> entities)
+		{
+			DataProvider.ExecuteNonReader(_entityOperations.CreateUpdate(entities));
+		}
+
+		public Task UpdateAsync(IEnumerable<T> entities)
+		{
+			return DataProvider.ExecuteNonReaderAsync(_entityOperations.CreateUpdate(entities));
+		}
+
+		public void Update<TView>(TView view, Condition where)
+			where TView : class
+		{
+			DataProvider.ExecuteNonReader(_entityOperations.CreateUpdate(view, where));
+		}
+
+		public Task UpdateAsync<TView>(TView view, Condition where)
+			where TView : class
+		{
+			return DataProvider.ExecuteNonReaderAsync(_entityOperations.CreateUpdate(view, where));
+		}
 	}
 }
