@@ -70,7 +70,7 @@ namespace Silk.Data.SQL.ORM.Operations
 			var primaryKeyFields = entityModel.Fields.OfType<IValueField>().Where(q => q.Column.IsPrimaryKey)
 				.ToArray();
 			if (primaryKeyFields.Length == 0)
-				throw new InvalidOperationException("Model requires at least 1 primary key field to generate entity DELETE statements.");
+				throw new InvalidOperationException("Model requires at least 1 primary key field to generate entity UPDATE statements.");
 
 			var transformer = new ColumnHelperTransformer(projectionModel);
 			foreach (var pkField in primaryKeyFields)
