@@ -85,7 +85,10 @@ namespace Silk.Data.SQL.ORM.Modelling
 				return;
 			}
 
-			var localColumn = new Column(sqlColumnName, primaryKeyField.Column.SqlDataType);
+			var primaryKeyFieldOptions = _schemaOptions.GetFieldOptions(_pathStack.Reverse().Concat(new[] { primaryKeyField.FieldName }).ToArray());
+			var localColumnName = primaryKeyFieldOptions?.ConfiguredColumnName ?? sqlColumnName;
+			var isPrimaryKey = primaryKeyFieldOptions?.IsPrimaryKey ?? false;
+			var localColumn = new Column(localColumnName, primaryKeyField.Column.SqlDataType, isPrimaryKey: true);
 			_entityColumns.Add(localColumn);
 			_entityFields.Add(field.FieldName,
 				new SingleRelatedObjectField<TData>(field.FieldName, field.CanRead, field.CanWrite, false, null, null, primaryKeyField, localColumn, null)
