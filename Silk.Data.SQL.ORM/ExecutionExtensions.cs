@@ -1,7 +1,5 @@
 ﻿using Silk.Data.SQL.ORM.Operations;
 using Silk.Data.SQL.Providers;
-using Silk.Data.SQL.Queries;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -9,6 +7,28 @@ namespace Silk.Data.SQL.ORM
 {
 	public static class ExecutionExtensions
 	{
+		public static void ExecuteBulk(this IDataProvider dataProvider, BulkOperation bulkOperation)
+		{
+			foreach (var operation in bulkOperation.GetOperations())
+			{
+				using (var queryResult = dataProvider.ExecuteReader(operation.GetQuery()))
+				{
+					operation.ProcessResult(queryResult);
+				}
+			}
+		}
+
+		public static async Task ExecuteBulkAsync(this IDataProvider dataProvider, BulkOperation bulkOperation)
+		{
+			foreach (var operation in bulkOperation.GetOperations())
+			{
+				using (var queryResult = await dataProvider.ExecuteReaderAsync(operation.GetQuery()))
+				{
+					await operation.ProcessResultAsync(queryResult);
+				}
+			}
+		}
+
 		public static void ExecuteNonReader(this IDataProvider dataProvider, DataOperation operation)
 		{
 			var query = operation.GetQuery();
