@@ -44,16 +44,17 @@ namespace Silk.Data.SQL.ORM.Operations
 				_projectionModel.Mapping.PerformMapping(reader, writer);
 				result.Add(writer);
 			}
+			queryResult.NextResult();
 
 			foreach (var manyRelatedObjectField in _projectionModel.Fields.OfType<IManyRelatedObjectField>())
 			{
-				queryResult.NextResult();
 				if (!queryResult.HasRows)
 					continue;
 
 				reader = new QueryResultReader(manyRelatedObjectField.RelatedObjectModel, queryResult);
 				var mapper = manyRelatedObjectField.CreateObjectMapper($"__IDENT__{manyRelatedObjectField.FieldName}");
 				mapper.PerformMapping(queryResult, reader, result);
+				queryResult.NextResult();
 			}
 
 			_result = result.Select(q => q.ReadField<T>(_selfPath, 0)).ToArray();
@@ -70,16 +71,17 @@ namespace Silk.Data.SQL.ORM.Operations
 				_projectionModel.Mapping.PerformMapping(reader, writer);
 				result.Add(writer);
 			}
+			await queryResult.NextResultAsync();
 
 			foreach (var manyRelatedObjectField in _projectionModel.Fields.OfType<IManyRelatedObjectField>())
 			{
-				await queryResult.NextResultAsync();
 				if (!queryResult.HasRows)
 					continue;
 
 				reader = new QueryResultReader(manyRelatedObjectField.RelatedObjectModel, queryResult);
 				var mapper = manyRelatedObjectField.CreateObjectMapper($"__IDENT__{manyRelatedObjectField.FieldName}");
 				await mapper.PerformMappingAsync(queryResult, reader, result);
+				await queryResult.NextResultAsync();
 			}
 
 			_result = result.Select(q => q.ReadField<T>(_selfPath, 0)).ToArray();
