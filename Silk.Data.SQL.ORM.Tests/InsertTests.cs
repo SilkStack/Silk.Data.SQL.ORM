@@ -652,9 +652,19 @@ namespace Silk.Data.SQL.ORM.Tests
 
 					Assert.AreEqual(fullInstance.Id, queryResult.GetInt32(0));
 					Assert.AreEqual(fullInstance.LocalData, queryResult.GetString(1));
-					//Assert.AreEqual(relatedObject.Id, queryResult.GetInt32(2));
+					Assert.AreEqual(relatedObjects[0].Id, queryResult.GetInt32(3));
+					Assert.AreEqual(relatedObjects[0].RelatedData, queryResult.GetString(5));
+
+					Assert.IsTrue(queryResult.Read());
+
+					Assert.AreEqual(fullInstance.Id, queryResult.GetInt32(0));
+					Assert.AreEqual(fullInstance.LocalData, queryResult.GetString(1));
+					Assert.AreEqual(relatedObjects[1].Id, queryResult.GetInt32(3));
+					Assert.AreEqual(relatedObjects[1].RelatedData, queryResult.GetString(5));
 				}
-				provider.ExecuteNonQuery(QueryExpression.Delete(QueryExpression.Table(nameof(PocoWithSingleRelationship))));
+				provider.ExecuteNonQuery(QueryExpression.Delete(QueryExpression.Table(nameof(PocoWithManyRelationships))));
+				provider.ExecuteNonQuery(QueryExpression.Delete(QueryExpression.Table(nameof(RelationshipPoco))));
+				provider.ExecuteNonQuery(QueryExpression.Delete(QueryExpression.Table("PocoWithManyRelationships_RelationshipsToRelationshipPoco")));
 			}
 		}
 

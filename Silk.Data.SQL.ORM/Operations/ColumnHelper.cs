@@ -124,6 +124,51 @@ namespace Silk.Data.SQL.ORM.Operations
 		}
 	}
 
+	internal abstract class MultipleRelationshipReader : ColumnHelper
+	{
+		protected readonly ColumnHelper _valueReader;
+		protected readonly string[] _path;
+
+		public IManyRelatedObjectField Field { get; }
+
+		public MultipleRelationshipReader(IManyRelatedObjectField field, ColumnHelper valueReader, string[] path) :
+			base(null)
+		{
+			Field = field;
+			_valueReader = valueReader;
+			_path = path;
+		}
+
+		public abstract IEnumerable<QueryExpression> GetForeignKeyExpressions(IModelReadWriter modelReadWriter);
+
+		public override QueryExpression GetColumnExpression(IModelReadWriter modelReadWriter)
+		{
+			throw new NotImplementedException();
+		}
+	}
+
+	internal class MultipleRelationshipReader<TEnum,T> : MultipleRelationshipReader
+		where TEnum : IEnumerable<T>
+	{
+		public MultipleRelationshipReader(IManyRelatedObjectField field, ColumnHelper valueReader, string[] path) :
+			base(field, valueReader, path)
+		{
+		}
+
+		public override IEnumerable<QueryExpression> GetForeignKeyExpressions(IModelReadWriter modelReadWriter)
+		{
+			var enumerable = modelReadWriter.ReadField<TEnum>(_path, 0);
+			if (enumerable != null)
+			{
+				foreach (var item in enumerable)
+				{
+					var readWriter = new ObjectReadWriter(item, TypeModel.GetModelOf<T>(), typeof(T));
+					yield return _valueReader.GetColumnExpression(readWriter);
+				}
+			}
+		}
+	}
+
 	internal class ColumnHelperTransformer : IModelTransformer
 	{
 		private readonly ProjectionModel _projectionModel;
@@ -213,6 +258,21 @@ namespace Silk.Data.SQL.ORM.Operations
 						}
 					}
 					break;
+				case IManyRelatedObjectField manyRelatedObjectField:
+					{
+						var primaryKeyVisitor = new ManyObjectFieldVisitor(_fieldStack);
+						manyRelatedObjectField.RelatedPrimaryKey.Transform(primaryKeyVisitor);
+						var remotePrimaryKeyReader = primaryKeyVisitor.ColumnValueReader;
+						if (remotePrimaryKeyReader != null)
+						{
+							var type = typeof(MultipleRelationshipReader<,>)
+								.MakeGenericType(manyRelatedObjectField.FieldType, manyRelatedObjectField.ElementType);
+							Current.Add(
+								Activator.CreateInstance(type, manyRelatedObjectField, remotePrimaryKeyReader, _fieldStack.Reverse().ToArray()) as MultipleRelationshipReader
+								);
+						}
+					}
+					break;
 			}
 
 			_fieldStack.Pop();
@@ -221,6 +281,44 @@ namespace Silk.Data.SQL.ORM.Operations
 		public void VisitModel<TField>(IModel<TField> model) where TField : IField
 		{
 			throw new System.NotImplementedException();
+		}
+
+		private class ManyObjectFieldVisitor : IModelTransformer
+		{
+			private readonly Stack<string> _fieldStack;
+
+			public ColumnHelper ColumnValueReader { get; private set; }
+
+			public ManyObjectFieldVisitor(Stack<string> fieldStack)
+			{
+				_fieldStack = fieldStack;
+			}
+
+			public void VisitField<T>(IField<T> field)
+			{
+				switch (field)
+				{
+					case IProjectedValueField projectedValueField:
+						{
+							var column = projectedValueField.Column;
+							var fieldPath = projectedValueField.Path;
+							ColumnValueReader = new ColumnValueReader<T>(projectedValueField.Column.ColumnName, fieldPath);
+						}
+						break;
+					case IValueField valueField:
+						{
+							var column = valueField.Column;
+							var fieldPath = new[] { valueField.FieldName };
+							ColumnValueReader = new ColumnValueReader<T>(valueField.Column.ColumnName, fieldPath);
+						}
+						break;
+				}
+			}
+
+			public void VisitModel<TField>(IModel<TField> model) where TField : IField
+			{
+				throw new NotImplementedException();
+			}
 		}
 
 		private class SingleObjectFieldVisitor : IModelTransformer

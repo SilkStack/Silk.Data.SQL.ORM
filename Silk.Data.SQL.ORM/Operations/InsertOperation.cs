@@ -98,6 +98,8 @@ namespace Silk.Data.SQL.ORM.Operations
 			var columns = new List<ColumnHelper>();
 			foreach (var projectionField in projectionModel.Fields)
 			{
+				if (projectionField is IManyRelatedObjectField)
+					continue;
 				projectionField.Transform(transformer);
 			}
 			columns.AddRange(transformer.Current.Where(q => q != null));
@@ -113,6 +115,7 @@ namespace Silk.Data.SQL.ORM.Operations
 			var manyRelationshipFields = projectionModel.Fields.OfType<IManyRelatedObjectField>().ToArray();
 
 			var bulkInsertRows = new List<QueryExpression[]>();
+
 			foreach (var obj in projections)
 			{
 				var readWriter = new ObjectReadWriter(obj, typeModel, typeof(TProjection));
@@ -131,13 +134,13 @@ namespace Silk.Data.SQL.ORM.Operations
 
 				if (mapBackPrimaryKey)
 				{
-					individualInsertExpressions.Add(new IndividualInsert(new CompositeQueryExpression(
+					individualInsertExpressions.Add(new IndividualInsert(new CompositeQueryExpression(new QueryExpression[] {
 						QueryExpression.Insert(entityModel.EntityTable.TableName, columns.Select(q => q.ColumnName).ToArray(), row),
 						QueryExpression.Select(
 							new[] {
 								QueryExpression.Alias(QueryExpression.LastInsertIdFunction(), primaryKeyField.Column.ColumnName)
 							}
-						)), readWriter, serverGeneratedPrimaryKey));
+						) }.Concat(CreateManyInserts(QueryExpression.LastInsertIdFunction(), transformer, readWriter, manyRelationshipFields)).ToArray()), readWriter, serverGeneratedPrimaryKey));
 				}
 				else
 				{
@@ -148,6 +151,36 @@ namespace Silk.Data.SQL.ORM.Operations
 			return new InsertOperation(
 				bulkInsertRows.Count > 0 ? QueryExpression.Insert(entityModel.EntityTable.TableName, columns.Select(q => q.ColumnName).ToArray(), bulkInsertRows.ToArray()) : null,
 				individualInsertExpressions);
+		}
+
+		private static IEnumerable<QueryExpression> CreateManyInserts(
+			QueryExpression localPrimaryKey, ColumnHelperTransformer transformer,
+			IModelReadWriter modelReadWriter, IManyRelatedObjectField[] manyRelatedObjectFields)
+		{
+			transformer.Current.Clear();
+			foreach (var field in manyRelatedObjectFields)
+				field.Transform(transformer);
+			var helpers = transformer.Current.OfType<MultipleRelationshipReader>();
+
+			foreach (var helper in helpers)
+			{
+				var rows = new List<QueryExpression[]>();
+
+				foreach (var foreignKeyExpression in helper.GetForeignKeyExpressions(modelReadWriter))
+				{
+					rows.Add(new QueryExpression[]
+					{
+						localPrimaryKey,
+						foreignKeyExpression
+					});
+				}
+
+				yield return QueryExpression.Insert(
+					helper.Field.JunctionTable.TableName,
+					new[] { helper.Field.LocalJunctionColumn.ColumnName, helper.Field.RelatedJunctionColumn.ColumnName },
+					rows.ToArray()
+					);
+			}
 		}
 
 		private class IndividualInsert
