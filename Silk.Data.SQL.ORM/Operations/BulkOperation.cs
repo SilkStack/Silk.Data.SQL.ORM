@@ -17,10 +17,12 @@ namespace Silk.Data.SQL.ORM.Operations
 			var currentOperations = new List<DataOperation>();
 			foreach (var operation in operations)
 			{
-				if (operation.CanBeBatched)
+				if (!operation.CanBeBatched)
 				{
-					currentOperations.Add(operation);
+					bulkOperations.Add(new BulkDataOperation(currentOperations.ToArray()));
+					currentOperations.Clear();
 				}
+				currentOperations.Add(operation);
 			}
 
 			if (currentOperations.Count > 0)
