@@ -18,6 +18,30 @@ namespace Silk.Data.SQL.ORM
 			}
 		}
 
+		public static T ExecuteBulk<T>(this Providers.IQueryProvider dataProvider, BulkOperationWithResult<T> bulkOperation)
+		{
+			foreach (var operation in bulkOperation.GetOperations())
+			{
+				using (var queryResult = dataProvider.ExecuteReader(operation.GetQuery()))
+				{
+					operation.ProcessResult(queryResult);
+				}
+			}
+			return bulkOperation.Result;
+		}
+
+		public static (T1,T2) ExecuteBulk<T1,T2>(this Providers.IQueryProvider dataProvider, BulkOperationWithResult<T1, T2> bulkOperation)
+		{
+			foreach (var operation in bulkOperation.GetOperations())
+			{
+				using (var queryResult = dataProvider.ExecuteReader(operation.GetQuery()))
+				{
+					operation.ProcessResult(queryResult);
+				}
+			}
+			return bulkOperation.Result;
+		}
+
 		public static async Task ExecuteBulkAsync(this Providers.IQueryProvider dataProvider, BulkOperation bulkOperation)
 		{
 			foreach (var operation in bulkOperation.GetOperations())
@@ -27,6 +51,30 @@ namespace Silk.Data.SQL.ORM
 					await operation.ProcessResultAsync(queryResult);
 				}
 			}
+		}
+
+		public static async Task<T> ExecuteBulkAsync<T>(this Providers.IQueryProvider dataProvider, BulkOperationWithResult<T> bulkOperation)
+		{
+			foreach (var operation in bulkOperation.GetOperations())
+			{
+				using (var queryResult = await dataProvider.ExecuteReaderAsync(operation.GetQuery()))
+				{
+					await operation.ProcessResultAsync(queryResult);
+				}
+			}
+			return bulkOperation.Result;
+		}
+
+		public static async Task<(T1, T2)> ExecuteBulkAsync<T1, T2>(this Providers.IQueryProvider dataProvider, BulkOperationWithResult<T1, T2> bulkOperation)
+		{
+			foreach (var operation in bulkOperation.GetOperations())
+			{
+				using (var queryResult = await dataProvider.ExecuteReaderAsync(operation.GetQuery()))
+				{
+					await operation.ProcessResultAsync(queryResult);
+				}
+			}
+			return bulkOperation.Result;
 		}
 
 		public static void ExecuteNonReader(this Providers.IQueryProvider dataProvider, DataOperation operation)

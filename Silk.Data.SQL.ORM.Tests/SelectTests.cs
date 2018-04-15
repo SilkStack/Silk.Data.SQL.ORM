@@ -12,6 +12,31 @@ namespace Silk.Data.SQL.ORM.Tests
 	public class SelectTests
 	{
 		[TestMethod]
+		public void SelectBulk()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<FlatPoco>();
+			var schema = schemaBuilder.Build();
+			var entityOperations = new EntityOperations<FlatPoco>(schema);
+
+			using (var provider = new SQLite3DataProvider(":memory:"))
+			{
+				provider.ExecuteNonReader(CreateTableOperation.Create(schema.GetEntityModel<FlatPoco>().EntityTable));
+
+				var operation = new OperationBuilder()
+					.Add(entityOperations.CreateSelect())
+					.Add(entityOperations.CreateInsert(new FlatPoco { Data = "Hello" }))
+					.Add(entityOperations.CreateSelect())
+					.Build();
+				var (result1, result2) = provider.ExecuteBulk(operation);
+				Assert.IsNotNull(result1);
+				Assert.IsNotNull(result2);
+				Assert.AreEqual(0, result1.Count);
+				Assert.AreEqual(1, result2.Count);
+			}
+		}
+
+		[TestMethod]
 		public void GenerateSelectFlatPocoSQL()
 		{
 			var schemaBuilder = new SchemaBuilder();

@@ -63,9 +63,9 @@ namespace Silk.Data.SQL.ORM.Operations
 				).ToArray(), _resultOperation, dataOperation);
 		}
 
-		public DataOperationWithResult<TResult> Build()
+		public BulkOperationWithResult<TResult> Build()
 		{
-			return null;
+			return new BulkOperationWithResult<TResult>(DataOperations, _resultOperation);
 		}
 	}
 
@@ -91,9 +91,9 @@ namespace Silk.Data.SQL.ORM.Operations
 				);
 		}
 
-		public DataOperationWithResult<(TResult1,TResult2)> Build()
+		public BulkOperationWithResult<TResult1,TResult2> Build()
 		{
-			return null;
+			return new BulkOperationWithResult<TResult1, TResult2>(DataOperations, _resultOperation1, _resultOperation2);
 		}
 	}
 }
