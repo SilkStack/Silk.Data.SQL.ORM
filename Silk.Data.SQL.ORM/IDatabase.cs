@@ -39,6 +39,9 @@ namespace Silk.Data.SQL.ORM
 			GroupBy groupBy = null, int? offset = null, int? limit = null)
 			where TView : class;
 
+		int Count(Condition where = null, Condition having = null, GroupBy groupBy = null);
+		Task<int> CountAsync(Condition where = null, Condition having = null, GroupBy groupBy = null);
+
 		void Delete(IEnumerable<T> entities);
 		Task DeleteAsync(IEnumerable<T> entities);
 		void Delete(Condition where);

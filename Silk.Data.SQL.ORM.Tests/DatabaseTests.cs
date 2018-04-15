@@ -11,6 +11,36 @@ namespace Silk.Data.SQL.ORM.Tests
 	public class DatabaseTests
 	{
 		[TestMethod]
+		public void Count()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<SimplePoco>();
+			var schema = schemaBuilder.Build();
+			var model = schema.GetEntityModel<SimplePoco>();
+			using (var dataProvider = new SQLite3DataProvider(":memory:"))
+			{
+				dataProvider.ExecuteNonReader(CreateTableOperation.Create(model.EntityTable));
+
+				var entities = new[]
+				{
+					new SimplePoco { Data = "Hello" },
+					new SimplePoco { Data = "World" }
+				};
+
+				var database = new EntityDatabase<SimplePoco>(schema, dataProvider);
+
+				database.Insert(entities);
+
+				var count = database.Count(
+					where: database
+						.Condition(q => q.Id == entities[0].Id || q.Id == entities[1].Id)
+						.Build()
+					);
+				Assert.AreEqual(entities.Length, count);
+			}
+		}
+
+		[TestMethod]
 		public void InsertAndSelect()
 		{
 			var schemaBuilder = new SchemaBuilder();

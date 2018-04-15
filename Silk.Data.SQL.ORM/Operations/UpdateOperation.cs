@@ -58,6 +58,8 @@ namespace Silk.Data.SQL.ORM.Operations
 			var columns = new List<ColumnHelper>();
 			foreach (var projectionField in projectionModel.Fields)
 			{
+				if (projectionField is IManyRelatedObjectField)
+					continue;
 				projectionField.Transform(transformer);
 			}
 			columns.AddRange(transformer.Current.Where(q => q != null));
@@ -125,6 +127,42 @@ namespace Silk.Data.SQL.ORM.Operations
 					.Zip(row, (column,val) => QueryExpression.Assign(QueryExpression.Column(column.ColumnName), val))
 					.ToArray()
 				);
+		}
+
+		private static IEnumerable<QueryExpression> CreateManyInserts(
+			QueryExpression localPrimaryKey, ColumnHelperTransformer transformer,
+			IModelReadWriter modelReadWriter, IManyRelatedObjectField[] manyRelatedObjectFields)
+		{
+			transformer.Current.Clear();
+			foreach (var field in manyRelatedObjectFields)
+				field.Transform(transformer);
+			var helpers = transformer.Current.OfType<MultipleRelationshipReader>();
+
+			foreach (var helper in helpers)
+			{
+				var rows = new List<QueryExpression[]>();
+
+				foreach (var foreignKeyExpression in helper.GetForeignKeyExpressions(modelReadWriter))
+				{
+					rows.Add(new QueryExpression[]
+					{
+						localPrimaryKey,
+						foreignKeyExpression
+					});
+				}
+
+				yield return new CompositeQueryExpression(
+					QueryExpression.Delete(
+						QueryExpression.Table(helper.Field.JunctionTable.TableName),
+						QueryExpression.Compare(QueryExpression.Column(helper.Field.LocalJunctionColumn.ColumnName), ComparisonOperator.AreEqual, localPrimaryKey)
+						),
+					QueryExpression.Insert(
+						helper.Field.JunctionTable.TableName,
+						new[] { helper.Field.LocalJunctionColumn.ColumnName, helper.Field.RelatedJunctionColumn.ColumnName },
+						rows.ToArray()
+						)
+					);
+			}
 		}
 	}
 }

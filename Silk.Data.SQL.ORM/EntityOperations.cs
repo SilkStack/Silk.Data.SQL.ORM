@@ -80,5 +80,10 @@ namespace Silk.Data.SQL.ORM
 		{
 			return UpdateOperation.Create(EntityModel, view, condition);
 		}
+
+		public SelectOperation<int> CreateCount(Condition where = null, Condition having = null, GroupBy groupBy = null)
+		{
+			return SelectOperation.CreateCount(EntityModel, where, having, groupBy);
+		}
 	}
 }

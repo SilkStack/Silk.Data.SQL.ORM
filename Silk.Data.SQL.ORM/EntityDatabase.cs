@@ -121,5 +121,15 @@ namespace Silk.Data.SQL.ORM
 		{
 			return DataProvider.ExecuteNonReaderAsync(_entityOperations.CreateUpdate(view, where));
 		}
+
+		public int Count(Condition where = null, Condition having = null, GroupBy groupBy = null)
+		{
+			return DataProvider.GetSingle(_entityOperations.CreateCount(where, having, groupBy));
+		}
+
+		public Task<int> CountAsync(Condition where = null, Condition having = null, GroupBy groupBy = null)
+		{
+			return DataProvider.GetSingleAsync(_entityOperations.CreateCount(where, having, groupBy));
+		}
 	}
 }
