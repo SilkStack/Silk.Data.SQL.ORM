@@ -28,7 +28,7 @@ namespace Silk.Data.SQL.ORM.Tests
 
 			var insert = InsertOperation.Create<SimplePoco>(model, data);
 			Assert.IsTrue(insert.CanBeBatched);
-			var insertExpression = insert.GetQuery() as InsertExpression;
+			var insertExpression = insert.GetQuery();
 			Assert.IsNotNull(insertExpression);
 			var query = new TestQueryConverter().ConvertToQuery(insertExpression);
 			var sql = TestQueryConverter.CleanSql(query.SqlText);
@@ -102,7 +102,7 @@ namespace Silk.Data.SQL.ORM.Tests
 
 			var insert = InsertOperation.Create<SimplePoco, SimplePocoDataView>(model, data);
 			Assert.IsTrue(insert.CanBeBatched);
-			var insertExpression = insert.GetQuery() as InsertExpression;
+			var insertExpression = insert.GetQuery();
 			Assert.IsNotNull(insertExpression);
 			var query = new TestQueryConverter().ConvertToQuery(insertExpression);
 			var sql = TestQueryConverter.CleanSql(query.SqlText);
@@ -663,7 +663,48 @@ namespace Silk.Data.SQL.ORM.Tests
 					Assert.AreEqual(relatedObjects[1].RelatedData, queryResult.GetString(5));
 				}
 				provider.ExecuteNonQuery(QueryExpression.Delete(QueryExpression.Table(nameof(PocoWithManyRelationships))));
-				provider.ExecuteNonQuery(QueryExpression.Delete(QueryExpression.Table(nameof(RelationshipPoco))));
+				provider.ExecuteNonQuery(QueryExpression.Delete(QueryExpression.Table("PocoWithManyRelationships_RelationshipsToRelationshipPoco")));
+
+				fullInstance = new PocoWithManyRelationships(5)
+				{
+					LocalData = "Hello",
+					Relationships = { relatedObjects[0], relatedObjects[1] }
+				};
+				insert = InsertOperation.Create<PocoWithManyRelationships>(mainModel, fullInstance);
+				using (var queryResult = provider.ExecuteReader(insert.GetQuery()))
+					insert.ProcessResult(queryResult);
+				using (var queryResult = provider.ExecuteReader(QueryExpression.Select(
+					new[] { QueryExpression.All() },
+					from: QueryExpression.Table(nameof(PocoWithManyRelationships)),
+					joins: new[]
+					{
+						QueryExpression.Join(
+							QueryExpression.Column(nameof(PocoWithManyRelationships.Id), QueryExpression.Table(nameof(PocoWithManyRelationships))),
+							QueryExpression.Column("LocalKey", QueryExpression.Table("PocoWithManyRelationships_RelationshipsToRelationshipPoco"))
+						),
+						QueryExpression.Join(
+							QueryExpression.Column("RemoteKey", QueryExpression.Table("PocoWithManyRelationships_RelationshipsToRelationshipPoco")),
+							QueryExpression.Column(nameof(RelationshipPoco.Id), QueryExpression.Table(nameof(RelationshipPoco)))
+						)
+					}
+					)))
+				{
+					Assert.IsTrue(queryResult.HasRows);
+					Assert.IsTrue(queryResult.Read());
+
+					Assert.AreEqual(fullInstance.Id, queryResult.GetInt32(0));
+					Assert.AreEqual(fullInstance.LocalData, queryResult.GetString(1));
+					Assert.AreEqual(relatedObjects[0].Id, queryResult.GetInt32(3));
+					Assert.AreEqual(relatedObjects[0].RelatedData, queryResult.GetString(5));
+
+					Assert.IsTrue(queryResult.Read());
+
+					Assert.AreEqual(fullInstance.Id, queryResult.GetInt32(0));
+					Assert.AreEqual(fullInstance.LocalData, queryResult.GetString(1));
+					Assert.AreEqual(relatedObjects[1].Id, queryResult.GetInt32(3));
+					Assert.AreEqual(relatedObjects[1].RelatedData, queryResult.GetString(5));
+				}
+				provider.ExecuteNonQuery(QueryExpression.Delete(QueryExpression.Table(nameof(PocoWithManyRelationships))));
 				provider.ExecuteNonQuery(QueryExpression.Delete(QueryExpression.Table("PocoWithManyRelationships_RelationshipsToRelationshipPoco")));
 			}
 		}
@@ -872,6 +913,9 @@ namespace Silk.Data.SQL.ORM.Tests
 			public string LocalData { get; set; }
 			public List<RelationshipPoco> Relationships { get; set; }
 				= new List<RelationshipPoco>();
+
+			public PocoWithManyRelationships() { }
+			public PocoWithManyRelationships(int id) { Id = id; }
 		}
 	}
 }

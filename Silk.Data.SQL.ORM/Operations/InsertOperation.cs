@@ -16,28 +16,36 @@ namespace Silk.Data.SQL.ORM.Operations
 
 		private readonly QueryExpression _bulkInsertExpression;
 		private readonly List<IndividualInsert> _individualInserts;
+		private readonly List<QueryExpression> _additionalQueries;
 
 		public override bool CanBeBatched => !GeneratesValuesServerSide;
 
 		private InsertOperation(QueryExpression bulkInsertExpression,
-			List<IndividualInsert> individualInserts)
+			List<IndividualInsert> individualInserts,
+			List<QueryExpression> additionalQueries)
 		{
 			GeneratesValuesServerSide = individualInserts.Count > 0;
 			_bulkInsertExpression = bulkInsertExpression;
 			_individualInserts = individualInserts;
+			_additionalQueries = additionalQueries;
 		}
 
 		public override QueryExpression GetQuery()
 		{
 			if (_individualInserts == null || _individualInserts.Count < 1)
-				return _bulkInsertExpression;
+				return new CompositeQueryExpression(
+					new[] { _bulkInsertExpression }.Concat(_additionalQueries).ToArray()
+					);
 
 			if (_bulkInsertExpression != null)
 				return new CompositeQueryExpression(
-					_individualInserts.Select(q => q.Query).Concat(new[] { _bulkInsertExpression }).ToArray()
+					_individualInserts.Select(q => q.Query)
+						.Concat(new[] { _bulkInsertExpression })
+						.Concat(_additionalQueries)
+						.ToArray()
 					);
 			return new CompositeQueryExpression(
-				_individualInserts.Select(q => q.Query).ToArray()
+				_individualInserts.Select(q => q.Query).Concat(_additionalQueries).ToArray()
 				);
 		}
 
@@ -109,13 +117,17 @@ namespace Silk.Data.SQL.ORM.Operations
 				primaryKeyField.Transform(transformer);
 				columns.AddRange(transformer.Current.Where(q => q != null));
 			}
+			var primaryKeyIndex = -1;
 			if (primaryKeyField != null)
+			{
+				primaryKeyIndex = columns.IndexOf(columns.First(q => q.ColumnName == primaryKeyField.Column.ColumnName));
 				serverGeneratedPrimaryKey = columns.OfType<ServerGeneratedValue>().FirstOrDefault(q => q.ColumnName == primaryKeyField.Column.ColumnName);
+			}
 
 			var manyRelationshipFields = projectionModel.Fields.OfType<IManyRelatedObjectField>().ToArray();
 
 			var bulkInsertRows = new List<QueryExpression[]>();
-
+			var additionalQueries = new List<QueryExpression>();
 			foreach (var obj in projections)
 			{
 				var readWriter = new ObjectReadWriter(obj, typeModel, typeof(TProjection));
@@ -144,13 +156,16 @@ namespace Silk.Data.SQL.ORM.Operations
 				}
 				else
 				{
+					if (primaryKeyIndex > -1)
+						additionalQueries.AddRange(CreateManyInserts(row[primaryKeyIndex], transformer, readWriter, manyRelationshipFields));
 					bulkInsertRows.Add(row);
 				}
 			}
 
 			return new InsertOperation(
 				bulkInsertRows.Count > 0 ? QueryExpression.Insert(entityModel.EntityTable.TableName, columns.Select(q => q.ColumnName).ToArray(), bulkInsertRows.ToArray()) : null,
-				individualInsertExpressions);
+				individualInsertExpressions,
+				additionalQueries);
 		}
 
 		private static IEnumerable<QueryExpression> CreateManyInserts(
