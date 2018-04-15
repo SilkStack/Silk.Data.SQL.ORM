@@ -64,7 +64,8 @@ namespace Silk.Data.SQL.ORM.Tests
 				var retrievedEntities = database.Query(
 					where: database
 						.Condition(q => q.Id == entities[0].Id || q.Id == entities[1].Id)
-						.Build()
+						.Build(),
+					orderBy: database.OrderByDescending(q => q.Id).Build()
 					);
 
 				Assert.AreEqual(entities.Length, retrievedEntities.Count);

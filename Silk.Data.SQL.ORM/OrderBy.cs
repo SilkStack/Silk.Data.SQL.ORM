@@ -2,11 +2,8 @@
 
 namespace Silk.Data.SQL.ORM
 {
-	public class OrderBy
+	public abstract class OrderBy
 	{
-		public QueryExpression[] GetExpressions()
-		{
-			return null;
-		}
+		public abstract QueryExpression GetExpression();
 	}
 }

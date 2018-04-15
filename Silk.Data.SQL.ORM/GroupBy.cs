@@ -2,11 +2,8 @@
 
 namespace Silk.Data.SQL.ORM
 {
-	public class GroupBy
+	public abstract class GroupBy
 	{
-		public QueryExpression[] GetExpressions()
-		{
-			return null;
-		}
+		public abstract QueryExpression GetExpression();
 	}
 }

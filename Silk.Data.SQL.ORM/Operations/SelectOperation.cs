@@ -154,7 +154,7 @@ namespace Silk.Data.SQL.ORM.Operations
 	{
 		public static SelectOperation<TEntity> Create<TEntity>(EntityModel<TEntity> model,
 			Condition where = null, Condition having = null,
-			OrderBy orderBy = null, GroupBy groupBy = null,
+			OrderBy[] orderBy = null, GroupBy[] groupBy = null,
 			int? offset = null, int? limit = null)
 		{
 			return Create<TEntity>(model, model, where, having, orderBy, groupBy, offset, limit);
@@ -162,14 +162,14 @@ namespace Silk.Data.SQL.ORM.Operations
 
 		public static SelectOperation<TProjection> Create<TEntity, TProjection>(EntityModel<TEntity> model,
 			Condition where = null, Condition having = null,
-			OrderBy orderBy = null, GroupBy groupBy = null,
+			OrderBy[] orderBy = null, GroupBy[] groupBy = null,
 			int? offset = null, int? limit = null)
 		{
 			return Create<TProjection>(model.GetProjection<TProjection>(), model, where, having, orderBy, groupBy, offset, limit);
 		}
 
 		public static SelectOperation<int> CreateCount<TEntity>(EntityModel<TEntity> model,
-			Condition where = null, Condition having = null, GroupBy groupBy = null)
+			Condition where = null, Condition having = null, GroupBy[] groupBy = null)
 		{
 			var query = CreateQuery(new[] { QueryExpression.CountFunction() }, model,
 				where, having, null, groupBy);
@@ -178,7 +178,7 @@ namespace Silk.Data.SQL.ORM.Operations
 
 		private static SelectOperation<TProjection> Create<TProjection>(ProjectionModel projectionModel, EntityModel entityModel,
 			Condition where = null, Condition having = null,
-			OrderBy orderBy = null, GroupBy groupBy = null,
+			OrderBy[] orderBy = null, GroupBy[] groupBy = null,
 			int? offset = null, int? limit = null)
 		{
 			var query = CreateQuery(projectionModel, entityModel, where, having, orderBy, groupBy, offset, limit);
@@ -187,7 +187,7 @@ namespace Silk.Data.SQL.ORM.Operations
 
 		private static QueryExpression CreateQuery(ProjectionModel projectionModel, EntityModel entityModel,
 			Condition where = null, Condition having = null,
-			OrderBy orderBy = null, GroupBy groupBy = null,
+			OrderBy[] orderBy = null, GroupBy[] groupBy = null,
 			int? offset = null, int? limit = null)
 		{
 			var from = QueryExpression.Table(entityModel.EntityTable.TableName);
@@ -198,8 +198,8 @@ namespace Silk.Data.SQL.ORM.Operations
 			var havingExpr = having?.GetExpression();
 			var offsetExpr = offset == null ? null : QueryExpression.Value(offset.Value);
 			var limitExpr = limit == null ? null : QueryExpression.Value(limit.Value);
-			var orderByExprs = orderBy?.GetExpressions();
-			var groupByExprs = groupBy?.GetExpressions();
+			var orderByExprs = orderBy?.Select(q => q.GetExpression()).ToArray();
+			var groupByExprs = groupBy?.Select(q => q.GetExpression()).ToArray();
 
 			AddJoins(entityModel, projectedFieldsExprs, from, joinExprs);
 			AddFields(projectionModel, projectedFieldsExprs, from, joinExprs);
@@ -242,7 +242,7 @@ namespace Silk.Data.SQL.ORM.Operations
 
 		private static QueryExpression CreateQuery(QueryExpression[] projection, EntityModel entityModel,
 			Condition where = null, Condition having = null,
-			OrderBy orderBy = null, GroupBy groupBy = null,
+			OrderBy[] orderBy = null, GroupBy[] groupBy = null,
 			int? offset = null, int? limit = null)
 		{
 			var from = QueryExpression.Table(entityModel.EntityTable.TableName);
@@ -253,8 +253,8 @@ namespace Silk.Data.SQL.ORM.Operations
 			var havingExpr = having?.GetExpression();
 			var offsetExpr = offset == null ? null : QueryExpression.Value(offset.Value);
 			var limitExpr = limit == null ? null : QueryExpression.Value(limit.Value);
-			var orderByExprs = orderBy?.GetExpressions();
-			var groupByExprs = groupBy?.GetExpressions();
+			var orderByExprs = orderBy?.Select(q => q.GetExpression()).ToArray();
+			var groupByExprs = groupBy?.Select(q => q.GetExpression()).ToArray();
 
 			AddJoins(entityModel, projectedFieldsExprs, from, joinExprs);
 
