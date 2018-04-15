@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard1.3</TargetFramework>
-    <Version>0.0.1</Version>
+    <Version>0.0.2</Version>
     <Authors>John Carruthers</Authors>
     <Company />
     <Product>SilkStack</Product>
@@ -11,12 +11,6 @@
 Part of the SilkStack project.</Description>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Compile Remove="vold\**" />
-    <EmbeddedResource Remove="vold\**" />
-    <None Remove="vold\**" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Silk.Data.Modelling" Version="0.1.4" />
