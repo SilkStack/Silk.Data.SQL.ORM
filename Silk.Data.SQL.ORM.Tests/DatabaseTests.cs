@@ -144,10 +144,38 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 		}
 
+		[TestMethod]
+		public void QueryComputedValue()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<PocoWithComputedValue>();
+			var schema = schemaBuilder.Build();
+			var model = schema.GetEntityModel<PocoWithComputedValue>();
+			using (var dataProvider = new SQLite3DataProvider(":memory:"))
+			{
+				dataProvider.ExecuteNonReader(CreateTableOperation.Create(model.EntityTable));
+
+				var database = new EntityDatabase<PocoWithComputedValue>(schema, dataProvider);
+				database.Insert(new[] { new PocoWithComputedValue { Value = 1 } });
+
+				var entity = database.Query(
+					where: database.Condition(q => q.ComputedValue == 2).Build()
+					).FirstOrDefault();
+				Assert.IsNotNull(entity);
+				Assert.AreEqual(2, entity.ComputedValue);
+			}
+		}
+
 		private class SimplePoco
 		{
 			public Guid Id { get; private set; }
 			public string Data { get; set; }
+		}
+
+		private class PocoWithComputedValue
+		{
+			public int Value { get; set; }
+			public int ComputedValue => Value + 1;
 		}
 	}
 }

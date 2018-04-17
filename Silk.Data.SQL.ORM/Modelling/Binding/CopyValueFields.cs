@@ -1,7 +1,4 @@
 ﻿using Silk.Data.Modelling.Mapping;
-using Silk.Data.Modelling.Mapping.Binding;
-using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Modelling.Binding
@@ -73,7 +70,7 @@ namespace Silk.Data.SQL.ORM.Modelling.Binding
 						builder
 							.Bind(toField)
 							.From(fromField)
-							.MapUsing<CopyBinding>();
+							.MapUsing<ConditionalCopyBinding>();
 					}
 				}
 			}
