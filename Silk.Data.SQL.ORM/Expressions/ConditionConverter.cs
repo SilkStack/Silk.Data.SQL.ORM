@@ -131,6 +131,14 @@ namespace Silk.Data.SQL.ORM.Expressions
 				return node;
 			}
 
+			protected override Expression VisitMethodCall(MethodCallExpression node)
+			{
+				//  todo: add support for QueryExpression dbfunctions here?
+				var value = System.Linq.Expressions.Expression.Lambda(node).Compile().DynamicInvoke();
+				_queryExpressionStack.Push(QueryExpression.Value(value));
+				return node;
+			}
+
 			private static ComparisonOperator GetComparisonOperator(ExpressionType linqExpressionType)
 			{
 				switch (linqExpressionType)

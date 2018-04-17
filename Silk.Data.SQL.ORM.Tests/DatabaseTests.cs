@@ -156,13 +156,35 @@ namespace Silk.Data.SQL.ORM.Tests
 				dataProvider.ExecuteNonReader(CreateTableOperation.Create(model.EntityTable));
 
 				var database = new EntityDatabase<PocoWithComputedValue>(schema, dataProvider);
-				database.Insert(new[] { new PocoWithComputedValue { Value = 1 } });
+				database.Insert(new[] { new PocoWithComputedValue { Value = "Hello" } });
 
 				var entity = database.Query(
-					where: database.Condition(q => q.ComputedValue == 2).Build()
+					where: database.Condition(q => q.ComputedValue == "hello").Build()
 					).FirstOrDefault();
 				Assert.IsNotNull(entity);
-				Assert.AreEqual(2, entity.ComputedValue);
+				Assert.AreEqual("hello", entity.ComputedValue);
+			}
+		}
+
+		[TestMethod]
+		public void QueryWithInlineMethod()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<PocoWithComputedValue>();
+			var schema = schemaBuilder.Build();
+			var model = schema.GetEntityModel<PocoWithComputedValue>();
+			using (var dataProvider = new SQLite3DataProvider(":memory:"))
+			{
+				dataProvider.ExecuteNonReader(CreateTableOperation.Create(model.EntityTable));
+
+				var database = new EntityDatabase<PocoWithComputedValue>(schema, dataProvider);
+				database.Insert(new[] { new PocoWithComputedValue { Value = "Hello" } });
+
+				var entity = database.Query(
+					where: database.Condition(q => q.ComputedValue == "HeLLo".ToLowerInvariant()).Build()
+					).FirstOrDefault();
+				Assert.IsNotNull(entity);
+				Assert.AreEqual("hello", entity.ComputedValue);
 			}
 		}
 
@@ -174,8 +196,8 @@ namespace Silk.Data.SQL.ORM.Tests
 
 		private class PocoWithComputedValue
 		{
-			public int Value { get; set; }
-			public int ComputedValue => Value + 1;
+			public string Value { get; set; }
+			public string ComputedValue => Value.ToLowerInvariant();
 		}
 	}
 }
