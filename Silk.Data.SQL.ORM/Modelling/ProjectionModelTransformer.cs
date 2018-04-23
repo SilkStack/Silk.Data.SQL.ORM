@@ -105,12 +105,16 @@ namespace Silk.Data.SQL.ORM.Modelling
 			if (fields.Count < 1)
 				return;
 
+			var sourceField = _toModel.GetField(_path.Reverse().ToArray());
+			var fieldType = sourceField?.FieldType ?? typeof(T);
+
 			_entityFields.Add(
-				new EmbeddedObjectField<T>(
+				Activator.CreateInstance(
+					typeof(EmbeddedObjectField<>).MakeGenericType(fieldType),
 					embeddedObjectField.FieldName, embeddedObjectField.CanRead, embeddedObjectField.CanWrite,
 					embeddedObjectField.IsEnumerable, embeddedObjectField.ElementType, fields,
 					embeddedObjectField.NullCheckColumn
-				));
+				) as IEntityField);
 		}
 
 		public void VisitField<T>(IField<T> field)

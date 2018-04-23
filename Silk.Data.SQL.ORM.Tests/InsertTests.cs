@@ -723,6 +723,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					nameof(PocoWithSingleRelationship),
 					QueryExpression.DefineColumn(nameof(PocoWithSingleRelationship.Id), SqlDataType.Int(), isAutoIncrement: true, isPrimaryKey: true),
 					QueryExpression.DefineColumn(nameof(PocoWithSingleRelationship.LocalData), SqlDataType.Text(), isNullable: true),
+					QueryExpression.DefineColumn(nameof(PocoWithSingleRelationship.Relationship), SqlDataType.Int()),
 					QueryExpression.DefineColumn(nameof(PocoWithSingleRelationship.Relationship) + "_" + nameof(RelationshipPoco.Id), SqlDataType.Int()),
 					QueryExpression.DefineColumn(nameof(PocoWithSingleRelationship.Relationship) + "_" + nameof(RelationshipPoco.RelatedData), SqlDataType.Text(), isNullable: true)
 					));
@@ -748,8 +749,9 @@ namespace Silk.Data.SQL.ORM.Tests
 
 					Assert.AreEqual(fullInstance.Id, queryResult.GetInt32(0));
 					Assert.AreEqual(fullInstance.LocalData, queryResult.GetString(1));
-					Assert.AreEqual(fullInstance.Relationship.Id, queryResult.GetInt32(2));
-					Assert.AreEqual(fullInstance.Relationship.RelatedData, queryResult.GetString(3));
+					Assert.AreEqual(1, queryResult.GetInt32(2));
+					Assert.AreEqual(fullInstance.Relationship.Id, queryResult.GetInt32(3));
+					Assert.AreEqual(fullInstance.Relationship.RelatedData, queryResult.GetString(4));
 				}
 				provider.ExecuteNonQuery(QueryExpression.Delete(QueryExpression.Table(nameof(PocoWithSingleRelationship))));
 
@@ -774,8 +776,9 @@ namespace Silk.Data.SQL.ORM.Tests
 
 					Assert.AreEqual(projectionWithFullRelationship.Id, queryResult.GetInt32(0));
 					Assert.AreEqual(projectionWithFullRelationship.LocalData, queryResult.GetString(1));
-					Assert.AreEqual(projectionWithFullRelationship.Relationship.Id, queryResult.GetInt32(2));
-					Assert.AreEqual(fullInstance.Relationship.RelatedData, queryResult.GetString(3));
+					Assert.AreEqual(1, queryResult.GetInt32(2));
+					Assert.AreEqual(projectionWithFullRelationship.Relationship.Id, queryResult.GetInt32(3));
+					Assert.AreEqual(fullInstance.Relationship.RelatedData, queryResult.GetString(4));
 				}
 				provider.ExecuteNonQuery(QueryExpression.Delete(QueryExpression.Table(nameof(PocoWithSingleRelationship))));
 
@@ -797,8 +800,9 @@ namespace Silk.Data.SQL.ORM.Tests
 
 					Assert.AreEqual(projectionWithProjectedRelationship.Id, queryResult.GetInt32(0));
 					Assert.AreEqual(projectionWithProjectedRelationship.LocalData, queryResult.GetString(1));
-					Assert.AreEqual(projectionWithProjectedRelationship.Relationship.Id, queryResult.GetInt32(2));
-					Assert.IsTrue(queryResult.IsDBNull(3));
+					Assert.AreEqual(1, queryResult.GetInt32(2));
+					Assert.AreEqual(projectionWithProjectedRelationship.Relationship.Id, queryResult.GetInt32(3));
+					Assert.IsTrue(queryResult.IsDBNull(4));
 				}
 				provider.ExecuteNonQuery(QueryExpression.Delete(QueryExpression.Table(nameof(PocoWithSingleRelationship))));
 
@@ -820,8 +824,9 @@ namespace Silk.Data.SQL.ORM.Tests
 
 					Assert.AreEqual(projectionWithFlatRelationship.Id, queryResult.GetInt32(0));
 					Assert.AreEqual(projectionWithFlatRelationship.LocalData, queryResult.GetString(1));
-					Assert.AreEqual(projectionWithFlatRelationship.RelationshipId, queryResult.GetInt32(2));
-					Assert.IsTrue(queryResult.IsDBNull(3));
+					Assert.AreEqual(1, queryResult.GetInt32(2));
+					Assert.AreEqual(projectionWithFlatRelationship.RelationshipId, queryResult.GetInt32(3));
+					Assert.IsTrue(queryResult.IsDBNull(4));
 				}
 				provider.ExecuteNonQuery(QueryExpression.Delete(QueryExpression.Table(nameof(PocoWithSingleRelationship))));
 			}

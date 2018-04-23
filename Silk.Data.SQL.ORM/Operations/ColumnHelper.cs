@@ -19,6 +19,7 @@ namespace Silk.Data.SQL.ORM.Operations
 		}
 
 		public abstract QueryExpression GetColumnExpression(IModelReadWriter modelReadWriter);
+		public abstract bool IsDefaultValue(IModelReadWriter modelReadWriter);
 	}
 
 	internal class ColumnValueReader<T> : ColumnHelper
@@ -35,6 +36,11 @@ namespace Silk.Data.SQL.ORM.Operations
 			return QueryExpression.Value(
 				modelReadWriter.ReadField<T>(_fieldPath, 0)
 				);
+		}
+
+		public override bool IsDefaultValue(IModelReadWriter modelReadWriter)
+		{
+			return EqualityComparer<T>.Default.Equals(modelReadWriter.ReadField<T>(_fieldPath, 0), default(T));
 		}
 	}
 
@@ -61,6 +67,11 @@ namespace Silk.Data.SQL.ORM.Operations
 			var newId = Guid.NewGuid();
 			modelReadWriter.WriteField<Guid>(_fieldPath, 0, newId);
 			return QueryExpression.Value(newId);
+		}
+
+		public override bool IsDefaultValue(IModelReadWriter modelReadWriter)
+		{
+			return false;
 		}
 	}
 
@@ -96,6 +107,11 @@ namespace Silk.Data.SQL.ORM.Operations
 			return QueryExpression.Value(null);
 		}
 
+		public override bool IsDefaultValue(IModelReadWriter modelReadWriter)
+		{
+			return false;
+		}
+
 		public override bool HasValue(IModelReadWriter modelReadWriter)
 		{
 			var value = modelReadWriter.ReadField<T>(_fieldPath, 0);
@@ -124,6 +140,50 @@ namespace Silk.Data.SQL.ORM.Operations
 		}
 	}
 
+	internal class EmbeddedObjectReader<T> : ColumnHelper
+	{
+		private readonly string[] _fieldPath;
+		private readonly ColumnHelper[] _embeddedColumns;
+
+		public EmbeddedObjectReader(string columnName, string[] fieldPath, ColumnHelper[] embeddedColumns) : base(columnName)
+		{
+			_fieldPath = fieldPath;
+			_embeddedColumns = embeddedColumns;
+		}
+
+		public override QueryExpression GetColumnExpression(IModelReadWriter modelReadWriter)
+		{
+			if (PathOnModel(modelReadWriter.Model))
+			{
+				var value = modelReadWriter.ReadField<T>(_fieldPath, 0);
+				if (EqualityComparer<T>.Default.Equals(value, default(T)))
+					return QueryExpression.Value(0);
+				return QueryExpression.Value(1);
+			}
+			if (_embeddedColumns.All(q => q.IsDefaultValue(modelReadWriter)))
+				return QueryExpression.Value(0);
+			return QueryExpression.Value(1);
+		}
+
+		public override bool IsDefaultValue(IModelReadWriter modelReadWriter)
+		{
+			return EqualityComparer<T>.Default.Equals(modelReadWriter.ReadField<T>(_fieldPath, 0), default(T));
+		}
+
+		private bool PathOnModel(IModel model)
+		{
+			var fields = model.Fields;
+			foreach (var segment in _fieldPath)
+			{
+				var field = fields.FirstOrDefault(q => q.FieldName == segment);
+				if (field == null)
+					return false;
+				fields = field.FieldTypeModel.Fields;
+			}
+			return true;
+		}
+	}
+
 	internal abstract class MultipleRelationshipReader : ColumnHelper
 	{
 		protected readonly ColumnHelper _valueReader;
@@ -142,6 +202,11 @@ namespace Silk.Data.SQL.ORM.Operations
 		public abstract IEnumerable<QueryExpression> GetForeignKeyExpressions(IModelReadWriter modelReadWriter);
 
 		public override QueryExpression GetColumnExpression(IModelReadWriter modelReadWriter)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override bool IsDefaultValue(IModelReadWriter modelReadWriter)
 		{
 			throw new NotImplementedException();
 		}
@@ -252,10 +317,16 @@ namespace Silk.Data.SQL.ORM.Operations
 					break;
 				case IEmbeddedObjectField embeddedObjectField:
 					{
+						var fieldCount = Current.Count;
 						foreach (var embeddedField in embeddedObjectField.EmbeddedFields)
 						{
 							embeddedField.Transform(this);
 						}
+
+						var embeddedFields = Current.Skip(fieldCount).ToArray();
+						var fieldPath = _fieldStack.Reverse().ToArray();
+						Current.Add(new EmbeddedObjectReader<T>(embeddedObjectField.NullCheckColumn.ColumnName, fieldPath,
+							embeddedFields));
 					}
 					break;
 				case IManyRelatedObjectField manyRelatedObjectField:
