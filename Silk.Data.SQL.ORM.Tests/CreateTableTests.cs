@@ -24,6 +24,20 @@ namespace Silk.Data.SQL.ORM.Tests
 			Assert.IsFalse(relationshipColumn.IsServerGenerated);
 		}
 
+		[TestMethod]
+		public void IndexSingleRelationshipKey()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<Poco>()
+				.For(x => x.Deep.Id).Index();
+			schemaBuilder.DefineEntity<EmbeddedPoco>();
+			var schema = schemaBuilder.Build();
+
+			var relationshipColumn = schema.GetEntityModel<Poco>().EntityTable.Columns
+				.First(q => q.ColumnName == nameof(Poco.Deep));
+			Assert.IsNotNull(relationshipColumn.Index);
+		}
+
 		private class Poco
 		{
 			public Guid Id { get; private set; }
