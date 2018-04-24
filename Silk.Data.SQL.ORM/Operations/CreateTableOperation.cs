@@ -39,7 +39,10 @@ namespace Silk.Data.SQL.ORM.Operations
 			if (!table.Columns.Any(q => q.Index != null))
 				return new CreateTableOperation(createTableExpression);
 
-			var queries = new List<QueryExpression>();
+			var queries = new List<QueryExpression>()
+			{
+				createTableExpression
+			};
 
 			foreach (var column in table.Columns.Where(q => q.Index != null && string.IsNullOrEmpty(q.Index.Name)))
 			{

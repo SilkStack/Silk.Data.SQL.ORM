@@ -1,5 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Silk.Data.SQL.ORM.Operations;
 using Silk.Data.SQL.ORM.Schema;
+using Silk.Data.SQL.SQLite3;
 using System;
 using System.Linq;
 
@@ -22,6 +24,11 @@ namespace Silk.Data.SQL.ORM.Tests
 			Assert.IsFalse(relationshipColumn.IsPrimaryKey);
 			Assert.IsFalse(relationshipColumn.IsClientGenerated);
 			Assert.IsFalse(relationshipColumn.IsServerGenerated);
+
+			using (var provider = new SQLite3DataProvider(":memory:"))
+			{
+				provider.ExecuteNonReader(CreateTableOperation.Create(schema.GetEntityModel<Poco>().EntityTable));
+			}
 		}
 
 		[TestMethod]
@@ -36,6 +43,11 @@ namespace Silk.Data.SQL.ORM.Tests
 			var relationshipColumn = schema.GetEntityModel<Poco>().EntityTable.Columns
 				.First(q => q.ColumnName == nameof(Poco.Deep));
 			Assert.IsNotNull(relationshipColumn.Index);
+
+			using (var provider = new SQLite3DataProvider(":memory:"))
+			{
+				provider.ExecuteNonReader(CreateTableOperation.Create(schema.GetEntityModel<Poco>().EntityTable));
+			}
 		}
 
 		private class Poco
