@@ -4,6 +4,7 @@ using Silk.Data.SQL.Queries;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace Silk.Data.SQL.ORM.Operations
 {
@@ -82,6 +83,9 @@ namespace Silk.Data.SQL.ORM.Operations
 
 			if (dataType == null)
 				return default(T);
+
+			if (dataType.GetTypeInfo().IsEnum)
+				dataType = typeof(int);
 
 			if (!_typeReaders.TryGetValue(dataType, out var readFunc))
 				return default(T);

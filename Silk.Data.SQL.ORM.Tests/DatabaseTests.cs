@@ -11,6 +11,38 @@ namespace Silk.Data.SQL.ORM.Tests
 	public class DatabaseTests
 	{
 		[TestMethod]
+		public void SelectEnum()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<PocoWithEnum>();
+			var schema = schemaBuilder.Build();
+			var model = schema.GetEntityModel<PocoWithEnum>();
+			using (var dataProvider = new SQLite3DataProvider(":memory:"))
+			{
+				dataProvider.ExecuteNonReader(CreateTableOperation.Create(model.EntityTable));
+
+				var entities = new[]
+				{
+					new PocoWithEnum { SimpleEnum = SimpleEnum.One },
+					new PocoWithEnum { SimpleEnum = SimpleEnum.Two },
+					new PocoWithEnum { SimpleEnum = SimpleEnum.Three }
+				};
+
+				var database = new EntityDatabase<PocoWithEnum>(schema, dataProvider);
+
+				database.Insert(entities);
+
+				var queriedEntities = database.Query(
+					where: database.Condition(q => q.SimpleEnum != SimpleEnum.Two).Build(),
+					orderBy: database.OrderByDescending(q => q.SimpleEnum).Build()
+					);
+				Assert.AreEqual(2, queriedEntities.Count);
+				Assert.AreEqual(SimpleEnum.Three, queriedEntities.First().SimpleEnum);
+				Assert.AreEqual(SimpleEnum.One, queriedEntities.Skip(1).First().SimpleEnum);
+			}
+		}
+
+		[TestMethod]
 		public void Count()
 		{
 			var schemaBuilder = new SchemaBuilder();
@@ -198,6 +230,18 @@ namespace Silk.Data.SQL.ORM.Tests
 		{
 			public string Value { get; set; }
 			public string ComputedValue => Value.ToLowerInvariant();
+		}
+
+		private enum SimpleEnum
+		{
+			One = 1,
+			Two = 2,
+			Three = 3
+		}
+
+		private class PocoWithEnum
+		{
+			public SimpleEnum SimpleEnum { get; set; }
 		}
 	}
 }
