@@ -10,6 +10,8 @@ namespace Silk.Data.SQL.ORM.Schema
 		private readonly List<EntitySchemaOptions> _entityTypes
 			= new List<EntitySchemaOptions>();
 
+		protected virtual IEnumerable<Table> GetNonEntityTables(EntityModelCollection entityModels) => null;
+
 		public EntitySchemaOptions<T> DefineEntity<T>()
 		{
 			var options = new EntitySchemaOptions<T>(this);
@@ -56,6 +58,10 @@ namespace Silk.Data.SQL.ORM.Schema
 			{
 				modelWithBuildFinalizer.FinalizeBuiltModel(schema, tables);
 			}
+
+			var additionalTables = GetNonEntityTables(entityModelCollection);
+			if (additionalTables != null)
+				tables.AddRange(additionalTables);
 
 			schema.SetTables(tables);
 			return schema;
