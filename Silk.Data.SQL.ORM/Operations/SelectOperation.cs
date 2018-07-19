@@ -171,7 +171,7 @@ namespace Silk.Data.SQL.ORM.Operations
 		public static SelectOperation<int> CreateCount<TEntity>(EntityModel<TEntity> model,
 			Condition where = null, Condition having = null, GroupBy[] groupBy = null)
 		{
-			var query = CreateQuery(new[] { QueryExpression.CountFunction() }, model,
+			var query = CreateQuery(new[] { QueryExpression.CountFunction(QueryExpression.All()) }, model,
 				where, having, null, groupBy);
 			return new SelectOperation<int>(query, null);
 		}
