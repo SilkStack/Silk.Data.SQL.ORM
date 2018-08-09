@@ -1,8 +1,8 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard1.3</TargetFramework>
-    <Version>0.0.9-alpha3</Version>
+    <Version>0.0.9-alpha4</Version>
     <Authors>John Carruthers</Authors>
     <Company />
     <Product>SilkStack</Product>
