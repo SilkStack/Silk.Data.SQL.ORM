@@ -13,7 +13,7 @@ namespace Silk.Data.SQL.ORM.Modelling.Binding
 
 		public void CreateBindings(SourceModel fromModel, TargetModel toModel, MappingBuilder builder)
 		{
-			var fromProjectionModel = fromModel.FromModel as ProjectionModel;
+			var fromProjectionModel = fromModel.FromModel as IProjectionModel;
 			if (fromProjectionModel == null)
 				return;
 
@@ -66,7 +66,7 @@ namespace Silk.Data.SQL.ORM.Modelling.Binding
 			}
 		}
 
-		private IEntityField GetField(ProjectionModel model, string[] path)
+		private IEntityField GetField(IProjectionModel model, string[] path)
 		{
 			IEntityField ret = null;
 			var fields = model.Fields;
@@ -95,15 +95,22 @@ namespace Silk.Data.SQL.ORM.Modelling.Binding
 	public class CreateEmbeddedInstanceIfPresent<T> : AssignmentBinding
 	{
 		private readonly CreateInstanceIfNull<T> _impl;
+		private readonly string[] _queryField;
 
 		public CreateEmbeddedInstanceIfPresent(ConstructorInfo constructorInfo, string[] toPath) : base(toPath)
 		{
 			_impl = new CreateInstanceIfNull<T>(constructorInfo, toPath);
 		}
 
+		public CreateEmbeddedInstanceIfPresent(ConstructorInfo constructorInfo, string[] toPath, string queryField)
+			: this(constructorInfo, toPath)
+		{
+			_queryField = new[] { queryField };
+		}
+
 		public override void AssignBindingValue(IModelReadWriter from, IModelReadWriter to)
 		{
-			var nullCheckObj = from.ReadField<bool>(ToPath, 0);
+			var nullCheckObj = from.ReadField<bool>(_queryField ?? ToPath, 0);
 			if (nullCheckObj)
 				_impl.PerformBinding(from, to);
 		}

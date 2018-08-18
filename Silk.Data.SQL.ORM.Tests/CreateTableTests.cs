@@ -25,7 +25,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			Assert.IsFalse(relationshipColumn.IsClientGenerated);
 			Assert.IsFalse(relationshipColumn.IsServerGenerated);
 
-			using (var provider = new SQLite3DataProvider(":memory:"))
+			using (var provider = new SQLite3DataProvider(TestHelper.ConnectionString))
 			{
 				provider.ExecuteNonReader(CreateTableOperation.Create(schema.GetEntityModel<Poco>().EntityTable));
 			}
@@ -44,7 +44,7 @@ namespace Silk.Data.SQL.ORM.Tests
 				.First(q => q.ColumnName == nameof(Poco.Deep));
 			Assert.IsNotNull(relationshipColumn.Index);
 
-			using (var provider = new SQLite3DataProvider(":memory:"))
+			using (var provider = new SQLite3DataProvider(TestHelper.ConnectionString))
 			{
 				provider.ExecuteNonReader(CreateTableOperation.Create(schema.GetEntityModel<Poco>().EntityTable));
 			}

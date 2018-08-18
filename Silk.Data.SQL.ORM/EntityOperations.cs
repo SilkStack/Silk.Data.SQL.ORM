@@ -1,5 +1,6 @@
 ﻿using Silk.Data.SQL.ORM.Modelling;
 using Silk.Data.SQL.ORM.Operations;
+using Silk.Data.SQL.ORM.Schema;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,9 +13,12 @@ namespace Silk.Data.SQL.ORM
 	{
 		public EntityModel<T> EntityModel { get; }
 
+		private readonly Schema.Schema _schema;
+
 		public EntityOperations(Schema.Schema schema)
 		{
 			EntityModel = schema.GetEntityModel<T>();
+			_schema = schema;
 
 			if (EntityModel == null)
 				throw new InvalidOperationException($"Knowledge of entity type {typeof(T).FullName} not present in provided schema.");
@@ -42,12 +46,12 @@ namespace Silk.Data.SQL.ORM
 
 		public SelectOperation<T> CreateSelect(Condition where = null, Condition having = null, OrderBy[] orderBy = null, GroupBy[] groupBy = null, int? offset = null, int? limit = null)
 		{
-			return SelectOperation.Create<T>(EntityModel, where, having, orderBy, groupBy, offset, limit);
+			return SelectOperation.Create<T>(_schema, where, having, orderBy, groupBy, offset, limit);
 		}
 
 		public SelectOperation<TView> CreateSelect<TView>(Condition where = null, Condition having = null, OrderBy[] orderBy = null, GroupBy[] groupBy = null, int? offset = null, int? limit = null) where TView : class
 		{
-			return SelectOperation.Create<T, TView>(EntityModel, where, having, orderBy, groupBy, offset, limit);
+			return SelectOperation.Create<T, TView>(_schema, where, having, orderBy, groupBy, offset, limit);
 		}
 
 		public DeleteOperation CreateDelete(IEnumerable<T> entities)
@@ -83,7 +87,7 @@ namespace Silk.Data.SQL.ORM
 
 		public SelectOperation<int> CreateCount(Condition where = null, Condition having = null, GroupBy[] groupBy = null)
 		{
-			return SelectOperation.CreateCount(EntityModel, where, having, groupBy);
+			return SelectOperation.CreateCount<T>(_schema, where, having, groupBy);
 		}
 	}
 }

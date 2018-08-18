@@ -9,7 +9,7 @@ using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Modelling
 {
-	public class ProjectionModelTransformer : IModelTransformer
+	public class ProjectionModelTransformer<TView> : IModelTransformer
 	{
 		private readonly static IMappingConvention[] _projectionConventions = new IMappingConvention[]
 		{
@@ -158,9 +158,9 @@ namespace Silk.Data.SQL.ORM.Modelling
 			_mapping = mappingBuilder.BuildMapping();
 		}
 
-		public ProjectionModel GetProjectionModel()
+		public IProjectionModel GetProjectionModel()
 		{
-			return new ProjectionModel(_entityFields.ToArray(), _entityModel.EntityTable, _mapping);
+			return new ProjectionModel<TView>(_entityFields.ToArray(), _entityModel.EntityTable, _mapping);
 		}
 
 		private class ProjectedValueField<T> : FieldBase<T>, IProjectedValueField
@@ -174,6 +174,11 @@ namespace Silk.Data.SQL.ORM.Modelling
 			{
 				Path = path;
 				Column = column;
+			}
+
+			public Data.Modelling.Mapping.Binding.Binding CreateCopyBinding(string columnAlias, string[] writePath)
+			{
+				return new CopyBinding<T>(new[] { columnAlias }, writePath);
 			}
 		}
 	}

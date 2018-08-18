@@ -52,7 +52,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			var schema = schemaBuilder.Build();
 			var model = schema.GetEntityModel<SimplePoco>();
 
-			using (var provider = new SQLite3DataProvider(":memory:"))
+			using (var provider = new SQLite3DataProvider(TestHelper.ConnectionString))
 			{
 				provider.ExecuteNonQuery(QueryExpression.CreateTable(
 					"SimplePoco",
@@ -122,7 +122,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			var schema = schemaBuilder.Build();
 			var model = schema.GetEntityModel<SimplePoco>();
 
-			using (var provider = new SQLite3DataProvider(":memory:"))
+			using (var provider = new SQLite3DataProvider(TestHelper.ConnectionString))
 			{
 				provider.ExecuteNonQuery(QueryExpression.CreateTable(
 					"SimplePoco",
@@ -169,7 +169,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			Assert.IsTrue(insert.CanBeBatched);
 			var query = insert.GetQuery();
 
-			using (var provider = new SQLite3DataProvider(":memory:"))
+			using (var provider = new SQLite3DataProvider(TestHelper.ConnectionString))
 			{
 				provider.ExecuteNonQuery(QueryExpression.CreateTable(
 					"PocoWithGuidPK",
@@ -205,7 +205,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			Assert.IsTrue(insert.CanBeBatched);
 			var query = insert.GetQuery();
 
-			using (var provider = new SQLite3DataProvider(":memory:"))
+			using (var provider = new SQLite3DataProvider(TestHelper.ConnectionString))
 			{
 				provider.ExecuteNonQuery(QueryExpression.CreateTable(
 					"PocoWithGuidPK",
@@ -240,7 +240,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			Assert.IsTrue(insert.CanBeBatched);
 			var query = insert.GetQuery();
 
-			using (var provider = new SQLite3DataProvider(":memory:"))
+			using (var provider = new SQLite3DataProvider(TestHelper.ConnectionString))
 			{
 				provider.ExecuteNonQuery(QueryExpression.CreateTable(
 					"PocoWithGuidPK",
@@ -279,7 +279,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			var query = insert.GetQuery();
 			var builtQuery = new TestQueryConverter().ConvertToQuery(query);
 
-			using (var provider = new SQLite3DataProvider(":memory:"))
+			using (var provider = new SQLite3DataProvider(TestHelper.ConnectionString))
 			{
 				provider.ExecuteNonQuery(QueryExpression.CreateTable(
 					"PocoWithIntPK",
@@ -327,7 +327,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			var query = insert.GetQuery();
 			var builtQuery = new TestQueryConverter().ConvertToQuery(query);
 
-			using (var provider = new SQLite3DataProvider(":memory:"))
+			using (var provider = new SQLite3DataProvider(TestHelper.ConnectionString))
 			{
 				provider.ExecuteNonQuery(QueryExpression.CreateTable(
 					"PocoWithIntPK",
@@ -376,7 +376,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			var query = insert.GetQuery();
 			var builtQuery = new TestQueryConverter().ConvertToQuery(query);
 
-			using (var provider = new SQLite3DataProvider(":memory:"))
+			using (var provider = new SQLite3DataProvider(TestHelper.ConnectionString))
 			{
 				provider.ExecuteNonQuery(QueryExpression.CreateTable(
 					"PocoWithIntPK",
@@ -427,7 +427,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			var query = insert.GetQuery();
 			var builtQuery = new TestQueryConverter().ConvertToQuery(query);
 
-			using (var provider = new SQLite3DataProvider(":memory:"))
+			using (var provider = new SQLite3DataProvider(TestHelper.ConnectionString))
 			{
 				provider.ExecuteNonQuery(QueryExpression.CreateTable(
 					"PocoWithIntPK",
@@ -464,7 +464,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			var relationshipModel = schema.GetEntityModel<RelationshipPoco>();
 			var mainModel = schema.GetEntityModel<PocoWithSingleRelationship>();
 
-			using (var provider = new SQLite3DataProvider(":memory:"))
+			using (var provider = new SQLite3DataProvider(TestHelper.ConnectionString))
 			{
 				provider.ExecuteNonQuery(QueryExpression.CreateTable(
 					nameof(PocoWithSingleRelationship),
@@ -591,7 +591,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			var relationshipModel = schema.GetEntityModel<RelationshipPoco>();
 			var mainModel = schema.GetEntityModel<PocoWithManyRelationships>();
 
-			using (var provider = new SQLite3DataProvider(":memory:"))
+			using (var provider = new SQLite3DataProvider(TestHelper.ConnectionString))
 			{
 				provider.ExecuteNonQuery(QueryExpression.CreateTable(
 					nameof(PocoWithManyRelationships),
@@ -717,7 +717,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			var schema = schemaBuilder.Build();
 			var mainModel = schema.GetEntityModel<PocoWithSingleRelationship>();
 
-			using (var provider = new SQLite3DataProvider(":memory:"))
+			using (var provider = new SQLite3DataProvider(TestHelper.ConnectionString))
 			{
 				provider.ExecuteNonQuery(QueryExpression.CreateTable(
 					nameof(PocoWithSingleRelationship),

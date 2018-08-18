@@ -19,7 +19,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			var schema = schemaBuilder.Build();
 			var entityOperations = new EntityOperations<FlatPoco>(schema);
 
-			using (var provider = new SQLite3DataProvider(":memory:"))
+			using (var provider = new SQLite3DataProvider(TestHelper.ConnectionString))
 			{
 				provider.ExecuteNonReader(CreateTableOperation.Create(schema.GetEntityModel<FlatPoco>().EntityTable));
 
@@ -42,9 +42,8 @@ namespace Silk.Data.SQL.ORM.Tests
 			var schemaBuilder = new SchemaBuilder();
 			schemaBuilder.DefineEntity<FlatPoco>();
 			var schema = schemaBuilder.Build();
-			var model = schema.GetEntityModel<FlatPoco>();
 
-			var select = SelectOperation.Create<FlatPoco>(model);
+			var select = SelectOperation.Create<FlatPoco>(schema);
 			var sql = TestQueryConverter.CleanSql(
 				new TestQueryConverter().ConvertToQuery(select.GetQuery()).SqlText
 				);
@@ -55,7 +54,7 @@ FROM [FlatPoco];", sql);
 		[TestMethod]
 		public void QuerySelectFlatPoco()
 		{
-			using (var sqlProvider = new SQLite3DataProvider(":memory:"))
+			using (var sqlProvider = new SQLite3DataProvider(TestHelper.ConnectionString))
 			{
 				sqlProvider.ExecuteNonQuery(QueryExpression.CreateTable(
 					"FlatPoco",
@@ -72,9 +71,8 @@ FROM [FlatPoco];", sql);
 				var schemaBuilder = new SchemaBuilder();
 				schemaBuilder.DefineEntity<FlatPoco>();
 				var schema = schemaBuilder.Build();
-				var model = schema.GetEntityModel<FlatPoco>();
 
-				var select = SelectOperation.Create<FlatPoco>(model);
+				var select = SelectOperation.Create<FlatPoco>(schema);
 				using (var queryResult = sqlProvider.ExecuteReader(select.GetQuery()))
 				{
 					select.ProcessResult(queryResult);
@@ -95,9 +93,8 @@ FROM [FlatPoco];", sql);
 			schemaBuilder.DefineEntity<PocoWithSingleRelationship>();
 			schemaBuilder.DefineEntity<FlatPoco>();
 			var schema = schemaBuilder.Build();
-			var model = schema.GetEntityModel<PocoWithSingleRelationship>();
 
-			var select = SelectOperation.Create<PocoWithSingleRelationship>(model);
+			var select = SelectOperation.Create<PocoWithSingleRelationship>(schema);
 			var sql = TestQueryConverter.CleanSql(
 				new TestQueryConverter().ConvertToQuery(select.GetQuery()).SqlText
 				);
@@ -109,7 +106,7 @@ LEFT OUTER JOIN [FlatPoco] AS [Data] ON [PocoWithSingleRelationship].[Data] = [D
 		[TestMethod]
 		public void QuerySelectPocoWithSingleRelationship()
 		{
-			using (var sqlProvider = new SQLite3DataProvider(":memory:"))
+			using (var sqlProvider = new SQLite3DataProvider(TestHelper.ConnectionString))
 			{
 				sqlProvider.ExecuteNonQuery(QueryExpression.CreateTable(
 					"FlatPoco",
@@ -140,9 +137,8 @@ LEFT OUTER JOIN [FlatPoco] AS [Data] ON [PocoWithSingleRelationship].[Data] = [D
 				schemaBuilder.DefineEntity<FlatPoco>();
 				schemaBuilder.DefineEntity<PocoWithSingleRelationship>();
 				var schema = schemaBuilder.Build();
-				var model = schema.GetEntityModel<PocoWithSingleRelationship>();
 
-				var select = SelectOperation.Create<PocoWithSingleRelationship>(model);
+				var select = SelectOperation.Create<PocoWithSingleRelationship>(schema);
 				using (var queryResult = sqlProvider.ExecuteReader(select.GetQuery()))
 				{
 					select.ProcessResult(queryResult);
@@ -164,9 +160,8 @@ LEFT OUTER JOIN [FlatPoco] AS [Data] ON [PocoWithSingleRelationship].[Data] = [D
 			schemaBuilder.DefineEntity<ClassWithEmbeddedPoco>();
 			schemaBuilder.DefineEntity<FlatPoco>();
 			var schema = schemaBuilder.Build();
-			var model = schema.GetEntityModel<ClassWithEmbeddedPoco>();
 
-			var select = SelectOperation.Create<ClassWithEmbeddedPoco>(model);
+			var select = SelectOperation.Create<ClassWithEmbeddedPoco>(schema);
 			var sql = TestQueryConverter.CleanSql(
 				new TestQueryConverter().ConvertToQuery(select.GetQuery()).SqlText
 				);
@@ -178,7 +173,7 @@ LEFT OUTER JOIN [FlatPoco] AS [Embedded_SubEmbedded_Relationship] ON [ClassWithE
 		[TestMethod]
 		public void QuerySelectPocoWithEmbeddedTypes()
 		{
-			using (var sqlProvider = new SQLite3DataProvider(":memory:"))
+			using (var sqlProvider = new SQLite3DataProvider(TestHelper.ConnectionString))
 			{
 				sqlProvider.ExecuteNonQuery(QueryExpression.CreateTable(
 					"FlatPoco",
@@ -213,9 +208,8 @@ LEFT OUTER JOIN [FlatPoco] AS [Embedded_SubEmbedded_Relationship] ON [ClassWithE
 				schemaBuilder.DefineEntity<FlatPoco>();
 				schemaBuilder.DefineEntity<ClassWithEmbeddedPoco>();
 				var schema = schemaBuilder.Build();
-				var model = schema.GetEntityModel<ClassWithEmbeddedPoco>();
 
-				var select = SelectOperation.Create<ClassWithEmbeddedPoco>(model);
+				var select = SelectOperation.Create<ClassWithEmbeddedPoco>(schema);
 				using (var queryResult = sqlProvider.ExecuteReader(select.GetQuery()))
 				{
 					select.ProcessResult(queryResult);
@@ -260,9 +254,8 @@ LEFT OUTER JOIN [FlatPoco] AS [Embedded_SubEmbedded_Relationship] ON [ClassWithE
 			schemaBuilder.DefineEntity<PocoWithManyRelationship>();
 			schemaBuilder.DefineEntity<FlatPoco>();
 			var schema = schemaBuilder.Build();
-			var model = schema.GetEntityModel<PocoWithManyRelationship>();
 
-			var select = SelectOperation.Create<PocoWithManyRelationship>(model);
+			var select = SelectOperation.Create<PocoWithManyRelationship>(schema);
 			var sql = TestQueryConverter.CleanSql(
 				new TestQueryConverter().ConvertToQuery(select.GetQuery()).SqlText
 				);
@@ -277,7 +270,7 @@ INNER JOIN [FlatPoco] AS [Data] ON [__JUNCTION__Data].[RemoteKey] = [Data].[Id];
 		[TestMethod]
 		public void QuerySelectPocoWithMultileRelatedObjects()
 		{
-			using (var sqlProvider = new SQLite3DataProvider(":memory:"))
+			using (var sqlProvider = new SQLite3DataProvider(TestHelper.ConnectionString))
 			{
 				sqlProvider.ExecuteNonQuery(QueryExpression.CreateTable(
 					"FlatPoco",
@@ -321,9 +314,8 @@ INNER JOIN [FlatPoco] AS [Data] ON [__JUNCTION__Data].[RemoteKey] = [Data].[Id];
 				schemaBuilder.DefineEntity<FlatPoco>();
 				schemaBuilder.DefineEntity<PocoWithManyRelationship>();
 				var schema = schemaBuilder.Build();
-				var model = schema.GetEntityModel<PocoWithManyRelationship>();
 
-				var select = SelectOperation.Create<PocoWithManyRelationship>(model);
+				var select = SelectOperation.Create<PocoWithManyRelationship>(schema);
 				using (var queryResult = sqlProvider.ExecuteReader(select.GetQuery()))
 				{
 					select.ProcessResult(queryResult);
@@ -365,9 +357,8 @@ INNER JOIN [FlatPoco] AS [Data] ON [__JUNCTION__Data].[RemoteKey] = [Data].[Id];
 			var schemaBuilder = new SchemaBuilder();
 			schemaBuilder.DefineEntity<FlatPoco>();
 			var schema = schemaBuilder.Build();
-			var model = schema.GetEntityModel<FlatPoco>();
 
-			var select = SelectOperation.Create<FlatPoco, FlatPocoProjection>(model);
+			var select = SelectOperation.Create<FlatPoco, FlatPocoProjection>(schema);
 			var sql = TestQueryConverter.CleanSql(
 				new TestQueryConverter().ConvertToQuery(select.GetQuery()).SqlText
 				);
@@ -378,7 +369,7 @@ FROM [FlatPoco];", sql);
 		[TestMethod]
 		public void ProjectionQuerySelectFlatPoco()
 		{
-			using (var sqlProvider = new SQLite3DataProvider(":memory:"))
+			using (var sqlProvider = new SQLite3DataProvider(TestHelper.ConnectionString))
 			{
 				sqlProvider.ExecuteNonQuery(QueryExpression.CreateTable(
 					"FlatPoco",
@@ -395,9 +386,8 @@ FROM [FlatPoco];", sql);
 				var schemaBuilder = new SchemaBuilder();
 				schemaBuilder.DefineEntity<FlatPoco>();
 				var schema = schemaBuilder.Build();
-				var model = schema.GetEntityModel<FlatPoco>();
 
-				var select = SelectOperation.Create<FlatPoco, FlatPocoProjection>(model);
+				var select = SelectOperation.Create<FlatPoco, FlatPocoProjection>(schema);
 				using (var queryResult = sqlProvider.ExecuteReader(select.GetQuery()))
 				{
 					select.ProcessResult(queryResult);
@@ -418,9 +408,8 @@ FROM [FlatPoco];", sql);
 			schemaBuilder.DefineEntity<PocoWithSingleRelationship>();
 			schemaBuilder.DefineEntity<FlatPoco>();
 			var schema = schemaBuilder.Build();
-			var model = schema.GetEntityModel<PocoWithSingleRelationship>();
 
-			var select = SelectOperation.Create<PocoWithSingleRelationship, ProjectionPocoWithSingleRelationship>(model);
+			var select = SelectOperation.Create<PocoWithSingleRelationship, ProjectionPocoWithSingleRelationship>(schema);
 			var sql = TestQueryConverter.CleanSql(
 				new TestQueryConverter().ConvertToQuery(select.GetQuery()).SqlText
 				);
@@ -432,7 +421,7 @@ LEFT OUTER JOIN [FlatPoco] AS [Data] ON [PocoWithSingleRelationship].[Data] = [D
 		[TestMethod]
 		public void FlattenedProjectionQuerySelectPocoWithSingleRelationship()
 		{
-			using (var sqlProvider = new SQLite3DataProvider(":memory:"))
+			using (var sqlProvider = new SQLite3DataProvider(TestHelper.ConnectionString))
 			{
 				sqlProvider.ExecuteNonQuery(QueryExpression.CreateTable(
 					"FlatPoco",
@@ -463,9 +452,8 @@ LEFT OUTER JOIN [FlatPoco] AS [Data] ON [PocoWithSingleRelationship].[Data] = [D
 				schemaBuilder.DefineEntity<FlatPoco>();
 				schemaBuilder.DefineEntity<PocoWithSingleRelationship>();
 				var schema = schemaBuilder.Build();
-				var model = schema.GetEntityModel<PocoWithSingleRelationship>();
 
-				var select = SelectOperation.Create<PocoWithSingleRelationship, ProjectionPocoWithSingleRelationship>(model);
+				var select = SelectOperation.Create<PocoWithSingleRelationship, ProjectionPocoWithSingleRelationship>(schema);
 				using (var queryResult = sqlProvider.ExecuteReader(select.GetQuery()))
 				{
 					select.ProcessResult(queryResult);
@@ -487,9 +475,8 @@ LEFT OUTER JOIN [FlatPoco] AS [Data] ON [PocoWithSingleRelationship].[Data] = [D
 			schemaBuilder.DefineEntity<ClassWithEmbeddedPoco>();
 			schemaBuilder.DefineEntity<FlatPoco>();
 			var schema = schemaBuilder.Build();
-			var model = schema.GetEntityModel<ClassWithEmbeddedPoco>();
 
-			var select = SelectOperation.Create<ClassWithEmbeddedPoco, FlatProjectionClassWithEmbeddedPoco>(model);
+			var select = SelectOperation.Create<ClassWithEmbeddedPoco, FlatProjectionClassWithEmbeddedPoco>(schema);
 			var sql = TestQueryConverter.CleanSql(
 				new TestQueryConverter().ConvertToQuery(select.GetQuery()).SqlText
 				);
@@ -501,7 +488,7 @@ LEFT OUTER JOIN [FlatPoco] AS [Embedded_SubEmbedded_Relationship] ON [ClassWithE
 		[TestMethod]
 		public void FlattenedProjectionQuerySelectPocoWithEmbeddedTypes()
 		{
-			using (var sqlProvider = new SQLite3DataProvider(":memory:"))
+			using (var sqlProvider = new SQLite3DataProvider(TestHelper.ConnectionString))
 			{
 				sqlProvider.ExecuteNonQuery(QueryExpression.CreateTable(
 					"FlatPoco",
@@ -536,9 +523,8 @@ LEFT OUTER JOIN [FlatPoco] AS [Embedded_SubEmbedded_Relationship] ON [ClassWithE
 				schemaBuilder.DefineEntity<FlatPoco>();
 				schemaBuilder.DefineEntity<ClassWithEmbeddedPoco>();
 				var schema = schemaBuilder.Build();
-				var model = schema.GetEntityModel<ClassWithEmbeddedPoco>();
 
-				var select = SelectOperation.Create<ClassWithEmbeddedPoco, FlatProjectionClassWithEmbeddedPoco>(model);
+				var select = SelectOperation.Create<ClassWithEmbeddedPoco, FlatProjectionClassWithEmbeddedPoco>(schema);
 				using (var queryResult = sqlProvider.ExecuteReader(select.GetQuery()))
 				{
 					select.ProcessResult(queryResult);
@@ -584,9 +570,8 @@ LEFT OUTER JOIN [FlatPoco] AS [Embedded_SubEmbedded_Relationship] ON [ClassWithE
 			schemaBuilder.DefineEntity<ClassWithEmbeddedPoco>();
 			schemaBuilder.DefineEntity<FlatPoco>();
 			var schema = schemaBuilder.Build();
-			var model = schema.GetEntityModel<ClassWithEmbeddedPoco>();
 
-			var select = SelectOperation.Create<ClassWithEmbeddedPoco, IdenticalProjectionOfClassWithEmbeddedPoco>(model);
+			var select = SelectOperation.Create<ClassWithEmbeddedPoco, IdenticalProjectionOfClassWithEmbeddedPoco>(schema);
 			var sql = TestQueryConverter.CleanSql(
 				new TestQueryConverter().ConvertToQuery(select.GetQuery()).SqlText
 				);
@@ -598,7 +583,7 @@ LEFT OUTER JOIN [FlatPoco] AS [Embedded_SubEmbedded_Relationship] ON [ClassWithE
 		[TestMethod]
 		public void ProjectIdenticalQuerySelectPocoWithEmbeddedTypes()
 		{
-			using (var sqlProvider = new SQLite3DataProvider(":memory:"))
+			using (var sqlProvider = new SQLite3DataProvider(TestHelper.ConnectionString))
 			{
 				sqlProvider.ExecuteNonQuery(QueryExpression.CreateTable(
 					"FlatPoco",
@@ -633,9 +618,8 @@ LEFT OUTER JOIN [FlatPoco] AS [Embedded_SubEmbedded_Relationship] ON [ClassWithE
 				schemaBuilder.DefineEntity<FlatPoco>();
 				schemaBuilder.DefineEntity<ClassWithEmbeddedPoco>();
 				var schema = schemaBuilder.Build();
-				var model = schema.GetEntityModel<ClassWithEmbeddedPoco>();
 
-				var select = SelectOperation.Create<ClassWithEmbeddedPoco, IdenticalProjectionOfClassWithEmbeddedPoco>(model);
+				var select = SelectOperation.Create<ClassWithEmbeddedPoco, IdenticalProjectionOfClassWithEmbeddedPoco>(schema);
 				using (var queryResult = sqlProvider.ExecuteReader(select.GetQuery()))
 				{
 					select.ProcessResult(queryResult);
@@ -680,9 +664,8 @@ LEFT OUTER JOIN [FlatPoco] AS [Embedded_SubEmbedded_Relationship] ON [ClassWithE
 			schemaBuilder.DefineEntity<ClassWithEmbeddedPoco>();
 			schemaBuilder.DefineEntity<FlatPoco>();
 			var schema = schemaBuilder.Build();
-			var model = schema.GetEntityModel<ClassWithEmbeddedPoco>();
 
-			var select = SelectOperation.Create<ClassWithEmbeddedPoco, ProjectionClassWithEmbeddedPoco>(model);
+			var select = SelectOperation.Create<ClassWithEmbeddedPoco, ProjectionClassWithEmbeddedPoco>(schema);
 			var sql = TestQueryConverter.CleanSql(
 				new TestQueryConverter().ConvertToQuery(select.GetQuery()).SqlText
 				);
@@ -694,7 +677,7 @@ LEFT OUTER JOIN [FlatPoco] AS [Embedded_SubEmbedded_Relationship] ON [ClassWithE
 		[TestMethod]
 		public void SubProjectQuerySelectPocoWithEmbeddedTypes()
 		{
-			using (var sqlProvider = new SQLite3DataProvider(":memory:"))
+			using (var sqlProvider = new SQLite3DataProvider(TestHelper.ConnectionString))
 			{
 				sqlProvider.ExecuteNonQuery(QueryExpression.CreateTable(
 					"FlatPoco",
@@ -729,9 +712,8 @@ LEFT OUTER JOIN [FlatPoco] AS [Embedded_SubEmbedded_Relationship] ON [ClassWithE
 				schemaBuilder.DefineEntity<FlatPoco>();
 				schemaBuilder.DefineEntity<ClassWithEmbeddedPoco>();
 				var schema = schemaBuilder.Build();
-				var model = schema.GetEntityModel<ClassWithEmbeddedPoco>();
 
-				var select = SelectOperation.Create<ClassWithEmbeddedPoco, ProjectionClassWithEmbeddedPoco>(model);
+				var select = SelectOperation.Create<ClassWithEmbeddedPoco, ProjectionClassWithEmbeddedPoco>(schema);
 				using (var queryResult = sqlProvider.ExecuteReader(select.GetQuery()))
 				{
 					select.ProcessResult(queryResult);
@@ -762,7 +744,7 @@ LEFT OUTER JOIN [FlatPoco] AS [Embedded_SubEmbedded_Relationship] ON [ClassWithE
 		[TestMethod]
 		public void QuerySelectPocoWithNullable()
 		{
-			using (var sqlProvider = new SQLite3DataProvider(":memory:"))
+			using (var sqlProvider = new SQLite3DataProvider(TestHelper.ConnectionString))
 			{
 				sqlProvider.ExecuteNonQuery(QueryExpression.CreateTable(
 					"PocoWithNullable",
@@ -778,9 +760,8 @@ LEFT OUTER JOIN [FlatPoco] AS [Embedded_SubEmbedded_Relationship] ON [ClassWithE
 				var schemaBuilder = new SchemaBuilder();
 				schemaBuilder.DefineEntity<PocoWithNullable>();
 				var schema = schemaBuilder.Build();
-				var model = schema.GetEntityModel<PocoWithNullable>();
 
-				var select = SelectOperation.Create<PocoWithNullable>(model);
+				var select = SelectOperation.Create<PocoWithNullable>(schema);
 				using (var queryResult = sqlProvider.ExecuteReader(select.GetQuery()))
 				{
 					select.ProcessResult(queryResult);

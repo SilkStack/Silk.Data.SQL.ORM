@@ -236,12 +236,12 @@ namespace Silk.Data.SQL.ORM.Operations
 
 	internal class ColumnHelperTransformer : IModelTransformer
 	{
-		private readonly ProjectionModel _projectionModel;
+		private readonly IProjectionModel _projectionModel;
 		private readonly Stack<string> _fieldStack = new Stack<string>();
 
 		public List<ColumnHelper> Current { get; } = new List<ColumnHelper>();
 
-		public ColumnHelperTransformer(ProjectionModel projectionModel)
+		public ColumnHelperTransformer(IProjectionModel projectionModel)
 		{
 			_projectionModel = projectionModel;
 		}

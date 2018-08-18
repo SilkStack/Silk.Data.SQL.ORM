@@ -51,7 +51,7 @@ namespace Silk.Data.SQL.ORM.Operations
 				));
 		}
 
-		private static List<ColumnHelper> GetFields(ProjectionModel projectionModel, ColumnHelperTransformer transformer = null)
+		private static List<ColumnHelper> GetFields(IProjectionModel projectionModel, ColumnHelperTransformer transformer = null)
 		{
 			if (transformer == null)
 				transformer = new ColumnHelperTransformer(projectionModel);
@@ -66,7 +66,7 @@ namespace Silk.Data.SQL.ORM.Operations
 			return columns;
 		}
 
-		private static UpdateOperation Create<TProjection>(ProjectionModel projectionModel, EntityModel entityModel, params TProjection[] projections)
+		private static UpdateOperation Create<TProjection>(IProjectionModel projectionModel, EntityModel entityModel, params TProjection[] projections)
 			where TProjection : class
 		{
 			var primaryKeyFields = entityModel.Fields.OfType<IValueField>().Where(q => q.Column.IsPrimaryKey)
@@ -111,7 +111,7 @@ namespace Silk.Data.SQL.ORM.Operations
 			return new UpdateOperation(new CompositeQueryExpression(updateExpressions.ToArray()));
 		}
 
-		private static QueryExpression CreateUpdateExpression<TProjection>(ProjectionModel projectionModel, EntityModel entityModel, IModelReadWriter objectReadWriter, Condition condition,
+		private static QueryExpression CreateUpdateExpression<TProjection>(IProjectionModel projectionModel, EntityModel entityModel, IModelReadWriter objectReadWriter, Condition condition,
 			List<ColumnHelper> columns)
 		{
 			var row = new QueryExpression[columns.Count];

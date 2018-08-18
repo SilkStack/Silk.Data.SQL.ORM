@@ -87,7 +87,7 @@ namespace Silk.Data.SQL.ORM.Operations
 			return Create<TProjection>(model.GetProjection<TProjection>(), model, projections);
 		}
 
-		private static InsertOperation Create<TProjection>(ProjectionModel projectionModel, EntityModel entityModel, params TProjection[] projections)
+		private static InsertOperation Create<TProjection>(IProjectionModel projectionModel, EntityModel entityModel, params TProjection[] projections)
 			where TProjection : class
 		{
 			var typeModel = TypeModel.GetModelOf<TProjection>();

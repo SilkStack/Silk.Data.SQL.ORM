@@ -17,7 +17,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			schemaBuilder.DefineEntity<PocoWithEnum>();
 			var schema = schemaBuilder.Build();
 			var model = schema.GetEntityModel<PocoWithEnum>();
-			using (var dataProvider = new SQLite3DataProvider(":memory:"))
+			using (var dataProvider = new SQLite3DataProvider(TestHelper.ConnectionString))
 			{
 				dataProvider.ExecuteNonReader(CreateTableOperation.Create(model.EntityTable));
 
@@ -49,7 +49,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			schemaBuilder.DefineEntity<SimplePoco>();
 			var schema = schemaBuilder.Build();
 			var model = schema.GetEntityModel<SimplePoco>();
-			using (var dataProvider = new SQLite3DataProvider(":memory:"))
+			using (var dataProvider = new SQLite3DataProvider(TestHelper.ConnectionString))
 			{
 				dataProvider.ExecuteNonReader(CreateTableOperation.Create(model.EntityTable));
 
@@ -79,7 +79,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			schemaBuilder.DefineEntity<SimplePoco>();
 			var schema = schemaBuilder.Build();
 			var model = schema.GetEntityModel<SimplePoco>();
-			using (var dataProvider = new SQLite3DataProvider(":memory:"))
+			using (var dataProvider = new SQLite3DataProvider(TestHelper.ConnectionString))
 			{
 				dataProvider.ExecuteNonReader(CreateTableOperation.Create(model.EntityTable));
 
@@ -118,7 +118,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			schemaBuilder.DefineEntity<SimplePoco>();
 			var schema = schemaBuilder.Build();
 			var model = schema.GetEntityModel<SimplePoco>();
-			using (var dataProvider = new SQLite3DataProvider(":memory:"))
+			using (var dataProvider = new SQLite3DataProvider(TestHelper.ConnectionString))
 			{
 				dataProvider.ExecuteNonReader(CreateTableOperation.Create(model.EntityTable));
 
@@ -145,7 +145,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			schemaBuilder.DefineEntity<SimplePoco>();
 			var schema = schemaBuilder.Build();
 			var model = schema.GetEntityModel<SimplePoco>();
-			using (var dataProvider = new SQLite3DataProvider(":memory:"))
+			using (var dataProvider = new SQLite3DataProvider(TestHelper.ConnectionString))
 			{
 				dataProvider.ExecuteNonReader(CreateTableOperation.Create(model.EntityTable));
 
@@ -183,7 +183,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			schemaBuilder.DefineEntity<PocoWithComputedValue>();
 			var schema = schemaBuilder.Build();
 			var model = schema.GetEntityModel<PocoWithComputedValue>();
-			using (var dataProvider = new SQLite3DataProvider(":memory:"))
+			using (var dataProvider = new SQLite3DataProvider(TestHelper.ConnectionString))
 			{
 				dataProvider.ExecuteNonReader(CreateTableOperation.Create(model.EntityTable));
 
@@ -205,7 +205,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			schemaBuilder.DefineEntity<PocoWithComputedValue>();
 			var schema = schemaBuilder.Build();
 			var model = schema.GetEntityModel<PocoWithComputedValue>();
-			using (var dataProvider = new SQLite3DataProvider(":memory:"))
+			using (var dataProvider = new SQLite3DataProvider(TestHelper.ConnectionString))
 			{
 				dataProvider.ExecuteNonReader(CreateTableOperation.Create(model.EntityTable));
 

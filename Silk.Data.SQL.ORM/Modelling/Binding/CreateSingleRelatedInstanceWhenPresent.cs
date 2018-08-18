@@ -13,7 +13,7 @@ namespace Silk.Data.SQL.ORM.Modelling.Binding
 
 		public void CreateBindings(SourceModel fromModel, TargetModel toModel, MappingBuilder builder)
 		{
-			var fromProjectionModel = fromModel.FromModel as ProjectionModel;
+			var fromProjectionModel = fromModel.FromModel as IProjectionModel;
 			if (fromProjectionModel == null)
 				return;
 
@@ -71,7 +71,7 @@ namespace Silk.Data.SQL.ORM.Modelling.Binding
 			}
 		}
 
-		private IEntityField GetField(ProjectionModel model, string[] path)
+		private IEntityField GetField(IProjectionModel model, string[] path)
 		{
 			IEntityField ret = null;
 			var fields = model.Fields;
