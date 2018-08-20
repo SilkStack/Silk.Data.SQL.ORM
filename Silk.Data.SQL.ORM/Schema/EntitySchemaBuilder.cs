@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 
 namespace Silk.Data.SQL.ORM.Schema
 {
@@ -23,6 +22,11 @@ namespace Silk.Data.SQL.ORM.Schema
 		/// </summary>
 		/// <returns></returns>
 		public abstract EntitySchema BuildSchema(EntityPrimitiveFieldCollection entityPrimitiveFields);
+
+		/// <summary>
+		/// Gets or sets the table name to store entity instances in.
+		/// </summary>
+		public string TableName { get; set; }
 	}
 
 	/// <summary>
@@ -33,6 +37,11 @@ namespace Silk.Data.SQL.ORM.Schema
 		private readonly TypeModel<T> _entityTypeModel = TypeModel.GetModelOf<T>();
 		private readonly Dictionary<IPropertyField, EntityFieldBuilder> _entityFieldBuilders
 			= new Dictionary<IPropertyField, EntityFieldBuilder>();
+
+		public EntitySchemaBuilder()
+		{
+			TableName = typeof(T).Name;
+		}
 
 		public virtual EntityFieldBuilder<TProperty> For<TProperty>(Expression<Func<T, TProperty>> property)
 		{
@@ -89,10 +98,12 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public override EntitySchema BuildSchema(EntityPrimitiveFieldCollection entityPrimitiveFields)
 		{
-			return new EntitySchema<T>(new Table(),
-				entityPrimitiveFields[typeof(T)]
+			var fields = entityPrimitiveFields[typeof(T)]
 					.Concat(BuildEntityFields(getPrimitiveFields: false))
-					.ToArray()
+					.ToArray();
+			var columns = fields.Select(q => q.Column).ToArray();
+			return new EntitySchema<T>(
+				new Table(TableName, columns), fields
 				);
 		}
 

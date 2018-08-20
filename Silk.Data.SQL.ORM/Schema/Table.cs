@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Silk.Data.SQL.ORM.Schema
+﻿namespace Silk.Data.SQL.ORM.Schema
 {
 	/// <summary>
 	/// Database table.
@@ -18,5 +14,11 @@ namespace Silk.Data.SQL.ORM.Schema
 		/// Gets an array of columns in the table.
 		/// </summary>
 		public Column[] Columns { get; }
+
+		public Table(string tableName, Column[] columns)
+		{
+			TableName = tableName;
+			Columns = columns;
+		}
 	}
 }

@@ -1,7 +1,5 @@
 ﻿using Silk.Data.Modelling;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Silk.Data.SQL.ORM.Schema
 {
@@ -14,6 +12,21 @@ namespace Silk.Data.SQL.ORM.Schema
 		/// Gets the model field the field builder represents.
 		/// </summary>
 		public abstract IPropertyField ModelField { get; }
+
+		/// <summary>
+		/// Gets or sets the column name to use to store the field.
+		/// </summary>
+		public string ColumnName { get; set; }
+
+		/// <summary>
+		/// Gets or sets if the column is nullable.
+		/// </summary>
+		public bool IsNullable { get; set; }
+
+		/// <summary>
+		/// Gets or sets the datatype to store the field as.
+		/// </summary>
+		public SqlDataType SqlDataType { get; set; }
 
 		/// <summary>
 		/// Builds the entity field.
@@ -36,14 +49,26 @@ namespace Silk.Data.SQL.ORM.Schema
 		public EntityFieldBuilder(IPropertyField modelField)
 		{
 			ModelField = modelField;
+			ColumnName = modelField.FieldName;
+			IsNullable = TypeIsNullable(typeof(T));
+			SqlDataType = SqlTypeHelper.GetDataType(typeof(T));
 		}
 
 		public override EntityField Build()
 		{
-			if (!ModelField.CanRead || ModelField.IsEnumerable)
+			if (SqlDataType == null || !ModelField.CanRead || ModelField.IsEnumerable)
 				return null;
 
-			return new EntityField<T>(new Column());
+			return new EntityField<T>(new Column(ColumnName, SqlDataType, IsNullable));
+		}
+
+		private static bool TypeIsNullable(Type type)
+		{
+			if (type == typeof(string))
+				return true;
+			if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+				return true;
+			return false;
 		}
 	}
 }
