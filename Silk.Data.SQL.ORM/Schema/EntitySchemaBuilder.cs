@@ -101,10 +101,21 @@ namespace Silk.Data.SQL.ORM.Schema
 			var fields = entityPrimitiveFields[typeof(T)]
 					.Concat(BuildEntityFields(getPrimitiveFields: false))
 					.ToArray();
+			var projectionFields = BuildProjectionFields(fields).ToArray();
 			var columns = fields.Select(q => q.Column).ToArray();
 			return new EntitySchema<T>(
-				new Table(TableName, columns), fields
+				new Table(TableName, columns), fields, projectionFields
 				);
+		}
+
+		private IEnumerable<ProjectionField> BuildProjectionFields(IEnumerable<EntityField> entityFields)
+		{
+			foreach (var entityField in entityFields)
+			{
+				yield return new ProjectionField(TableName,
+					entityField.Column.ColumnName,
+					entityField.ModelField.FieldName);
+			}
 		}
 
 		private IEnumerable<EntityField> BuildEntityFields(bool getPrimitiveFields)

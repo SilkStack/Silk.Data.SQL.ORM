@@ -59,7 +59,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			if (SqlDataType == null || !ModelField.CanRead || ModelField.IsEnumerable)
 				return null;
 
-			return new EntityField<T>(new Column(ColumnName, SqlDataType, IsNullable));
+			return new EntityField<T>(new Column(ColumnName, SqlDataType, IsNullable), ModelField);
 		}
 
 		private static bool TypeIsNullable(Type type)

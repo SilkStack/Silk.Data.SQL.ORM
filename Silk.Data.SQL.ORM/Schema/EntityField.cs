@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Silk.Data.Modelling;
+using System;
 
 namespace Silk.Data.SQL.ORM.Schema
 {
@@ -9,6 +10,7 @@ namespace Silk.Data.SQL.ORM.Schema
 	{
 		public abstract Type FieldType { get; }
 		public abstract Column Column { get; }
+		public abstract IPropertyField ModelField { get; }
 	}
 
 	/// <summary>
@@ -19,10 +21,12 @@ namespace Silk.Data.SQL.ORM.Schema
 	{
 		public override Type FieldType { get; } = typeof(T);
 		public override Column Column { get; }
+		public override IPropertyField ModelField { get; }
 
-		public EntityField(Column column)
+		public EntityField(Column column, IPropertyField modelField)
 		{
 			Column = column;
+			ModelField = modelField;
 		}
 	}
 }

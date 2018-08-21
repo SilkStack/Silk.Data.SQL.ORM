@@ -23,8 +23,4 @@ Part of the SilkStack project.</Description>
     <PackageReference Include="Silk.Data.SQL.Base" Version="0.0.6" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Queries\" />
-  </ItemGroup>
-
 </Project>
