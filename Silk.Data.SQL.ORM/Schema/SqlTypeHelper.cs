@@ -14,7 +14,7 @@ namespace Silk.Data.SQL.ORM.Schema
 				{ typeof(byte), SqlDataType.UnsignedTinyInt() },
 				{ typeof(ushort), SqlDataType.UnsignedSmallInt() },
 				{ typeof(short), SqlDataType.SmallInt() },
-				{ typeof(uint), SqlDataType.UnsignedSmallInt() },
+				{ typeof(uint), SqlDataType.UnsignedInt() },
 				{ typeof(int), SqlDataType.Int() },
 				{ typeof(ulong), SqlDataType.UnsignedBigInt() },
 				{ typeof(long), SqlDataType.BigInt() },
