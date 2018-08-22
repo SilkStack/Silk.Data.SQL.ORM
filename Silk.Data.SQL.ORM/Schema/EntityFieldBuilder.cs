@@ -24,6 +24,11 @@ namespace Silk.Data.SQL.ORM.Schema
 		public bool IsNullable { get; set; }
 
 		/// <summary>
+		/// Gets or sets if the column is a primary key.
+		/// </summary>
+		public bool IsPrimaryKey { get; set; }
+
+		/// <summary>
 		/// Gets or sets the datatype to store the field as.
 		/// </summary>
 		public SqlDataType SqlDataType { get; set; }
@@ -52,6 +57,9 @@ namespace Silk.Data.SQL.ORM.Schema
 			ColumnName = modelField.FieldName;
 			IsNullable = TypeIsNullable(typeof(T));
 			SqlDataType = SqlTypeHelper.GetDataType(typeof(T));
+
+			if (modelField.FieldName == "Id")
+				IsPrimaryKey = true;
 		}
 
 		public override EntityField Build()
@@ -59,7 +67,25 @@ namespace Silk.Data.SQL.ORM.Schema
 			if (SqlDataType == null || !ModelField.CanRead || ModelField.IsEnumerable)
 				return null;
 
-			return new EntityField<T>(new Column(ColumnName, SqlDataType, IsNullable), ModelField);
+			var primaryKeyGenerator = PrimaryKeyGenerator.NotPrimaryKey;
+			if (IsPrimaryKey)
+				primaryKeyGenerator = GetPrimaryKeyGenerator(SqlDataType);
+			return new EntityField<T>(new Column(ColumnName, SqlDataType, IsNullable),
+				ModelField, primaryKeyGenerator);
+		}
+
+		private static PrimaryKeyGenerator GetPrimaryKeyGenerator(SqlDataType sqlDataType)
+		{
+			switch (sqlDataType.BaseType)
+			{
+				case SqlBaseType.TinyInt:
+				case SqlBaseType.SmallInt:
+				case SqlBaseType.Int:
+				case SqlBaseType.BigInt:
+					return PrimaryKeyGenerator.ServerGenerated;
+				default:
+					return PrimaryKeyGenerator.ClientGenerated;
+			}
 		}
 
 		private static bool TypeIsNullable(Type type)

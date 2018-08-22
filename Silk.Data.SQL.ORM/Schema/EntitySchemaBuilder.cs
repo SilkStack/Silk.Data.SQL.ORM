@@ -99,7 +99,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		public override EntitySchema BuildSchema(EntityPrimitiveFieldCollection entityPrimitiveFields)
 		{
 			var fields = entityPrimitiveFields[typeof(T)]
-					.Concat(BuildEntityFields(getPrimitiveFields: false))
+					.Concat(BuildEntityFields(getPrimitiveFields: false, entityPrimitiveFields: entityPrimitiveFields))
 					.ToArray();
 			var projectionFields = BuildProjectionFields(fields).ToArray();
 			var columns = fields.Select(q => q.Column).ToArray();
@@ -118,7 +118,8 @@ namespace Silk.Data.SQL.ORM.Schema
 			}
 		}
 
-		private IEnumerable<EntityField> BuildEntityFields(bool getPrimitiveFields)
+		private IEnumerable<EntityField> BuildEntityFields(bool getPrimitiveFields,
+			EntityPrimitiveFieldCollection entityPrimitiveFields = null)
 		{
 			foreach (var modelField in _entityTypeModel.Fields)
 			{
@@ -127,15 +128,29 @@ namespace Silk.Data.SQL.ORM.Schema
 				if (getPrimitiveFields != isPrimitiveType)
 					continue;
 
-				var builder = GetFieldBuilder(modelField);
-				if (builder == null)
-					continue;
+				if (isPrimitiveType)
+				{
+					var builder = GetFieldBuilder(modelField);
+					if (builder == null)
+						continue;
 
-				var entityField = builder.Build();
-				if (entityField == null)
-					continue;
+					var entityField = builder.Build();
+					if (entityField == null)
+						continue;
 
-				yield return entityField;
+					yield return entityField;
+				}
+				else
+				{
+					if (entityPrimitiveFields.IsEntityTypeDefined(modelField.FieldType))
+					{
+						//  many to one relationship
+					}
+					else
+					{
+						//  embedded POCO
+					}
+				}
 			}
 		}
 

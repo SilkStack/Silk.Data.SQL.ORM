@@ -61,6 +61,50 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 		}
 
+		[TestMethod]
+		public void ModelPrimaryKeyByConvention()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<ConventionPrimaryKey>();
+
+			var schema = schemaBuilder.Build();
+			var entitySchema = schema.GetEntitySchema<ConventionPrimaryKey>();
+
+			var idField = entitySchema.EntityFields.First(q => q.ModelField.FieldName == nameof(ConventionPrimaryKey.Id));
+			Assert.IsTrue(idField.IsPrimaryKey, "ID field is not a primary key.");
+		}
+
+		[TestMethod]
+		public void ModelCustomPrimaryKey()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			var entityBuilder = schemaBuilder.DefineEntity<CustomPrimaryKey>();
+			entityBuilder.For(q => q.Id).IsPrimaryKey = false;
+			entityBuilder.For(q => q.PrimaryKey).IsPrimaryKey = true;
+
+			var schema = schemaBuilder.Build();
+			var entitySchema = schema.GetEntitySchema<CustomPrimaryKey>();
+
+			var idField = entitySchema.EntityFields.First(q => q.ModelField.FieldName == nameof(CustomPrimaryKey.Id));
+			Assert.IsFalse(idField.IsPrimaryKey, "ID field shouldn't be a primary key.");
+
+			var primaryKeyField = entitySchema.EntityFields.First(q => q.ModelField.FieldName == nameof(CustomPrimaryKey.PrimaryKey));
+			Assert.IsTrue(primaryKeyField.IsPrimaryKey, "Primary key field is not a primary key.");
+		}
+
+		[TestMethod]
+		public void ModelManyToOneRelationship()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<Parent>();
+			schemaBuilder.DefineEntity<Child>();
+
+			var schema = schemaBuilder.Build();
+			var parentSchema = schema.GetEntitySchema<Parent>();
+
+			Assert.IsNotNull(parentSchema);
+		}
+
 		private static bool TypesAreEqual(SqlDataType one, SqlDataType two)
 		{
 			if (one.BaseType != two.BaseType)
@@ -93,6 +137,28 @@ namespace Silk.Data.SQL.ORM.Tests
 			public float Float { get; set; }
 			public double Double { get; set; }
 			public decimal Decimal { get; set; }
+		}
+
+		private class ConventionPrimaryKey
+		{
+			public int Id { get; private set; }
+		}
+
+		private class CustomPrimaryKey
+		{
+			public int Id { get; set; }
+			public int PrimaryKey { get; private set; }
+		}
+
+		private class Parent
+		{
+			public string Data { get; }
+			public Child Child { get; }
+		}
+
+		private class Child
+		{
+			public string Data { get; }
 		}
 	}
 }

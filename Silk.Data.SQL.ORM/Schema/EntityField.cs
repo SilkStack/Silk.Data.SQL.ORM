@@ -11,6 +11,8 @@ namespace Silk.Data.SQL.ORM.Schema
 		public abstract Type FieldType { get; }
 		public abstract Column Column { get; }
 		public abstract IPropertyField ModelField { get; }
+		public abstract PrimaryKeyGenerator PrimaryKeyGenerator { get; }
+		public bool IsPrimaryKey => PrimaryKeyGenerator != PrimaryKeyGenerator.NotPrimaryKey;
 	}
 
 	/// <summary>
@@ -22,11 +24,14 @@ namespace Silk.Data.SQL.ORM.Schema
 		public override Type FieldType { get; } = typeof(T);
 		public override Column Column { get; }
 		public override IPropertyField ModelField { get; }
+		public override PrimaryKeyGenerator PrimaryKeyGenerator { get; }
 
-		public EntityField(Column column, IPropertyField modelField)
+		public EntityField(Column column, IPropertyField modelField,
+			PrimaryKeyGenerator primaryKeyGenerator)
 		{
 			Column = column;
 			ModelField = modelField;
+			PrimaryKeyGenerator = primaryKeyGenerator;
 		}
 	}
 }
