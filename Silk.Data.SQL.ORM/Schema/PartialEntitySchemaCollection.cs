@@ -33,7 +33,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		{
 			if (TryGetValue(type, out var partialEntitySchema))
 			{
-				return partialEntitySchema.PrimitiveFields.Where(q => q.IsPrimaryKey);
+				return partialEntitySchema.EntityFields.Where(q => q.IsPrimaryKey);
 			}
 			return null;
 		}

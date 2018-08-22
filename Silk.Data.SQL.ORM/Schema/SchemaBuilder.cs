@@ -35,8 +35,20 @@ namespace Silk.Data.SQL.ORM.Schema
 		public virtual Schema Build()
 		{
 			var entityPrimitiveFields = BuildEntityPrimitiveFields();
+			while (DefineNewFields(entityPrimitiveFields)) { }
 			var entitySchemas = BuildEntitySchemas(entityPrimitiveFields);
 			return new Schema(entitySchemas);
+		}
+
+		private bool DefineNewFields(PartialEntitySchemaCollection partialEntitySchemas)
+		{
+			var result = false;
+			foreach (var kvp in _entitySchemaBuilders)
+			{
+				if (kvp.Value.DefineNewSchemaFields(partialEntitySchemas))
+					result = true;
+			}
+			return result;
 		}
 
 		private PartialEntitySchemaCollection BuildEntityPrimitiveFields()

@@ -124,6 +124,18 @@ namespace Silk.Data.SQL.ORM.Tests
 				Assert.Fail("Join to child table not present.");
 		}
 
+		[TestMethod]
+		public void ModelDeepManyToOneRelationship()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<Child>();
+			schemaBuilder.DefineEntity<Parent>();
+			schemaBuilder.DefineEntity<DeepParent>();
+
+			var schema = schemaBuilder.Build();
+			var parentSchema = schema.GetEntitySchema<DeepParent>();
+		}
+
 		private static bool TypesAreEqual(SqlDataType one, SqlDataType two)
 		{
 			if (one.BaseType != two.BaseType)
@@ -171,7 +183,7 @@ namespace Silk.Data.SQL.ORM.Tests
 
 		private class Parent
 		{
-			public string Data { get; set; }
+			public int Id { get; private set; }
 			public Child Child { get; set; }
 		}
 
@@ -179,6 +191,11 @@ namespace Silk.Data.SQL.ORM.Tests
 		{
 			public int Id { get; private set; }
 			public string Data { get; set; }
+		}
+
+		private class DeepParent
+		{
+			public Parent Child { get; set; }
 		}
 	}
 }

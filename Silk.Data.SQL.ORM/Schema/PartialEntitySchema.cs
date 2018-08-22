@@ -1,5 +1,6 @@
 ﻿using Silk.Data.Modelling;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Schema
@@ -7,12 +8,12 @@ namespace Silk.Data.SQL.ORM.Schema
 	public abstract class PartialEntitySchema
 	{
 		public abstract Type EntityType { get; }
-		public EntityField[] PrimitiveFields { get; }
+		public List<EntityField> EntityFields { get; } = new List<EntityField>();
 		public string TableName { get; }
 
 		public PartialEntitySchema(EntityField[] primitiveFields, string tableName)
 		{
-			PrimitiveFields = primitiveFields;
+			EntityFields.AddRange(primitiveFields);
 			TableName = tableName;
 		}
 
