@@ -3,7 +3,6 @@ using Silk.Data.SQL.ORM.Schema;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace Silk.Data.SQL.ORM.Queries
 {
@@ -12,12 +11,15 @@ namespace Silk.Data.SQL.ORM.Queries
 		protected QueryExpression Source { get; set; }
 		protected List<IProjectedItem> Projections { get; }
 			= new List<IProjectedItem>();
+		protected List<ITableJoin> TableJoins { get; }
+			= new List<ITableJoin>();
 
 		public SelectExpression BuildSelect()
 		{
 			return QueryExpression.Select(
 				projection: Projections.Select(q => QueryExpression.Alias(QueryExpression.Column(q.FieldName, new AliasIdentifierExpression(q.SourceName)), q.AliasName)).ToArray(),
-				from: Source
+				from: Source,
+				joins: null //  todo: populate join expressions
 				);
 		}
 	}
@@ -54,7 +56,10 @@ namespace Silk.Data.SQL.ORM.Queries
 			foreach (var projectionField in projectionSchema.ProjectionFields)
 			{
 				Projections.Add(projectionField);
+				//  todo: add mapping binding
 			}
+
+			TableJoins.AddRange(projectionSchema.EntityJoins);
 
 			return null;
 		}

@@ -39,17 +39,17 @@ namespace Silk.Data.SQL.ORM.Schema
 			return new Schema(entitySchemas);
 		}
 
-		private EntityPrimitiveFieldCollection BuildEntityPrimitiveFields()
+		private PartialEntitySchemaCollection BuildEntityPrimitiveFields()
 		{
-			var primitiveFields = new EntityPrimitiveFieldCollection();
+			var primitiveFields = new PartialEntitySchemaCollection();
 			foreach (var kvp in _entitySchemaBuilders)
 			{
-				primitiveFields.Add(kvp.Key, kvp.Value.BuildPrimitiveFields().ToArray());
+				primitiveFields.Add(kvp.Key, kvp.Value.BuildPartialSchema());
 			}
 			return primitiveFields;
 		}
 
-		private IEnumerable<EntitySchema> BuildEntitySchemas(EntityPrimitiveFieldCollection entityPrimitiveFields)
+		private IEnumerable<EntitySchema> BuildEntitySchemas(PartialEntitySchemaCollection entityPrimitiveFields)
 		{
 			foreach (var kvp in _entitySchemaBuilders)
 			{

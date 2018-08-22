@@ -70,7 +70,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			var primaryKeyGenerator = PrimaryKeyGenerator.NotPrimaryKey;
 			if (IsPrimaryKey)
 				primaryKeyGenerator = GetPrimaryKeyGenerator(SqlDataType);
-			return new EntityField<T>(new Column(ColumnName, SqlDataType, IsNullable),
+			return new EntityField<T>(new[] { new Column(ColumnName, SqlDataType, IsNullable) },
 				ModelField, primaryKeyGenerator);
 		}
 

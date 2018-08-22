@@ -44,7 +44,7 @@ namespace Silk.Data.SQL.ORM.Tests
 
 			foreach (var (type, name, dataType) in expectedFields)
 			{
-				var entityField = entitySchema.EntityFields.FirstOrDefault(q => q.FieldType == type && q.ModelField.FieldName == name);
+				var entityField = entitySchema.EntityFields.FirstOrDefault(q => q.DataType == type && q.ModelField.FieldName == name);
 				if (entityField == null)
 					Assert.Fail("Expected entity field not present on entity schema.");
 				var column = entitySchema.EntityTable.Columns.FirstOrDefault(q => q.ColumnName == name &&
@@ -105,6 +105,23 @@ namespace Silk.Data.SQL.ORM.Tests
 			var parentSchema = schema.GetEntitySchema<Parent>();
 
 			Assert.IsNotNull(parentSchema);
+			var entity = parentSchema.EntityFields.FirstOrDefault(q => q.ModelField.FieldName == nameof(Parent.Child));
+			if (entity == null)
+				Assert.Fail("Child entity field not present on entity schema.");
+			var foreignKeyColumn = parentSchema.EntityTable.Columns.FirstOrDefault(q => q.ColumnName == "Child_Id");
+			if (foreignKeyColumn == null)
+				Assert.Fail("Foreign key column not present in entity table.");
+			var projectionField = parentSchema.ProjectionFields.FirstOrDefault(q => q.AliasName == "Child_Id");
+			if (projectionField == null)
+				Assert.Fail("Child Id field not present in projection.");
+			Assert.IsTrue(projectionField.ModelPath.SequenceEqual(new[] { "Child", "Id" }), "Child Id model path is incorrect.");
+			projectionField = parentSchema.ProjectionFields.FirstOrDefault(q => q.AliasName == "Child_Data");
+			if (projectionField == null)
+				Assert.Fail("Child Data field not present in projection.");
+			Assert.IsTrue(projectionField.ModelPath.SequenceEqual(new[] { "Child", "Data" }), "Child Data model path is incorrect.");
+			var join = parentSchema.EntityJoins.FirstOrDefault(q => q.TableAlias == "Child");
+			if (join == null)
+				Assert.Fail("Join to child table not present.");
 		}
 
 		private static bool TypesAreEqual(SqlDataType one, SqlDataType two)
@@ -154,13 +171,14 @@ namespace Silk.Data.SQL.ORM.Tests
 
 		private class Parent
 		{
-			public string Data { get; }
-			public Child Child { get; }
+			public string Data { get; set; }
+			public Child Child { get; set; }
 		}
 
 		private class Child
 		{
-			public string Data { get; }
+			public int Id { get; private set; }
+			public string Data { get; set; }
 		}
 	}
 }

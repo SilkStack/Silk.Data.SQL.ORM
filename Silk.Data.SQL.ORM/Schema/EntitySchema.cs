@@ -13,6 +13,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		public abstract Table EntityTable { get; }
 		public abstract EntityField[] EntityFields { get; }
 		public abstract ProjectionField[] ProjectionFields { get; }
+		public abstract EntityJoin[] EntityJoins { get; }
 	}
 
 	/// <summary>
@@ -24,13 +25,15 @@ namespace Silk.Data.SQL.ORM.Schema
 		public override Table EntityTable { get; }
 		public override Type EntityType { get; } = typeof(T);
 		public override ProjectionField[] ProjectionFields { get; }
+		public override EntityJoin[] EntityJoins { get; }
 
 		public EntitySchema(Table entityTable, EntityField[] entityFields,
-			ProjectionField[] projectionFields)
+			ProjectionField[] projectionFields, EntityJoin[] manyToOneJoins)
 		{
 			EntityTable = entityTable;
 			EntityFields = entityFields;
 			ProjectionFields = projectionFields;
+			EntityJoins = manyToOneJoins;
 		}
 	}
 }

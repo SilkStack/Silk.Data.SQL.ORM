@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Silk.Data.SQL.ORM.Schema
@@ -7,7 +8,7 @@ namespace Silk.Data.SQL.ORM.Schema
 	/// <summary>
 	/// Collection of defined entity types and their fields that are primitive SQL types.
 	/// </summary>
-	public class EntityPrimitiveFieldCollection : Dictionary<Type, EntityField[]>
+	public class PartialEntitySchemaCollection : Dictionary<Type, PartialEntitySchema>
 	{
 		/// <summary>
 		/// Determines if an entity type has been defined in the schema builder.
@@ -24,6 +25,17 @@ namespace Silk.Data.SQL.ORM.Schema
 		public bool IsEntityTypeDefined(Type type)
 		{
 			return ContainsKey(type);
+		}
+
+		public IEnumerable<EntityField> GetEntityPrimaryKeys<T>() => GetEntityPrimaryKeys(typeof(T));
+
+		public IEnumerable<EntityField> GetEntityPrimaryKeys(Type type)
+		{
+			if (TryGetValue(type, out var partialEntitySchema))
+			{
+				return partialEntitySchema.PrimitiveFields.Where(q => q.IsPrimaryKey);
+			}
+			return null;
 		}
 	}
 }

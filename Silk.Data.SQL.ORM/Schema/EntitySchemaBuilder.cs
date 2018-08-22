@@ -15,13 +15,13 @@ namespace Silk.Data.SQL.ORM.Schema
 		/// Builds and returns an enumeration of primitive fields to be stored with no embedded or related objects taken into consideration.
 		/// </summary>
 		/// <returns></returns>
-		public abstract IEnumerable<EntityField> BuildPrimitiveFields();
+		public abstract PartialEntitySchema BuildPartialSchema();
 
 		/// <summary>
 		/// Builds the completed entity schema.
 		/// </summary>
 		/// <returns></returns>
-		public abstract EntitySchema BuildSchema(EntityPrimitiveFieldCollection entityPrimitiveFields);
+		public abstract EntitySchema BuildSchema(PartialEntitySchemaCollection partialEntities);
 
 		/// <summary>
 		/// Gets or sets the table name to store entity instances in.
@@ -91,36 +91,97 @@ namespace Silk.Data.SQL.ORM.Schema
 		/// Builds the entity schema.
 		/// </summary>
 		/// <returns></returns>
-		public override IEnumerable<EntityField> BuildPrimitiveFields()
+		public override PartialEntitySchema BuildPartialSchema()
 		{
-			return BuildEntityFields(getPrimitiveFields: true);
-		}
-
-		public override EntitySchema BuildSchema(EntityPrimitiveFieldCollection entityPrimitiveFields)
-		{
-			var fields = entityPrimitiveFields[typeof(T)]
-					.Concat(BuildEntityFields(getPrimitiveFields: false, entityPrimitiveFields: entityPrimitiveFields))
-					.ToArray();
-			var projectionFields = BuildProjectionFields(fields).ToArray();
-			var columns = fields.Select(q => q.Column).ToArray();
-			return new EntitySchema<T>(
-				new Table(TableName, columns), fields, projectionFields
+			return new PartialEntitySchema<T>(
+				BuildEntityFields(getPrimitiveFields: true).ToArray(),
+				TableName
 				);
 		}
 
-		private IEnumerable<ProjectionField> BuildProjectionFields(IEnumerable<EntityField> entityFields)
+		public override EntitySchema BuildSchema(PartialEntitySchemaCollection partialEntities)
 		{
+			var fields = partialEntities[typeof(T)].PrimitiveFields
+					.Concat(BuildEntityFields(getPrimitiveFields: false, entityPrimitiveFields: partialEntities))
+					.ToArray();
+			var projectionFields = BuildProjectionFields(fields, partialEntities).ToArray();
+			var columns = fields.SelectMany(q => q.Columns).ToArray();
+			var joins = BuildManyToOneJoins(fields, partialEntities).ToArray();
+			return new EntitySchema<T>(
+				new Table(TableName, columns), fields, projectionFields, joins
+				);
+		}
+
+		private IEnumerable<EntityJoin> BuildManyToOneJoins(IEnumerable<EntityField> entityFields,
+			PartialEntitySchemaCollection partialEntities, string[] propertyPath = null)
+		{
+			if (propertyPath == null)
+				propertyPath = new string[0];
+
 			foreach (var entityField in entityFields)
 			{
-				yield return new ProjectionField(TableName,
-					entityField.Column.ColumnName,
-					entityField.ModelField.FieldName,
-					new[] { entityField.ModelField.FieldName });
+				if (SqlTypeHelper.IsSqlPrimitiveType(entityField.DataType))
+					continue;
+
+				var subPropertyPath = propertyPath.Concat(new[] { entityField.ModelField.FieldName }).ToArray();
+				if (partialEntities.IsEntityTypeDefined(entityField.DataType))
+				{
+					var relatedEntityType = partialEntities[entityField.DataType];
+					var primaryKeyFields = partialEntities.GetEntityPrimaryKeys(entityField.DataType);
+					var foreignPrimaryKeyColumnNames = primaryKeyFields.Select(q => q.Columns[0].ColumnName).ToArray();
+					var localPrimaryKeyPrefix = $"{string.Join("_", subPropertyPath)}_";
+					var localPrimaryKeyColumnNames = foreignPrimaryKeyColumnNames.Select(
+						q => $"{localPrimaryKeyPrefix}{q}"
+						).ToArray();
+					yield return new EntityJoin(
+						relatedEntityType.TableName,
+						string.Join("_", subPropertyPath),
+						TableName,
+						localPrimaryKeyColumnNames,
+						foreignPrimaryKeyColumnNames,
+						entityField.DataType
+						);
+				}
+				else
+				{
+
+				}
+			}
+		}
+
+		private IEnumerable<ProjectionField> BuildProjectionFields(IEnumerable<EntityField> entityFields,
+			PartialEntitySchemaCollection partialEntities, string[] propertyPath = null)
+		{
+			if (propertyPath == null)
+				propertyPath = new string[0];
+
+			foreach (var entityField in entityFields)
+			{
+				var subPropertyPath = propertyPath.Concat(new[] { entityField.ModelField.FieldName }).ToArray();
+				if (SqlTypeHelper.IsSqlPrimitiveType(entityField.DataType))
+				{
+					var sourceName = propertyPath.Length == 0 ? TableName : string.Join("_", propertyPath);
+					var prefix = propertyPath.Length == 0 ? "" : $"{sourceName}_";
+					yield return new ProjectionField(sourceName,
+						entityField.Columns[0].ColumnName,
+						$"{prefix}{entityField.ModelField.FieldName}",
+						subPropertyPath);
+				}
+				else if (partialEntities.IsEntityTypeDefined(entityField.DataType))
+				{
+					var relatedEntityType = partialEntities[entityField.DataType];
+					foreach (var relatedEntityField in BuildProjectionFields(relatedEntityType.PrimitiveFields, partialEntities, subPropertyPath))
+						yield return relatedEntityField;
+				}
+				else
+				{
+
+				}
 			}
 		}
 
 		private IEnumerable<EntityField> BuildEntityFields(bool getPrimitiveFields,
-			EntityPrimitiveFieldCollection entityPrimitiveFields = null)
+			PartialEntitySchemaCollection entityPrimitiveFields = null)
 		{
 			foreach (var modelField in _entityTypeModel.Fields)
 			{
@@ -141,16 +202,19 @@ namespace Silk.Data.SQL.ORM.Schema
 
 					yield return entityField;
 				}
+				else if (entityPrimitiveFields.IsEntityTypeDefined(modelField.FieldType))
+				{
+						//  many to one relationship
+						var primaryKeyFields = entityPrimitiveFields?.GetEntityPrimaryKeys(modelField.FieldType)?.ToArray();
+						if (primaryKeyFields == null || primaryKeyFields.Length == 0)
+							throw new Exception("Related entity types must have a primary key.");
+
+						yield return entityPrimitiveFields[modelField.FieldType]
+							.CreateEntityField(modelField, entityPrimitiveFields, modelField.FieldName);
+				}
 				else
 				{
-					if (entityPrimitiveFields.IsEntityTypeDefined(modelField.FieldType))
-					{
-						//  many to one relationship
-					}
-					else
-					{
-						//  embedded POCO
-					}
+					//  embedded POCO
 				}
 			}
 		}
