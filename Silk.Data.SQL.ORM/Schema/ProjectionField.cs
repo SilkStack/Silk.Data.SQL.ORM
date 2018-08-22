@@ -17,12 +17,18 @@
 		/// Gets the alias the field should be projected as.
 		/// </summary>
 		public string AliasName { get; }
+		/// <summary>
+		/// Gets the path to the property on the entity model.
+		/// </summary>
+		public string[] ModelPath { get; }
 
-		public ProjectionField(string sourceName, string fieldName, string aliasName)
+		public ProjectionField(string sourceName, string fieldName, string aliasName,
+			string[] modelPath)
 		{
 			SourceName = sourceName;
 			FieldName = fieldName;
 			AliasName = aliasName;
+			ModelPath = modelPath;
 		}
 	}
 }

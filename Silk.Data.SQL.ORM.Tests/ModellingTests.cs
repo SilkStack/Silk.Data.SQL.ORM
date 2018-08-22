@@ -58,6 +58,8 @@ namespace Silk.Data.SQL.ORM.Tests
 					);
 				if (projectionField == null)
 					Assert.Fail("Expected projection field not present on entity schema.");
+				Assert.IsTrue(projectionField.ModelPath.SequenceEqual(new[] { name }),
+					"Projection field model path is invalid.");
 			}
 		}
 

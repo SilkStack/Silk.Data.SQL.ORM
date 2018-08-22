@@ -114,7 +114,8 @@ namespace Silk.Data.SQL.ORM.Schema
 			{
 				yield return new ProjectionField(TableName,
 					entityField.Column.ColumnName,
-					entityField.ModelField.FieldName);
+					entityField.ModelField.FieldName,
+					new[] { entityField.ModelField.FieldName });
 			}
 		}
 
