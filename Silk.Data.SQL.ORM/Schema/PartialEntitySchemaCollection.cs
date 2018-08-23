@@ -10,6 +10,12 @@ namespace Silk.Data.SQL.ORM.Schema
 	/// </summary>
 	public class PartialEntitySchemaCollection : Dictionary<Type, PartialEntitySchema>
 	{
+		public PartialEntitySchemaCollection(IEnumerable<Type> definedEntityTypes)
+		{
+			foreach (var type in definedEntityTypes)
+				Add(type, null);
+		}
+
 		/// <summary>
 		/// Determines if an entity type has been defined in the schema builder.
 		/// </summary>

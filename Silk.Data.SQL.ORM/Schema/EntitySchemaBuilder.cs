@@ -15,7 +15,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		/// Builds and returns an enumeration of primitive fields to be stored with no embedded or related objects taken into consideration.
 		/// </summary>
 		/// <returns></returns>
-		public abstract PartialEntitySchema BuildPartialSchema();
+		public abstract PartialEntitySchema BuildPartialSchema(PartialEntitySchemaCollection partialEntities);
 
 		/// <summary>
 		/// Define new schema fields based on fields defined by other entities.
@@ -98,17 +98,17 @@ namespace Silk.Data.SQL.ORM.Schema
 		/// Builds the entity schema.
 		/// </summary>
 		/// <returns></returns>
-		public override PartialEntitySchema BuildPartialSchema()
+		public override PartialEntitySchema BuildPartialSchema(PartialEntitySchemaCollection partialEntities)
 		{
 			return new PartialEntitySchema<T>(
-				BuildEntityFields(getPrimitiveFields: true).ToArray(),
+				BuildEntityFields(_entityTypeModel, getPrimitiveFields: true, entityPrimitiveFields: partialEntities).ToArray(),
 				TableName
 				);
 		}
 
 		public override bool DefineNewSchemaFields(PartialEntitySchemaCollection partialEntities)
 		{
-			var additionalFields = BuildEntityFields(getPrimitiveFields: false, entityPrimitiveFields: partialEntities)
+			var additionalFields = BuildEntityFields(_entityTypeModel, getPrimitiveFields: false, entityPrimitiveFields: partialEntities)
 				.ToArray();
 			if (additionalFields.Length > 0)
 			{
@@ -123,7 +123,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			var fields = partialEntities[typeof(T)].EntityFields.ToArray();
 			var columns = fields.SelectMany(q => q.Columns).ToArray();
 			var joins = BuildManyToOneJoins(fields, partialEntities, TableName).ToArray();
-			var projectionFields = BuildProjectionFields(fields, partialEntities, joins).ToArray();
+			var projectionFields = BuildProjectionFields(_entityTypeModel, fields, partialEntities, joins).ToArray();
 			return new EntitySchema<T>(
 				new Table(TableName, columns), fields, projectionFields, joins
 				);
@@ -177,17 +177,21 @@ namespace Silk.Data.SQL.ORM.Schema
 			}
 		}
 
-		private IEnumerable<ProjectionField> BuildProjectionFields(IEnumerable<EntityField> entityFields,
-			PartialEntitySchemaCollection partialEntities, EntityFieldJoin[] entityJoins, EntityField parentEntityField = null, string[] propertyPath = null)
+		private IEnumerable<ProjectionField> BuildProjectionFields(
+			TypeModel entityModel, IEnumerable<EntityField> entityFields,
+			PartialEntitySchemaCollection partialEntities, EntityFieldJoin[] entityJoins,
+			EntityField parentEntityField = null, string[] propertyPath = null)
 		{
 			if (propertyPath == null)
 				propertyPath = new string[0];
 
-			foreach (var entityField in entityFields)
+			foreach (var modelField in entityModel.Fields)
 			{
-				var subPropertyPath = propertyPath.Concat(new[] { entityField.ModelField.FieldName }).ToArray();
-				if (SqlTypeHelper.IsSqlPrimitiveType(entityField.DataType))
+				var subPropertyPath = propertyPath.Concat(new[] { modelField.FieldName }).ToArray();
+
+				if (SqlTypeHelper.IsSqlPrimitiveType(modelField.FieldType))
 				{
+					var entityField = entityFields.First(q => q.ModelField == modelField);
 					var entityJoin = entityJoins.FirstOrDefault(q => q.EntityField == parentEntityField);
 					var sourceName = entityJoin?.TableAlias ?? TableName;
 					var prefix = propertyPath.Length == 0 ? "" : $"{string.Join("_", propertyPath)}_";
@@ -196,36 +200,52 @@ namespace Silk.Data.SQL.ORM.Schema
 						$"{prefix}{entityField.ModelField.FieldName}",
 						subPropertyPath);
 				}
-				else if (partialEntities.IsEntityTypeDefined(entityField.DataType))
+				else if (partialEntities.IsEntityTypeDefined(modelField.FieldType))
 				{
-					var relatedEntityType = partialEntities[entityField.DataType];
-					foreach (var relatedEntityField in BuildProjectionFields(relatedEntityType.EntityFields, partialEntities, entityJoins, entityField, subPropertyPath))
+					var entityField = entityFields.First(q => q.ModelField == modelField);
+					var relatedEntityType = partialEntities[modelField.FieldType];
+					foreach (var relatedEntityField in BuildProjectionFields(modelField.FieldTypeModel, relatedEntityType.EntityFields, partialEntities, entityJoins, entityField, subPropertyPath))
 						yield return relatedEntityField;
 				}
 				else
 				{
-
+					var entityField = entityFields.First(q => q.ModelField == modelField);
+					foreach (var relatedEntityField in BuildProjectionFields(modelField.FieldTypeModel, entityFields, partialEntities, entityJoins, entityField, subPropertyPath))
+						yield return relatedEntityField;
 				}
 			}
 		}
 
-		private IEnumerable<EntityField> BuildEntityFields(bool getPrimitiveFields,
-			PartialEntitySchemaCollection entityPrimitiveFields = null)
+		private IEnumerable<EntityField> BuildEntityFields(
+			TypeModel entityTypeModel, bool getPrimitiveFields,
+			PartialEntitySchemaCollection entityPrimitiveFields = null,
+			string[] propertyPath = null)
 		{
-			foreach (var modelField in _entityTypeModel.Fields)
+			string propertyNamePrefix;
+			if (propertyPath == null)
+			{
+				propertyPath = new string[0];
+				propertyNamePrefix = "";
+			}
+			else
+			{
+				propertyNamePrefix = $"{string.Join("_", propertyPath)}_";
+			}
+
+			foreach (var modelField in entityTypeModel.Fields)
 			{
 				var isPrimitiveType = SqlTypeHelper.IsSqlPrimitiveType(modelField.FieldType);
 
-				if (getPrimitiveFields != isPrimitiveType)
-					continue;
-
 				if (isPrimitiveType)
 				{
+					if (!getPrimitiveFields)
+						continue;
+
 					var builder = GetFieldBuilder(modelField);
 					if (builder == null)
 						continue;
 
-					var entityField = builder.Build();
+					var entityField = builder.Build(propertyNamePrefix);
 					if (entityField == null)
 						continue;
 
@@ -233,6 +253,9 @@ namespace Silk.Data.SQL.ORM.Schema
 				}
 				else if (entityPrimitiveFields.IsEntityTypeDefined(modelField.FieldType))
 				{
+					if (getPrimitiveFields)
+						continue;
+
 					//  many to one relationship
 					var primaryKeyFields = entityPrimitiveFields?.GetEntityPrimaryKeys(modelField.FieldType)?.ToArray();
 					if (primaryKeyFields == null || primaryKeyFields.Length == 0)
@@ -250,6 +273,21 @@ namespace Silk.Data.SQL.ORM.Schema
 				else
 				{
 					//  embedded POCO
+					//  null check field
+					var nullCheckField = entityPrimitiveFields[typeof(T)]
+						?.EntityFields.FirstOrDefault(q => q.ModelField == modelField);
+					if (nullCheckField == null)
+					{
+						nullCheckField = new EntityField<bool>(
+							new[] { new Column($"{propertyNamePrefix}{modelField.FieldName}", SqlTypeHelper.GetDataType(typeof(bool)), false) },
+							modelField, PrimaryKeyGenerator.NotPrimaryKey
+							);
+						yield return nullCheckField;
+					}
+					//  go deeper!
+					var subPropertyPath = propertyPath.Concat(new[] { modelField.FieldName }).ToArray();
+					foreach (var field in BuildEntityFields(modelField.FieldTypeModel, getPrimitiveFields, entityPrimitiveFields, subPropertyPath))
+						yield return field;
 				}
 			}
 		}

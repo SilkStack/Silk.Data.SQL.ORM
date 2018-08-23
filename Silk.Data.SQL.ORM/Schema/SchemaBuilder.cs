@@ -53,10 +53,10 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		private PartialEntitySchemaCollection BuildEntityPrimitiveFields()
 		{
-			var primitiveFields = new PartialEntitySchemaCollection();
+			var primitiveFields = new PartialEntitySchemaCollection(_entitySchemaBuilders.Keys);
 			foreach (var kvp in _entitySchemaBuilders)
 			{
-				primitiveFields.Add(kvp.Key, kvp.Value.BuildPartialSchema());
+				primitiveFields[kvp.Key] = kvp.Value.BuildPartialSchema(primitiveFields);
 			}
 			return primitiveFields;
 		}
