@@ -119,7 +119,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			if (projectionField == null)
 				Assert.Fail("Child Data field not present in projection.");
 			Assert.IsTrue(projectionField.ModelPath.SequenceEqual(new[] { "Child", "Data" }), "Child Data model path is incorrect.");
-			var join = parentSchema.EntityJoins.FirstOrDefault(q => q.TableAlias == "Child");
+			var join = parentSchema.EntityJoins.FirstOrDefault(q => q.TableName == "Child");
 			if (join == null)
 				Assert.Fail("Join to child table not present.");
 		}

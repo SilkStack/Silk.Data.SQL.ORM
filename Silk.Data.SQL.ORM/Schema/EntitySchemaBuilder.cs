@@ -121,16 +121,16 @@ namespace Silk.Data.SQL.ORM.Schema
 		public override EntitySchema BuildSchema(PartialEntitySchemaCollection partialEntities)
 		{
 			var fields = partialEntities[typeof(T)].EntityFields.ToArray();
-			var projectionFields = BuildProjectionFields(fields, partialEntities).ToArray();
 			var columns = fields.SelectMany(q => q.Columns).ToArray();
-			var joins = BuildManyToOneJoins(fields, partialEntities).ToArray();
+			var joins = BuildManyToOneJoins(fields, partialEntities, TableName).ToArray();
+			var projectionFields = BuildProjectionFields(fields, partialEntities, joins).ToArray();
 			return new EntitySchema<T>(
 				new Table(TableName, columns), fields, projectionFields, joins
 				);
 		}
 
-		private IEnumerable<EntityJoin> BuildManyToOneJoins(IEnumerable<EntityField> entityFields,
-			PartialEntitySchemaCollection partialEntities, string[] propertyPath = null)
+		private IEnumerable<EntityFieldJoin> BuildManyToOneJoins(IEnumerable<EntityField> entityFields,
+			PartialEntitySchemaCollection partialEntities, string currentSourceName, string[] propertyPath = null)
 		{
 			if (propertyPath == null)
 				propertyPath = new string[0];
@@ -146,18 +146,21 @@ namespace Silk.Data.SQL.ORM.Schema
 					var relatedEntityType = partialEntities[entityField.DataType];
 					var primaryKeyFields = partialEntities.GetEntityPrimaryKeys(entityField.DataType);
 					var foreignPrimaryKeyColumnNames = primaryKeyFields.Select(q => q.Columns[0].ColumnName).ToArray();
-					var localPrimaryKeyPrefix = $"{string.Join("_", subPropertyPath)}_";
-					var localPrimaryKeyColumnNames = foreignPrimaryKeyColumnNames.Select(
-						q => $"{localPrimaryKeyPrefix}{q}"
+					var localPrimaryKeyColumnNames = entityField.Columns.Select(
+						q => q.ColumnName
 						).ToArray();
-					yield return new EntityJoin(
+					var joinAliasName = $"__joinAlias_{string.Join("_", subPropertyPath)}";
+					yield return new EntityFieldJoin(
 						relatedEntityType.TableName,
-						string.Join("_", subPropertyPath),
-						TableName,
+						joinAliasName,
+						currentSourceName,
 						localPrimaryKeyColumnNames,
 						foreignPrimaryKeyColumnNames,
-						entityField.DataType
+						entityField
 						);
+
+					foreach (var subJoin in BuildManyToOneJoins(relatedEntityType.EntityFields, partialEntities, joinAliasName, subPropertyPath))
+						yield return subJoin;
 				}
 				else
 				{
@@ -167,7 +170,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		}
 
 		private IEnumerable<ProjectionField> BuildProjectionFields(IEnumerable<EntityField> entityFields,
-			PartialEntitySchemaCollection partialEntities, string[] propertyPath = null)
+			PartialEntitySchemaCollection partialEntities, EntityFieldJoin[] entityJoins, EntityField parentEntityField = null, string[] propertyPath = null)
 		{
 			if (propertyPath == null)
 				propertyPath = new string[0];
@@ -177,8 +180,9 @@ namespace Silk.Data.SQL.ORM.Schema
 				var subPropertyPath = propertyPath.Concat(new[] { entityField.ModelField.FieldName }).ToArray();
 				if (SqlTypeHelper.IsSqlPrimitiveType(entityField.DataType))
 				{
-					var sourceName = propertyPath.Length == 0 ? TableName : string.Join("_", propertyPath);
-					var prefix = propertyPath.Length == 0 ? "" : $"{sourceName}_";
+					var entityJoin = entityJoins.FirstOrDefault(q => q.EntityField == parentEntityField);
+					var sourceName = entityJoin?.TableAlias ?? TableName;
+					var prefix = propertyPath.Length == 0 ? "" : $"{string.Join("_", propertyPath)}_";
 					yield return new ProjectionField(sourceName,
 						entityField.Columns[0].ColumnName,
 						$"{prefix}{entityField.ModelField.FieldName}",
@@ -187,7 +191,7 @@ namespace Silk.Data.SQL.ORM.Schema
 				else if (partialEntities.IsEntityTypeDefined(entityField.DataType))
 				{
 					var relatedEntityType = partialEntities[entityField.DataType];
-					foreach (var relatedEntityField in BuildProjectionFields(relatedEntityType.EntityFields, partialEntities, subPropertyPath))
+					foreach (var relatedEntityField in BuildProjectionFields(relatedEntityType.EntityFields, partialEntities, entityJoins, entityField, subPropertyPath))
 						yield return relatedEntityField;
 				}
 				else
