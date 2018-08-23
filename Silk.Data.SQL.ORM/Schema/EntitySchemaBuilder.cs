@@ -122,14 +122,15 @@ namespace Silk.Data.SQL.ORM.Schema
 		{
 			var fields = partialEntities[typeof(T)].EntityFields.ToArray();
 			var columns = fields.SelectMany(q => q.Columns).ToArray();
-			var joins = BuildManyToOneJoins(fields, partialEntities, TableName).ToArray();
+			var joins = BuildManyToOneJoins(_entityTypeModel, fields, partialEntities, TableName).ToArray();
 			var projectionFields = BuildProjectionFields(_entityTypeModel, fields, partialEntities, joins).ToArray();
 			return new EntitySchema<T>(
 				new Table(TableName, columns), fields, projectionFields, joins
 				);
 		}
 
-		private IEnumerable<EntityFieldJoin> BuildManyToOneJoins(IEnumerable<EntityField> entityFields,
+		private IEnumerable<EntityFieldJoin> BuildManyToOneJoins(
+			TypeModel entityModel, IEnumerable<EntityField> entityFields,
 			PartialEntitySchemaCollection partialEntities, string currentSourceName, string[] propertyPath = null,
 			EntityFieldJoin[] dependencyJoins = null)
 		{
@@ -138,21 +139,22 @@ namespace Silk.Data.SQL.ORM.Schema
 			if (dependencyJoins == null)
 				dependencyJoins = new EntityFieldJoin[0];
 
-			foreach (var entityField in entityFields)
+			foreach (var modelField in entityModel.Fields)
 			{
-				if (SqlTypeHelper.IsSqlPrimitiveType(entityField.DataType))
+				if (SqlTypeHelper.IsSqlPrimitiveType(modelField.FieldType))
 					continue;
 
-				var subPropertyPath = propertyPath.Concat(new[] { entityField.ModelField.FieldName }).ToArray();
-				if (partialEntities.IsEntityTypeDefined(entityField.DataType))
+				var subPropertyPath = propertyPath.Concat(new[] { modelField.FieldName }).ToArray();
+				if (partialEntities.IsEntityTypeDefined(modelField.FieldType))
 				{
-					var relatedEntityType = partialEntities[entityField.DataType];
+					var relatedEntityType = partialEntities[modelField.FieldType];
+					var joinAliasName = $"__joinAlias_{string.Join("_", subPropertyPath)}";
+					var entityField = entityFields.First(q => q.ModelField == modelField);
+
 					var primaryKeyFields = partialEntities.GetEntityPrimaryKeys(entityField.DataType);
 					var foreignPrimaryKeyColumnNames = primaryKeyFields.Select(q => q.Columns[0].ColumnName).ToArray();
-					var localPrimaryKeyColumnNames = entityField.Columns.Select(
-						q => q.ColumnName
-						).ToArray();
-					var joinAliasName = $"__joinAlias_{string.Join("_", subPropertyPath)}";
+					var localPrimaryKeyColumnNames = entityField.Columns.Select(q => q.ColumnName).ToArray();
+
 					var newJoin = new EntityFieldJoin(
 						relatedEntityType.TableName,
 						joinAliasName,
@@ -165,14 +167,25 @@ namespace Silk.Data.SQL.ORM.Schema
 					yield return newJoin;
 
 					foreach (var subJoin in BuildManyToOneJoins(
-						relatedEntityType.EntityFields, partialEntities, joinAliasName,
-						subPropertyPath, dependencyJoins.Concat(new[] { newJoin }).ToArray()
-						))
+						modelField.FieldTypeModel,
+						relatedEntityType.EntityFields,
+						partialEntities,
+						joinAliasName,
+						subPropertyPath,
+						dependencyJoins.Concat(new[] { newJoin }).ToArray()))
 						yield return subJoin;
 				}
 				else
 				{
-
+					foreach (var subJoin in BuildManyToOneJoins(
+						modelField.FieldTypeModel,
+						entityFields,
+						partialEntities,
+						currentSourceName,
+						subPropertyPath,
+						dependencyJoins
+						))
+						yield return subJoin;
 				}
 			}
 		}
