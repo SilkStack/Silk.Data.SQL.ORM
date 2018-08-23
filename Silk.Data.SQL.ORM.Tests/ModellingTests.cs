@@ -181,18 +181,10 @@ namespace Silk.Data.SQL.ORM.Tests
 				("Child_Child_Id", "Child_Child_Id", "DeepParent", new[]{ "Child", "Child", "Id" }),
 				("Child_Child_Data", "Child_Child_Data", "DeepParent", new[]{ "Child", "Child", "Data" })
 			};
-
-			foreach (var expectedProjection in expectedProjections)
-			{
-				var projection = entitySchema.ProjectionFields.FirstOrDefault(q => q.FieldName == expectedProjection.FieldName);
-				Assert.IsNotNull(projection, $"Projection \"{expectedProjection.FieldName}\" not found.");
-				Assert.AreEqual(expectedProjection.Alias, projection.AliasName);
-				Assert.AreEqual(expectedProjection.Source, projection.SourceName);
-				Assert.IsTrue(expectedProjection.Path.SequenceEqual(projection.ModelPath));
-			}
+			CheckForProjections(entitySchema, expectedProjections);
 
 			//  all columns are in table
-			var expectedColumns = new(string FieldName, SqlBaseType SqlBaseType)[]
+			var expectedColumns = new (string FieldName, SqlBaseType SqlBaseType)[]
 			{
 				("Child", SqlBaseType.Bit), //  Child property null check
 				("Child_Id", SqlBaseType.Int),
@@ -200,12 +192,7 @@ namespace Silk.Data.SQL.ORM.Tests
 				("Child_Child_Id", SqlBaseType.Int),
 				("Child_Child_Data", SqlBaseType.Text)
 			};
-			foreach (var expectedColumn in expectedColumns)
-			{
-				var column = entitySchema.EntityTable.Columns.FirstOrDefault(q => q.ColumnName == expectedColumn.FieldName);
-				Assert.IsNotNull(column, $"Column \"{expectedColumn.FieldName}\" not found.");
-				Assert.AreEqual(expectedColumn.SqlBaseType, column.DataType.BaseType);
-			}
+			CheckForColumns(entitySchema, expectedColumns);
 		}
 
 		[TestMethod]
@@ -216,8 +203,24 @@ namespace Silk.Data.SQL.ORM.Tests
 			schemaBuilder.DefineEntity<Child>();
 
 			var schema = schemaBuilder.Build();
-			var parentSchema = schema.GetEntitySchema<DeepParent>();
-			var childSchema = schema.GetEntitySchema<Child>();
+			var entitySchema = schema.GetEntitySchema<DeepParent>();
+
+			var expectedProjections = new(string FieldName, string Alias, string Source, string[] Path)[]
+			{
+				("Child_Id", "Child_Id", "DeepParent", new[]{ "Child", "Id" }),
+				("Id", "Child_Child_Id", "__joinAlias_Child_Child", new[]{ "Child", "Child", "Id" }),
+				("Data", "Child_Child_Data", "__joinAlias_Child_Child", new[]{ "Child", "Child", "Data" })
+			};
+			CheckForProjections(entitySchema, expectedProjections);
+
+			//  all columns are in table
+			var expectedColumns = new(string FieldName, SqlBaseType SqlBaseType)[]
+			{
+				("Child", SqlBaseType.Bit),			//  Child property null check
+				("Child_Id", SqlBaseType.Int),		//  Embedded Child.Id
+				("FK_Child_Id", SqlBaseType.Int)	//  Child.Child property null check
+			};
+			CheckForColumns(entitySchema, expectedColumns);
 		}
 
 		[TestMethod]
@@ -225,10 +228,49 @@ namespace Silk.Data.SQL.ORM.Tests
 		{
 			var schemaBuilder = new SchemaBuilder();
 			schemaBuilder.DefineEntity<DeepParent>();
-			schemaBuilder.DefineEntity<Parent>();
+			schemaBuilder.DefineEntity<Parent>().For(q => q.Child.Id).IsPrimaryKey = false;
 
 			var schema = schemaBuilder.Build();
 			var entitySchema = schema.GetEntitySchema<DeepParent>();
+
+			var expectedProjections = new(string FieldName, string Alias, string Source, string[] Path)[]
+			{
+				("Id", "Child_Id", "__joinAlias_Child", new[]{ "Child", "Id" }),
+				("Child_Id", "Child_Child_Id", "__joinAlias_Child", new[]{ "Child", "Child", "Id" }),
+				("Child_Data", "Child_Child_Data", "__joinAlias_Child", new[]{ "Child", "Child", "Data" })
+			};
+			CheckForProjections(entitySchema, expectedProjections);
+
+			//  all columns are in table
+			var expectedColumns = new(string FieldName, SqlBaseType SqlBaseType)[]
+			{
+				("FK_Child_Id", SqlBaseType.Int)	//  Child.Child property null check
+			};
+			CheckForColumns(entitySchema, expectedColumns);
+		}
+
+		private static void CheckForProjections(EntitySchema entitySchema,
+			(string FieldName, string Alias, string Source, string[] Path)[] expectedProjections)
+		{
+			foreach (var expectedProjection in expectedProjections)
+			{
+				var projection = entitySchema.ProjectionFields.FirstOrDefault(q => q.FieldName == expectedProjection.FieldName);
+				Assert.IsNotNull(projection, $"Projection \"{expectedProjection.FieldName}\" not found.");
+				Assert.AreEqual(expectedProjection.Alias, projection.AliasName);
+				Assert.AreEqual(expectedProjection.Source, projection.SourceName);
+				Assert.IsTrue(expectedProjection.Path.SequenceEqual(projection.ModelPath));
+			}
+		}
+
+		private static void CheckForColumns(EntitySchema entitySchema,
+			(string FieldName, SqlBaseType SqlBaseType)[] expectedColumns)
+		{
+			foreach (var expectedColumn in expectedColumns)
+			{
+				var column = entitySchema.EntityTable.Columns.FirstOrDefault(q => q.ColumnName == expectedColumn.FieldName);
+				Assert.IsNotNull(column, $"Column \"{expectedColumn.FieldName}\" not found.");
+				Assert.AreEqual(expectedColumn.SqlBaseType, column.DataType.BaseType);
+			}
 		}
 
 		private static bool TypesAreEqual(SqlDataType one, SqlDataType two)
