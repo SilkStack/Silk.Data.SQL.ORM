@@ -55,8 +55,16 @@ namespace Silk.Data.SQL.ORM.Schema
 		{
 			ModelField = modelField;
 			ColumnName = modelField.FieldName;
-			IsNullable = TypeIsNullable(typeof(T));
-			SqlDataType = SqlTypeHelper.GetDataType(typeof(T));
+			if (SqlTypeHelper.IsSqlPrimitiveType(typeof(T)))
+			{
+				SqlDataType = SqlTypeHelper.GetDataType(typeof(T));
+				IsNullable = TypeIsNullable(typeof(T));
+			}
+			else
+			{
+				SqlDataType = SqlTypeHelper.GetDataType(typeof(bool));
+				IsNullable = false;
+			}
 
 			if (modelField.FieldName == "Id")
 				IsPrimaryKey = true;

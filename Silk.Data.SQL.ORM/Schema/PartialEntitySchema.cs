@@ -17,7 +17,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			TableName = tableName;
 		}
 
-		public abstract EntityField CreateEntityField(IPropertyField modelField,
+		public abstract EntityField CreateRelatedEntityField(IPropertyField modelField,
 			PartialEntitySchemaCollection entityPrimitiveFields, string propertyPathPrefix);
 	}
 
@@ -30,7 +30,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		{
 		}
 
-		public override EntityField CreateEntityField(IPropertyField modelField,
+		public override EntityField CreateRelatedEntityField(IPropertyField modelField,
 			PartialEntitySchemaCollection entityPrimitiveFields, string propertyPathPrefix)
 		{
 			return new EntityField<T>(

@@ -266,23 +266,26 @@ namespace Silk.Data.SQL.ORM.Schema
 					if (relatedEntityField == null)
 					{
 						relatedEntityField = entityPrimitiveFields[modelField.FieldType]
-							.CreateEntityField(modelField, entityPrimitiveFields, modelField.FieldName);
+							.CreateRelatedEntityField(modelField, entityPrimitiveFields, modelField.FieldName);
 						yield return relatedEntityField;
 					}
 				}
 				else
 				{
 					//  embedded POCO
-					//  null check field
-					var nullCheckField = entityPrimitiveFields[typeof(T)]
+					var embeddedEntityField = entityPrimitiveFields[typeof(T)]
 						?.EntityFields.FirstOrDefault(q => q.ModelField == modelField);
-					if (nullCheckField == null)
+					if (embeddedEntityField == null)
 					{
-						nullCheckField = new EntityField<bool>(
-							new[] { new Column($"{propertyNamePrefix}{modelField.FieldName}", SqlTypeHelper.GetDataType(typeof(bool)), false) },
-							modelField, PrimaryKeyGenerator.NotPrimaryKey
-							);
-						yield return nullCheckField;
+						var builder = GetFieldBuilder(modelField);
+						if (builder == null)
+							continue;
+
+						embeddedEntityField = builder.Build(propertyNamePrefix);
+						if (embeddedEntityField == null)
+							continue;
+
+						yield return embeddedEntityField;
 					}
 					//  go deeper!
 					var subPropertyPath = propertyPath.Concat(new[] { modelField.FieldName }).ToArray();
