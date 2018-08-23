@@ -19,7 +19,33 @@ namespace Silk.Data.SQL.ORM.Queries
 			return QueryExpression.Select(
 				projection: Projections.Select(q => QueryExpression.Alias(QueryExpression.Column(q.FieldName, new AliasIdentifierExpression(q.SourceName)), q.AliasName)).ToArray(),
 				from: Source,
-				joins: null //  todo: populate join expressions
+				joins: TableJoins.Select(q => CreateJoin(q)).ToArray()
+				);
+		}
+
+		private static JoinExpression CreateJoin(ITableJoin tableJoin)
+		{
+			var onCondition = default(QueryExpression);
+			var leftSource = new AliasIdentifierExpression(tableJoin.SourceName);
+			var rightSource = new AliasIdentifierExpression(tableJoin.TableAlias);
+			using (var leftEnumerator = ((ICollection<string>)tableJoin.LeftColumns).GetEnumerator())
+			using (var rightEnumerator = ((ICollection<string>)tableJoin.RightColumns).GetEnumerator())
+			{
+				while (leftEnumerator.MoveNext() && rightEnumerator.MoveNext())
+				{
+					var newCondition = QueryExpression.Compare(
+						QueryExpression.Column(leftEnumerator.Current, leftSource),
+						ComparisonOperator.AreEqual,
+						QueryExpression.Column(rightEnumerator.Current, rightSource)
+						);
+					onCondition = QueryExpression.CombineConditions(onCondition, ConditionType.AndAlso, newCondition);
+				}
+			}
+
+			return QueryExpression.Join(
+				QueryExpression.Alias(new AliasIdentifierExpression(tableJoin.TableName), tableJoin.TableAlias),
+				onCondition,
+				JoinDirection.Left
 				);
 		}
 	}
