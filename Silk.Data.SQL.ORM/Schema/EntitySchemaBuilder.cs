@@ -193,7 +193,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		private IEnumerable<ProjectionField> BuildProjectionFields(
 			TypeModel entityModel, IEnumerable<EntityField> entityFields,
 			PartialEntitySchemaCollection partialEntities, EntityFieldJoin[] entityJoins,
-			EntityField parentEntityField = null, string[] propertyPath = null)
+			EntityField joinEntityField = null, string[] propertyPath = null)
 		{
 			if (propertyPath == null)
 				propertyPath = new string[0];
@@ -205,7 +205,7 @@ namespace Silk.Data.SQL.ORM.Schema
 				if (SqlTypeHelper.IsSqlPrimitiveType(modelField.FieldType))
 				{
 					var entityField = entityFields.First(q => q.ModelField == modelField);
-					var entityJoin = entityJoins.FirstOrDefault(q => q.EntityField == parentEntityField);
+					var entityJoin = entityJoins.FirstOrDefault(q => q.EntityField == joinEntityField);
 					var sourceName = entityJoin?.TableAlias ?? TableName;
 					var prefix = propertyPath.Length == 0 ? "" : $"{string.Join("_", propertyPath)}_";
 					yield return new ProjectionField(sourceName,
@@ -223,7 +223,7 @@ namespace Silk.Data.SQL.ORM.Schema
 				else
 				{
 					var entityField = entityFields.First(q => q.ModelField == modelField);
-					foreach (var relatedEntityField in BuildProjectionFields(modelField.FieldTypeModel, entityFields, partialEntities, entityJoins, entityField, subPropertyPath))
+					foreach (var relatedEntityField in BuildProjectionFields(modelField.FieldTypeModel, entityFields, partialEntities, entityJoins, joinEntityField, subPropertyPath))
 						yield return relatedEntityField;
 				}
 			}
