@@ -162,6 +162,74 @@ namespace Silk.Data.SQL.ORM.Tests
 				Assert.Fail("Join to child table not present.");
 		}
 
+		[TestMethod]
+		public void ModelNestedEmbeddedObjects()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<DeepParent>();
+
+			var schema = schemaBuilder.Build();
+			var entitySchema = schema.GetEntitySchema<DeepParent>();
+
+			var entityField = entitySchema.EntityFields.FirstOrDefault(q => q.ModelField.FieldName == nameof(DeepParent.Child));
+			if (entityField == null)
+				Assert.Fail("Child entity field not present on entity schema.");
+
+			var expectedProjections = new (string FieldName, string Alias, string Source, string[] Path)[]
+			{
+				("Child_Id", "Child_Id", "DeepParent", new[]{ "Child", "Id" }),
+				("Child_Child_Id", "Child_Child_Id", "DeepParent", new[]{ "Child", "Child", "Id" }),
+				("Child_Child_Data", "Child_Child_Data", "DeepParent", new[]{ "Child", "Child", "Data" })
+			};
+
+			foreach (var expectedProjection in expectedProjections)
+			{
+				var projection = entitySchema.ProjectionFields.FirstOrDefault(q => q.FieldName == expectedProjection.FieldName);
+				Assert.IsNotNull(projection, $"Projection \"{expectedProjection.FieldName}\" not found.");
+				Assert.AreEqual(expectedProjection.Alias, projection.AliasName);
+				Assert.AreEqual(expectedProjection.Source, projection.SourceName);
+				Assert.IsTrue(expectedProjection.Path.SequenceEqual(projection.ModelPath));
+			}
+
+			//  all columns are in table
+			var expectedColumns = new(string FieldName, SqlBaseType SqlBaseType)[]
+			{
+				("Child", SqlBaseType.Bit), //  Child property null check
+				("Child_Id", SqlBaseType.Int),
+				("Child_Child", SqlBaseType.Bit), //  Child.Child property null check
+				("Child_Child_Id", SqlBaseType.Int),
+				("Child_Child_Data", SqlBaseType.Text)
+			};
+			foreach (var expectedColumn in expectedColumns)
+			{
+				var column = entitySchema.EntityTable.Columns.FirstOrDefault(q => q.ColumnName == expectedColumn.FieldName);
+				Assert.IsNotNull(column, $"Column \"{expectedColumn.FieldName}\" not found.");
+				Assert.AreEqual(expectedColumn.SqlBaseType, column.DataType.BaseType);
+			}
+		}
+
+		[TestMethod]
+		public void ModelEmbeddedObjectWithRelationship()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<DeepParent>();
+			schemaBuilder.DefineEntity<Child>();
+
+			var schema = schemaBuilder.Build();
+			var entitySchema = schema.GetEntitySchema<DeepParent>();
+		}
+
+		[TestMethod]
+		public void ModelRelationshipWithEmbeddedObjects()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<DeepParent>();
+			schemaBuilder.DefineEntity<Parent>();
+
+			var schema = schemaBuilder.Build();
+			var entitySchema = schema.GetEntitySchema<DeepParent>();
+		}
+
 		private static bool TypesAreEqual(SqlDataType one, SqlDataType two)
 		{
 			if (one.BaseType != two.BaseType)
