@@ -105,8 +105,8 @@ namespace Silk.Data.SQL.ORM.Tests
 			var parentSchema = schema.GetEntitySchema<Parent>();
 
 			Assert.IsNotNull(parentSchema);
-			var entity = parentSchema.EntityFields.FirstOrDefault(q => q.ModelField.FieldName == nameof(Parent.Child));
-			if (entity == null)
+			var entityField = parentSchema.EntityFields.FirstOrDefault(q => q.ModelField.FieldName == nameof(Parent.Child));
+			if (entityField == null)
 				Assert.Fail("Child entity field not present on entity schema.");
 			var foreignKeyColumn = parentSchema.EntityTable.Columns.FirstOrDefault(q => q.ColumnName == "Child_Id");
 			if (foreignKeyColumn == null)
@@ -134,6 +134,32 @@ namespace Silk.Data.SQL.ORM.Tests
 
 			var schema = schemaBuilder.Build();
 			var parentSchema = schema.GetEntitySchema<DeepParent>();
+
+			var entityField = parentSchema.EntityFields.FirstOrDefault(q => q.ModelField.FieldName == nameof(DeepParent.Child));
+			if (entityField == null)
+				Assert.Fail("Child entity field not present on entity schema.");
+			var foreignKeyColumn = parentSchema.EntityTable.Columns.FirstOrDefault(q => q.ColumnName == "Child_Id");
+			if (foreignKeyColumn == null)
+				Assert.Fail("Foreign key column not present in entity table.");
+			var projectionField = parentSchema.ProjectionFields.FirstOrDefault(q => q.AliasName == "Child_Id");
+			if (projectionField == null)
+				Assert.Fail("Child Id field not present in projection.");
+			Assert.IsTrue(projectionField.ModelPath.SequenceEqual(new[] { "Child", "Id" }), "Child Id model path is incorrect.");
+			projectionField = parentSchema.ProjectionFields.FirstOrDefault(q => q.AliasName == "Child_Child_Id");
+			if (projectionField == null)
+				Assert.Fail("Deep child Id field not present in projection.");
+			Assert.IsTrue(projectionField.ModelPath.SequenceEqual(new[] { "Child", "Child", "Id" }), "Deep child Id model path is incorrect.");
+			projectionField = parentSchema.ProjectionFields.FirstOrDefault(q => q.AliasName == "Child_Child_Data");
+			if (projectionField == null)
+				Assert.Fail("Deep child Data field not present in projection.");
+			Assert.IsTrue(projectionField.ModelPath.SequenceEqual(new[] { "Child", "Child", "Data" }), "Deep child Data model path is incorrect.");
+
+			var join = parentSchema.EntityJoins.FirstOrDefault(q => q.TableName == "Parent");
+			if (join == null)
+				Assert.Fail("Join to parent table not present.");
+			join = parentSchema.EntityJoins.FirstOrDefault(q => q.TableName == "Child");
+			if (join == null)
+				Assert.Fail("Join to child table not present.");
 		}
 
 		private static bool TypesAreEqual(SqlDataType one, SqlDataType two)
