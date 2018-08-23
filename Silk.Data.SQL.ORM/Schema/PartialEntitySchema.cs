@@ -35,7 +35,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		{
 			return new EntityField<T>(
 				entityPrimitiveFields.GetEntityPrimaryKeys(modelField.FieldType).Select(q => new Column(
-					$"{propertyPathPrefix}_{q.Columns[0].ColumnName}", q.Columns[0].DataType, true
+					$"FK_{propertyPathPrefix}_{q.Columns[0].ColumnName}", q.Columns[0].DataType, true
 					)).ToArray(),
 				modelField, PrimaryKeyGenerator.NotPrimaryKey);
 		}

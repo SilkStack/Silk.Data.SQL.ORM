@@ -108,7 +108,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			var entityField = parentSchema.EntityFields.FirstOrDefault(q => q.ModelField.FieldName == nameof(Parent.Child));
 			if (entityField == null)
 				Assert.Fail("Child entity field not present on entity schema.");
-			var foreignKeyColumn = parentSchema.EntityTable.Columns.FirstOrDefault(q => q.ColumnName == "Child_Id");
+			var foreignKeyColumn = parentSchema.EntityTable.Columns.FirstOrDefault(q => q.ColumnName == "FK_Child_Id");
 			if (foreignKeyColumn == null)
 				Assert.Fail("Foreign key column not present in entity table.");
 			var projectionField = parentSchema.ProjectionFields.FirstOrDefault(q => q.AliasName == "Child_Id");
@@ -138,7 +138,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			var entityField = parentSchema.EntityFields.FirstOrDefault(q => q.ModelField.FieldName == nameof(DeepParent.Child));
 			if (entityField == null)
 				Assert.Fail("Child entity field not present on entity schema.");
-			var foreignKeyColumn = parentSchema.EntityTable.Columns.FirstOrDefault(q => q.ColumnName == "Child_Id");
+			var foreignKeyColumn = parentSchema.EntityTable.Columns.FirstOrDefault(q => q.ColumnName == "FK_Child_Id");
 			if (foreignKeyColumn == null)
 				Assert.Fail("Foreign key column not present in entity table.");
 			var projectionField = parentSchema.ProjectionFields.FirstOrDefault(q => q.AliasName == "Child_Id");
@@ -216,7 +216,8 @@ namespace Silk.Data.SQL.ORM.Tests
 			schemaBuilder.DefineEntity<Child>();
 
 			var schema = schemaBuilder.Build();
-			var entitySchema = schema.GetEntitySchema<DeepParent>();
+			var parentSchema = schema.GetEntitySchema<DeepParent>();
+			var childSchema = schema.GetEntitySchema<Child>();
 		}
 
 		[TestMethod]
