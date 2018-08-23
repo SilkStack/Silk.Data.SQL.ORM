@@ -130,10 +130,13 @@ namespace Silk.Data.SQL.ORM.Schema
 		}
 
 		private IEnumerable<EntityFieldJoin> BuildManyToOneJoins(IEnumerable<EntityField> entityFields,
-			PartialEntitySchemaCollection partialEntities, string currentSourceName, string[] propertyPath = null)
+			PartialEntitySchemaCollection partialEntities, string currentSourceName, string[] propertyPath = null,
+			EntityFieldJoin[] dependencyJoins = null)
 		{
 			if (propertyPath == null)
 				propertyPath = new string[0];
+			if (dependencyJoins == null)
+				dependencyJoins = new EntityFieldJoin[0];
 
 			foreach (var entityField in entityFields)
 			{
@@ -150,16 +153,21 @@ namespace Silk.Data.SQL.ORM.Schema
 						q => q.ColumnName
 						).ToArray();
 					var joinAliasName = $"__joinAlias_{string.Join("_", subPropertyPath)}";
-					yield return new EntityFieldJoin(
+					var newJoin = new EntityFieldJoin(
 						relatedEntityType.TableName,
 						joinAliasName,
 						currentSourceName,
 						localPrimaryKeyColumnNames,
 						foreignPrimaryKeyColumnNames,
-						entityField
+						entityField,
+						dependencyJoins
 						);
+					yield return newJoin;
 
-					foreach (var subJoin in BuildManyToOneJoins(relatedEntityType.EntityFields, partialEntities, joinAliasName, subPropertyPath))
+					foreach (var subJoin in BuildManyToOneJoins(
+						relatedEntityType.EntityFields, partialEntities, joinAliasName,
+						subPropertyPath, dependencyJoins.Concat(new[] { newJoin }).ToArray()
+						))
 						yield return subJoin;
 				}
 				else

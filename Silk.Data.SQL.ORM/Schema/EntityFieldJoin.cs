@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Silk.Data.SQL.ORM.Schema
+﻿namespace Silk.Data.SQL.ORM.Schema
 {
 	public class EntityFieldJoin : ITableJoin
 	{
@@ -10,10 +8,11 @@ namespace Silk.Data.SQL.ORM.Schema
 		public string[] LeftColumns { get; }
 		public string[] RightColumns { get; }
 		public EntityField EntityField { get; }
+		public EntityFieldJoin[] DependencyJoins { get; }
 
 		public EntityFieldJoin(string tableName, string tableAlias,
 			string sourceName, string[] leftColumns, string[] rightColumns,
-			EntityField entityField)
+			EntityField entityField, EntityFieldJoin[] dependencyJoins = null)
 		{
 			TableName = tableName;
 			TableAlias = tableAlias;
@@ -21,6 +20,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			LeftColumns = leftColumns;
 			RightColumns = rightColumns;
 			EntityField = entityField;
+			DependencyJoins = dependencyJoins ?? new EntityFieldJoin[0];
 		}
 	}
 }
