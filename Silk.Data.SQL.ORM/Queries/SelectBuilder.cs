@@ -14,7 +14,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		protected List<ITableJoin> TableJoins { get; }
 			= new List<ITableJoin>();
 
-		public SelectExpression BuildSelect()
+		public SelectExpression BuildQuery()
 		{
 			return QueryExpression.Select(
 				projection: Projections.Select(q => QueryExpression.Alias(QueryExpression.Column(q.FieldName, new AliasIdentifierExpression(q.SourceName)), q.AliasName)).ToArray(),

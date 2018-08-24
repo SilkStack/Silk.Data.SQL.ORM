@@ -26,7 +26,7 @@ namespace Silk.Data.SQL.ORM.Tests
 
 				var queryBuilder = new EntitySelectBuilder<FlatEntity>(schema);
 				queryBuilder.Project<FlatEntity>();
-				var selectQuery = queryBuilder.BuildSelect();
+				var selectQuery = queryBuilder.BuildQuery();
 
 				using (var queryResult = await provider.ExecuteReaderAsync(selectQuery))
 				{
@@ -63,7 +63,7 @@ namespace Silk.Data.SQL.ORM.Tests
 
 				var queryBuilder = new EntitySelectBuilder<RelationshipEntity>(schema);
 				queryBuilder.Project<RelationshipEntity>();
-				var selectQuery = queryBuilder.BuildSelect();
+				var selectQuery = queryBuilder.BuildQuery();
 
 				using (var queryResult = await provider.ExecuteReaderAsync(selectQuery))
 				{
@@ -94,7 +94,7 @@ namespace Silk.Data.SQL.ORM.Tests
 
 				var queryBuilder = new EntitySelectBuilder<RelationshipEntity>(schema);
 				queryBuilder.Project<RelationshipEntity>();
-				var selectQuery = queryBuilder.BuildSelect();
+				var selectQuery = queryBuilder.BuildQuery();
 
 				using (var queryResult = await provider.ExecuteReaderAsync(selectQuery))
 				{
@@ -132,7 +132,7 @@ namespace Silk.Data.SQL.ORM.Tests
 
 				var queryBuilder = new EntitySelectBuilder<DeepRelationshipEntity>(schema);
 				queryBuilder.Project<DeepRelationshipEntity>();
-				var selectQuery = queryBuilder.BuildSelect();
+				var selectQuery = queryBuilder.BuildQuery();
 
 				using (var queryResult = await provider.ExecuteReaderAsync(selectQuery))
 				{
@@ -170,7 +170,7 @@ namespace Silk.Data.SQL.ORM.Tests
 
 				var queryBuilder = new EntitySelectBuilder<DeepRelationshipEntity>(schema);
 				queryBuilder.Project<DeepRelationshipEntity>();
-				var selectQuery = queryBuilder.BuildSelect();
+				var selectQuery = queryBuilder.BuildQuery();
 
 				using (var queryResult = await provider.ExecuteReaderAsync(selectQuery))
 				{
