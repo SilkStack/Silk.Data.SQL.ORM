@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Queries
 {
-	public class QueryBuilder
+	public class SelectBuilder
 	{
 		protected QueryExpression Source { get; set; }
 		protected List<IProjectedItem> Projections { get; }
@@ -50,18 +50,18 @@ namespace Silk.Data.SQL.ORM.Queries
 		}
 	}
 
-	public class QueryBuilder<T> : QueryBuilder
+	public class SelectBuilder<T> : SelectBuilder
 		where T : class
 	{
 	}
 
-	public class EntityQueryBuilder<T> : QueryBuilder<T>
+	public class EntitySelectBuilder<T> : SelectBuilder<T>
 		where T : class
 	{
 		public Schema.Schema Schema { get; }
 		public EntitySchema<T> EntitySchema { get; }
 
-		public EntityQueryBuilder(Schema.Schema schema)
+		public EntitySelectBuilder(Schema.Schema schema)
 		{
 			Schema = schema;
 			EntitySchema = schema.GetEntitySchema<T>();
