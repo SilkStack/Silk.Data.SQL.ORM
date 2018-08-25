@@ -143,9 +143,10 @@ namespace Silk.Data.SQL.ORM.Schema
 			var columns = fields.SelectMany(q => q.Columns).ToArray();
 			var joins = BuildManyToOneJoins(_entityTypeModel, fields, partialEntities, TableName).ToArray();
 			var projectionFields = BuildProjectionFields(_entityTypeModel, fields, partialEntities, joins).ToArray();
+			var table = new Table(TableName, columns);
 			return new EntitySchema<T>(
-				new Table(TableName, columns), fields, projectionFields, joins,
-				_indexBuilders.Select(kvp => kvp.Value.Build(fields)).ToArray()
+				table, fields, projectionFields, joins,
+				_indexBuilders.Select(kvp => kvp.Value.Build(table, fields)).ToArray()
 				);
 		}
 

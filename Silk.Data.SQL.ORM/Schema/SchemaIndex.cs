@@ -1,16 +1,25 @@
-﻿namespace Silk.Data.SQL.ORM.Schema
+﻿using System.Linq;
+
+namespace Silk.Data.SQL.ORM.Schema
 {
-	public class SchemaIndex
+	public class SchemaIndex : IIndex
 	{
-		public string Name { get; }
+		public string IndexName { get; }
 		public bool HasUniqueConstraint { get; }
 		public EntityField[] EntityFields { get; }
+		public Table Table { get; }
+		public string[] ColumnNames { get; }
+		public string SourceName => Table.TableName;
 
-		public SchemaIndex(string name, bool hasUniqueConstraint, EntityField[] entityFields)
+		public SchemaIndex(string indexName, bool hasUniqueConstraint, EntityField[] entityFields,
+			Table table)
 		{
-			Name = name;
+			IndexName = indexName;
 			HasUniqueConstraint = hasUniqueConstraint;
 			EntityFields = entityFields;
+			Table = table;
+			ColumnNames = entityFields.SelectMany(field => field.Columns)
+				.Select(column => column.ColumnName).ToArray();
 		}
 	}
 }

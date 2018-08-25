@@ -12,8 +12,8 @@ namespace Silk.Data.SQL.ORM.Queries
 	{
 		protected Dictionary<string, EntityField[]> Fields { get; }
 			= new Dictionary<string, EntityField[]>();
-		protected Dictionary<string, SchemaIndex[]> Indexes { get; }
-			= new Dictionary<string, SchemaIndex[]>();
+		protected Dictionary<string, IIndex[]> Indexes { get; }
+			= new Dictionary<string, IIndex[]>();
 
 		public QueryExpression BuildQuery()
 		{
@@ -31,9 +31,9 @@ namespace Silk.Data.SQL.ORM.Queries
 				{
 					//  todo: support the custom index name specified
 					yield return QueryExpression.CreateIndex(
-						kvp.Key,
+						index.SourceName,
 						index.HasUniqueConstraint,
-						index.EntityFields.SelectMany(q => q.Columns.Select(column => column.ColumnName)).ToArray()
+						index.ColumnNames
 						);
 				}
 			}
