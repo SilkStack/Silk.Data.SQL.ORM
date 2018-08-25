@@ -10,8 +10,8 @@ namespace Silk.Data.SQL.ORM.Queries
 {
 	public class CreateSchemaBuilder
 	{
-		protected Dictionary<string, EntityField[]> Fields { get; }
-			= new Dictionary<string, EntityField[]>();
+		protected Dictionary<string, ITableField[]> Fields { get; }
+			= new Dictionary<string, ITableField[]>();
 		protected Dictionary<string, IIndex[]> Indexes { get; }
 			= new Dictionary<string, IIndex[]>();
 

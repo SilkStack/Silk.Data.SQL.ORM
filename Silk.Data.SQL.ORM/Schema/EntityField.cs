@@ -6,7 +6,7 @@ namespace Silk.Data.SQL.ORM.Schema
 	/// <summary>
 	/// An entity field.
 	/// </summary>
-	public abstract class EntityField
+	public abstract class EntityField : ITableField
 	{
 		public abstract Type DataType { get; }
 		public abstract Column[] Columns { get; }
