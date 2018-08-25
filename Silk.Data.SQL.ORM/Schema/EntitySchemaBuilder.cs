@@ -40,14 +40,33 @@ namespace Silk.Data.SQL.ORM.Schema
 	/// Builds the schema components for entities of type T.
 	/// </summary>
 	public class EntitySchemaBuilder<T> : EntitySchemaBuilder
+		where T : class
 	{
 		private readonly TypeModel<T> _entityTypeModel = TypeModel.GetModelOf<T>();
 		private readonly Dictionary<IPropertyField, EntityFieldBuilder> _entityFieldBuilders
 			= new Dictionary<IPropertyField, EntityFieldBuilder>();
+		private readonly Dictionary<string, SchemaIndexBuilder<T>> _indexBuilders
+			= new Dictionary<string, SchemaIndexBuilder<T>>();
 
 		public EntitySchemaBuilder()
 		{
 			TableName = typeof(T).Name;
+		}
+
+		public SchemaIndexBuilder<T> Index(string indexName, params Expression<Func<T, object>>[] indexFields)
+			=> Index(indexName, null, indexFields);
+
+		public SchemaIndexBuilder<T> Index(string indexName, bool? uniqueConstraint, params Expression<Func<T, object>>[] indexFields)
+		{
+			if (!_indexBuilders.TryGetValue(indexName, out var indexBuilder))
+			{
+				indexBuilder = new SchemaIndexBuilder<T>(indexName);
+				_indexBuilders.Add(indexName, indexBuilder);
+			}
+			if (uniqueConstraint != null)
+				indexBuilder.HasUniqueConstraint = uniqueConstraint.Value;
+			indexBuilder.AddFields(indexFields);
+			return indexBuilder;
 		}
 
 		public virtual EntityFieldBuilder<TProperty> For<TProperty>(Expression<Func<T, TProperty>> property)
@@ -125,7 +144,8 @@ namespace Silk.Data.SQL.ORM.Schema
 			var joins = BuildManyToOneJoins(_entityTypeModel, fields, partialEntities, TableName).ToArray();
 			var projectionFields = BuildProjectionFields(_entityTypeModel, fields, partialEntities, joins).ToArray();
 			return new EntitySchema<T>(
-				new Table(TableName, columns), fields, projectionFields, joins
+				new Table(TableName, columns), fields, projectionFields, joins,
+				_indexBuilders.Select(kvp => kvp.Value.Build(fields)).ToArray()
 				);
 		}
 

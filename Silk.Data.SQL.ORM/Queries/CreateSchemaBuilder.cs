@@ -12,15 +12,34 @@ namespace Silk.Data.SQL.ORM.Queries
 	{
 		protected Dictionary<string, EntityField[]> Fields { get; }
 			= new Dictionary<string, EntityField[]>();
+		protected Dictionary<string, SchemaIndex[]> Indexes { get; }
+			= new Dictionary<string, SchemaIndex[]>();
 
 		public QueryExpression BuildQuery()
 		{
 			return new CompositeQueryExpression(
 				GetCreateTableExpressions()
+					.Concat(GetCreateIndexExpressions())
 				);
 		}
 
-		private IEnumerable<CreateTableExpression> GetCreateTableExpressions()
+		private IEnumerable<QueryExpression> GetCreateIndexExpressions()
+		{
+			foreach (var kvp in Indexes)
+			{
+				foreach (var index in kvp.Value)
+				{
+					//  todo: support the custom index name specified
+					yield return QueryExpression.CreateIndex(
+						kvp.Key,
+						index.HasUniqueConstraint,
+						index.EntityFields.SelectMany(q => q.Columns.Select(column => column.ColumnName)).ToArray()
+						);
+				}
+			}
+		}
+
+		private IEnumerable<QueryExpression> GetCreateTableExpressions()
 		{
 			foreach (var kvp in Fields)
 			{
@@ -56,6 +75,8 @@ namespace Silk.Data.SQL.ORM.Queries
 		{
 			Fields.Add(EntitySchema.EntityTable.TableName,
 				EntitySchema.EntityFields);
+			Indexes.Add(EntitySchema.EntityTable.TableName,
+				EntitySchema.Indexes);
 		}
 	}
 }

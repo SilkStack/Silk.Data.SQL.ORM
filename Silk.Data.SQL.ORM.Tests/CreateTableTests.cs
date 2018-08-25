@@ -30,6 +30,51 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 		}
 
+		[TestMethod]
+		public async Task CreatePrimitiveTableWithCustomTableName()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<Primitives>().TableName = "CustomTable";
+			var schema = schemaBuilder.Build();
+			Assert.AreEqual("CustomTable", schema.GetEntitySchema<Primitives>().EntityTable.TableName);
+
+			using (var provider = TestHelper.CreateProvider())
+			{
+				var queryBuilder = new EntityCreateSchemaBuilder<Primitives>(schema);
+				var queryExpression = queryBuilder.BuildQuery();
+				await provider.ExecuteNonQueryAsync(queryExpression);
+
+				await InsertDefaultRow<Primitives>(provider, schema);
+				await TestDefaultRow<Primitives>(provider, schema);
+			}
+		}
+
+		[TestMethod]
+		public async Task CreatePrimitiveTableWithUniqueIndex()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<Primitives>()
+				.Index("testIndex", true, q => q.Bool, q => q.Int);
+			var schema = schemaBuilder.Build();
+
+			using (var provider = TestHelper.CreateProvider())
+			{
+				var queryBuilder = new EntityCreateSchemaBuilder<Primitives>(schema);
+				var queryExpression = queryBuilder.BuildQuery();
+				await provider.ExecuteNonQueryAsync(queryExpression);
+
+				await InsertDefaultRow<Primitives>(provider, schema);
+				await TestDefaultRow<Primitives>(provider, schema);
+
+				try
+				{
+					await InsertDefaultRow<Primitives>(provider, schema);
+					Assert.Fail("Inserted row that should violate unique index.");
+				}
+				catch { }
+			}
+		}
+
 		private static async Task InsertDefaultRow<T>(IDataProvider dataProvider, Schema.Schema schema)
 		{
 			var entitySchema = schema.GetEntitySchema<T>();
