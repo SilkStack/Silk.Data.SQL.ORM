@@ -4,11 +4,10 @@ using Silk.Data.SQL.ORM.Schema;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace Silk.Data.SQL.ORM.Queries
 {
-	public class CreateSchemaBuilder
+	public class CreateSchemaBuilder : IQueryBuilder
 	{
 		protected Dictionary<string, ITableField[]> Fields { get; }
 			= new Dictionary<string, ITableField[]>();

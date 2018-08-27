@@ -118,6 +118,8 @@ namespace Silk.Data.SQL.ORM.Tests
 				case SqlBaseType.TinyInt:
 					return (byte)1;
 				case SqlBaseType.Float:
+					if (column.DataType.Parameters[0] <= SqlDataType.FLOAT_MAX_PRECISION)
+						return 1.0f;
 					return 1.0d;
 				case SqlBaseType.Date:
 				case SqlBaseType.DateTime:

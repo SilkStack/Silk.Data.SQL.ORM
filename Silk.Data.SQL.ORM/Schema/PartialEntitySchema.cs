@@ -17,8 +17,9 @@ namespace Silk.Data.SQL.ORM.Schema
 			TableName = tableName;
 		}
 
-		public abstract EntityField CreateRelatedEntityField(IPropertyField modelField,
-			PartialEntitySchemaCollection entityPrimitiveFields, string propertyPathPrefix);
+		public abstract EntityField CreateRelatedEntityField<TEntity>(IPropertyField modelField,
+			PartialEntitySchemaCollection entityPrimitiveFields, string propertyPathPrefix,
+			string[] modelPath);
 	}
 
 	public class PartialEntitySchema<T> : PartialEntitySchema
@@ -30,14 +31,15 @@ namespace Silk.Data.SQL.ORM.Schema
 		{
 		}
 
-		public override EntityField CreateRelatedEntityField(IPropertyField modelField,
-			PartialEntitySchemaCollection entityPrimitiveFields, string propertyPathPrefix)
+		public override EntityField CreateRelatedEntityField<TEntity>(IPropertyField modelField,
+			PartialEntitySchemaCollection entityPrimitiveFields, string propertyPathPrefix,
+			string[] modelPath)
 		{
-			return new EntityField<T>(
+			return new EntityField<T, TEntity>(
 				entityPrimitiveFields.GetEntityPrimaryKeys(modelField.FieldType).Select(q => new Column(
 					$"FK_{propertyPathPrefix}_{q.Columns[0].ColumnName}", q.Columns[0].DataType, true
 					)).ToArray(),
-				modelField, PrimaryKeyGenerator.NotPrimaryKey);
+				modelField, PrimaryKeyGenerator.NotPrimaryKey, modelPath);
 		}
 	}
 }

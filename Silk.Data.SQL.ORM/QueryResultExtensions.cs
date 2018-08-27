@@ -27,6 +27,10 @@ namespace Silk.Data.SQL.ORM
 			if (!_typeReaders.TryGetValue(column.DataType.BaseType, out var reader))
 				throw new Exception("Unsupported data type.");
 
+			if (column.DataType.BaseType == SqlBaseType.Float &&
+				column.DataType.Parameters[0] <= SqlDataType.FLOAT_MAX_PRECISION)
+				reader = (q, o) => q.GetFloat(o);
+
 			var ord = queryResult.GetOrdinal(column.ColumnName);
 			if (queryResult.IsDBNull(ord))
 				return null;

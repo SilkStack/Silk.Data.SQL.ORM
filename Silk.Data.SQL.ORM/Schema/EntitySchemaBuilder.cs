@@ -69,7 +69,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			return indexBuilder;
 		}
 
-		public virtual EntityFieldBuilder<TProperty> For<TProperty>(Expression<Func<T, TProperty>> property)
+		public virtual EntityFieldBuilder<TProperty, T> For<TProperty>(Expression<Func<T, TProperty>> property)
 		{
 			if (property.Body is MemberExpression memberExpression)
 			{
@@ -81,11 +81,11 @@ namespace Silk.Data.SQL.ORM.Schema
 					throw new ArgumentException("Field selector expression doesn't specify a valid member.", nameof(property));
 
 				if (_entityFieldBuilders.TryGetValue(field, out var fieldBuilder))
-					return fieldBuilder as EntityFieldBuilder<TProperty>;
+					return fieldBuilder as EntityFieldBuilder<TProperty, T>;
 
-				fieldBuilder = new EntityFieldBuilder<TProperty>(field);
+				fieldBuilder = new EntityFieldBuilder<TProperty, T>(field);
 				_entityFieldBuilders.Add(field, fieldBuilder);
-				return fieldBuilder as EntityFieldBuilder<TProperty>;
+				return fieldBuilder as EntityFieldBuilder<TProperty, T>;
 			}
 			throw new ArgumentException("Field selector must be a MemberExpression.", nameof(property));
 		}
@@ -139,7 +139,7 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public override EntitySchema BuildSchema(PartialEntitySchemaCollection partialEntities)
 		{
-			var fields = partialEntities[typeof(T)].EntityFields.ToArray();
+			var fields = partialEntities[typeof(T)].EntityFields.OfType<EntityField<T>>().ToArray();
 			var columns = fields.SelectMany(q => q.Columns).ToArray();
 			var joins = BuildManyToOneJoins(_entityTypeModel, fields, partialEntities, TableName).ToArray();
 			var projectionFields = BuildProjectionFields(_entityTypeModel, fields, partialEntities, joins).ToArray();
@@ -268,6 +268,7 @@ namespace Silk.Data.SQL.ORM.Schema
 
 			foreach (var modelField in entityTypeModel.Fields)
 			{
+				var subPropertyPath = propertyPath.Concat(new[] { modelField.FieldName }).ToArray();
 				var isPrimitiveType = SqlTypeHelper.IsSqlPrimitiveType(modelField.FieldType);
 
 				if (isPrimitiveType)
@@ -279,7 +280,7 @@ namespace Silk.Data.SQL.ORM.Schema
 					if (builder == null)
 						continue;
 
-					var entityField = builder.Build(propertyNamePrefix);
+					var entityField = builder.Build(propertyNamePrefix, subPropertyPath);
 					if (entityField == null)
 						continue;
 
@@ -300,7 +301,7 @@ namespace Silk.Data.SQL.ORM.Schema
 					if (relatedEntityField == null)
 					{
 						relatedEntityField = entityPrimitiveFields[modelField.FieldType]
-							.CreateRelatedEntityField(modelField, entityPrimitiveFields, modelField.FieldName);
+							.CreateRelatedEntityField<T>(modelField, entityPrimitiveFields, modelField.FieldName, subPropertyPath);
 						yield return relatedEntityField;
 					}
 				}
@@ -315,14 +316,13 @@ namespace Silk.Data.SQL.ORM.Schema
 						if (builder == null)
 							continue;
 
-						embeddedEntityField = builder.Build(propertyNamePrefix);
+						embeddedEntityField = builder.Build(propertyNamePrefix, subPropertyPath);
 						if (embeddedEntityField == null)
 							continue;
 
 						yield return embeddedEntityField;
 					}
 					//  go deeper!
-					var subPropertyPath = propertyPath.Concat(new[] { modelField.FieldName }).ToArray();
 					foreach (var field in BuildEntityFields(modelField.FieldTypeModel, getPrimitiveFields, entityPrimitiveFields, subPropertyPath))
 						yield return field;
 				}
@@ -344,7 +344,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			//    building a schema is a rare occurance, using reflection here should make the use of generic types
 			//    possible through the entire codebase while only executing slow reflection code this once
 			return Activator.CreateInstance(
-				typeof(EntityFieldBuilder<>).MakeGenericType(propertyField.FieldType),
+				typeof(EntityFieldBuilder<,>).MakeGenericType(propertyField.FieldType, typeof(T)),
 				new object[] { propertyField }
 				) as EntityFieldBuilder;
 		}

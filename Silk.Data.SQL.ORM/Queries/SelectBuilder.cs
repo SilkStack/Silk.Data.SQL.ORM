@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Queries
 {
-	public class SelectBuilder
+	public class SelectBuilder : IQueryBuilder
 	{
 		protected QueryExpression Source { get; set; }
 		protected List<IProjectedItem> Projections { get; }
@@ -14,7 +14,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		protected List<ITableJoin> TableJoins { get; }
 			= new List<ITableJoin>();
 
-		public SelectExpression BuildQuery()
+		public QueryExpression BuildQuery()
 		{
 			return QueryExpression.Select(
 				projection: Projections.Select(q => QueryExpression.Alias(QueryExpression.Column(q.FieldName, new AliasIdentifierExpression(q.SourceName)), q.AliasName)).ToArray(),

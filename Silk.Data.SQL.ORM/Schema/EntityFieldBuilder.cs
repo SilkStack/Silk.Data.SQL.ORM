@@ -37,14 +37,14 @@ namespace Silk.Data.SQL.ORM.Schema
 		/// Builds the entity field.
 		/// </summary>
 		/// <returns>Null when the field shouldn't be stored in the schema being built.</returns>
-		public abstract EntityField Build(string columnNamePrefix);
+		public abstract EntityField Build(string columnNamePrefix, string[] modelPath);
 	}
 
 	/// <summary>
 	/// Configures and builds an entity field of type T.
 	/// </summary>
-	/// <typeparam name="T"></typeparam>
-	public class EntityFieldBuilder<T> : EntityFieldBuilder
+	/// <typeparam name="TValue"></typeparam>
+	public class EntityFieldBuilder<TValue, TEntity> : EntityFieldBuilder
 	{
 		/// <summary>
 		/// Gets the model field the field builder represents.
@@ -55,10 +55,10 @@ namespace Silk.Data.SQL.ORM.Schema
 		{
 			ModelField = modelField;
 			ColumnName = modelField.FieldName;
-			if (SqlTypeHelper.IsSqlPrimitiveType(typeof(T)))
+			if (SqlTypeHelper.IsSqlPrimitiveType(typeof(TValue)))
 			{
-				SqlDataType = SqlTypeHelper.GetDataType(typeof(T));
-				IsNullable = TypeIsNullable(typeof(T));
+				SqlDataType = SqlTypeHelper.GetDataType(typeof(TValue));
+				IsNullable = TypeIsNullable(typeof(TValue));
 			}
 			else
 			{
@@ -70,7 +70,7 @@ namespace Silk.Data.SQL.ORM.Schema
 				IsPrimaryKey = true;
 		}
 
-		public override EntityField Build(string columnNamePrefix)
+		public override EntityField Build(string columnNamePrefix, string[] modelPath)
 		{
 			if (SqlDataType == null || !ModelField.CanRead || ModelField.IsEnumerable)
 				return null;
@@ -78,8 +78,8 @@ namespace Silk.Data.SQL.ORM.Schema
 			var primaryKeyGenerator = PrimaryKeyGenerator.NotPrimaryKey;
 			if (IsPrimaryKey)
 				primaryKeyGenerator = GetPrimaryKeyGenerator(SqlDataType);
-			return new EntityField<T>(new[] { new Column($"{columnNamePrefix}{ColumnName}", SqlDataType, IsNullable) },
-				ModelField, primaryKeyGenerator);
+			return new EntityField<TValue, TEntity>(new[] { new Column($"{columnNamePrefix}{ColumnName}", SqlDataType, IsNullable) },
+				ModelField, primaryKeyGenerator, modelPath);
 		}
 
 		private static PrimaryKeyGenerator GetPrimaryKeyGenerator(SqlDataType sqlDataType)
