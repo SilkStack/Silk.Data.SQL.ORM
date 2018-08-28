@@ -28,6 +28,14 @@ namespace Silk.Data.SQL.ORM.Schema
 			return builder as EntitySchemaBuilder<T>;
 		}
 
+		public EntitySchemaBuilder<T> DefineEntity<T>(Action<EntitySchemaBuilder<T>> configureCallback)
+			where T : class
+		{
+			var builder = DefineEntity<T>();
+			configureCallback?.Invoke(builder);
+			return builder;
+		}
+
 		/// <summary>
 		/// Build the schema.
 		/// </summary>

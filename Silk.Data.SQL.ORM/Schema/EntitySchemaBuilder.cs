@@ -90,6 +90,14 @@ namespace Silk.Data.SQL.ORM.Schema
 			throw new ArgumentException("Field selector must be a MemberExpression.", nameof(property));
 		}
 
+		public EntityFieldBuilder<TProperty, T> For<TProperty>(Expression<Func<T, TProperty>> property,
+			Action<EntityFieldBuilder<TProperty, T>> configureCallback)
+		{
+			var builder = For(property);
+			configureCallback?.Invoke(builder);
+			return builder;
+		}
+
 		private IPropertyField GetField(IEnumerable<string> path)
 		{
 			var fields = _entityTypeModel.Fields;
