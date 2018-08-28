@@ -2,6 +2,8 @@
 using Silk.Data.Modelling.Mapping.Binding;
 using Silk.Data.SQL.ORM.Queries;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Schema
 {
@@ -15,10 +17,13 @@ namespace Silk.Data.SQL.ORM.Schema
 		public abstract IPropertyField ModelField { get; }
 		public abstract PrimaryKeyGenerator PrimaryKeyGenerator { get; }
 		public abstract string[] ModelPath { get; }
+		public abstract KeyType KeyType { get; }
 
 		public bool IsPrimaryKey => PrimaryKeyGenerator != PrimaryKeyGenerator.NotPrimaryKey;
 
 		public abstract Binding GetValueBinding();
+
+		public abstract ForeignKey BuildForeignKey(string propertyPathPrefix, string[] modelPath);
 	}
 
 	public abstract class EntityField<TEntity> : EntityField
@@ -39,6 +44,8 @@ namespace Silk.Data.SQL.ORM.Schema
 		public override IPropertyField ModelField { get; }
 		public override PrimaryKeyGenerator PrimaryKeyGenerator { get; }
 		public override string[] ModelPath { get; }
+		public override KeyType KeyType { get; }
+		public ForeignKey[] ForeignKeys { get; }
 
 		public EntityField(Column[] columns, IPropertyField modelField,
 			PrimaryKeyGenerator primaryKeyGenerator, string[] modelPath)
@@ -47,14 +54,39 @@ namespace Silk.Data.SQL.ORM.Schema
 			ModelField = modelField;
 			PrimaryKeyGenerator = primaryKeyGenerator;
 			ModelPath = modelPath;
+			KeyType = KeyType.None;
+		}
+
+		public EntityField(IPropertyField modelField, string[] modelPath, KeyType keyType,
+			ForeignKey[] foreignKeys)
+		{
+			Columns = foreignKeys.Select(q => q.LocalColumn).ToArray();
+			ModelField = modelField;
+			PrimaryKeyGenerator = PrimaryKeyGenerator.NotPrimaryKey;
+			ModelPath = modelPath;
+			ForeignKeys = foreignKeys;
+			KeyType = keyType;
 		}
 
 		public override IValueReader GetValueReader(TEntity obj, Column column)
 		{
-			return new ValueReader(
-				new ObjectReadWriter(obj, _entityModel, typeof(TEntity)),
-				ModelPath
-				);
+			var objectReadWriter = new ObjectReadWriter(obj, _entityModel, typeof(TEntity));
+
+			//  if EntityField represents a complex type read a true/false value representing null/not null
+			if (!SqlTypeHelper.IsSqlPrimitiveType(DataType))
+			{
+				if (KeyType == KeyType.None)
+				{
+					return new NullBoolReader(objectReadWriter, ModelPath);
+				}
+				else
+				{
+					var foreignKey = ForeignKeys.First(q => q.LocalColumn == column);
+					return foreignKey.CreateValueReader(objectReadWriter);
+				}
+			}
+
+			return new ValueReader(objectReadWriter, ModelPath);
 		}
 
 		public override Binding GetValueBinding()
@@ -64,6 +96,14 @@ namespace Silk.Data.SQL.ORM.Schema
 				return new CopyBinding<TValue>(new[] { "__PK_IDENTITY" }, ModelPath);
 			}
 			return new CopyBinding<TValue>(new[] { Columns[0].ColumnName }, ModelPath);
+		}
+
+		public override ForeignKey BuildForeignKey(string propertyPathPrefix, string[] modelPath)
+		{
+			var column = Columns[0];
+			return new ForeignKey<TEntity, TValue>(new Column(
+					$"FK_{propertyPathPrefix}_{column.ColumnName}", column.DataType, true
+					), column, modelPath.Concat(ModelPath).ToArray());
 		}
 
 		private class ValueReader : IValueReader
@@ -80,6 +120,24 @@ namespace Silk.Data.SQL.ORM.Schema
 			public object Read()
 			{
 				return _objectReadWriter.ReadField<TValue>(_modelPath, 0);
+			}
+		}
+
+		private class NullBoolReader : IValueReader
+		{
+			private readonly ObjectReadWriter _objectReadWriter;
+			private readonly string[] _modelPath;
+
+			public NullBoolReader(ObjectReadWriter objectReadWriter, string[] modelPath)
+			{
+				_objectReadWriter = objectReadWriter;
+				_modelPath = modelPath;
+			}
+
+			public object Read()
+			{
+				var value = _objectReadWriter.ReadField<TValue>(_modelPath, 0);
+				return value != null;
 			}
 		}
 	}

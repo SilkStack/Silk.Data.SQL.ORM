@@ -35,11 +35,17 @@ namespace Silk.Data.SQL.ORM.Schema
 			PartialEntitySchemaCollection entityPrimitiveFields, string propertyPathPrefix,
 			string[] modelPath)
 		{
-			return new EntityField<T, TEntity>(
-				entityPrimitiveFields.GetEntityPrimaryKeys(modelField.FieldType).Select(q => new Column(
-					$"FK_{propertyPathPrefix}_{q.Columns[0].ColumnName}", q.Columns[0].DataType, true
-					)).ToArray(),
-				modelField, PrimaryKeyGenerator.NotPrimaryKey, modelPath);
+			var primaryKeyFields = entityPrimitiveFields.GetEntityPrimaryKeys(modelField.FieldType);
+			var foreignKeys = primaryKeyFields.Select(q => q.BuildForeignKey(propertyPathPrefix, modelPath)).ToArray();
+			return new EntityField<T, TEntity>(modelField, modelPath, KeyType.ManyToOne, foreignKeys.ToArray());
+
+			//return new EntityField<T, TEntity>(
+			//	entityPrimitiveFields.GetEntityPrimaryKeys(modelField.FieldType).Select(q => new Column(
+			//		$"FK_{propertyPathPrefix}_{q.Columns[0].ColumnName}", q.Columns[0].DataType, true
+			//		)).ToArray(),
+			//	modelField, PrimaryKeyGenerator.NotPrimaryKey, modelPath, KeyType.ManyToOne,
+			//	entityPrimitiveFields.GetEntityPrimaryKeys(modelField.FieldType).ToArray()
+			//	);
 		}
 	}
 }

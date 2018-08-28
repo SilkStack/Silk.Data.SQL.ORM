@@ -159,6 +159,105 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 		}
 
+		[TestMethod]
+		public async Task InsertEmbedded()
+		{
+			var tableName = default(string);
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<HasRelationship>(builder =>
+			{
+				tableName = builder.TableName;
+				builder.For(q => q.Sub.Id).IsPrimaryKey = false;
+			});
+			var schema = schemaBuilder.Build();
+
+			using (var provider = TestHelper.CreateProvider())
+			{
+				await CreateSchema<HasRelationship>(schema, provider);
+
+				var obj = new HasRelationship
+				{
+					Data = "Hello",
+					Sub = new HasGuidPK
+					{
+						Data = "World"
+					}
+				};
+
+				var insertBuilder = new EntityInsertBuilder<HasRelationship>(schema);
+				insertBuilder.Add(obj);
+				var queryExpression = insertBuilder.BuildQuery();
+				await provider.ExecuteNonQueryAsync(queryExpression);
+
+				Assert.AreNotEqual(Guid.Empty, obj.Id);
+				Assert.AreEqual(Guid.Empty, obj.Sub.Id);
+
+				using (var queryResult = await provider.ExecuteReaderAsync(
+					QueryExpression.Select(QueryExpression.All(), QueryExpression.Table(tableName))
+					))
+				{
+					Assert.IsTrue(queryResult.HasRows);
+					Assert.IsTrue(await queryResult.ReadAsync());
+
+					Assert.AreEqual(obj.Id, queryResult.GetGuid(queryResult.GetOrdinal("Id")));
+					Assert.AreEqual(obj.Data, queryResult.GetString(queryResult.GetOrdinal("Data")));
+					Assert.AreEqual(true, queryResult.GetBoolean(queryResult.GetOrdinal("Sub")));
+					Assert.AreEqual(obj.Sub.Id, queryResult.GetGuid(queryResult.GetOrdinal("Sub_Id")));
+					Assert.AreEqual(obj.Sub.Data, queryResult.GetString(queryResult.GetOrdinal("Sub_Data")));
+				}
+			}
+		}
+
+		[TestMethod]
+		public async Task InsertWithRelationship()
+		{
+			var tableName = default(string);
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<HasGuidPK>();
+			schemaBuilder.DefineEntity<HasRelationship>(builder =>
+			{
+				tableName = builder.TableName;
+			});
+			var schema = schemaBuilder.Build();
+
+			using (var provider = TestHelper.CreateProvider())
+			{
+				await CreateSchema<HasGuidPK>(schema, provider);
+				await CreateSchema<HasRelationship>(schema, provider);
+
+				var obj = new HasRelationship
+				{
+					Data = "Hello",
+					Sub = new HasGuidPK
+					{
+						Data = "World"
+					}
+				};
+
+				var guidPKInsertBuilder = new EntityInsertBuilder<HasGuidPK>(schema);
+				guidPKInsertBuilder.Add(obj.Sub);
+				await provider.ExecuteNonQueryAsync(guidPKInsertBuilder.BuildQuery());
+
+				var insertBuilder = new EntityInsertBuilder<HasRelationship>(schema);
+				insertBuilder.Add(obj);
+				var queryExpression = insertBuilder.BuildQuery();
+
+				await provider.ExecuteNonQueryAsync(queryExpression);
+
+				using (var queryResult = await provider.ExecuteReaderAsync(
+					QueryExpression.Select(QueryExpression.All(), QueryExpression.Table(tableName))
+					))
+				{
+					Assert.IsTrue(queryResult.HasRows);
+					Assert.IsTrue(await queryResult.ReadAsync());
+
+					Assert.AreEqual(obj.Id, queryResult.GetGuid(queryResult.GetOrdinal("Id")));
+					Assert.AreEqual(obj.Data, queryResult.GetString(queryResult.GetOrdinal("Data")));
+					Assert.AreEqual(obj.Sub.Id, queryResult.GetGuid(queryResult.GetOrdinal("FK_Sub_Id")));
+				}
+			}
+		}
+
 		private void CheckValue<T>(T value, QueryResult queryResult, Column column)
 		{
 			Assert.AreEqual(value, queryResult.GetColumnValue(column));
@@ -196,6 +295,13 @@ namespace Silk.Data.SQL.ORM.Tests
 		{
 			public int Id { get; private set; }
 			public string Data { get; set; }
+		}
+
+		private class HasRelationship
+		{
+			public Guid Id { get; private set; }
+			public string Data { get; set; }
+			public HasGuidPK Sub { get; set; }
 		}
 	}
 }
