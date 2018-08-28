@@ -3,6 +3,7 @@ using Silk.Data.Modelling.Mapping.Binding;
 using Silk.Data.SQL.Queries;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Silk.Data.SQL.ORM.Queries
 {
@@ -24,6 +25,7 @@ namespace Silk.Data.SQL.ORM.Queries
 
 	public class ResultMapper<T> : ResultMapper
 	{
+		private static string[] _selfPath = new[] { "." };
 		private static TypeModel<T> _typeModel = TypeModel.GetModelOf<T>();
 
 		public ResultMapper(int resultSetCount, IEnumerable<Binding> bindings)
@@ -35,9 +37,48 @@ namespace Silk.Data.SQL.ORM.Queries
 		{
 			var objectReadWriter = new ObjectReadWriter(obj, _typeModel, typeof(T));
 			var queryReader = new QueryResultReader(queryResult);
+			Bind(queryReader, objectReadWriter);
+		}
+
+		public T Map(QueryResult queryResult)
+		{
+			var objectReadWriter = new ObjectReadWriter(null, _typeModel, typeof(T));
+			var queryReader = new QueryResultReader(queryResult);
+			Bind(queryReader, objectReadWriter);
+			return objectReadWriter.ReadField<T>(_selfPath, 0);
+		}
+
+		public ICollection<T> MapResultSet(QueryResult queryResult)
+		{
+			var queryReader = new QueryResultReader(queryResult);
+			var result = new List<T>();
+			while (queryResult.Read())
+			{
+				var objectReadWriter = new ObjectReadWriter(null, _typeModel, typeof(T));
+				Bind(queryReader, objectReadWriter);
+				result.Add(objectReadWriter.ReadField<T>(_selfPath, 0));
+			}
+			return result;
+		}
+
+		public async Task<ICollection<T>> MapResultSetAsync(QueryResult queryResult)
+		{
+			var queryReader = new QueryResultReader(queryResult);
+			var result = new List<T>();
+			while (await queryResult.ReadAsync())
+			{
+				var objectReadWriter = new ObjectReadWriter(null, _typeModel, typeof(T));
+				Bind(queryReader, objectReadWriter);
+				result.Add(objectReadWriter.ReadField<T>(_selfPath, 0));
+			}
+			return result;
+		}
+
+		private void Bind(IModelReadWriter from, IModelReadWriter to)
+		{
 			foreach (var binding in Bindings)
 			{
-				binding.PerformBinding(queryReader, objectReadWriter);
+				binding.PerformBinding(from, to);
 			}
 		}
 	}

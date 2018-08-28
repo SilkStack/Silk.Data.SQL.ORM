@@ -1,9 +1,11 @@
-﻿namespace Silk.Data.SQL.ORM.Schema
+﻿using Silk.Data.Modelling.Mapping.Binding;
+
+namespace Silk.Data.SQL.ORM.Schema
 {
 	/// <summary>
 	/// Describs how a field is mapped from schema to entity type.
 	/// </summary>
-	public class ProjectionField : IProjectedItem
+	public abstract class ProjectionField : IProjectedItem
 	{
 		/// <summary>
 		/// Gets the table name/alias that the field is a member of.
@@ -29,6 +31,21 @@
 			FieldName = fieldName;
 			AliasName = aliasName;
 			ModelPath = modelPath;
+		}
+
+		public abstract Binding GetMappingBinding();
+	}
+
+	public class ProjectionField<T> : ProjectionField
+	{
+		public ProjectionField(string sourceName, string fieldName, string aliasName, string[] modelPath)
+			: base(sourceName, fieldName, aliasName, modelPath)
+		{
+		}
+
+		public override Binding GetMappingBinding()
+		{
+			return new CopyBinding<T>(new[] { AliasName }, ModelPath);
 		}
 	}
 }

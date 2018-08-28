@@ -1,8 +1,11 @@
-﻿using Silk.Data.SQL.Expressions;
+﻿using Silk.Data.Modelling;
+using Silk.Data.Modelling.Mapping.Binding;
+using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Schema;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace Silk.Data.SQL.ORM.Queries
 {
@@ -71,7 +74,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			Source = QueryExpression.Table(EntitySchema.EntityTable.TableName);
 		}
 
-		public ResultMapper Project<TView>()
+		public ResultMapper<TView> Project<TView>()
 			where TView : class
 		{
 			var projectionSchema = EntitySchema;
@@ -79,15 +82,36 @@ namespace Silk.Data.SQL.ORM.Queries
 			{
 			}
 
-			foreach (var projectionField in projectionSchema.ProjectionFields)
-			{
-				Projections.Add(projectionField);
-				//  todo: add mapping binding
-			}
-
+			Projections.AddRange(projectionSchema.ProjectionFields);
 			TableJoins.AddRange(projectionSchema.EntityJoins);
 
-			return null;
+			return CreateResultMapper<TView>(1, projectionSchema);
+		}
+
+		private IEnumerable<Binding> CreateMappingBindings<TView>(EntitySchema projectionSchema)
+		{
+			yield return new CreateInstanceIfNull<TView>(GetConstructor(typeof(TView)), new[] { "." });
+			foreach (var field in projectionSchema.ProjectionFields)
+			{
+				yield return field.GetMappingBinding();
+			}
+		}
+
+		private ResultMapper<TView> CreateResultMapper<TView>(int resultSetCount, EntitySchema projectionSchema)
+		{
+			return new ResultMapper<TView>(resultSetCount,
+				CreateMappingBindings<TView>(projectionSchema));
+		}
+
+		private static ConstructorInfo GetConstructor(Type type)
+		{
+			var ctor = type.GetConstructors()
+				.FirstOrDefault(q => q.GetParameters().Length == 0);
+			if (ctor == null)
+			{
+				throw new MappingRequirementException($"A constructor with 0 parameters is required on type {type}.");
+			}
+			return ctor;
 		}
 	}
 }

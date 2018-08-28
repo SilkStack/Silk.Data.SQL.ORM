@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 namespace Silk.Data.SQL.ORM.Tests
 {
 	[TestClass]
-	public class ModelSelectTests
+	public class SelectQueryTests
 	{
 		[TestMethod]
 		public async Task SelectFlatModel()

@@ -237,7 +237,8 @@ namespace Silk.Data.SQL.ORM.Schema
 					var entityJoin = entityJoins.FirstOrDefault(q => q.EntityField == joinEntityField);
 					var sourceName = entityJoin?.TableAlias ?? TableName;
 					var prefix = propertyPath.Length == 0 ? "" : $"{string.Join("_", propertyPath)}_";
-					yield return new ProjectionField(sourceName,
+
+					yield return entityField.BuildProjectionField(sourceName,
 						entityField.Columns[0].ColumnName,
 						$"{prefix}{entityField.ModelField.FieldName}",
 						subPropertyPath);
