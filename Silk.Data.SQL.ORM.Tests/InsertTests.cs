@@ -89,6 +89,76 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 		}
 
+		[TestMethod]
+		public async Task InsertGuidPrimaryKey()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<HasGuidPK>();
+			var schema = schemaBuilder.Build();
+
+			using (var provider = TestHelper.CreateProvider())
+			{
+				await CreateSchema<HasGuidPK>(schema, provider);
+
+				var obj = new HasGuidPK
+				{
+					Data = "Hello World"
+				};
+
+				var insertBuilder = new EntityInsertBuilder<HasGuidPK>(schema);
+				var resultMapper = insertBuilder.Add(obj);
+				Assert.IsNull(resultMapper);
+
+				var queryExpression = insertBuilder.BuildQuery();
+				using (var queryResult = await provider.ExecuteReaderAsync(queryExpression))
+				{
+					Assert.IsFalse(queryResult.HasRows);
+					Assert.AreNotEqual(Guid.Empty, obj.Id);
+				}
+			}
+		}
+
+		[TestMethod]
+		public async Task InsertIdPrimaryKey()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<HasIntPK>();
+			var schema = schemaBuilder.Build();
+
+			using (var provider = TestHelper.CreateProvider())
+			{
+				await CreateSchema<HasIntPK>(schema, provider);
+
+				var obj1 = new HasIntPK
+				{
+					Data = "Hello"
+				};
+				var obj2 = new HasIntPK
+				{
+					Data = "World"
+				};
+
+				var insertBuilder = new EntityInsertBuilder<HasIntPK>(schema);
+				var resultMapper = insertBuilder.Add(obj1, obj2);
+				Assert.IsNotNull(resultMapper);
+				Assert.AreEqual(2, resultMapper.ResultSetCount);
+
+				var queryExpression = insertBuilder.BuildQuery();
+				using (var queryResult = await provider.ExecuteReaderAsync(queryExpression))
+				{
+					Assert.IsTrue(queryResult.HasRows);
+					Assert.IsTrue(await queryResult.ReadAsync());
+					resultMapper.Inject(obj1, queryResult);
+					Assert.IsTrue(await queryResult.NextResultAsync());
+					Assert.IsTrue(await queryResult.ReadAsync());
+					resultMapper.Inject(obj2, queryResult);
+					Assert.AreNotEqual(0, obj1.Id);
+					Assert.AreNotEqual(0, obj2.Id);
+					Assert.AreNotEqual(obj2.Id, obj1.Id);
+				}
+			}
+		}
+
 		private void CheckValue<T>(T value, QueryResult queryResult, Column column)
 		{
 			Assert.AreEqual(value, queryResult.GetColumnValue(column));
@@ -114,6 +184,18 @@ namespace Silk.Data.SQL.ORM.Tests
 			public float Float { get; set; }
 			public double Double { get; set; }
 			public decimal Decimal { get; set; }
+		}
+
+		private class HasGuidPK
+		{
+			public Guid Id { get; private set; }
+			public string Data { get; set; }
+		}
+
+		private class HasIntPK
+		{
+			public int Id { get; private set; }
+			public string Data { get; set; }
 		}
 	}
 }

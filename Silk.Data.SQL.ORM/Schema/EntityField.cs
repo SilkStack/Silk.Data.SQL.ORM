@@ -1,4 +1,5 @@
 ﻿using Silk.Data.Modelling;
+using Silk.Data.Modelling.Mapping.Binding;
 using Silk.Data.SQL.ORM.Queries;
 using System;
 
@@ -16,6 +17,8 @@ namespace Silk.Data.SQL.ORM.Schema
 		public abstract string[] ModelPath { get; }
 
 		public bool IsPrimaryKey => PrimaryKeyGenerator != PrimaryKeyGenerator.NotPrimaryKey;
+
+		public abstract Binding GetValueBinding();
 	}
 
 	public abstract class EntityField<TEntity> : EntityField
@@ -52,6 +55,15 @@ namespace Silk.Data.SQL.ORM.Schema
 				new ObjectReadWriter(obj, _entityModel, typeof(TEntity)),
 				ModelPath
 				);
+		}
+
+		public override Binding GetValueBinding()
+		{
+			if (PrimaryKeyGenerator == PrimaryKeyGenerator.ServerGenerated)
+			{
+				return new CopyBinding<TValue>(new[] { "__PK_IDENTITY" }, ModelPath);
+			}
+			return new CopyBinding<TValue>(new[] { Columns[0].ColumnName }, ModelPath);
 		}
 
 		private class ValueReader : IValueReader

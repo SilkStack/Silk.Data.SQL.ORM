@@ -71,7 +71,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			Source = QueryExpression.Table(EntitySchema.EntityTable.TableName);
 		}
 
-		public ProjectionMapping Project<TView>()
+		public ResultMapper Project<TView>()
 			where TView : class
 		{
 			var projectionSchema = EntitySchema;
