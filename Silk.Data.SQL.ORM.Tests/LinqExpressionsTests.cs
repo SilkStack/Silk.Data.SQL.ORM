@@ -247,6 +247,18 @@ namespace Silk.Data.SQL.ORM.Tests
 			Assert.AreEqual(ConditionType.OrElse, checkExpression.ConditionType);
 		}
 
+		[TestMethod]
+		public void ConvertHasFlagMethod()
+		{
+			var expressionConverter = CreateConverter<TestEnum, TestEnum>();
+			var condition = expressionConverter.Convert(q => q.A.HasFlag(TestEnum.OptionB));
+
+			var checkExpression = condition.QueryExpression as ComparisonExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.AreEqual(ComparisonOperator.AreEqual, checkExpression.Operator);
+			Assert.IsInstanceOfType(checkExpression.Left, typeof(BitwiseOperationQueryExpression));
+		}
+
 		private ExpressionConverter<TestTuple<T1,T2>> CreateConverter<T1, T2>()
 		{
 			var schemaBuilder = new SchemaBuilder();
@@ -259,6 +271,17 @@ namespace Silk.Data.SQL.ORM.Tests
 		{
 			public T1 A { get; set; }
 			public T2 B { get; set; }
+		}
+
+		[Flags]
+		private enum TestEnum
+		{
+			None = 0,
+			OptionA = 1,
+			OptionB = 2,
+			OptionC = 4,
+			OptionD = 8,
+			All = int.MaxValue
 		}
 	}
 }

@@ -23,7 +23,8 @@ namespace Silk.Data.SQL.ORM.Queries
 			return QueryExpression.Select(
 				projection: Projections.Select(q => QueryExpression.Alias(QueryExpression.Column(q.FieldName, new AliasIdentifierExpression(q.SourceName)), q.AliasName)).ToArray(),
 				from: Source,
-				joins: TableJoins.Select(q => CreateJoin(q)).ToArray()
+				joins: TableJoins.Select(q => CreateJoin(q)).ToArray(),
+				where: Where
 				);
 		}
 

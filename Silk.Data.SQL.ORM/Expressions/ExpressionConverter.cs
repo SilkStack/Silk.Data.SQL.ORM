@@ -2,6 +2,7 @@
 using Silk.Data.SQL.ORM.Schema;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Linq.Expressions;
 
@@ -9,6 +10,8 @@ namespace Silk.Data.SQL.ORM.Expressions
 {
 	public class ExpressionConverter<T> where T : class
 	{
+		private IReadOnlyCollection<ParameterExpression> _parameters;
+
 		public Schema.Schema Schema { get; }
 		public EntitySchema<T> EntitySchema { get; }
 
@@ -22,27 +25,36 @@ namespace Silk.Data.SQL.ORM.Expressions
 
 		public ExpressionResult Convert<TResult>(Expression<Func<T, TResult>> expression)
 		{
-			var visitor = new Visitor(Schema, EntitySchema);
-			visitor.Visit(expression);
-			return new ExpressionResult(visitor.Expression);
+			_parameters = expression.Parameters;
+			return Convert((Expression)expression);
+		}
+
+		public ExpressionResult Convert(Expression expression)
+		{
+			var visitor = new Visitor(Schema, EntitySchema, this, _parameters);
+			var result = visitor.ConvertToQueryExpression(expression);
+			return new ExpressionResult(result);
 		}
 
 		private class Visitor : ExpressionVisitor
 		{
-			public QueryExpression Expression { get; private set; }
 			public Schema.Schema Schema { get; }
 			public EntitySchema<T> EntitySchema { get; }
 
+			private readonly ExpressionConverter<T> _parent;
 			private IReadOnlyCollection<ParameterExpression> _expressionParameters;
 			private Stack<QueryExpression> _queryExpressionStack = new Stack<QueryExpression>();
 
-			public Visitor(Schema.Schema schema, EntitySchema<T> entitySchema)
+			public Visitor(Schema.Schema schema, EntitySchema<T> entitySchema, ExpressionConverter<T> parent,
+				IReadOnlyCollection<ParameterExpression> expressionParameters)
 			{
 				Schema = schema;
 				EntitySchema = entitySchema;
+				_parent = parent;
+				_expressionParameters = expressionParameters;
 			}
 
-			private QueryExpression ConvertToQueryExpression(Expression node)
+			public QueryExpression ConvertToQueryExpression(Expression node)
 			{
 				var expectedCount = _queryExpressionStack.Count + 1;
 				Visit(node);
@@ -58,14 +70,8 @@ namespace Silk.Data.SQL.ORM.Expressions
 
 			protected override Expression VisitLambda<T1>(Expression<T1> node)
 			{
-				if (_expressionParameters == null)
-				{
-					_expressionParameters = node.Parameters;
-					Expression = ConvertToQueryExpression(node.Body);
-					return node;
-				}
-
-				return base.VisitLambda(node);
+				Visit(node.Body);
+				return node;
 			}
 
 			protected override Expression VisitConstant(ConstantExpression node)
@@ -88,12 +94,20 @@ namespace Silk.Data.SQL.ORM.Expressions
 
 			protected override Expression VisitMethodCall(MethodCallExpression node)
 			{
+				var converter = Schema.GetMethodCallConverter(node.Method);
+				if (converter == null)
+					throw new Exception("Method call not supported.");
+				var result = converter.Convert<T>(node.Method, node, _parent);
+				if (result != null)
+				{
+					SetConversionResult(result.QueryExpression);
+				}
 				return node;
 			}
 
 			protected override Expression VisitMember(MemberExpression node)
 			{
-				var lambdaParameter = _expressionParameters.FirstOrDefault(q => ReferenceEquals(q, node.Expression));
+				var lambdaParameter = _expressionParameters?.FirstOrDefault(q => ReferenceEquals(q, node.Expression));
 				if (lambdaParameter != null)
 				{
 					//  visiting a member of expression parameter, ie. a field on the entity table
@@ -111,9 +125,9 @@ namespace Silk.Data.SQL.ORM.Expressions
 				{
 					//  simple field access (ie, acessing a variable)
 					//  todo: investigate if the need for a Compile() can be removed, at least for simple cases
-					var memberAccessExp = System.Linq.Expressions.Expression.MakeMemberAccess(node.Expression, node.Member);
-					var @delegate = System.Linq.Expressions.Expression.Lambda<Func<object>>(
-						System.Linq.Expressions.Expression.Convert(memberAccessExp, typeof(object))
+					var memberAccessExp = Expression.MakeMemberAccess(node.Expression, node.Member);
+					var @delegate = Expression.Lambda<Func<object>>(
+						Expression.Convert(memberAccessExp, typeof(object))
 						);
 					var value = @delegate.Compile()();
 					SetConversionResult(

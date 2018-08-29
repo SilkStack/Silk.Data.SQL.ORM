@@ -1,6 +1,8 @@
-﻿using System;
+﻿using Silk.Data.SQL.ORM.Expressions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace Silk.Data.SQL.ORM.Schema
 {
@@ -10,10 +12,19 @@ namespace Silk.Data.SQL.ORM.Schema
 	public class Schema
 	{
 		private readonly Dictionary<Type, EntitySchema> _entitySchemas;
+		private readonly Dictionary<MethodInfo, IMethodCallConverter> _methodCallConverters;
 
-		public Schema(IEnumerable<EntitySchema> entitySchemas)
+		public Schema(IEnumerable<EntitySchema> entitySchemas,
+			Dictionary<MethodInfo, IMethodCallConverter> methodCallConverters)
 		{
 			_entitySchemas = entitySchemas.ToDictionary(q => q.EntityType);
+			_methodCallConverters = methodCallConverters;
+		}
+
+		public IMethodCallConverter GetMethodCallConverter(MethodInfo methodInfo)
+		{
+			_methodCallConverters.TryGetValue(methodInfo, out var converter);
+			return converter;
 		}
 
 		public EntitySchema GetEntitySchema(Type entityType)

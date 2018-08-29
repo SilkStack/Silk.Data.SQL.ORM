@@ -1,6 +1,7 @@
-﻿using System;
+﻿using Silk.Data.SQL.ORM.Expressions;
+using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Reflection;
 
 namespace Silk.Data.SQL.ORM.Schema
 {
@@ -11,6 +12,15 @@ namespace Silk.Data.SQL.ORM.Schema
 	{
 		private readonly Dictionary<Type, EntitySchemaBuilder> _entitySchemaBuilders
 			= new Dictionary<Type, EntitySchemaBuilder>();
+		private readonly Dictionary<MethodInfo, IMethodCallConverter> _methodCallConverters
+			= new Dictionary<MethodInfo, IMethodCallConverter>();
+
+		public SchemaBuilder()
+		{
+			_methodCallConverters.Add(
+				typeof(Enum).GetMethod(nameof(Enum.HasFlag)), new HasFlagCallConverter()
+				);
+		}
 
 		/// <summary>
 		/// Add an entity type to the schema and return the EntitySchemaBuilder for customizing how the entity is stored.
@@ -45,7 +55,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			var entityPrimitiveFields = BuildEntityPrimitiveFields();
 			while (DefineNewFields(entityPrimitiveFields)) { }
 			var entitySchemas = BuildEntitySchemas(entityPrimitiveFields);
-			return new Schema(entitySchemas);
+			return new Schema(entitySchemas, _methodCallConverters);
 		}
 
 		private bool DefineNewFields(PartialEntitySchemaCollection partialEntitySchemas)
