@@ -25,7 +25,8 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public abstract ForeignKey BuildForeignKey(string propertyPathPrefix, string[] modelPath);
 
-		public abstract ProjectionField BuildProjectionField(string sourceName, string fieldName, string aliasName, string[] modelPath);
+		public abstract ProjectionField BuildProjectionField(string sourceName, string fieldName,
+			string aliasName, string[] modelPath, EntityFieldJoin join);
 	}
 
 	public abstract class EntityField<TEntity> : EntityField
@@ -108,9 +109,10 @@ namespace Silk.Data.SQL.ORM.Schema
 					), column, modelPath.Concat(ModelPath).ToArray());
 		}
 
-		public override ProjectionField BuildProjectionField(string sourceName, string fieldName, string aliasName, string[] modelPath)
+		public override ProjectionField BuildProjectionField(string sourceName, string fieldName,
+			string aliasName, string[] modelPath, EntityFieldJoin join)
 		{
-			return new ProjectionField<TValue>(sourceName, fieldName, aliasName, modelPath);
+			return new ProjectionField<TValue>(sourceName, fieldName, aliasName, modelPath, join);
 		}
 
 		private class ValueReader : IValueReader

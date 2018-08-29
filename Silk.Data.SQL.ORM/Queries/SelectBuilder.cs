@@ -109,6 +109,14 @@ namespace Silk.Data.SQL.ORM.Queries
 			Source = QueryExpression.Table(EntitySchema.EntityTable.TableName);
 		}
 
+		public ResultMapper<TProperty> Project<TProperty>(Expression<Func<T,TProperty>> member)
+		{
+			var projectionField = ResolveProjectionField(member);
+			if (projectionField == null)
+				throw new Exception("Field couldn't be resolved.");
+			return null;
+		}
+
 		public ResultMapper<TView> Project<TView>()
 			where TView : class
 		{
@@ -117,10 +125,23 @@ namespace Silk.Data.SQL.ORM.Queries
 			{
 			}
 
-			Projections.AddRange(projectionSchema.ProjectionFields);
-			TableJoins.AddRange(projectionSchema.EntityJoins);
+			foreach (var projectionField in projectionSchema.ProjectionFields)
+				AddProjection(projectionField);
 
 			return CreateResultMapper<TView>(1, projectionSchema);
+		}
+
+		private ProjectionField ResolveProjectionField<TProperty>(Expression<Func<T, TProperty>> member)
+		{
+			return null;
+		}
+
+		private void AddProjection(ProjectionField projectionField)
+		{
+			if (Projections.Contains(projectionField))
+				return;
+			Projections.Add(projectionField);
+			AddJoins(projectionField.Join);
 		}
 
 		private IEnumerable<Binding> CreateMappingBindings<TView>(EntitySchema projectionSchema)
@@ -158,10 +179,16 @@ namespace Silk.Data.SQL.ORM.Queries
 				return;
 			foreach (var join in joins)
 			{
-				if (TableJoins.Contains(join))
-					continue;
-				TableJoins.Add(join);
+				AddJoins(join);
 			}
+		}
+
+		private void AddJoins(EntityFieldJoin join)
+		{
+			if (join == null || TableJoins.Contains(join))
+				return;
+			TableJoins.Add(join);
+			AddJoins(join.DependencyJoins);
 		}
 	}
 }

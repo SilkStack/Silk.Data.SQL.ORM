@@ -35,7 +35,7 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public override ProjectionField BuildProjectionField(string sourceName, string fieldName, string aliasName, string[] modelPath)
 		{
-			return new ProjectionField<TEntity, TValue>(sourceName, fieldName, aliasName, modelPath);
+			return new ProjectionField<TEntity, TValue>(sourceName, fieldName, aliasName, modelPath, null);
 		}
 
 		private class ValueReader : IValueReader

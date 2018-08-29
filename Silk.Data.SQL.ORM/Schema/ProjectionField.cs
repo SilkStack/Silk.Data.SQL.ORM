@@ -27,13 +27,16 @@ namespace Silk.Data.SQL.ORM.Schema
 		/// </summary>
 		public string[] ModelPath { get; }
 
+		public EntityFieldJoin Join { get; }
+
 		public ProjectionField(string sourceName, string fieldName, string aliasName,
-			string[] modelPath)
+			string[] modelPath, EntityFieldJoin join)
 		{
 			SourceName = sourceName;
 			FieldName = fieldName;
 			AliasName = aliasName;
 			ModelPath = modelPath;
+			Join = join;
 		}
 
 		public abstract CoreBinding.Binding GetMappingBinding();
@@ -43,8 +46,8 @@ namespace Silk.Data.SQL.ORM.Schema
 	{
 		public override bool IsNullCheck { get; }
 
-		public ProjectionField(string sourceName, string fieldName, string aliasName, string[] modelPath)
-			: base(sourceName, fieldName, aliasName, modelPath)
+		public ProjectionField(string sourceName, string fieldName, string aliasName, string[] modelPath, EntityFieldJoin join)
+			: base(sourceName, fieldName, aliasName, modelPath, join)
 		{
 			IsNullCheck = !SqlTypeHelper.IsSqlPrimitiveType(typeof(T));
 		}
@@ -65,8 +68,8 @@ namespace Silk.Data.SQL.ORM.Schema
 	{
 		public override bool IsNullCheck => true;
 
-		public ProjectionField(string sourceName, string fieldName, string aliasName, string[] modelPath)
-			: base(sourceName, fieldName, aliasName, modelPath)
+		public ProjectionField(string sourceName, string fieldName, string aliasName, string[] modelPath, EntityFieldJoin join)
+			: base(sourceName, fieldName, aliasName, modelPath, join)
 		{
 		}
 

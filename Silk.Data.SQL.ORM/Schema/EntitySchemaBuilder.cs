@@ -241,7 +241,7 @@ namespace Silk.Data.SQL.ORM.Schema
 					yield return entityField.BuildProjectionField(sourceName,
 						entityField.Columns[0].ColumnName,
 						$"{prefix}{entityField.ModelField.FieldName}",
-						subPropertyPath);
+						subPropertyPath, entityJoin);
 				}
 				else if (partialEntities.IsEntityTypeDefined(modelField.FieldType))
 				{
@@ -274,7 +274,7 @@ namespace Silk.Data.SQL.ORM.Schema
 					yield return entityField.BuildProjectionField(sourceName,
 						entityField.Columns[0].ColumnName,
 						$"__NULL_CHECK_{prefix}{entityField.ModelField.FieldName}",
-						subPropertyPath);
+						subPropertyPath, entityJoin);
 
 					foreach (var relatedEntityField in BuildProjectionFields(modelField.FieldTypeModel, entityFields, partialEntities, entityJoins, joinEntityField, subPropertyPath))
 						yield return relatedEntityField;
