@@ -25,6 +25,11 @@ namespace Silk.Data.SQL.ORM.Schema
 				);
 		}
 
+		public void AddMethodConverter(MethodInfo methodInfo, IMethodCallConverter methodCallConverter)
+		{
+			_methodCallConverters.Add(methodInfo, methodCallConverter);
+		}
+
 		/// <summary>
 		/// Add an entity type to the schema and return the EntitySchemaBuilder for customizing how the entity is stored.
 		/// </summary>
