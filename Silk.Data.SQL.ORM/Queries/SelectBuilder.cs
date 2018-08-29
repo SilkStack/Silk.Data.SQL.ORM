@@ -17,6 +17,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		protected List<ITableJoin> TableJoins { get; }
 			= new List<ITableJoin>();
 		protected QueryExpression Where { get; private set; }
+		protected QueryExpression Limit { get; private set; }
 
 		public QueryExpression BuildQuery()
 		{
@@ -24,7 +25,8 @@ namespace Silk.Data.SQL.ORM.Queries
 				projection: Projections.Select(q => QueryExpression.Alias(QueryExpression.Column(q.FieldName, new AliasIdentifierExpression(q.SourceName)), q.AliasName)).ToArray(),
 				from: Source,
 				joins: TableJoins.Select(q => CreateJoin(q)).ToArray(),
-				where: Where
+				where: Where,
+				limit: Limit
 				);
 		}
 
@@ -62,6 +64,16 @@ namespace Silk.Data.SQL.ORM.Queries
 		public void OrWhere(QueryExpression queryExpression)
 		{
 			Where = QueryExpression.CombineConditions(Where, ConditionType.OrElse, queryExpression);
+		}
+
+		void IConditionalQuery.Limit(QueryExpression queryExpression)
+		{
+			Limit = queryExpression;
+		}
+
+		void IConditionalQuery.Limit(int count)
+		{
+			Limit = QueryExpression.Value(count);
 		}
 	}
 

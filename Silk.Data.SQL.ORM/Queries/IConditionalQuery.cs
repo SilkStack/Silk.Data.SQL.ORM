@@ -8,6 +8,8 @@ namespace Silk.Data.SQL.ORM.Queries
 	{
 		void AndWhere(QueryExpression queryExpression);
 		void OrWhere(QueryExpression queryExpression);
+		void Limit(QueryExpression queryExpression);
+		void Limit(int count);
 	}
 
 	public interface IEntityConditionalQuery<T> : IConditionalQuery
