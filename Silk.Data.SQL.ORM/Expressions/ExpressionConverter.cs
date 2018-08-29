@@ -1,4 +1,5 @@
 ﻿using Silk.Data.SQL.Expressions;
+using Silk.Data.SQL.ORM.Queries;
 using Silk.Data.SQL.ORM.Schema;
 using System;
 using System.Collections.Generic;
@@ -77,8 +78,14 @@ namespace Silk.Data.SQL.ORM.Expressions
 				return node;
 			}
 
-			private ValueExpression GetValueExpression(object value)
+			private QueryExpression GetValueExpression(object value)
 			{
+				if (value is QueryExpression queryExpression)
+					return queryExpression;
+
+				if (value is IQueryBuilder queryBuilder)
+					return queryBuilder.BuildQuery();
+
 				if (value is Enum)
 				{
 					value = (int)value;

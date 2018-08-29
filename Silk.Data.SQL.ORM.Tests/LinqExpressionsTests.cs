@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Expressions;
+using Silk.Data.SQL.ORM.Queries;
 using Silk.Data.SQL.ORM.Schema;
 using System;
 
@@ -120,6 +121,44 @@ namespace Silk.Data.SQL.ORM.Tests
 			{
 				return expressionConverter.Convert(q => param);
 			}
+		}
+
+		[TestMethod]
+		public void ConvertDatabaseFunctionWithRelatedField()
+		{
+			var expressionConverter = CreateParentConverter<TestEnum, TestEnum>(true);
+			var condition = expressionConverter.Convert(q => q.Child1.A.HasFlag(TestEnum.OptionD));
+
+			var checkExpression = condition.QueryExpression as ComparisonExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.AreEqual(ComparisonOperator.AreEqual, checkExpression.Operator);
+			Assert.IsInstanceOfType(checkExpression.Left, typeof(BitwiseOperationQueryExpression));
+			Assert.IsNotNull(condition.RequiredJoins);
+			Assert.AreEqual(1, condition.RequiredJoins.Length);
+			Assert.AreEqual("__joinAlias_Child1", condition.RequiredJoins[0].TableAlias);
+		}
+
+		[TestMethod]
+		public void DontConvertQueryExpressions()
+		{
+			var expressionConverter = CreateConverter<int, int>();
+			var queryExpression = QueryExpression.Select(QueryExpression.All(), QueryExpression.Table("TestTable"));
+			var condition = expressionConverter.Convert(q => queryExpression);
+
+			var checkExpression = condition.QueryExpression as SelectExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.ReferenceEquals(queryExpression, checkExpression);
+		}
+
+		[TestMethod]
+		public void ConvertQueryBuilderToExpression()
+		{
+			var expressionConverter = CreateConverter<int, int>();
+			var selectBuilder = new EntitySelectBuilder<TestTuple<int, int>>(expressionConverter.Schema);
+			var condition = expressionConverter.Convert(q => selectBuilder);
+
+			var checkExpression = condition.QueryExpression as SelectExpression;
+			Assert.IsNotNull(checkExpression);
 		}
 
 		[TestMethod]
