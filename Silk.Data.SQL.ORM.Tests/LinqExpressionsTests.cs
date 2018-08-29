@@ -67,6 +67,23 @@ namespace Silk.Data.SQL.ORM.Tests
 		}
 
 		[TestMethod]
+		public void ConvertEmbeddedColumn()
+		{
+			var expressionConverter = CreateParentConverter<int, int>(false);
+			var condition = expressionConverter.Convert(q => q.Child1.A);
+
+			var checkExpression = condition.QueryExpression as ColumnExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.AreEqual("Child1_A", checkExpression.ColumnName);
+
+			condition = expressionConverter.Convert(q => q.Child2.A);
+
+			checkExpression = condition.QueryExpression as ColumnExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.AreEqual("Child2_A", checkExpression.ColumnName);
+		}
+
+		[TestMethod]
 		public void ConvertMethodParameter()
 		{
 			var expressionConverter = CreateConverter<int, int>();
@@ -289,10 +306,26 @@ namespace Silk.Data.SQL.ORM.Tests
 			return new ExpressionConverter<TestTuple<T1, T2>>(schema);
 		}
 
+		private ExpressionConverter<TupleParent<T1, T2>> CreateParentConverter<T1, T2>(bool defineChildEntity)
+		{
+			var schemaBuilder = new SchemaBuilder();
+			if (defineChildEntity)
+				schemaBuilder.DefineEntity<TestTuple<T1, T2>>().TableName = "TestTable";
+			schemaBuilder.DefineEntity<TupleParent<T1, T2>>();
+			var schema = schemaBuilder.Build();
+			return new ExpressionConverter<TupleParent<T1, T2>>(schema);
+		}
+
 		private class TestTuple<T1, T2>
 		{
 			public T1 A { get; set; }
 			public T2 B { get; set; }
+		}
+
+		private class TupleParent<T1, T2>
+		{
+			public TestTuple<T1, T2> Child1 { get; set; }
+			public TestTuple<T1, T2> Child2 { get; set; }
 		}
 
 		[Flags]

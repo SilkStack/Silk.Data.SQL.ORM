@@ -116,13 +116,14 @@ namespace Silk.Data.SQL.ORM.Expressions
 
 			protected override Expression VisitMember(MemberExpression node)
 			{
-				var lambdaParameter = _expressionParameters?.FirstOrDefault(q => ReferenceEquals(q, node.Expression));
+				var (allExpressions, expressionPath) = FlattenExpressionTree(node);
+				var lambdaParameter = _expressionParameters?.FirstOrDefault(q => ReferenceEquals(q, allExpressions[0]));
 				if (lambdaParameter != null)
 				{
 					//  visiting a member of expression parameter, ie. a field on the entity table
 					var reflectionMemberInfo = node.Member;
-					var sourceExpression = ConvertToQueryExpression(node.Expression);
-					var entityField = EntitySchema.EntityFields.FirstOrDefault(q => q.ModelField.FieldName == reflectionMemberInfo.Name);
+					var sourceExpression = ConvertToQueryExpression(allExpressions[0]);
+					var entityField = EntitySchema.EntityFields.FirstOrDefault(q => q.ModelPath.SequenceEqual(expressionPath.Skip(1)));
 					if (entityField != null && SqlTypeHelper.IsSqlPrimitiveType(entityField.DataType))
 					{
 						SetConversionResult(
@@ -145,6 +146,43 @@ namespace Silk.Data.SQL.ORM.Expressions
 				}
 
 				return node;
+
+				(Expression[] Expressions, string[] Path) FlattenExpressionTree(
+					Expression expression, Expression[] expressions = null,
+					string[] path = null)
+				{
+					if (expressions == null)
+						expressions = new Expression[0];
+					if (path == null)
+						path = new string[0];
+
+					expressions = new[] { expression }.Concat(expressions).ToArray();
+
+					if (expression is MemberExpression memberExpression)
+					{
+						path = new[] { memberExpression.Member.Name }.Concat(path).ToArray();
+						return FlattenExpressionTree(memberExpression.Expression,
+							expressions, path);
+					}
+
+					if (expression is ParameterExpression parameterExpression)
+					{
+						path = new[] { parameterExpression.Name }.Concat(path).ToArray();
+					}
+					else if (expression is ConstantExpression constantExpression)
+					{
+						path = new[] { "const" }.Concat(path).ToArray();
+					}
+					else
+					{
+						path = new[] { "unknown" }.Concat(path).ToArray();
+					}
+
+					return (
+							expressions,
+							path
+							);
+				}
 			}
 
 			protected override Expression VisitBinary(BinaryExpression node)
