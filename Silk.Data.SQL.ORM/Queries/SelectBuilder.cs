@@ -33,6 +33,22 @@ namespace Silk.Data.SQL.ORM.Queries
 				);
 		}
 
+		public ValueResultMapper<T> Project<T>(QueryExpression queryExpression)
+			where T : struct
+		{
+			if (!SqlTypeHelper.IsSqlPrimitiveType(typeof(T)))
+				throw new Exception("Cannot project complex types.");
+
+			var aliasExpression = queryExpression as AliasExpression;
+			if (aliasExpression == null)
+			{
+				aliasExpression = QueryExpression.Alias(queryExpression, $"__AutoAlias_{ProjectionExpressions.Count}");
+			}
+			ProjectionExpressions.Add(aliasExpression);
+
+			return new ValueResultMapper<T>(1, aliasExpression.Identifier.Identifier);
+		}
+
 		private static JoinExpression CreateJoin(ITableJoin tableJoin)
 		{
 			var onCondition = default(QueryExpression);
@@ -113,6 +129,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		}
 
 		public ValueResultMapper<TProperty> Project<TProperty>(Expression<Func<T,TProperty>> projection)
+			where TProperty : struct
 		{
 			if (!SqlTypeHelper.IsSqlPrimitiveType(typeof(TProperty)))
 				throw new Exception("Cannot project complex types, call Project<TView>() instead.");
@@ -125,15 +142,10 @@ namespace Silk.Data.SQL.ORM.Queries
 			}
 
 			var expressionResult = ExpressionConverter.Convert(projection);
-			var aliasExpression = expressionResult.QueryExpression as AliasExpression;
-			if (aliasExpression == null)
-			{
-				aliasExpression = QueryExpression.Alias(expressionResult.QueryExpression, $"__AutoAlias_{ProjectionExpressions.Count}");
-			}
-			ProjectionExpressions.Add(aliasExpression);
-			AddJoins(expressionResult.RequiredJoins);
 
-			return new ValueResultMapper<TProperty>(1, aliasExpression.Identifier.Identifier);
+			var mapper = Project<TProperty>(expressionResult.QueryExpression);
+			AddJoins(expressionResult.RequiredJoins);
+			return mapper;
 		}
 
 		public ObjectResultMapper<TView> Project<TView>()
