@@ -248,6 +248,17 @@ namespace Silk.Data.SQL.ORM.Tests
 		}
 
 		[TestMethod]
+		public void EnumsAreIntegers()
+		{
+			var expressionConverter = CreateConverter<TestEnum, TestEnum>();
+			var condition = expressionConverter.Convert(q => TestEnum.OptionC);
+
+			var checkExpression = condition.QueryExpression as ValueExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.IsInstanceOfType(checkExpression.Value, typeof(int));
+		}
+
+		[TestMethod]
 		public void ConvertHasFlagMethod()
 		{
 			var expressionConverter = CreateConverter<TestEnum, TestEnum>();

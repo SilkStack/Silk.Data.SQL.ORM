@@ -74,9 +74,18 @@ namespace Silk.Data.SQL.ORM.Expressions
 				return node;
 			}
 
+			private ValueExpression GetValueExpression(object value)
+			{
+				if (value is Enum)
+				{
+					value = (int)value;
+				}
+				return QueryExpression.Value(value);
+			}
+
 			protected override Expression VisitConstant(ConstantExpression node)
 			{
-				SetConversionResult(QueryExpression.Value(node.Value));
+				SetConversionResult(GetValueExpression(node.Value));
 				return node;
 			}
 
@@ -131,7 +140,7 @@ namespace Silk.Data.SQL.ORM.Expressions
 						);
 					var value = @delegate.Compile()();
 					SetConversionResult(
-						QueryExpression.Value(value)
+						GetValueExpression(value)
 						);
 				}
 

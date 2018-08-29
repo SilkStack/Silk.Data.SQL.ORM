@@ -18,14 +18,11 @@ namespace Silk.Data.SQL.ORM.Expressions
 			var convertedArgument = expressionConverter.Convert(enumValueConstantExpression);
 
 			var calledOn = expressionConverter.Convert(node.Object);
-
-			var valueExpression = convertedArgument.QueryExpression as ValueExpression;
-			valueExpression = QueryExpression.Value((int)valueExpression.Value);
-
+			
 			return new ExpressionResult(
 				QueryExpression.Compare(
-					new BitwiseOperationQueryExpression(calledOn.QueryExpression, BitwiseOperator.And, valueExpression),
-					ComparisonOperator.AreEqual, valueExpression)
+					new BitwiseOperationQueryExpression(calledOn.QueryExpression, BitwiseOperator.And, convertedArgument.QueryExpression),
+					ComparisonOperator.AreEqual, convertedArgument.QueryExpression)
 				);
 		}
 	}
