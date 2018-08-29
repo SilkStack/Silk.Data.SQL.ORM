@@ -15,7 +15,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			var expectedFields = new (Type type, string Name, SqlDataType DataType)[]
 			{
 				(typeof(bool), "Bool", SqlDataType.Bit()),
-				(typeof(byte), "Byte", SqlDataType.UnsignedTinyInt()),
+				(typeof(byte), "Byte", SqlDataType.TinyInt()),
 				(typeof(short), "Short", SqlDataType.SmallInt()),
 				(typeof(int), "Int", SqlDataType.Int()),
 				(typeof(long), "Long", SqlDataType.BigInt()),
