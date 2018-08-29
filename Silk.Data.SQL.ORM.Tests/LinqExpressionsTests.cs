@@ -270,6 +270,17 @@ namespace Silk.Data.SQL.ORM.Tests
 			Assert.IsInstanceOfType(checkExpression.Left, typeof(BitwiseOperationQueryExpression));
 		}
 
+		[TestMethod]
+		public void ConvertLikeMethod()
+		{
+			var expressionConverter = CreateConverter<string, string>();
+			var condition = expressionConverter.Convert(q => DatabaseFunctions.Like(q.A, "%search%"));
+
+			var checkExpression = condition.QueryExpression as ComparisonExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.AreEqual(ComparisonOperator.Like, checkExpression.Operator);
+		}
+
 		private ExpressionConverter<TestTuple<T1,T2>> CreateConverter<T1, T2>()
 		{
 			var schemaBuilder = new SchemaBuilder();

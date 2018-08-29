@@ -20,6 +20,9 @@ namespace Silk.Data.SQL.ORM.Schema
 			_methodCallConverters.Add(
 				typeof(Enum).GetMethod(nameof(Enum.HasFlag)), new HasFlagCallConverter()
 				);
+			_methodCallConverters.Add(
+				typeof(DatabaseFunctions).GetMethod(nameof(DatabaseFunctions.Like)), new StringLikeCallConverter()
+				);
 		}
 
 		/// <summary>
