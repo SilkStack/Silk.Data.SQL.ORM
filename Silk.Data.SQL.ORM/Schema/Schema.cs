@@ -23,6 +23,8 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public IMethodCallConverter GetMethodCallConverter(MethodInfo methodInfo)
 		{
+			if (methodInfo.IsGenericMethod)
+				methodInfo = methodInfo.GetGenericMethodDefinition();
 			_methodCallConverters.TryGetValue(methodInfo, out var converter);
 			return converter;
 		}

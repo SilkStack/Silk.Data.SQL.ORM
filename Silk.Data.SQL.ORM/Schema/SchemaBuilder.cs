@@ -23,6 +23,12 @@ namespace Silk.Data.SQL.ORM.Schema
 			_methodCallConverters.Add(
 				typeof(DatabaseFunctions).GetMethod(nameof(DatabaseFunctions.Like)), new StringLikeCallConverter()
 				);
+			_methodCallConverters.Add(
+				typeof(DatabaseFunctions).GetMethod(nameof(DatabaseFunctions.Alias)), new AliasCallConverter()
+				);
+			_methodCallConverters.Add(
+				typeof(DatabaseFunctions).GetMethod(nameof(DatabaseFunctions.Count)), new CountCallConverter()
+				);
 		}
 
 		public void AddMethodConverter(MethodInfo methodInfo, IMethodCallConverter methodCallConverter)

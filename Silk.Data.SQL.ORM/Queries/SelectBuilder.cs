@@ -12,6 +12,8 @@ namespace Silk.Data.SQL.ORM.Queries
 	public class SelectBuilder : IQueryBuilder, IConditionalQuery
 	{
 		protected QueryExpression Source { get; set; }
+		protected List<AliasExpression> ProjectionExpressions { get; }
+			= new List<AliasExpression>();
 		protected List<IProjectedItem> Projections { get; }
 			= new List<IProjectedItem>();
 		protected List<ITableJoin> TableJoins { get; }
@@ -22,7 +24,8 @@ namespace Silk.Data.SQL.ORM.Queries
 		public QueryExpression BuildQuery()
 		{
 			return QueryExpression.Select(
-				projection: Projections.Select(q => QueryExpression.Alias(QueryExpression.Column(q.FieldName, new AliasIdentifierExpression(q.SourceName)), q.AliasName)).ToArray(),
+				projection: Projections.Select(q => QueryExpression.Alias(QueryExpression.Column(q.FieldName, new AliasIdentifierExpression(q.SourceName)), q.AliasName))
+					.Concat(ProjectionExpressions).ToArray(),
 				from: Source,
 				joins: TableJoins.Select(q => CreateJoin(q)).ToArray(),
 				where: Where,
@@ -109,17 +112,28 @@ namespace Silk.Data.SQL.ORM.Queries
 			Source = QueryExpression.Table(EntitySchema.EntityTable.TableName);
 		}
 
-		public ValueResultMapper<TProperty> Project<TProperty>(Expression<Func<T,TProperty>> member)
+		public ValueResultMapper<TProperty> Project<TProperty>(Expression<Func<T,TProperty>> projection)
 		{
-			if (SqlTypeHelper.IsSqlPrimitiveType(typeof(TProperty)))
+			if (!SqlTypeHelper.IsSqlPrimitiveType(typeof(TProperty)))
+				throw new Exception("Cannot project complex types, call Project<TView>() instead.");
+
+			var projectionField = ResolveProjectionField(projection);
+			if (projectionField != null)
 			{
-				var projectionField = ResolveProjectionField(member);
-				if (projectionField == null)
-					throw new Exception("Field couldn't be resolved.");
 				AddProjection(projectionField);
 				return new ValueResultMapper<TProperty>(1, projectionField.AliasName);
 			}
-			throw new Exception("Cannot project complex types, call Project<TView>() instead.");
+
+			var expressionResult = ExpressionConverter.Convert(projection);
+			var aliasExpression = expressionResult.QueryExpression as AliasExpression;
+			if (aliasExpression == null)
+			{
+				aliasExpression = QueryExpression.Alias(expressionResult.QueryExpression, $"__AutoAlias_{ProjectionExpressions.Count}");
+			}
+			ProjectionExpressions.Add(aliasExpression);
+			AddJoins(expressionResult.RequiredJoins);
+
+			return new ValueResultMapper<TProperty>(1, aliasExpression.Identifier.Identifier);
 		}
 
 		public ObjectResultMapper<TView> Project<TView>()
@@ -145,7 +159,7 @@ namespace Silk.Data.SQL.ORM.Queries
 
 				return GetProjectionField(path);
 			}
-			throw new ArgumentException("Field selector must be a MemberExpression.", nameof(property));
+			return null;
 		}
 
 		private ProjectionField GetProjectionField(IEnumerable<string> path)

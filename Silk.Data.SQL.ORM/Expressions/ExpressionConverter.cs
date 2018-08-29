@@ -112,6 +112,8 @@ namespace Silk.Data.SQL.ORM.Expressions
 				var result = converter.Convert<T>(node.Method, node, _parent);
 				if (result != null)
 				{
+					if (result.RequiredJoins != null)
+						RequiredJoins.AddRange(result.RequiredJoins);
 					SetConversionResult(result.QueryExpression);
 				}
 				return node;

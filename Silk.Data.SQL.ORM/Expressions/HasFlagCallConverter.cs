@@ -1,4 +1,5 @@
 ﻿using Silk.Data.SQL.Expressions;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -22,7 +23,8 @@ namespace Silk.Data.SQL.ORM.Expressions
 			return new ExpressionResult(
 				QueryExpression.Compare(
 					new BitwiseOperationQueryExpression(calledOn.QueryExpression, BitwiseOperator.And, convertedArgument.QueryExpression),
-					ComparisonOperator.AreEqual, convertedArgument.QueryExpression)
+					ComparisonOperator.AreEqual, convertedArgument.QueryExpression),
+					MethodHelper.ConcatJoins(convertedArgument, calledOn).ToArray()
 				);
 		}
 	}

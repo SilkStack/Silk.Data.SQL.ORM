@@ -2,6 +2,7 @@
 using Silk.Data.SQL.ORM.Queries;
 using Silk.Data.SQL.ORM.Schema;
 using System.Threading.Tasks;
+using static Silk.Data.SQL.ORM.DatabaseFunctions;
 
 namespace Silk.Data.SQL.ORM.Tests
 {
@@ -179,6 +180,35 @@ namespace Silk.Data.SQL.ORM.Tests
 					Assert.AreEqual(1, queryResult.GetInt32(queryResult.GetOrdinal("Child_Child_Id")));
 					Assert.AreEqual(2, queryResult.GetInt32(queryResult.GetOrdinal("Child_Child_Data")));
 					Assert.AreEqual(3, queryResult.GetInt32(queryResult.GetOrdinal("Child_Data")));
+				}
+			}
+		}
+
+		[TestMethod]
+		public async Task SelectCountExpression()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<FlatEntity>();
+			var schema = schemaBuilder.Build();
+
+			using (var provider = TestHelper.CreateProvider())
+			{
+				await provider.ExecuteNonQueryAsync(
+					SQLite3.SQLite3.Raw("CREATE TABLE [FlatEntity] ([Id] INT, [Data] INT)")
+					);
+				await provider.ExecuteNonQueryAsync(
+					SQLite3.SQLite3.Raw("INSERT INTO [FlatEntity] VALUES (1, 2)")
+					);
+
+				var queryBuilder = new EntitySelectBuilder<FlatEntity>(schema);
+				queryBuilder.Project(q => Alias(Count(q.Id), "count"));
+				var selectQuery = queryBuilder.BuildQuery();
+
+				using (var queryResult = await provider.ExecuteReaderAsync(selectQuery))
+				{
+					Assert.IsTrue(queryResult.HasRows);
+					Assert.IsTrue(await queryResult.ReadAsync());
+					Assert.AreEqual(1, queryResult.GetInt32(queryResult.GetOrdinal("count")));
 				}
 			}
 		}

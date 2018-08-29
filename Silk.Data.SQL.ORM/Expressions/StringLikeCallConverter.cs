@@ -1,4 +1,5 @@
 ﻿using Silk.Data.SQL.Expressions;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -14,7 +15,8 @@ namespace Silk.Data.SQL.ORM.Expressions
 			var searchText = expressionConverter.Convert(node.Arguments[1]);
 
 			return new ExpressionResult(
-				QueryExpression.Compare(searchField.QueryExpression, ComparisonOperator.Like, searchText.QueryExpression)
+				QueryExpression.Compare(searchField.QueryExpression, ComparisonOperator.Like, searchText.QueryExpression),
+				MethodHelper.ConcatJoins(searchField, searchText).ToArray()
 				);
 		}
 	}
