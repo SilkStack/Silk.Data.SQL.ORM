@@ -2,7 +2,6 @@
 using Silk.Data.SQL.ORM.Schema;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Linq.Expressions;
 
@@ -33,13 +32,17 @@ namespace Silk.Data.SQL.ORM.Expressions
 		{
 			var visitor = new Visitor(Schema, EntitySchema, this, _parameters);
 			var result = visitor.ConvertToQueryExpression(expression);
-			return new ExpressionResult(result);
+			return new ExpressionResult(result,
+				visitor.RequiredJoins.GroupBy(q => q).Select(q => q.First()).ToArray());
 		}
 
 		private class Visitor : ExpressionVisitor
 		{
 			public Schema.Schema Schema { get; }
 			public EntitySchema<T> EntitySchema { get; }
+
+			public List<EntityFieldJoin> RequiredJoins { get; }
+				= new List<EntityFieldJoin>();
 
 			private readonly ExpressionConverter<T> _parent;
 			private IReadOnlyCollection<ParameterExpression> _expressionParameters;
@@ -123,12 +126,50 @@ namespace Silk.Data.SQL.ORM.Expressions
 					//  visiting a member of expression parameter, ie. a field on the entity table
 					var reflectionMemberInfo = node.Member;
 					var sourceExpression = ConvertToQueryExpression(allExpressions[0]);
-					var entityField = EntitySchema.EntityFields.FirstOrDefault(q => q.ModelPath.SequenceEqual(expressionPath.Skip(1)));
+					var entityField = EntitySchema.EntityFields
+						.FirstOrDefault(q => q.ModelPath.SequenceEqual(expressionPath.Skip(1))) as EntityField;
 					if (entityField != null && SqlTypeHelper.IsSqlPrimitiveType(entityField.DataType))
 					{
 						SetConversionResult(
 							QueryExpression.Column(entityField.Columns[0].ColumnName, sourceExpression)
 							);
+						return node;
+					}
+
+					if (entityField == null)
+					{
+						//  entity field not found on model, search for the entity field through a JOIN tree
+						var currentSchema = EntitySchema as EntitySchema;
+						var joinChain = new List<EntityFieldJoin>();
+						foreach (var pathSegment in expressionPath.Skip(1))
+						{
+							entityField = currentSchema.EntityFields.FirstOrDefault(q => q.ModelField.FieldName == pathSegment);
+							if (entityField == null)
+								throw new Exception("Couldn't resolve entity field on related object.");
+
+							if (entityField.KeyType == KeyType.ManyToOne)
+							{
+								var join = currentSchema.EntityJoins.FirstOrDefault(
+									q => q.EntityField == entityField
+									);
+								if (join == null)
+									throw new Exception("Couldn't resolve JOIN for related field.");
+								joinChain.Add(join);
+								currentSchema = Schema.GetEntitySchema(entityField.DataType);
+							}
+						}
+
+						if (entityField != null && SqlTypeHelper.IsSqlPrimitiveType(entityField.DataType))
+						{
+							sourceExpression = new AliasIdentifierExpression(
+								joinChain.Last().TableAlias
+								);
+							SetConversionResult(
+								QueryExpression.Column(entityField.Columns[0].ColumnName, sourceExpression)
+								);
+							RequiredJoins.AddRange(joinChain);
+							return node;
+						}
 					}
 				}
 				else

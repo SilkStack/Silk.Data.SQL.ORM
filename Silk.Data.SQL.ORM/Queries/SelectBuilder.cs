@@ -130,12 +130,26 @@ namespace Silk.Data.SQL.ORM.Queries
 		{
 			var condition = ExpressionConverter.Convert(expression);
 			AndWhere(condition.QueryExpression);
+			AddJoins(condition.RequiredJoins);
 		}
 
 		public void OrWhere(Expression<Func<T, bool>> expression)
 		{
 			var condition = ExpressionConverter.Convert(expression);
 			OrWhere(condition.QueryExpression);
+			AddJoins(condition.RequiredJoins);
+		}
+
+		private void AddJoins(EntityFieldJoin[] joins)
+		{
+			if (joins == null || joins.Length < 1)
+				return;
+			foreach (var join in joins)
+			{
+				if (TableJoins.Contains(join))
+					continue;
+				TableJoins.Add(join);
+			}
 		}
 	}
 }

@@ -84,6 +84,29 @@ namespace Silk.Data.SQL.ORM.Tests
 		}
 
 		[TestMethod]
+		public void ConvertManyToOneColumn()
+		{
+			var expressionConverter = CreateParentConverter<int, int>(true);
+			var condition = expressionConverter.Convert(q => q.Child1.A);
+
+			var checkExpression = condition.QueryExpression as ColumnExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.AreEqual("A", checkExpression.ColumnName);
+			Assert.IsNotNull(condition.RequiredJoins);
+			Assert.AreEqual(1, condition.RequiredJoins.Length);
+			Assert.AreEqual("__joinAlias_Child1", condition.RequiredJoins[0].TableAlias);
+
+			condition = expressionConverter.Convert(q => q.Child2.A);
+
+			checkExpression = condition.QueryExpression as ColumnExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.AreEqual("A", checkExpression.ColumnName);
+			Assert.IsNotNull(condition.RequiredJoins);
+			Assert.AreEqual(1, condition.RequiredJoins.Length);
+			Assert.AreEqual("__joinAlias_Child2", condition.RequiredJoins[0].TableAlias);
+		}
+
+		[TestMethod]
 		public void ConvertMethodParameter()
 		{
 			var expressionConverter = CreateConverter<int, int>();
@@ -318,6 +341,7 @@ namespace Silk.Data.SQL.ORM.Tests
 
 		private class TestTuple<T1, T2>
 		{
+			public Guid Id { get; private set; }
 			public T1 A { get; set; }
 			public T2 B { get; set; }
 		}
