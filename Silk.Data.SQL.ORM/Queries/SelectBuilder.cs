@@ -1,19 +1,22 @@
 ﻿using Silk.Data.Modelling.Mapping.Binding;
 using Silk.Data.SQL.Expressions;
+using Silk.Data.SQL.ORM.Expressions;
 using Silk.Data.SQL.ORM.Schema;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 
 namespace Silk.Data.SQL.ORM.Queries
 {
-	public class SelectBuilder : IQueryBuilder
+	public class SelectBuilder : IQueryBuilder, IConditionalQuery
 	{
 		protected QueryExpression Source { get; set; }
 		protected List<IProjectedItem> Projections { get; }
 			= new List<IProjectedItem>();
 		protected List<ITableJoin> TableJoins { get; }
 			= new List<ITableJoin>();
+		protected QueryExpression Where { get; private set; }
 
 		public QueryExpression BuildQuery()
 		{
@@ -49,6 +52,16 @@ namespace Silk.Data.SQL.ORM.Queries
 				JoinDirection.Left
 				);
 		}
+
+		public void AndWhere(QueryExpression queryExpression)
+		{
+			Where = QueryExpression.CombineConditions(Where, ConditionType.AndAlso, queryExpression);
+		}
+
+		public void OrWhere(QueryExpression queryExpression)
+		{
+			Where = QueryExpression.CombineConditions(Where, ConditionType.OrElse, queryExpression);
+		}
 	}
 
 	public class SelectBuilder<T> : SelectBuilder
@@ -56,9 +69,20 @@ namespace Silk.Data.SQL.ORM.Queries
 	{
 	}
 
-	public class EntitySelectBuilder<T> : SelectBuilder<T>
+	public class EntitySelectBuilder<T> : SelectBuilder<T>, IEntityConditionalQuery<T>
 		where T : class
 	{
+		private ExpressionConverter<T> _expressionConverter;
+		private ExpressionConverter<T> ExpressionConverter
+		{
+			get
+			{
+				if (_expressionConverter == null)
+					_expressionConverter = new ExpressionConverter<T>(Schema);
+				return _expressionConverter;
+			}
+		}
+
 		public Schema.Schema Schema { get; }
 		public EntitySchema<T> EntitySchema { get; }
 
@@ -99,6 +123,18 @@ namespace Silk.Data.SQL.ORM.Queries
 		{
 			return new ResultMapper<TView>(resultSetCount,
 				CreateMappingBindings<TView>(projectionSchema));
+		}
+
+		public void AndWhere(Expression<Func<T, bool>> expression)
+		{
+			var condition = ExpressionConverter.Convert(expression);
+			AndWhere(condition.QueryExpression);
+		}
+
+		public void OrWhere(Expression<Func<T, bool>> expression)
+		{
+			var condition = ExpressionConverter.Convert(expression);
+			OrWhere(condition.QueryExpression);
 		}
 	}
 }
