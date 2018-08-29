@@ -29,6 +29,9 @@ namespace Silk.Data.SQL.ORM.Schema
 			_methodCallConverters.Add(
 				typeof(DatabaseFunctions).GetMethod(nameof(DatabaseFunctions.Count)), new CountCallConverter()
 				);
+			_methodCallConverters.Add(
+				typeof(DatabaseFunctions).GetMethod(nameof(DatabaseFunctions.Random)), new RandomCallConverter()
+				);
 		}
 
 		public void AddMethodConverter(MethodInfo methodInfo, IMethodCallConverter methodCallConverter)
