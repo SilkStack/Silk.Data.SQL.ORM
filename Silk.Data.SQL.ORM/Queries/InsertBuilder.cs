@@ -121,12 +121,12 @@ namespace Silk.Data.SQL.ORM.Queries
 			}
 		}
 
-		private ResultMapper<T> CreateResultMapper(int resultSetCount)
+		private ObjectResultMapper<T> CreateResultMapper(int resultSetCount)
 		{
-			return new ResultMapper<T>(resultSetCount, CreateMappingBindings());
+			return new ObjectResultMapper<T>(resultSetCount, CreateMappingBindings());
 		}
 
-		public ResultMapper<T> Add(IEnumerable<T> instances)
+		public ObjectResultMapper<T> Add(IEnumerable<T> instances)
 		{
 			var instanceCount = 0;
 			foreach (var instance in instances)
@@ -139,6 +139,6 @@ namespace Silk.Data.SQL.ORM.Queries
 			return CreateResultMapper(instanceCount);
 		}
 
-		public ResultMapper<T> Add(params T[] instances) => Add((IEnumerable<T>)instances);
+		public ObjectResultMapper<T> Add(params T[] instances) => Add((IEnumerable<T>)instances);
 	}
 }

@@ -183,6 +183,42 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 		}
 
+		[TestMethod]
+		public async Task SelectFlatFieldExpression()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<FlatEntity>();
+			var schema = schemaBuilder.Build();
+
+			using (var provider = TestHelper.CreateProvider())
+			{
+				await provider.ExecuteNonQueryAsync(
+					SQLite3.SQLite3.Raw("CREATE TABLE [FlatEntity] ([Id] INT, [Data] INT)")
+					);
+				await provider.ExecuteNonQueryAsync(
+					SQLite3.SQLite3.Raw("INSERT INTO [FlatEntity] VALUES (1, 2)")
+					);
+
+				var queryBuilder = new EntitySelectBuilder<FlatEntity>(schema);
+				queryBuilder.Project(q => q.Data);
+				var selectQuery = queryBuilder.BuildQuery();
+
+				using (var queryResult = await provider.ExecuteReaderAsync(selectQuery))
+				{
+					Assert.IsTrue(queryResult.HasRows);
+					Assert.IsTrue(await queryResult.ReadAsync());
+					Assert.AreEqual(2, queryResult.GetInt32(queryResult.GetOrdinal(nameof(FlatEntity.Data))));
+
+					try
+					{
+						queryResult.GetOrdinal(nameof(FlatEntity.Id));
+						Assert.Fail("Id field was included in projection.");
+					}
+					catch { }
+				}
+			}
+		}
+
 		private class FlatEntity
 		{
 			public int Id { get; private set; }

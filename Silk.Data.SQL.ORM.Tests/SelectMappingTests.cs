@@ -209,6 +209,38 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 		}
 
+		[TestMethod]
+		public async Task SelectFlatFieldExpression()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<FlatEntity>();
+			var schema = schemaBuilder.Build();
+
+			using (var provider = TestHelper.CreateProvider())
+			{
+				await provider.ExecuteNonQueryAsync(
+					SQLite3.SQLite3.Raw("CREATE TABLE [FlatEntity] ([Id] INT, [Data] INT)")
+					);
+				await provider.ExecuteNonQueryAsync(
+					SQLite3.SQLite3.Raw("INSERT INTO [FlatEntity] VALUES (1, 2)")
+					);
+
+				var queryBuilder = new EntitySelectBuilder<FlatEntity>(schema);
+				var mapper = queryBuilder.Project(q => q.Data);
+				Assert.IsNotNull(mapper);
+
+				var selectQuery = queryBuilder.BuildQuery();
+
+				using (var queryResult = await provider.ExecuteReaderAsync(selectQuery))
+				{
+					Assert.IsTrue(queryResult.HasRows);
+					Assert.IsTrue(await queryResult.ReadAsync());
+					var result = mapper.Read(queryResult);
+					Assert.AreEqual(2, result);
+				}
+			}
+		}
+
 		private Task Insert<T>(Schema.Schema schema, IDataProvider provider, T obj)
 			where T : class
 		{

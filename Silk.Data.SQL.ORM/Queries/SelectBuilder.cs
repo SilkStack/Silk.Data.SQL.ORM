@@ -109,15 +109,20 @@ namespace Silk.Data.SQL.ORM.Queries
 			Source = QueryExpression.Table(EntitySchema.EntityTable.TableName);
 		}
 
-		public ResultMapper<TProperty> Project<TProperty>(Expression<Func<T,TProperty>> member)
+		public ValueResultMapper<TProperty> Project<TProperty>(Expression<Func<T,TProperty>> member)
 		{
-			var projectionField = ResolveProjectionField(member);
-			if (projectionField == null)
-				throw new Exception("Field couldn't be resolved.");
-			return null;
+			if (SqlTypeHelper.IsSqlPrimitiveType(typeof(TProperty)))
+			{
+				var projectionField = ResolveProjectionField(member);
+				if (projectionField == null)
+					throw new Exception("Field couldn't be resolved.");
+				AddProjection(projectionField);
+				return new ValueResultMapper<TProperty>(1, projectionField.AliasName);
+			}
+			throw new Exception("Cannot project complex types, call Project<TView>() instead.");
 		}
 
-		public ResultMapper<TView> Project<TView>()
+		public ObjectResultMapper<TView> Project<TView>()
 			where TView : class
 		{
 			var projectionSchema = EntitySchema;
@@ -131,9 +136,34 @@ namespace Silk.Data.SQL.ORM.Queries
 			return CreateResultMapper<TView>(1, projectionSchema);
 		}
 
-		private ProjectionField ResolveProjectionField<TProperty>(Expression<Func<T, TProperty>> member)
+		private ProjectionField ResolveProjectionField<TProperty>(Expression<Func<T, TProperty>> property)
 		{
-			return null;
+			if (property.Body is MemberExpression memberExpression)
+			{
+				var path = new List<string>();
+				PopulatePath(property.Body, path);
+
+				return GetProjectionField(path);
+			}
+			throw new ArgumentException("Field selector must be a MemberExpression.", nameof(property));
+		}
+
+		private ProjectionField GetProjectionField(IEnumerable<string> path)
+		{
+			return EntitySchema.ProjectionFields.FirstOrDefault(
+				q => q.ModelPath.SequenceEqual(path)
+				);
+		}
+
+		private void PopulatePath(Expression expression, List<string> path)
+		{
+			if (expression is MemberExpression memberExpression)
+			{
+				var parentExpr = memberExpression.Expression;
+				PopulatePath(parentExpr, path);
+
+				path.Add(memberExpression.Member.Name);
+			}
 		}
 
 		private void AddProjection(ProjectionField projectionField)
@@ -153,9 +183,9 @@ namespace Silk.Data.SQL.ORM.Queries
 			}
 		}
 
-		private ResultMapper<TView> CreateResultMapper<TView>(int resultSetCount, EntitySchema projectionSchema)
+		private ObjectResultMapper<TView> CreateResultMapper<TView>(int resultSetCount, EntitySchema projectionSchema)
 		{
-			return new ResultMapper<TView>(resultSetCount,
+			return new ObjectResultMapper<TView>(resultSetCount,
 				CreateMappingBindings<TView>(projectionSchema));
 		}
 
