@@ -25,8 +25,8 @@ namespace Silk.Data.SQL.ORM.Queries
 
 	public class ResultMapper<T> : ResultMapper
 	{
-		private static string[] _selfPath = new[] { "." };
-		private static TypeModel<T> _typeModel = TypeModel.GetModelOf<T>();
+		private readonly static string[] _selfPath = new[] { "." };
+		private readonly static TypeModel<T> _typeModel = TypeModel.GetModelOf<T>();
 
 		public ResultMapper(int resultSetCount, IEnumerable<Binding> bindings)
 			: base(resultSetCount, bindings)
@@ -70,6 +70,44 @@ namespace Silk.Data.SQL.ORM.Queries
 				var objectReadWriter = new ObjectReadWriter(null, _typeModel, typeof(T));
 				Bind(queryReader, objectReadWriter);
 				result.Add(objectReadWriter.ReadField<T>(_selfPath, 0));
+			}
+			return result;
+		}
+
+		public ICollection<T> MapAll(QueryResult queryResult)
+		{
+			var queryReader = new QueryResultReader(queryResult);
+			var result = new List<T>();
+			for (var i = 0; i < ResultSetCount; i++)
+			{
+				if (!queryResult.NextResult())
+					break;
+
+				while (queryResult.Read())
+				{
+					var objectReadWriter = new ObjectReadWriter(null, _typeModel, typeof(T));
+					Bind(queryReader, objectReadWriter);
+					result.Add(objectReadWriter.ReadField<T>(_selfPath, 0));
+				}
+			}
+			return result;
+		}
+
+		public async Task<ICollection<T>> MapAllAsync(QueryResult queryResult)
+		{
+			var queryReader = new QueryResultReader(queryResult);
+			var result = new List<T>();
+			for (var i = 0; i < ResultSetCount; i++)
+			{
+				if (!await queryResult.NextResultAsync())
+					break;
+
+				while (await queryResult.ReadAsync())
+				{
+					var objectReadWriter = new ObjectReadWriter(null, _typeModel, typeof(T));
+					Bind(queryReader, objectReadWriter);
+					result.Add(objectReadWriter.ReadField<T>(_selfPath, 0));
+				}
 			}
 			return result;
 		}
