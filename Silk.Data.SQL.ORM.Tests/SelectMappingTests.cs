@@ -117,6 +117,98 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 		}
 
+		[TestMethod]
+		public async Task SelectEmbeddedObjectWithRelationshipModel()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<DeepRelationshipEntity>();
+			schemaBuilder.DefineEntity<FlatEntity>();
+			var schema = schemaBuilder.Build();
+
+			using (var provider = TestHelper.CreateProvider())
+			{
+				await CreateSchema<DeepRelationshipEntity>(schema, provider);
+				await CreateSchema<FlatEntity>(schema, provider);
+
+				var inObj = new DeepRelationshipEntity
+				{
+					Child = new RelationshipEntity
+					{
+						Data = 2,
+						Child = new FlatEntity
+						{
+							Data = 3
+						}
+					}
+				};
+				await Insert(schema, provider, inObj.Child.Child);
+				await Insert(schema, provider, inObj);
+
+				var queryBuilder = new EntitySelectBuilder<DeepRelationshipEntity>(schema);
+				var mapper = queryBuilder.Project<DeepRelationshipEntity>();
+				var selectQuery = queryBuilder.BuildQuery();
+
+				using (var queryResult = await provider.ExecuteReaderAsync(selectQuery))
+				{
+					Assert.IsTrue(queryResult.HasRows);
+					Assert.IsTrue(await queryResult.ReadAsync());
+
+					var outObj = mapper.Map(queryResult);
+					Assert.IsNotNull(outObj);
+					Assert.IsNotNull(outObj.Child);
+					Assert.IsNotNull(outObj.Child.Child);
+					Assert.AreEqual(inObj.Child.Data, outObj.Child.Data);
+					Assert.AreEqual(inObj.Child.Child.Data, outObj.Child.Child.Data);
+				}
+			}
+		}
+
+		[TestMethod]
+		public async Task SelectRelationshipWithEmbeddedObjectModel()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<DeepRelationshipEntity>();
+			schemaBuilder.DefineEntity<RelationshipEntity>();
+			var schema = schemaBuilder.Build();
+
+			using (var provider = TestHelper.CreateProvider())
+			{
+				await CreateSchema<DeepRelationshipEntity>(schema, provider);
+				await CreateSchema<RelationshipEntity>(schema, provider);
+
+				var inObj = new DeepRelationshipEntity
+				{
+					Child = new RelationshipEntity
+					{
+						Data = 2,
+						Child = new FlatEntity
+						{
+							Data = 3
+						}
+					}
+				};
+				await Insert(schema, provider, inObj.Child);
+				await Insert(schema, provider, inObj);
+
+				var queryBuilder = new EntitySelectBuilder<DeepRelationshipEntity>(schema);
+				var mapper = queryBuilder.Project<DeepRelationshipEntity>();
+				var selectQuery = queryBuilder.BuildQuery();
+
+				using (var queryResult = await provider.ExecuteReaderAsync(selectQuery))
+				{
+					Assert.IsTrue(queryResult.HasRows);
+					Assert.IsTrue(await queryResult.ReadAsync());
+
+					var outObj = mapper.Map(queryResult);
+					Assert.IsNotNull(outObj);
+					Assert.IsNotNull(outObj.Child);
+					Assert.IsNotNull(outObj.Child.Child);
+					Assert.AreEqual(inObj.Child.Data, outObj.Child.Data);
+					Assert.AreEqual(inObj.Child.Child.Data, outObj.Child.Child.Data);
+				}
+			}
+		}
+
 		private Task Insert<T>(Schema.Schema schema, IDataProvider provider, T obj)
 			where T : class
 		{
