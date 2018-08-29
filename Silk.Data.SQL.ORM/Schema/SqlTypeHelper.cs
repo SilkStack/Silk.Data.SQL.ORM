@@ -13,13 +13,9 @@ namespace Silk.Data.SQL.ORM.Schema
 			{
 				{ typeof(string), SqlDataType.Text() },
 				{ typeof(bool), SqlDataType.Bit() },
-				{ typeof(sbyte), SqlDataType.TinyInt() },
 				{ typeof(byte), SqlDataType.UnsignedTinyInt() },
-				{ typeof(ushort), SqlDataType.UnsignedSmallInt() },
 				{ typeof(short), SqlDataType.SmallInt() },
-				{ typeof(uint), SqlDataType.UnsignedInt() },
 				{ typeof(int), SqlDataType.Int() },
-				{ typeof(ulong), SqlDataType.UnsignedBigInt() },
 				{ typeof(long), SqlDataType.BigInt() },
 				{ typeof(float), SqlDataType.Float(SqlDataType.FLOAT_MAX_PRECISION) },
 				{ typeof(double), SqlDataType.Float(SqlDataType.DOUBLE_MAX_PRECISION) },

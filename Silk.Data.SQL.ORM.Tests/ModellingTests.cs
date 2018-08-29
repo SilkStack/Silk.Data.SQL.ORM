@@ -15,13 +15,9 @@ namespace Silk.Data.SQL.ORM.Tests
 			var expectedFields = new (Type type, string Name, SqlDataType DataType)[]
 			{
 				(typeof(bool), "Bool", SqlDataType.Bit()),
-				(typeof(sbyte), "SByte", SqlDataType.TinyInt()),
 				(typeof(byte), "Byte", SqlDataType.UnsignedTinyInt()),
-				(typeof(ushort), "UShort", SqlDataType.UnsignedSmallInt()),
 				(typeof(short), "Short", SqlDataType.SmallInt()),
-				(typeof(uint), "UInt", SqlDataType.UnsignedInt()),
 				(typeof(int), "Int", SqlDataType.Int()),
-				(typeof(ulong), "ULong", SqlDataType.UnsignedBigInt()),
 				(typeof(long), "Long", SqlDataType.BigInt()),
 				(typeof(float), "Float", SqlDataType.Float(SqlDataType.FLOAT_MAX_PRECISION)),
 				(typeof(double), "Double", SqlDataType.Float(SqlDataType.DOUBLE_MAX_PRECISION)),
@@ -291,13 +287,9 @@ namespace Silk.Data.SQL.ORM.Tests
 		private class Primitives
 		{
 			public bool Bool { get; set; }
-			public sbyte SByte { get; set; }
 			public byte Byte { get; set; }
-			public ushort UShort { get; set; }
 			public short Short { get; set; }
-			public uint UInt { get; set; }
 			public int Int { get; set; }
-			public ulong ULong { get; set; }
 			public long Long { get; set; }
 			public string String { get; set; }
 			public DateTime DateTime { get; set; }
