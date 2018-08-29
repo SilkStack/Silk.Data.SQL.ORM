@@ -13,7 +13,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			{
 				{ typeof(string), SqlDataType.Text() },
 				{ typeof(bool), SqlDataType.Bit() },
-				{ typeof(byte), SqlDataType.UnsignedTinyInt() },
+				{ typeof(byte), SqlDataType.TinyInt() },
 				{ typeof(short), SqlDataType.SmallInt() },
 				{ typeof(int), SqlDataType.Int() },
 				{ typeof(long), SqlDataType.BigInt() },
