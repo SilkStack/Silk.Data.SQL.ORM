@@ -1,11 +1,9 @@
-﻿using Silk.Data.Modelling;
-using Silk.Data.Modelling.Mapping.Binding;
+﻿using Silk.Data.Modelling.Mapping.Binding;
 using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Schema;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 
 namespace Silk.Data.SQL.ORM.Queries
 {
@@ -90,7 +88,7 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		private IEnumerable<Binding> CreateMappingBindings<TView>(EntitySchema projectionSchema)
 		{
-			yield return new CreateInstanceIfNull<TView>(GetConstructor(typeof(TView)), new[] { "." });
+			yield return new CreateInstanceIfNull<TView>(SqlTypeHelper.GetConstructor(typeof(TView)), new[] { "." });
 			foreach (var field in projectionSchema.ProjectionFields)
 			{
 				yield return field.GetMappingBinding();
@@ -101,17 +99,6 @@ namespace Silk.Data.SQL.ORM.Queries
 		{
 			return new ResultMapper<TView>(resultSetCount,
 				CreateMappingBindings<TView>(projectionSchema));
-		}
-
-		private static ConstructorInfo GetConstructor(Type type)
-		{
-			var ctor = type.GetConstructors()
-				.FirstOrDefault(q => q.GetParameters().Length == 0);
-			if (ctor == null)
-			{
-				throw new MappingRequirementException($"A constructor with 0 parameters is required on type {type}.");
-			}
-			return ctor;
 		}
 	}
 }

@@ -86,10 +86,10 @@ namespace Silk.Data.SQL.ORM.Tests
 			using (var provider = TestHelper.CreateProvider())
 			{
 				await provider.ExecuteNonQueryAsync(
-					SQLite3.SQLite3.Raw("CREATE TABLE [RelationshipEntity] ([Data] INT, [Child_Id] INT, [Child_Data] INT)")
+					SQLite3.SQLite3.Raw("CREATE TABLE [RelationshipEntity] ([Data] INT, [Child] INT, [Child_Id] INT, [Child_Data] INT)")
 					);
 				await provider.ExecuteNonQueryAsync(
-					SQLite3.SQLite3.Raw("INSERT INTO [RelationshipEntity] VALUES (3, 1, 2)")
+					SQLite3.SQLite3.Raw("INSERT INTO [RelationshipEntity] VALUES (3, 1, 1, 2)")
 					);
 
 				var queryBuilder = new EntitySelectBuilder<RelationshipEntity>(schema);
@@ -159,10 +159,10 @@ namespace Silk.Data.SQL.ORM.Tests
 					SQLite3.SQLite3.Raw("CREATE TABLE [DeepRelationshipEntity] ([FK_Child_Child_Id] INT)")
 					);
 				await provider.ExecuteNonQueryAsync(
-					SQLite3.SQLite3.Raw("CREATE TABLE [RelationshipEntity] ([Data] INT, [Child_Id] INT, [Child_Data] INT)")
+					SQLite3.SQLite3.Raw("CREATE TABLE [RelationshipEntity] ([Data] INT, [Child] INT, [Child_Id] INT, [Child_Data] INT)")
 					);
 				await provider.ExecuteNonQueryAsync(
-					SQLite3.SQLite3.Raw("INSERT INTO [RelationshipEntity] VALUES (3, 1, 2)")
+					SQLite3.SQLite3.Raw("INSERT INTO [RelationshipEntity] VALUES (3, 1, 1, 2)")
 					);
 				await provider.ExecuteNonQueryAsync(
 					SQLite3.SQLite3.Raw("INSERT INTO [DeepRelationshipEntity] VALUES (1)")

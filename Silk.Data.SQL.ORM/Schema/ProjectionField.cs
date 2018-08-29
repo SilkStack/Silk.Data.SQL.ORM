@@ -1,4 +1,5 @@
-﻿using Silk.Data.Modelling.Mapping.Binding;
+﻿using Silk.Data.SQL.ORM.Schema.Binding;
+using CoreBinding = Silk.Data.Modelling.Mapping.Binding;
 
 namespace Silk.Data.SQL.ORM.Schema
 {
@@ -7,6 +8,8 @@ namespace Silk.Data.SQL.ORM.Schema
 	/// </summary>
 	public abstract class ProjectionField : IProjectedItem
 	{
+		public abstract bool IsNullCheck { get; }
+
 		/// <summary>
 		/// Gets the table name/alias that the field is a member of.
 		/// </summary>
@@ -33,19 +36,46 @@ namespace Silk.Data.SQL.ORM.Schema
 			ModelPath = modelPath;
 		}
 
-		public abstract Binding GetMappingBinding();
+		public abstract CoreBinding.Binding GetMappingBinding();
 	}
 
 	public class ProjectionField<T> : ProjectionField
 	{
+		public override bool IsNullCheck { get; }
+
+		public ProjectionField(string sourceName, string fieldName, string aliasName, string[] modelPath)
+			: base(sourceName, fieldName, aliasName, modelPath)
+		{
+			IsNullCheck = !SqlTypeHelper.IsSqlPrimitiveType(typeof(T));
+		}
+
+		public override CoreBinding.Binding GetMappingBinding()
+		{
+			if (IsNullCheck)
+				return new CreateInstanceWithNullCheck<T, bool>(
+					SqlTypeHelper.GetConstructor(typeof(T)),
+					new[] { AliasName },
+					ModelPath);
+
+			return new CoreBinding.CopyBinding<T>(new[] { AliasName }, ModelPath);
+		}
+	}
+
+	public class ProjectionField<TEntity, TKeyValue> : ProjectionField
+	{
+		public override bool IsNullCheck => true;
+
 		public ProjectionField(string sourceName, string fieldName, string aliasName, string[] modelPath)
 			: base(sourceName, fieldName, aliasName, modelPath)
 		{
 		}
 
-		public override Binding GetMappingBinding()
+		public override CoreBinding.Binding GetMappingBinding()
 		{
-			return new CopyBinding<T>(new[] { AliasName }, ModelPath);
+			return new CreateInstanceWithNullCheck<TEntity, TKeyValue>(
+				SqlTypeHelper.GetConstructor(typeof(TEntity)),
+				new[] { AliasName },
+				ModelPath);
 		}
 	}
 }

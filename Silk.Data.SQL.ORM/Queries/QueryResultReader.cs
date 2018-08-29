@@ -22,13 +22,14 @@ namespace Silk.Data.SQL.ORM.Queries
 				{ typeof(Guid), new Func<QueryResult, int, Guid>((q,o) => q.GetGuid(o)) },
 				{ typeof(DateTime), new Func<QueryResult, int, DateTime>((q,o) => q.GetDateTime(o)) }
 			};
-		private readonly QueryResult _queryResult;
+
+		public QueryResult QueryResult { get; }
 
 		public IModel Model => throw new NotImplementedException();
 
 		public QueryResultReader(QueryResult queryResult)
 		{
-			_queryResult = queryResult;
+			QueryResult = queryResult;
 		}
 
 		public T ReadField<T>(string[] path, int offset)
@@ -36,12 +37,12 @@ namespace Silk.Data.SQL.ORM.Queries
 			if (!_typeReaders.TryGetValue(typeof(T), out var @delegate))
 				throw new Exception("Unsupported data type.");
 
-			var ord = _queryResult.GetOrdinal(path[0]);
-			if (_queryResult.IsDBNull(ord))
+			var ord = QueryResult.GetOrdinal(path[0]);
+			if (QueryResult.IsDBNull(ord))
 				return default(T);
 
 			var readFunc = @delegate as Func<QueryResult, int, T>;
-			return readFunc(_queryResult, ord);
+			return readFunc(QueryResult, ord);
 		}
 
 		public void WriteField<T>(string[] path, int offset, T value)

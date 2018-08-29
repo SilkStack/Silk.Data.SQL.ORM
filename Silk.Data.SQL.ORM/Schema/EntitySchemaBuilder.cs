@@ -247,12 +247,35 @@ namespace Silk.Data.SQL.ORM.Schema
 				{
 					var entityField = entityFields.First(q => q.ModelField == modelField);
 					var relatedEntityType = partialEntities[modelField.FieldType];
+
+					var entityJoin = entityJoins.FirstOrDefault(q => q.EntityField == entityField);
+					var prefix = propertyPath.Length == 0 ? "" : $"{string.Join("_", propertyPath)}_";
+
+					//  todo: decide how to support the null check binding this projection provides
+					//        on joins with composite keys
+					foreach (var foreignKey in entityField.ForeignKeys)
+					{
+						yield return foreignKey.BuildProjectionField(entityJoin.TableAlias,
+							foreignKey.ForeignColumn.ColumnName,
+							$"__NULL_CHECK_{prefix}{entityField.ModelField.FieldName}",
+							subPropertyPath);
+					}
+
 					foreach (var relatedEntityField in BuildProjectionFields(modelField.FieldTypeModel, relatedEntityType.EntityFields, partialEntities, entityJoins, entityField, subPropertyPath))
 						yield return relatedEntityField;
 				}
 				else
 				{
 					var entityField = entityFields.First(q => q.ModelField == modelField);
+					var entityJoin = entityJoins.FirstOrDefault(q => q.EntityField == joinEntityField);
+					var sourceName = entityJoin?.TableAlias ?? TableName;
+					var prefix = propertyPath.Length == 0 ? "" : $"{string.Join("_", propertyPath)}_";
+
+					yield return entityField.BuildProjectionField(sourceName,
+						entityField.Columns[0].ColumnName,
+						$"__NULL_CHECK_{prefix}{entityField.ModelField.FieldName}",
+						subPropertyPath);
+
 					foreach (var relatedEntityField in BuildProjectionFields(modelField.FieldTypeModel, entityFields, partialEntities, entityJoins, joinEntityField, subPropertyPath))
 						yield return relatedEntityField;
 				}

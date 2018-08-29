@@ -1,8 +1,7 @@
 ﻿using Silk.Data.Modelling;
-using Silk.Data.Modelling.Mapping.Binding;
+using CoreBinding = Silk.Data.Modelling.Mapping.Binding;
 using Silk.Data.SQL.ORM.Queries;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Schema
@@ -18,10 +17,11 @@ namespace Silk.Data.SQL.ORM.Schema
 		public abstract PrimaryKeyGenerator PrimaryKeyGenerator { get; }
 		public abstract string[] ModelPath { get; }
 		public abstract KeyType KeyType { get; }
+		public abstract ForeignKey[] ForeignKeys { get; }
 
 		public bool IsPrimaryKey => PrimaryKeyGenerator != PrimaryKeyGenerator.NotPrimaryKey;
 
-		public abstract Binding GetValueBinding();
+		public abstract CoreBinding.Binding GetValueBinding();
 
 		public abstract ForeignKey BuildForeignKey(string propertyPathPrefix, string[] modelPath);
 
@@ -47,7 +47,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		public override PrimaryKeyGenerator PrimaryKeyGenerator { get; }
 		public override string[] ModelPath { get; }
 		public override KeyType KeyType { get; }
-		public ForeignKey[] ForeignKeys { get; }
+		public override ForeignKey[] ForeignKeys { get; }
 
 		public EntityField(Column[] columns, IPropertyField modelField,
 			PrimaryKeyGenerator primaryKeyGenerator, string[] modelPath)
@@ -91,13 +91,13 @@ namespace Silk.Data.SQL.ORM.Schema
 			return new ValueReader(objectReadWriter, ModelPath);
 		}
 
-		public override Binding GetValueBinding()
+		public override CoreBinding.Binding GetValueBinding()
 		{
 			if (PrimaryKeyGenerator == PrimaryKeyGenerator.ServerGenerated)
 			{
-				return new CopyBinding<TValue>(new[] { "__PK_IDENTITY" }, ModelPath);
+				return new CoreBinding.CopyBinding<TValue>(new[] { "__PK_IDENTITY" }, ModelPath);
 			}
-			return new CopyBinding<TValue>(new[] { Columns[0].ColumnName }, ModelPath);
+			return new CoreBinding.CopyBinding<TValue>(new[] { Columns[0].ColumnName }, ModelPath);
 		}
 
 		public override ForeignKey BuildForeignKey(string propertyPathPrefix, string[] modelPath)

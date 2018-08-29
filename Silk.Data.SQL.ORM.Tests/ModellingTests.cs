@@ -254,7 +254,7 @@ namespace Silk.Data.SQL.ORM.Tests
 		{
 			foreach (var expectedProjection in expectedProjections)
 			{
-				var projection = entitySchema.ProjectionFields.FirstOrDefault(q => q.FieldName == expectedProjection.FieldName);
+				var projection = entitySchema.ProjectionFields.FirstOrDefault(q => !q.IsNullCheck && q.FieldName == expectedProjection.FieldName);
 				Assert.IsNotNull(projection, $"Projection \"{expectedProjection.FieldName}\" not found.");
 				Assert.AreEqual(expectedProjection.Alias, projection.AliasName);
 				Assert.AreEqual(expectedProjection.Source, projection.SourceName);

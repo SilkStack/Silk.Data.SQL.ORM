@@ -3,8 +3,6 @@ using Silk.Data.SQL.ORM.Queries;
 using Silk.Data.SQL.ORM.Schema;
 using Silk.Data.SQL.Providers;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Silk.Data.SQL.ORM.Tests
@@ -44,6 +42,81 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 		}
 
+		[TestMethod]
+		public async Task SelectRelationshipModel()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<FlatEntity>();
+			schemaBuilder.DefineEntity<RelationshipEntity>();
+			var schema = schemaBuilder.Build();
+
+			using (var provider = TestHelper.CreateProvider())
+			{
+				await CreateSchema<FlatEntity>(schema, provider);
+				await CreateSchema<RelationshipEntity>(schema, provider);
+
+				var inFlat = new FlatEntity { Data = 2 };
+				var inRelated = new RelationshipEntity { Data = 3, Child = inFlat };
+
+				await Insert(schema, provider, inFlat);
+				await Insert(schema, provider, inRelated);
+
+				var queryBuilder = new EntitySelectBuilder<RelationshipEntity>(schema);
+				var mapper = queryBuilder.Project<RelationshipEntity>();
+
+				using (var queryResult = await provider.ExecuteReaderAsync(queryBuilder.BuildQuery()))
+				{
+					Assert.IsTrue(queryResult.HasRows);
+					Assert.IsTrue(await queryResult.ReadAsync());
+					var outRelated = mapper.Map(queryResult);
+					Assert.IsNotNull(outRelated);
+					Assert.IsNotNull(outRelated.Child);
+					Assert.AreEqual(inRelated.Data, outRelated.Data);
+					Assert.AreEqual(inRelated.Child.Data, outRelated.Child.Data);
+				}
+			}
+		}
+
+		[TestMethod]
+		public async Task SelectEmbeddedModel()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<RelationshipEntity>();
+			var schema = schemaBuilder.Build();
+
+			using (var provider = TestHelper.CreateProvider())
+			{
+				await CreateSchema<RelationshipEntity>(schema, provider);
+
+				var inObj = new RelationshipEntity
+				{
+					Data = 2,
+					Child = new FlatEntity
+					{
+						Data = 3
+					}
+				};
+
+				await Insert(schema, provider, inObj);
+
+				var queryBuilder = new EntitySelectBuilder<RelationshipEntity>(schema);
+				var mapper = queryBuilder.Project<RelationshipEntity>();
+				var selectQuery = queryBuilder.BuildQuery();
+
+				using (var queryResult = await provider.ExecuteReaderAsync(selectQuery))
+				{
+					Assert.IsTrue(queryResult.HasRows);
+					Assert.IsTrue(await queryResult.ReadAsync());
+
+					var outObj = mapper.Map(queryResult);
+					Assert.IsNotNull(outObj);
+					Assert.IsNotNull(outObj.Child);
+					Assert.AreEqual(inObj.Data, outObj.Data);
+					Assert.AreEqual(inObj.Child.Data, outObj.Child.Data);
+				}
+			}
+		}
+
 		private Task Insert<T>(Schema.Schema schema, IDataProvider provider, T obj)
 			where T : class
 		{
@@ -68,7 +141,7 @@ namespace Silk.Data.SQL.ORM.Tests
 		private class RelationshipEntity
 		{
 			public FlatEntity Child { get; set; }
-			public Guid Data { get; set; }
+			public int Data { get; set; }
 		}
 
 		private class DeepRelationshipEntity

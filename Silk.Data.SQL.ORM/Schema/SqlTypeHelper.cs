@@ -1,5 +1,8 @@
-﻿using System;
+﻿using Silk.Data.Modelling;
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 
 namespace Silk.Data.SQL.ORM.Schema
 {
@@ -42,6 +45,17 @@ namespace Silk.Data.SQL.ORM.Schema
 				return GetDataType(type.GetGenericArguments()[0]);
 			_sqlTypeDictionary.TryGetValue(type, out var sqlDataType);
 			return sqlDataType;
+		}
+
+		public static ConstructorInfo GetConstructor(Type type)
+		{
+			var ctor = type.GetConstructors()
+				.FirstOrDefault(q => q.GetParameters().Length == 0);
+			if (ctor == null)
+			{
+				throw new MappingRequirementException($"A constructor with 0 parameters is required on type {type}.");
+			}
+			return ctor;
 		}
 	}
 }

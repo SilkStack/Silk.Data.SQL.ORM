@@ -10,6 +10,8 @@ namespace Silk.Data.SQL.ORM.Schema
 		public abstract string[] ModelPath { get; }
 
 		public abstract IValueReader CreateValueReader(IModelReadWriter writeToModelReadWriter);
+
+		public abstract ProjectionField BuildProjectionField(string sourceName, string fieldName, string aliasName, string[] modelPath);
 	}
 
 	public class ForeignKey<TEntity, TValue> : ForeignKey
@@ -29,6 +31,11 @@ namespace Silk.Data.SQL.ORM.Schema
 		public override IValueReader CreateValueReader(IModelReadWriter writeToModelReadWriter)
 		{
 			return new ValueReader(writeToModelReadWriter, ModelPath);
+		}
+
+		public override ProjectionField BuildProjectionField(string sourceName, string fieldName, string aliasName, string[] modelPath)
+		{
+			return new ProjectionField<TEntity, TValue>(sourceName, fieldName, aliasName, modelPath);
 		}
 
 		private class ValueReader : IValueReader
