@@ -249,6 +249,37 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 		}
 
+		[TestMethod]
+		public async Task SelectWhereInArray()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<FlatEntity>();
+			var schema = schemaBuilder.Build();
+
+			using (var provider = TestHelper.CreateProvider())
+			{
+				await provider.ExecuteNonQueryAsync(
+					SQLite3.SQLite3.Raw("CREATE TABLE [FlatEntity] ([Id] INT, [Data] INT)")
+					);
+				await provider.ExecuteNonQueryAsync(
+					SQLite3.SQLite3.Raw("INSERT INTO [FlatEntity] VALUES (1, 2), (2, 3)")
+					);
+
+				var queryBuilder = new EntitySelectBuilder<FlatEntity>(schema);
+				queryBuilder.Project<FlatEntity>();
+				var ids = new[] { 1, 2 };
+				queryBuilder.AndWhere(q => IsIn(q.Id, ids));
+				var selectQuery = queryBuilder.BuildQuery();
+
+				using (var queryResult = await provider.ExecuteReaderAsync(selectQuery))
+				{
+					Assert.IsTrue(queryResult.HasRows);
+					Assert.IsTrue(await queryResult.ReadAsync());
+					Assert.IsTrue(await queryResult.ReadAsync());
+				}
+			}
+		}
+
 		private class FlatEntity
 		{
 			public int Id { get; private set; }
