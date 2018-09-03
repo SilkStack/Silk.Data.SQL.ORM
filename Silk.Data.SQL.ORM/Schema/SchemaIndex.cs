@@ -6,12 +6,12 @@ namespace Silk.Data.SQL.ORM.Schema
 	{
 		public string IndexName { get; }
 		public bool HasUniqueConstraint { get; }
-		public EntityField[] EntityFields { get; }
+		public IEntityField[] EntityFields { get; }
 		public Table Table { get; }
 		public string[] ColumnNames { get; }
 		public string SourceName => Table.TableName;
 
-		public SchemaIndex(string indexName, bool hasUniqueConstraint, EntityField[] entityFields,
+		public SchemaIndex(string indexName, bool hasUniqueConstraint, IEntityField[] entityFields,
 			Table table)
 		{
 			IndexName = indexName;

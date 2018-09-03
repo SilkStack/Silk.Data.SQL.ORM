@@ -9,15 +9,17 @@ namespace Silk.Data.SQL.ORM.Schema
 	/// </summary>
 	public abstract class EntitySchema
 	{
+		public Schema Schema { get; internal set; }
+
 		public abstract Type EntityType { get; }
 		public abstract Table EntityTable { get; }
 		public abstract SchemaIndex[] Indexes { get; }
 		public abstract ProjectionField[] ProjectionFields { get; }
 		public abstract EntityFieldJoin[] EntityJoins { get; }
 
-		public EntityField[] EntityFields { get; }
+		public IEntityField[] EntityFields { get; }
 
-		public EntitySchema(EntityField[] entityFields)
+		public EntitySchema(IEntityField[] entityFields)
 		{
 			EntityFields = entityFields;
 		}
@@ -28,14 +30,14 @@ namespace Silk.Data.SQL.ORM.Schema
 	/// </summary>
 	public class EntitySchema<T> : EntitySchema
 	{
-		public new EntityField<T>[] EntityFields { get; }
+		public new IEntityFieldOfEntity<T>[] EntityFields { get; }
 		public override Table EntityTable { get; }
 		public override Type EntityType { get; } = typeof(T);
 		public override SchemaIndex[] Indexes { get; }
 		public override ProjectionField[] ProjectionFields { get; }
 		public override EntityFieldJoin[] EntityJoins { get; }
 
-		public EntitySchema(Table entityTable, EntityField<T>[] entityFields,
+		public EntitySchema(Table entityTable, IEntityFieldOfEntity<T>[] entityFields,
 			ProjectionField[] projectionFields, EntityFieldJoin[] manyToOneJoins,
 			SchemaIndex[] indexes) : base(entityFields)
 		{

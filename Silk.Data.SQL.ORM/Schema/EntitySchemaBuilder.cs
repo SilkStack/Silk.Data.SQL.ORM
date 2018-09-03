@@ -147,7 +147,7 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public override EntitySchema BuildSchema(PartialEntitySchemaCollection partialEntities)
 		{
-			var fields = partialEntities[typeof(T)].EntityFields.OfType<EntityField<T>>().ToArray();
+			var fields = partialEntities[typeof(T)].EntityFields.OfType<IEntityFieldOfEntity<T>>().ToArray();
 			var columns = fields.SelectMany(q => q.Columns).ToArray();
 			var joins = BuildManyToOneJoins(_entityTypeModel, fields, partialEntities, TableName).ToArray();
 			var projectionFields = BuildProjectionFields(_entityTypeModel, fields, partialEntities, joins).ToArray();
@@ -159,7 +159,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		}
 
 		private IEnumerable<EntityFieldJoin> BuildManyToOneJoins(
-			TypeModel entityModel, IEnumerable<EntityField> entityFields,
+			TypeModel entityModel, IEnumerable<IEntityField> entityFields,
 			PartialEntitySchemaCollection partialEntities, string currentSourceName, string[] propertyPath = null,
 			EntityFieldJoin[] dependencyJoins = null)
 		{
@@ -220,9 +220,9 @@ namespace Silk.Data.SQL.ORM.Schema
 		}
 
 		private IEnumerable<ProjectionField> BuildProjectionFields(
-			TypeModel entityModel, IEnumerable<EntityField> entityFields,
+			TypeModel entityModel, IEnumerable<IEntityField> entityFields,
 			PartialEntitySchemaCollection partialEntities, EntityFieldJoin[] entityJoins,
-			EntityField joinEntityField = null, string[] propertyPath = null)
+			IEntityField joinEntityField = null, string[] propertyPath = null)
 		{
 			if (propertyPath == null)
 				propertyPath = new string[0];
@@ -282,7 +282,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			}
 		}
 
-		private IEnumerable<EntityField> BuildEntityFields(
+		private IEnumerable<IEntityField> BuildEntityFields(
 			TypeModel entityTypeModel, bool getPrimitiveFields,
 			PartialEntitySchemaCollection entityPrimitiveFields = null,
 			string[] propertyPath = null)

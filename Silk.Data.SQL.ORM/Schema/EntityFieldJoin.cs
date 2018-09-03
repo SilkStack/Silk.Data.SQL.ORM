@@ -7,12 +7,12 @@
 		public string SourceName { get; }
 		public string[] LeftColumns { get; }
 		public string[] RightColumns { get; }
-		public EntityField EntityField { get; }
+		public IEntityField EntityField { get; }
 		public EntityFieldJoin[] DependencyJoins { get; }
 
 		public EntityFieldJoin(string tableName, string tableAlias,
 			string sourceName, string[] leftColumns, string[] rightColumns,
-			EntityField entityField, EntityFieldJoin[] dependencyJoins = null)
+			IEntityField entityField, EntityFieldJoin[] dependencyJoins = null)
 		{
 			TableName = tableName;
 			TableAlias = tableAlias;

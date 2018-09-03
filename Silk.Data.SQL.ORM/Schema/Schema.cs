@@ -18,6 +18,10 @@ namespace Silk.Data.SQL.ORM.Schema
 			Dictionary<MethodInfo, IMethodCallConverter> methodCallConverters)
 		{
 			_entitySchemas = entitySchemas.ToDictionary(q => q.EntityType);
+			foreach(var schema in _entitySchemas.Values)
+			{
+				schema.Schema = this;
+			}
 			_methodCallConverters = methodCallConverters;
 		}
 

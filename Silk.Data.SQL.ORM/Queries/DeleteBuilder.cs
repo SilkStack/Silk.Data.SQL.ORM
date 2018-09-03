@@ -6,7 +6,7 @@ using System.Linq.Expressions;
 
 namespace Silk.Data.SQL.ORM.Queries
 {
-	public class DeleteBuilder : IQueryBuilder, IConditionalQuery
+	public class DeleteBuilder : IQueryBuilder
 	{
 		protected TableExpression Source { get; set; }
 		protected QueryExpression Where { get; private set; }
@@ -28,23 +28,13 @@ namespace Silk.Data.SQL.ORM.Queries
 		{
 			Where = QueryExpression.CombineConditions(Where, ConditionType.OrElse, queryExpression);
 		}
-
-		void IConditionalQuery.Limit(QueryExpression queryExpression)
-		{
-			Limit = queryExpression;
-		}
-
-		void IConditionalQuery.Limit(int count)
-		{
-			Limit = QueryExpression.Value(count);
-		}
 	}
 
 	public class DeleteBuilder<T> : DeleteBuilder
 	{
 	}
 
-	public class EntityDeleteBuilder<T> : DeleteBuilder<T>, IEntityConditionalQuery<T>
+	public class EntityDeleteBuilder<T> : DeleteBuilder<T>
 		where T : class
 	{
 		private ExpressionConverter<T> _expressionConverter;

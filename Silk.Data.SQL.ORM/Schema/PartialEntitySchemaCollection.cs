@@ -33,9 +33,9 @@ namespace Silk.Data.SQL.ORM.Schema
 			return ContainsKey(type);
 		}
 
-		public IEnumerable<EntityField> GetEntityPrimaryKeys<T>() => GetEntityPrimaryKeys(typeof(T));
+		public IEnumerable<IEntityField> GetEntityPrimaryKeys<T>() => GetEntityPrimaryKeys(typeof(T));
 
-		public IEnumerable<EntityField> GetEntityPrimaryKeys(Type type)
+		public IEnumerable<IEntityField> GetEntityPrimaryKeys(Type type)
 		{
 			if (TryGetValue(type, out var partialEntitySchema))
 			{

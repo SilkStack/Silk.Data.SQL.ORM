@@ -9,7 +9,7 @@ using System.Linq.Expressions;
 
 namespace Silk.Data.SQL.ORM.Queries
 {
-	public class SelectBuilder : IQueryBuilder, IConditionalQuery
+	public class SelectBuilder : IQueryBuilder
 	{
 		protected QueryExpression Source { get; set; }
 		protected List<AliasExpression> ProjectionExpressions { get; }
@@ -19,7 +19,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		protected List<ITableJoin> TableJoins { get; }
 			= new List<ITableJoin>();
 		protected QueryExpression Where { get; private set; }
-		protected QueryExpression Limit { get; private set; }
+		protected QueryExpression LimitExpression { get; private set; }
 
 		public QueryExpression BuildQuery()
 		{
@@ -29,7 +29,7 @@ namespace Silk.Data.SQL.ORM.Queries
 				from: Source,
 				joins: TableJoins.Select(q => CreateJoin(q)).ToArray(),
 				where: Where,
-				limit: Limit
+				limit: LimitExpression
 				);
 		}
 
@@ -85,14 +85,14 @@ namespace Silk.Data.SQL.ORM.Queries
 			Where = QueryExpression.CombineConditions(Where, ConditionType.OrElse, queryExpression);
 		}
 
-		void IConditionalQuery.Limit(QueryExpression queryExpression)
+		public void Limit(int limit)
 		{
-			Limit = queryExpression;
+			LimitExpression = QueryExpression.Value(limit);
 		}
 
-		void IConditionalQuery.Limit(int count)
+		public void Limit(QueryExpression queryExpression)
 		{
-			Limit = QueryExpression.Value(count);
+			LimitExpression = queryExpression;
 		}
 	}
 
@@ -101,7 +101,7 @@ namespace Silk.Data.SQL.ORM.Queries
 	{
 	}
 
-	public class EntitySelectBuilder<T> : SelectBuilder<T>, IEntityConditionalQuery<T>
+	public class EntitySelectBuilder<T> : SelectBuilder<T>
 		where T : class
 	{
 		private ExpressionConverter<T> _expressionConverter;

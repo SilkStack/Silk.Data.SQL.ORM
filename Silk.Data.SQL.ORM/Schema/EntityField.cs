@@ -9,46 +9,48 @@ namespace Silk.Data.SQL.ORM.Schema
 	/// <summary>
 	/// An entity field.
 	/// </summary>
-	public abstract class EntityField : ITableField
+	public interface IEntityField : ITableField
 	{
-		public abstract Type DataType { get; }
-		public abstract Column[] Columns { get; }
-		public abstract IPropertyField ModelField { get; }
-		public abstract PrimaryKeyGenerator PrimaryKeyGenerator { get; }
-		public abstract string[] ModelPath { get; }
-		public abstract KeyType KeyType { get; }
-		public abstract ForeignKey[] ForeignKeys { get; }
+		Type DataType { get; }
+		IPropertyField ModelField { get; }
+		string[] ModelPath { get; }
+		KeyType KeyType { get; }
+		ForeignKey[] ForeignKeys { get; }
 
-		public bool IsPrimaryKey => PrimaryKeyGenerator != PrimaryKeyGenerator.NotPrimaryKey;
+		CoreBinding.Binding GetValueBinding();
 
-		public abstract CoreBinding.Binding GetValueBinding();
+		ForeignKey BuildForeignKey(string propertyPathPrefix, string[] modelPath);
 
-		public abstract ForeignKey BuildForeignKey(string propertyPathPrefix, string[] modelPath);
-
-		public abstract ProjectionField BuildProjectionField(string sourceName, string fieldName,
+		ProjectionField BuildProjectionField(string sourceName, string fieldName,
 			string aliasName, string[] modelPath, EntityFieldJoin join);
 	}
 
-	public abstract class EntityField<TEntity> : EntityField
+	public interface IEntityFieldOfValue<TValue> : IEntityField
 	{
-		public abstract IValueReader GetValueReader(TEntity obj, Column column);
+	}
+
+	public interface IEntityFieldOfEntity<TEntity> : IEntityField
+	{
+		IValueReader GetValueReader(TEntity obj, Column column);
+		FieldAssignment GetFieldValuePair(TEntity obj);
 	}
 
 	/// <summary>
 	/// An entity field that stores type TValue.
 	/// </summary>
 	/// <typeparam name="TValue"></typeparam>
-	public class EntityField<TValue, TEntity> : EntityField<TEntity>
+	public class EntityField<TValue, TEntity> : IEntityFieldOfValue<TValue>, IEntityFieldOfEntity<TEntity>
 	{
 		private static TypeModel<TEntity> _entityModel = TypeModel.GetModelOf<TEntity>();
 
-		public override Type DataType { get; } = typeof(TValue);
-		public override Column[] Columns { get; }
-		public override IPropertyField ModelField { get; }
-		public override PrimaryKeyGenerator PrimaryKeyGenerator { get; }
-		public override string[] ModelPath { get; }
-		public override KeyType KeyType { get; }
-		public override ForeignKey[] ForeignKeys { get; }
+		public Type DataType { get; } = typeof(TValue);
+		public Column[] Columns { get; }
+		public IPropertyField ModelField { get; }
+		public PrimaryKeyGenerator PrimaryKeyGenerator { get; }
+		public string[] ModelPath { get; }
+		public KeyType KeyType { get; }
+		public ForeignKey[] ForeignKeys { get; }
+		public bool IsPrimaryKey => PrimaryKeyGenerator != PrimaryKeyGenerator.NotPrimaryKey;
 
 		public EntityField(Column[] columns, IPropertyField modelField,
 			PrimaryKeyGenerator primaryKeyGenerator, string[] modelPath)
@@ -71,7 +73,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			KeyType = keyType;
 		}
 
-		public override IValueReader GetValueReader(TEntity obj, Column column)
+		public IValueReader GetValueReader(TEntity obj, Column column)
 		{
 			var objectReadWriter = new ObjectReadWriter(obj, _entityModel, typeof(TEntity));
 
@@ -92,7 +94,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			return new ValueReader(objectReadWriter, ModelPath);
 		}
 
-		public override CoreBinding.Binding GetValueBinding()
+		public CoreBinding.Binding GetValueBinding()
 		{
 			if (PrimaryKeyGenerator == PrimaryKeyGenerator.ServerGenerated)
 			{
@@ -101,7 +103,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			return new CoreBinding.CopyBinding<TValue>(new[] { Columns[0].ColumnName }, ModelPath);
 		}
 
-		public override ForeignKey BuildForeignKey(string propertyPathPrefix, string[] modelPath)
+		public ForeignKey BuildForeignKey(string propertyPathPrefix, string[] modelPath)
 		{
 			var column = Columns[0];
 			return new ForeignKey<TEntity, TValue>(new Column(
@@ -109,13 +111,19 @@ namespace Silk.Data.SQL.ORM.Schema
 					), column, modelPath.Concat(ModelPath).ToArray());
 		}
 
-		public override ProjectionField BuildProjectionField(string sourceName, string fieldName,
+		public ProjectionField BuildProjectionField(string sourceName, string fieldName,
 			string aliasName, string[] modelPath, EntityFieldJoin join)
 		{
 			return new ProjectionField<TValue>(sourceName, fieldName, aliasName, modelPath, join);
 		}
 
-		private class ValueReader : IValueReader
+		public FieldAssignment GetFieldValuePair(TEntity obj)
+		{
+			var objectReadWriter = new ObjectReadWriter(obj, _entityModel, typeof(TEntity));
+			return new FieldValueAssignment<TValue>(this, new ValueReader(objectReadWriter, ModelPath));
+		}
+
+		private class ValueReader : IValueReader, IValueReader<TValue>
 		{
 			private readonly ObjectReadWriter _objectReadWriter;
 			private readonly string[] _modelPath;
@@ -127,6 +135,11 @@ namespace Silk.Data.SQL.ORM.Schema
 			}
 
 			public object Read()
+			{
+				return _objectReadWriter.ReadField<TValue>(_modelPath, 0);
+			}
+
+			TValue IValueReader<TValue>.Read()
 			{
 				return _objectReadWriter.ReadField<TValue>(_modelPath, 0);
 			}

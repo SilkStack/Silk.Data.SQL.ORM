@@ -37,7 +37,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		/// Builds the entity field.
 		/// </summary>
 		/// <returns>Null when the field shouldn't be stored in the schema being built.</returns>
-		public abstract EntityField Build(string columnNamePrefix, string[] modelPath);
+		public abstract IEntityField Build(string columnNamePrefix, string[] modelPath);
 	}
 
 	/// <summary>
@@ -70,7 +70,7 @@ namespace Silk.Data.SQL.ORM.Schema
 				IsPrimaryKey = true;
 		}
 
-		public override EntityField Build(string columnNamePrefix, string[] modelPath)
+		public override IEntityField Build(string columnNamePrefix, string[] modelPath)
 		{
 			if (SqlDataType == null || !ModelField.CanRead || ModelField.IsEnumerable)
 				return null;

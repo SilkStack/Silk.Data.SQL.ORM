@@ -21,7 +21,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			IndexName = indexName;
 		}
 
-		public SchemaIndex Build(Table table, EntityField[] entityFields)
+		public SchemaIndex Build(Table table, IEntityField[] entityFields)
 		{
 			return new SchemaIndex(IndexName, HasUniqueConstraint, 
 				entityFields.Where(q => _indexFields.Contains(q.ModelField)).ToArray(),

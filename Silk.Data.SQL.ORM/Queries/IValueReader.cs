@@ -4,4 +4,9 @@
 	{
 		object Read();
 	}
+
+	public interface IValueReader<T>
+	{
+		T Read();
+	}
 }

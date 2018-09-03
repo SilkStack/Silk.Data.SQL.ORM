@@ -8,16 +8,16 @@ namespace Silk.Data.SQL.ORM.Schema
 	public abstract class PartialEntitySchema
 	{
 		public abstract Type EntityType { get; }
-		public List<EntityField> EntityFields { get; } = new List<EntityField>();
+		public List<IEntityField> EntityFields { get; } = new List<IEntityField>();
 		public string TableName { get; }
 
-		public PartialEntitySchema(EntityField[] primitiveFields, string tableName)
+		public PartialEntitySchema(IEntityField[] primitiveFields, string tableName)
 		{
 			EntityFields.AddRange(primitiveFields);
 			TableName = tableName;
 		}
 
-		public abstract EntityField CreateRelatedEntityField<TEntity>(IPropertyField modelField,
+		public abstract IEntityField CreateRelatedEntityField<TEntity>(IPropertyField modelField,
 			PartialEntitySchemaCollection entityPrimitiveFields, string propertyPathPrefix,
 			string[] modelPath);
 	}
@@ -26,12 +26,12 @@ namespace Silk.Data.SQL.ORM.Schema
 	{
 		public override Type EntityType { get; } = typeof(T);
 
-		public PartialEntitySchema(EntityField[] primitiveFields, string tableName) :
+		public PartialEntitySchema(IEntityField[] primitiveFields, string tableName) :
 			base(primitiveFields, tableName)
 		{
 		}
 
-		public override EntityField CreateRelatedEntityField<TEntity>(IPropertyField modelField,
+		public override IEntityField CreateRelatedEntityField<TEntity>(IPropertyField modelField,
 			PartialEntitySchemaCollection entityPrimitiveFields, string propertyPathPrefix,
 			string[] modelPath)
 		{
