@@ -27,8 +27,8 @@ namespace Silk.Data.SQL.ORM.Tests
 				await provider.ExecuteNonQueryAsync(queryBuilder.BuildQuery());
 
 				obj.Data = 2;
-				var updateQuery = schema.CreateUpdateQuery<PrimitivePoco>(obj);
-				await provider.ExecuteNonQueryAsync(updateQuery);
+				var updateQuery = schema.CreateUpdate<PrimitivePoco>(obj);
+				await provider.ExecuteAsync(updateQuery);
 
 				var selectBuilder = new EntitySelectBuilder<PrimitivePoco>(schema);
 				var mapping = selectBuilder.Project(q => q.Data);
