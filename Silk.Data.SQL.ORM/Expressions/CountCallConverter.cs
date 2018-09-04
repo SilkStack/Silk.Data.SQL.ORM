@@ -11,8 +11,11 @@ namespace Silk.Data.SQL.ORM.Expressions
 			where TEntity : class
 		{
 			var expressionResult = expressionConverter.Convert(node.Arguments[0]);
+			var countExpression = expressionResult.QueryExpression;
+			if (countExpression is TableExpression)
+				countExpression = QueryExpression.All();
 			return new ExpressionResult(
-				QueryExpression.CountFunction(expressionResult.QueryExpression),
+				QueryExpression.CountFunction(countExpression),
 				expressionResult.RequiredJoins
 				);
 		}

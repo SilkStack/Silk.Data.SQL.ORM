@@ -98,9 +98,22 @@ namespace Silk.Data.SQL.ORM.Queries
 	public class QueryWithScalarResult<T> : QueryWithResult<T>
 		where T : struct
 	{
-		public QueryWithScalarResult(QueryExpression queryExpression)
+		private readonly ValueResultMapper<T> _resultMapper;
+
+		public QueryWithScalarResult(QueryExpression queryExpression, ValueResultMapper<T> resultMapper)
 			: base(queryExpression)
 		{
+			_resultMapper = resultMapper;
+		}
+
+		public override void ProcessResult(QueryResult queryResult)
+		{
+			Result = _resultMapper.ReadAll(queryResult);
+		}
+
+		public override async Task ProcessResultAsync(QueryResult queryResult)
+		{
+			Result = await _resultMapper.ReadAllAsync(queryResult);
 		}
 	}
 }

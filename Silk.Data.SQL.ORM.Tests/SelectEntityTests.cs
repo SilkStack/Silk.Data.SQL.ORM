@@ -14,6 +14,32 @@ namespace Silk.Data.SQL.ORM.Tests
 	public class SelectEntityTests
 	{
 		[TestMethod]
+		public async Task Count()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<PrimitivePoco>();
+			var schema = schemaBuilder.Build();
+
+			using (var provider = TestHelper.CreateProvider())
+			{
+				await CreateSchema<PrimitivePoco>(schema, provider);
+
+				var inObjs = new[]
+				{
+					new PrimitivePoco { Data = 2 },
+					new PrimitivePoco { Data = 3 },
+					new PrimitivePoco { Data = 1 }
+				};
+				await provider.ExecuteAsync(schema.CreateInsert(inObjs));
+
+				var selectQuery = schema.CreateCount<PrimitivePoco>(q => q.AndWhere(obj => obj.Data == 1 || obj.Data == 3));
+				await provider.ExecuteAsync(selectQuery);
+				Assert.AreEqual(1, selectQuery.Result.Count);
+				Assert.AreEqual(2, selectQuery.Result.First());
+			}
+		}
+
+		[TestMethod]
 		public async Task Where()
 		{
 			var schemaBuilder = new SchemaBuilder();
