@@ -87,10 +87,10 @@ namespace Silk.Data.SQL.ORM
 
 						queryBuilder.Set(field.GetFieldValuePair(entity));
 					}
-					yield return queryBuilder.BuildQuery();
 
 					if (!isBulkInsert)
 					{
+						yield return queryBuilder.BuildQuery();
 						//  todo: when the SelectBuilder API is refactored come back here and make it sensible!
 						var selectPKQueryBuilder = new SelectBuilder<T>(schema.Schema);
 						selectPKQueryBuilder.Project<int>(QueryExpression.Alias(
@@ -98,6 +98,9 @@ namespace Silk.Data.SQL.ORM
 						yield return selectPKQueryBuilder.BuildQuery();
 					}
 				}
+
+				if (isBulkInsert)
+					yield return queryBuilder.BuildQuery();
 			}
 		}
 

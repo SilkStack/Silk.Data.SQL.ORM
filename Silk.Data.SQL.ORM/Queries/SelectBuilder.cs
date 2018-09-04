@@ -12,7 +12,7 @@ namespace Silk.Data.SQL.ORM.Queries
 	public class SelectBuilder<T> : IQueryBuilder
 		where T : class
 	{
-		private QueryExpression _source;
+		private readonly QueryExpression _source;
 		private List<AliasExpression> _projectionExpressions
 			= new List<AliasExpression>();
 		private List<IProjectedItem> _projections
@@ -27,7 +27,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		private List<QueryExpression> _groupBy = new List<QueryExpression>();
 
 		private ExpressionConverter<T> _expressionConverter;
-		private ExpressionConverter<T> ExpressionConverter
+		public ExpressionConverter<T> ExpressionConverter
 		{
 			get
 			{
@@ -161,20 +161,6 @@ namespace Silk.Data.SQL.ORM.Queries
 				CreateMappingBindings<TView>(projectionSchema));
 		}
 
-		public void AndWhere(Expression<Func<T, bool>> expression)
-		{
-			var condition = ExpressionConverter.Convert(expression);
-			AndWhere(condition.QueryExpression);
-			AddJoins(condition.RequiredJoins);
-		}
-
-		public void OrWhere(Expression<Func<T, bool>> expression)
-		{
-			var condition = ExpressionConverter.Convert(expression);
-			OrWhere(condition.QueryExpression);
-			AddJoins(condition.RequiredJoins);
-		}
-
 		private void AddJoins(EntityFieldJoin[] joins)
 		{
 			if (joins == null || joins.Length < 1)
@@ -240,9 +226,99 @@ namespace Silk.Data.SQL.ORM.Queries
 			_where = QueryExpression.CombineConditions(_where, ConditionType.AndAlso, queryExpression);
 		}
 
+		public void AndWhere(Expression<Func<T, bool>> expression)
+		{
+			AndWhere(ExpressionConverter.Convert(expression));
+		}
+
+		public void AndWhere(ExpressionResult condition)
+		{
+			AndWhere(condition.QueryExpression);
+			AddJoins(condition.RequiredJoins);
+		}
+
 		public void OrWhere(QueryExpression queryExpression)
 		{
 			_where = QueryExpression.CombineConditions(_where, ConditionType.OrElse, queryExpression);
+		}
+
+		public void OrWhere(Expression<Func<T, bool>> expression)
+		{
+			OrWhere(ExpressionConverter.Convert(expression));
+		}
+
+		public void OrWhere(ExpressionResult condition)
+		{
+			OrWhere(condition.QueryExpression);
+			AddJoins(condition.RequiredJoins);
+		}
+
+		public void AndHaving(QueryExpression queryExpression)
+		{
+			_having = QueryExpression.CombineConditions(_having, ConditionType.AndAlso, queryExpression);
+		}
+
+		public void AndHaving(Expression<Func<T, bool>> expression)
+		{
+			AndHaving(ExpressionConverter.Convert(expression));
+		}
+
+		public void AndHaving(ExpressionResult condition)
+		{
+			AndHaving(condition.QueryExpression);
+			AddJoins(condition.RequiredJoins);
+		}
+
+		public void OrHaving(QueryExpression queryExpression)
+		{
+			_having = QueryExpression.CombineConditions(_having, ConditionType.OrElse, queryExpression);
+		}
+
+		public void OrHaving(Expression<Func<T, bool>> expression)
+		{
+			OrHaving(ExpressionConverter.Convert(expression));
+		}
+
+		public void OrHaving(ExpressionResult condition)
+		{
+			OrHaving(condition.QueryExpression);
+			AddJoins(condition.RequiredJoins);
+		}
+
+		public void OrderBy(QueryExpression queryExpression, OrderDirection orderDirection = OrderDirection.Ascending)
+		{
+			if (orderDirection == OrderDirection.Descending)
+				queryExpression = QueryExpression.Descending(queryExpression);
+			_orderBy.Add(queryExpression);
+		}
+
+		public void OrderBy<TProperty>(Expression<Func<T, TProperty>> propertyExpression, OrderDirection orderDirection = OrderDirection.Ascending)
+		{
+			var expressionResult = ExpressionConverter.Convert(propertyExpression);
+			OrderBy(expressionResult.QueryExpression, orderDirection);
+			AddJoins(expressionResult.RequiredJoins);
+		}
+
+		public void GroupBy(QueryExpression queryExpression)
+		{
+			_groupBy.Add(queryExpression);
+		}
+
+		public void GroupBy<TProperty>(Expression<Func<T, TProperty>> propertyExpression)
+		{
+			var expressionResult = ExpressionConverter.Convert(propertyExpression);
+			GroupBy(expressionResult.QueryExpression);
+			AddJoins(expressionResult.RequiredJoins);
+		}
+
+		public void Offset(int offset)
+		{
+			Offset(QueryExpression.Value(offset));
+		}
+
+		public void Offset(QueryExpression offset)
+		{
+			_offset = offset;
 		}
 
 		public void Limit(int limit)

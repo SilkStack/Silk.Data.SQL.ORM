@@ -69,9 +69,9 @@ namespace Silk.Data.SQL.ORM.Queries
 			return QueryExpression.Insert(
 				_source.TableName,
 				_fieldAssignments.First().SelectMany(q => q.GetColumnExpressionPairs()).Select(q => q.Column.ColumnName).ToArray(),
-				_fieldAssignments.SelectMany(row =>
+				_fieldAssignments.Select(row =>
 					row.SelectMany(fieldValuePair => fieldValuePair.GetColumnExpressionPairs())
-						.Select(columnPair => columnPair.ValueExpression)
+						.Select(columnPair => columnPair.ValueExpression).ToArray()
 					).ToArray()
 				);
 		}
