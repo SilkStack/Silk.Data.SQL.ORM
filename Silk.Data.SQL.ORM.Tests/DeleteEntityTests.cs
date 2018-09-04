@@ -22,9 +22,7 @@ namespace Silk.Data.SQL.ORM.Tests
 				await CreateSchema<PrimitivePoco>(schema, provider);
 
 				var obj = new PrimitivePoco { Data = 1 };
-				var queryBuilder = new EntityInsertBuilder<PrimitivePoco>(schema);
-				queryBuilder.Add(obj);
-				await provider.ExecuteNonQueryAsync(queryBuilder.BuildQuery());
+				await provider.ExecuteAsync(schema.CreateInsert(obj));
 
 				var deleteQuery = schema.CreateDelete<PrimitivePoco>(obj);
 				await provider.ExecuteAsync(deleteQuery);

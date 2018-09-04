@@ -25,7 +25,6 @@ namespace Silk.Data.SQL.ORM.Tests
 			{
 				await CreateSchema<Primitives>(schema, provider);
 
-				var insertBuilder = new EntityInsertBuilder<Primitives>(schema);
 				var obj = new Primitives
 				{
 					Bool = true,
@@ -40,10 +39,9 @@ namespace Silk.Data.SQL.ORM.Tests
 					DateTime = DateTime.Today,
 					Guid = Guid.NewGuid()
 				};
-				insertBuilder.Add(obj);
 
-				var queryExpression = insertBuilder.BuildQuery();
-				await provider.ExecuteNonQueryAsync(queryExpression);
+				var query = schema.CreateInsert(obj);
+				await provider.ExecuteAsync(query);
 
 				using (var queryResult = await provider.ExecuteReaderAsync(
 					QueryExpression.Select(QueryExpression.All(), QueryExpression.Table(entitySchema.EntityTable.TableName))
@@ -105,16 +103,8 @@ namespace Silk.Data.SQL.ORM.Tests
 					Data = "Hello World"
 				};
 
-				var insertBuilder = new EntityInsertBuilder<HasGuidPK>(schema);
-				var resultMapper = insertBuilder.Add(obj);
-				Assert.IsNull(resultMapper);
-
-				var queryExpression = insertBuilder.BuildQuery();
-				using (var queryResult = await provider.ExecuteReaderAsync(queryExpression))
-				{
-					Assert.IsFalse(queryResult.HasRows);
-					Assert.AreNotEqual(Guid.Empty, obj.Id);
-				}
+				await provider.ExecuteAsync(schema.CreateInsert(obj));
+				Assert.AreNotEqual(Guid.Empty, obj.Id);
 			}
 		}
 
@@ -138,24 +128,11 @@ namespace Silk.Data.SQL.ORM.Tests
 					Data = "World"
 				};
 
-				var insertBuilder = new EntityInsertBuilder<HasIntPK>(schema);
-				var resultMapper = insertBuilder.Add(obj1, obj2);
-				Assert.IsNotNull(resultMapper);
-				Assert.AreEqual(2, resultMapper.ResultSetCount);
+				await provider.ExecuteAsync(schema.CreateInsert(obj1, obj2));
 
-				var queryExpression = insertBuilder.BuildQuery();
-				using (var queryResult = await provider.ExecuteReaderAsync(queryExpression))
-				{
-					Assert.IsTrue(queryResult.HasRows);
-					Assert.IsTrue(await queryResult.ReadAsync());
-					resultMapper.Inject(obj1, queryResult);
-					Assert.IsTrue(await queryResult.NextResultAsync());
-					Assert.IsTrue(await queryResult.ReadAsync());
-					resultMapper.Inject(obj2, queryResult);
-					Assert.AreNotEqual(0, obj1.Id);
-					Assert.AreNotEqual(0, obj2.Id);
-					Assert.AreNotEqual(obj2.Id, obj1.Id);
-				}
+				Assert.AreNotEqual(0, obj1.Id);
+				Assert.AreNotEqual(0, obj2.Id);
+				Assert.AreNotEqual(obj2.Id, obj1.Id);
 			}
 		}
 
@@ -184,10 +161,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					}
 				};
 
-				var insertBuilder = new EntityInsertBuilder<HasRelationship>(schema);
-				insertBuilder.Add(obj);
-				var queryExpression = insertBuilder.BuildQuery();
-				await provider.ExecuteNonQueryAsync(queryExpression);
+				await provider.ExecuteAsync(schema.CreateInsert(obj));
 
 				Assert.AreNotEqual(Guid.Empty, obj.Id);
 				Assert.AreEqual(Guid.Empty, obj.Sub.Id);
@@ -234,15 +208,10 @@ namespace Silk.Data.SQL.ORM.Tests
 					}
 				};
 
-				var guidPKInsertBuilder = new EntityInsertBuilder<HasGuidPK>(schema);
-				guidPKInsertBuilder.Add(obj.Sub);
-				await provider.ExecuteNonQueryAsync(guidPKInsertBuilder.BuildQuery());
-
-				var insertBuilder = new EntityInsertBuilder<HasRelationship>(schema);
-				insertBuilder.Add(obj);
-				var queryExpression = insertBuilder.BuildQuery();
-
-				await provider.ExecuteNonQueryAsync(queryExpression);
+				await provider.ExecuteAsync(
+					schema.CreateInsert(obj.Sub),
+					schema.CreateInsert(obj)
+					);
 
 				using (var queryResult = await provider.ExecuteReaderAsync(
 					QueryExpression.Select(QueryExpression.All(), QueryExpression.Table(tableName))

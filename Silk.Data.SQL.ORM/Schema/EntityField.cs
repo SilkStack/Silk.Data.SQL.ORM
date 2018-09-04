@@ -31,7 +31,6 @@ namespace Silk.Data.SQL.ORM.Schema
 
 	public interface IEntityFieldOfEntity<TEntity> : IEntityField
 	{
-		IValueReader GetValueReader(TEntity obj, Column column);
 		FieldAssignment GetFieldValuePair(TEntity obj);
 	}
 
@@ -73,27 +72,6 @@ namespace Silk.Data.SQL.ORM.Schema
 			KeyType = keyType;
 		}
 
-		public IValueReader GetValueReader(TEntity obj, Column column)
-		{
-			var objectReadWriter = new ObjectReadWriter(obj, _entityModel, typeof(TEntity));
-
-			//  if EntityField represents a complex type read a true/false value representing null/not null
-			if (!SqlTypeHelper.IsSqlPrimitiveType(DataType))
-			{
-				if (KeyType == KeyType.None)
-				{
-					return new NullBoolReader(objectReadWriter, ModelPath);
-				}
-				else
-				{
-					var foreignKey = ForeignKeys.First(q => q.LocalColumn == column);
-					return foreignKey.CreateValueReader(objectReadWriter);
-				}
-			}
-
-			return new ValueReader(objectReadWriter, ModelPath);
-		}
-
 		public CoreBinding.Binding GetValueBinding()
 		{
 			if (PrimaryKeyGenerator == PrimaryKeyGenerator.ServerGenerated)
@@ -123,7 +101,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			return new FieldValueAssignment<TValue>(this, new ValueReader(objectReadWriter, ModelPath));
 		}
 
-		private class ValueReader : IValueReader, IValueReader<TValue>
+		private class ValueReader : IValueReader<TValue>
 		{
 			private readonly ObjectReadWriter _objectReadWriter;
 			private readonly string[] _modelPath;
@@ -134,32 +112,9 @@ namespace Silk.Data.SQL.ORM.Schema
 				_modelPath = modelPath;
 			}
 
-			public object Read()
-			{
-				return _objectReadWriter.ReadField<TValue>(_modelPath, 0);
-			}
-
 			TValue IValueReader<TValue>.Read()
 			{
 				return _objectReadWriter.ReadField<TValue>(_modelPath, 0);
-			}
-		}
-
-		private class NullBoolReader : IValueReader
-		{
-			private readonly ObjectReadWriter _objectReadWriter;
-			private readonly string[] _modelPath;
-
-			public NullBoolReader(ObjectReadWriter objectReadWriter, string[] modelPath)
-			{
-				_objectReadWriter = objectReadWriter;
-				_modelPath = modelPath;
-			}
-
-			public object Read()
-			{
-				var value = _objectReadWriter.ReadField<TValue>(_modelPath, 0);
-				return value != null;
 			}
 		}
 	}

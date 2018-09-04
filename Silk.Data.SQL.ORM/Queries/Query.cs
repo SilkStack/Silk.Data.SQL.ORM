@@ -30,9 +30,35 @@ namespace Silk.Data.SQL.ORM.Queries
 	public class QueryInjectResult<T> : Query
 		where T : class
 	{
-		public QueryInjectResult(QueryExpression queryExpression)
+		private readonly ObjectResultMapper<T> _resultMapper;
+		private readonly T[] _entities;
+
+		public QueryInjectResult(QueryExpression queryExpression, ObjectResultMapper<T> resultMapper,
+			T[] entities)
 			: base(queryExpression, true)
 		{
+			_resultMapper = resultMapper;
+			_entities = entities;
+		}
+
+		public override void ProcessResult(QueryResult queryResult)
+		{
+			foreach (var entity in _entities)
+			{
+				queryResult.Read();
+				_resultMapper.Inject(entity, queryResult);
+				queryResult.NextResult();
+			}
+		}
+
+		public override async Task ProcessResultAsync(QueryResult queryResult)
+		{
+			foreach (var entity in _entities)
+			{
+				await queryResult.ReadAsync();
+				_resultMapper.Inject(entity, queryResult);
+				await queryResult.NextResultAsync();
+			}
 		}
 	}
 

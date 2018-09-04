@@ -20,7 +20,7 @@ namespace Silk.Data.SQL.ORM
 				throw new Exception("Entity type must have a primary key to generate update statements.");
 		}
 
-		public static Query CreateInsertQuery<T>(this EntitySchema<T> schema, params T[] entities)
+		public static Query CreateInsert<T>(this EntitySchema<T> schema, params T[] entities)
 			where T : class
 		{
 			SanityCheckArgs(schema, entities, primaryKeyRequired: false);
@@ -35,7 +35,9 @@ namespace Silk.Data.SQL.ORM
 					);
 
 			return new QueryInjectResult<T> (
-				new CompositeQueryExpression(BuildExpressions())
+				new CompositeQueryExpression(BuildExpressions()),
+				new ObjectResultMapper<T>(entities.Length, schema.EntityFields.Where(q => q.PrimaryKeyGenerator == PrimaryKeyGenerator.ServerGenerated).Select(q => q.GetValueBinding())),
+				entities
 				);
 
 			IEnumerable<QueryExpression> BuildExpressions()
@@ -67,26 +69,27 @@ namespace Silk.Data.SQL.ORM
 						queryBuilder.Set(field.GetFieldValuePair(entity));
 					}
 					yield return queryBuilder.BuildQuery();
+
 					if (!isBulkInsert)
 					{
 						//  todo: when the SelectBuilder API is refactored come back here and make it sensible!
 						var selectPKQueryBuilder = new EntitySelectBuilder<T>(schema.Schema);
-						selectPKQueryBuilder.Project<int>(QueryExpression.Column(
-							serverGeneratedPrimaryKeyField.Columns[0].ColumnName
-							));
+						selectPKQueryBuilder.Project<int>(QueryExpression.Alias(
+							QueryExpression.LastInsertIdFunction(), "__PK_IDENTITY"));
+						yield return selectPKQueryBuilder.BuildQuery();
 					}
 				}
 			}
 		}
 
-		public static Query CreateInsertQuery<T>(this Schema.Schema schema, params T[] entities)
+		public static Query CreateInsert<T>(this Schema.Schema schema, params T[] entities)
 			where T : class
 		{
 			var entitySchema = schema.GetEntitySchema<T>();
 			if (entitySchema == null)
 				throw new Exception("Entity isn't configured in schema.");
 
-			return entitySchema.CreateInsertQuery(entities);
+			return entitySchema.CreateInsert(entities);
 		}
 
 		public static Query CreateDelete<T>(this EntitySchema<T> schema, params T[] entities)

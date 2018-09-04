@@ -25,7 +25,6 @@ namespace Silk.Data.SQL.ORM
 				foreach (var query in queries.Where(q => q.ProducesResultSet))
 				{
 					query.ProcessResult(queryResult);
-					queryResult.NextResult();
 				}
 			}
 		}
@@ -47,7 +46,6 @@ namespace Silk.Data.SQL.ORM
 				foreach (var query in queries.Where(q => q.ProducesResultSet))
 				{
 					await query.ProcessResultAsync(queryResult);
-					await queryResult.NextResultAsync();
 				}
 			}
 		}

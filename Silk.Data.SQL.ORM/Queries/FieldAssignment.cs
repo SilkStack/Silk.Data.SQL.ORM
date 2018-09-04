@@ -1,6 +1,8 @@
-﻿using Silk.Data.SQL.Expressions;
+﻿using Silk.Data.Modelling;
+using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Schema;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Queries
 {
@@ -32,7 +34,30 @@ namespace Silk.Data.SQL.ORM.Queries
 		{
 			foreach (var column in Field.Columns)
 			{
-				yield return (column, QueryExpression.Value(ValueReader.Read()));
+				if (!SqlTypeHelper.IsSqlPrimitiveType(Field.DataType))
+				{
+					if (Field.KeyType == KeyType.None)
+					{
+						if (ValueReader.Read() == null)
+							yield return (column, QueryExpression.Value(false));
+						else
+							yield return (column, QueryExpression.Value(true));
+					}
+					else
+					{
+						var foreignKey = Field.ForeignKeys.First(q => q.LocalColumn == column);
+						var obj = ValueReader.Read();
+						var objectReadWriter = new ObjectReadWriter(obj, Field.ModelField.FieldTypeModel, Field.ModelField.FieldType);
+
+						yield return (column, QueryExpression.Value(
+							foreignKey.ReadValue(objectReadWriter, Field.ModelPath.Length)
+							));
+					}
+				}
+				else
+				{
+					yield return (column, QueryExpression.Value(ValueReader.Read()));
+				}
 			}
 		}
 	}

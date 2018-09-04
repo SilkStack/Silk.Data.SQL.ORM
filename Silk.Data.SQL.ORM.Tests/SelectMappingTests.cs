@@ -276,9 +276,7 @@ namespace Silk.Data.SQL.ORM.Tests
 		private Task Insert<T>(Schema.Schema schema, IDataProvider provider, T obj)
 			where T : class
 		{
-			var builder = new EntityInsertBuilder<T>(schema);
-			builder.Add(obj);
-			return provider.ExecuteNonQueryAsync(builder.BuildQuery());
+			return provider.ExecuteAsync(schema.CreateInsert(obj));
 		}
 
 		private async Task CreateSchema<T>(Schema.Schema schema, IDataProvider dataProvider)
