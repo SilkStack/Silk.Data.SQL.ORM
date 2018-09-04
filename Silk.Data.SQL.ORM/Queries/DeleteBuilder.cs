@@ -6,37 +6,12 @@ using System.Linq.Expressions;
 
 namespace Silk.Data.SQL.ORM.Queries
 {
-	public class DeleteBuilder : IQueryBuilder
-	{
-		protected TableExpression Source { get; set; }
-		protected QueryExpression Where { get; private set; }
-		protected QueryExpression Limit { get; private set; }
-
-		public QueryExpression BuildQuery()
-		{
-			return QueryExpression.Delete(
-				Source, Where, Limit
-				);
-		}
-
-		public void AndWhere(QueryExpression queryExpression)
-		{
-			Where = QueryExpression.CombineConditions(Where, ConditionType.AndAlso, queryExpression);
-		}
-
-		public void OrWhere(QueryExpression queryExpression)
-		{
-			Where = QueryExpression.CombineConditions(Where, ConditionType.OrElse, queryExpression);
-		}
-	}
-
-	public class DeleteBuilder<T> : DeleteBuilder
-	{
-	}
-
-	public class EntityDeleteBuilder<T> : DeleteBuilder<T>
+	public class DeleteBuilder<T> : IQueryBuilder
 		where T : class
 	{
+		private readonly TableExpression _source;
+		private QueryExpression _where;
+
 		private ExpressionConverter<T> _expressionConverter;
 		private ExpressionConverter<T> ExpressionConverter
 		{
@@ -51,14 +26,43 @@ namespace Silk.Data.SQL.ORM.Queries
 		public Schema.Schema Schema { get; }
 		public EntitySchema<T> EntitySchema { get; }
 
-		public EntityDeleteBuilder(Schema.Schema schema)
+		public DeleteBuilder(Schema.Schema schema)
 		{
 			Schema = schema;
 			EntitySchema = schema.GetEntitySchema<T>();
 			if (EntitySchema == null)
 				throw new Exception("Entity isn't configured in schema.");
 
-			Source = QueryExpression.Table(EntitySchema.EntityTable.TableName);
+			_source = QueryExpression.Table(EntitySchema.EntityTable.TableName);
+		}
+
+		public DeleteBuilder(EntitySchema<T> schema)
+		{
+			EntitySchema = schema;
+			Schema = schema.Schema;
+			_source = QueryExpression.Table(EntitySchema.EntityTable.TableName);
+		}
+
+		public void AndWhere(QueryExpression queryExpression)
+		{
+			_where = QueryExpression.CombineConditions(_where, ConditionType.AndAlso, queryExpression);
+		}
+
+		public void OrWhere(QueryExpression queryExpression)
+		{
+			_where = QueryExpression.CombineConditions(_where, ConditionType.OrElse, queryExpression);
+		}
+
+		public void AndWhere(FieldAssignment field, ComparisonOperator comparisonOperator)
+		{
+			foreach (var (column, valueExpression) in field.GetColumnExpressionPairs())
+			{
+				AndWhere(QueryExpression.Compare(
+					QueryExpression.Column(column.ColumnName, _source),
+					comparisonOperator,
+					valueExpression
+					));
+			}
 		}
 
 		public void AndWhere(Expression<Func<T, bool>> expression)
@@ -69,12 +73,31 @@ namespace Silk.Data.SQL.ORM.Queries
 			AndWhere(condition.QueryExpression);
 		}
 
+		public void OrWhere(FieldAssignment field, ComparisonOperator comparisonOperator)
+		{
+			foreach (var (column, valueExpression) in field.GetColumnExpressionPairs())
+			{
+				OrWhere(QueryExpression.Compare(
+					QueryExpression.Column(column.ColumnName, _source),
+					comparisonOperator,
+					valueExpression
+					));
+			}
+		}
+
 		public void OrWhere(Expression<Func<T, bool>> expression)
 		{
 			var condition = ExpressionConverter.Convert(expression);
 			if (condition.RequiredJoins != null && condition.RequiredJoins.Length > 0)
 				throw new Exception("Condition requires a JOIN which DELETE doesn't support, consider using a sub-query instead.");
 			OrWhere(condition.QueryExpression);
+		}
+
+		public QueryExpression BuildQuery()
+		{
+			return QueryExpression.Delete(
+				_source, _where
+				);
 		}
 	}
 }

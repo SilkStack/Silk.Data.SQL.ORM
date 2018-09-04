@@ -8,10 +8,10 @@ using System.Threading.Tasks;
 namespace Silk.Data.SQL.ORM.Tests
 {
 	[TestClass]
-	public class UpdateEntityTests
+	public class DeleteEntityTests
 	{
 		[TestMethod]
-		public async Task UpdatePrimitives()
+		public async Task Delete()
 		{
 			var schemaBuilder = new SchemaBuilder();
 			schemaBuilder.DefineEntity<PrimitivePoco>();
@@ -26,16 +26,14 @@ namespace Silk.Data.SQL.ORM.Tests
 				queryBuilder.Add(obj);
 				await provider.ExecuteNonQueryAsync(queryBuilder.BuildQuery());
 
-				obj.Data = 2;
-				var updateQuery = schema.CreateUpdateQuery<PrimitivePoco>(obj);
-				await provider.ExecuteNonQueryAsync(updateQuery);
+				var deleteQuery = schema.CreateDeleteQuery<PrimitivePoco>(obj);
+				await provider.ExecuteNonQueryAsync(deleteQuery);
 
 				var selectBuilder = new EntitySelectBuilder<PrimitivePoco>(schema);
 				var mapping = selectBuilder.Project(q => q.Data);
 				using (var queryResult = await provider.ExecuteReaderAsync(selectBuilder.BuildQuery()))
 				{
-					Assert.IsTrue(await queryResult.ReadAsync());
-					Assert.AreEqual(obj.Data, mapping.Read(queryResult));
+					Assert.IsFalse(await queryResult.ReadAsync());
 				}
 			}
 		}

@@ -8,7 +8,7 @@ using Silk.Data.SQL.ORM.Schema;
 
 namespace Silk.Data.SQL.ORM.Queries
 {
-	public class UpdateBuilder<T>
+	public class UpdateBuilder<T> : IQueryBuilder
 		where T : class
 	{
 		private ExpressionConverter<T> _expressionConverter;
@@ -61,7 +61,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			foreach (var (column, valueExpression) in field.GetColumnExpressionPairs())
 			{
 				AndWhere(QueryExpression.Compare(
-					QueryExpression.Column(column.ColumnName),
+					QueryExpression.Column(column.ColumnName, _source),
 					comparisonOperator,
 					valueExpression
 					));
@@ -81,7 +81,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			foreach (var (column, valueExpression) in field.GetColumnExpressionPairs())
 			{
 				OrWhere(QueryExpression.Compare(
-					QueryExpression.Column(column.ColumnName),
+					QueryExpression.Column(column.ColumnName, _source),
 					comparisonOperator,
 					valueExpression
 					));

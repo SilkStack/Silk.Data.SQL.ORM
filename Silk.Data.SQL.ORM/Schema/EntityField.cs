@@ -41,7 +41,7 @@ namespace Silk.Data.SQL.ORM.Schema
 	/// <typeparam name="TValue"></typeparam>
 	public class EntityField<TValue, TEntity> : IEntityFieldOfValue<TValue>, IEntityFieldOfEntity<TEntity>
 	{
-		private static TypeModel<TEntity> _entityModel = TypeModel.GetModelOf<TEntity>();
+		private readonly static TypeModel<TEntity> _entityModel = TypeModel.GetModelOf<TEntity>();
 
 		public Type DataType { get; } = typeof(TValue);
 		public Column[] Columns { get; }
