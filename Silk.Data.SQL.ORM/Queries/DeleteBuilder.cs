@@ -1,47 +1,18 @@
 ﻿using Silk.Data.SQL.Expressions;
-using Silk.Data.SQL.ORM.Expressions;
 using Silk.Data.SQL.ORM.Schema;
 using System;
 using System.Linq.Expressions;
 
 namespace Silk.Data.SQL.ORM.Queries
 {
-	public class DeleteBuilder<T> : IQueryBuilder
+	public class DeleteBuilder<T> : QueryBuilderBase<T>
 		where T : class
 	{
-		private readonly TableExpression _source;
 		private QueryExpression _where;
 
-		private ExpressionConverter<T> _expressionConverter;
-		private ExpressionConverter<T> ExpressionConverter
-		{
-			get
-			{
-				if (_expressionConverter == null)
-					_expressionConverter = new ExpressionConverter<T>(Schema);
-				return _expressionConverter;
-			}
-		}
+		public DeleteBuilder(Schema.Schema schema) : base(schema) { }
 
-		public Schema.Schema Schema { get; }
-		public EntitySchema<T> EntitySchema { get; }
-
-		public DeleteBuilder(Schema.Schema schema)
-		{
-			Schema = schema;
-			EntitySchema = schema.GetEntitySchema<T>();
-			if (EntitySchema == null)
-				throw new Exception("Entity isn't configured in schema.");
-
-			_source = QueryExpression.Table(EntitySchema.EntityTable.TableName);
-		}
-
-		public DeleteBuilder(EntitySchema<T> schema)
-		{
-			EntitySchema = schema;
-			Schema = schema.Schema;
-			_source = QueryExpression.Table(EntitySchema.EntityTable.TableName);
-		}
+		public DeleteBuilder(EntitySchema<T> schema) : base(schema) { }
 
 		public void AndWhere(QueryExpression queryExpression)
 		{
@@ -58,7 +29,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			foreach (var (column, valueExpression) in field.GetColumnExpressionPairs())
 			{
 				AndWhere(QueryExpression.Compare(
-					QueryExpression.Column(column.ColumnName, _source),
+					QueryExpression.Column(column.ColumnName, Source),
 					comparisonOperator,
 					valueExpression
 					));
@@ -78,7 +49,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			foreach (var (column, valueExpression) in field.GetColumnExpressionPairs())
 			{
 				OrWhere(QueryExpression.Compare(
-					QueryExpression.Column(column.ColumnName, _source),
+					QueryExpression.Column(column.ColumnName, Source),
 					comparisonOperator,
 					valueExpression
 					));
@@ -93,10 +64,10 @@ namespace Silk.Data.SQL.ORM.Queries
 			OrWhere(condition.QueryExpression);
 		}
 
-		public QueryExpression BuildQuery()
+		public override QueryExpression BuildQuery()
 		{
 			return QueryExpression.Delete(
-				_source, _where
+				Source, _where
 				);
 		}
 	}

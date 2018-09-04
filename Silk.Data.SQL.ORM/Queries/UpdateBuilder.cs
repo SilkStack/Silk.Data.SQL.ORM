@@ -8,43 +8,15 @@ using Silk.Data.SQL.ORM.Schema;
 
 namespace Silk.Data.SQL.ORM.Queries
 {
-	public class UpdateBuilder<T> : IQueryBuilder
+	public class UpdateBuilder<T> : QueryBuilderBase<T>
 		where T : class
 	{
-		private ExpressionConverter<T> _expressionConverter;
-		private ExpressionConverter<T> ExpressionConverter
-		{
-			get
-			{
-				if (_expressionConverter == null)
-					_expressionConverter = new ExpressionConverter<T>(Schema);
-				return _expressionConverter;
-			}
-		}
-
-		public Schema.Schema Schema { get; }
-		public EntitySchema<T> EntitySchema { get; }
-
 		private readonly List<FieldAssignment> _fieldAssignments = new List<FieldAssignment>();
-		private readonly TableExpression _source;
 		private QueryExpression _where;
 
-		public UpdateBuilder(Schema.Schema schema)
-		{
-			Schema = schema;
-			EntitySchema = schema.GetEntitySchema<T>();
-			if (EntitySchema == null)
-				throw new Exception("Entity isn't configured in schema.");
+		public UpdateBuilder(Schema.Schema schema) : base(schema) { }
 
-			_source = QueryExpression.Table(EntitySchema.EntityTable.TableName);
-		}
-
-		public UpdateBuilder(EntitySchema<T> schema)
-		{
-			EntitySchema = schema;
-			Schema = schema.Schema;
-			_source = QueryExpression.Table(EntitySchema.EntityTable.TableName);
-		}
+		public UpdateBuilder(EntitySchema<T> schema) : base(schema) { }
 
 		public void AndWhere(QueryExpression queryExpression)
 		{
@@ -61,7 +33,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			foreach (var (column, valueExpression) in field.GetColumnExpressionPairs())
 			{
 				AndWhere(QueryExpression.Compare(
-					QueryExpression.Column(column.ColumnName, _source),
+					QueryExpression.Column(column.ColumnName, Source),
 					comparisonOperator,
 					valueExpression
 					));
@@ -81,7 +53,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			foreach (var (column, valueExpression) in field.GetColumnExpressionPairs())
 			{
 				OrWhere(QueryExpression.Compare(
-					QueryExpression.Column(column.ColumnName, _source),
+					QueryExpression.Column(column.ColumnName, Source),
 					comparisonOperator,
 					valueExpression
 					));
@@ -122,10 +94,10 @@ namespace Silk.Data.SQL.ORM.Queries
 		{
 		}
 
-		public QueryExpression BuildQuery()
+		public override QueryExpression BuildQuery()
 		{
 			return QueryExpression.Update(
-				_source,
+				Source,
 				where: _where,
 				assignments: GetAssignColumnExpressions().ToArray()
 				);

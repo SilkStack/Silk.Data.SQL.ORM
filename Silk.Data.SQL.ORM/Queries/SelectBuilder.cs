@@ -9,10 +9,9 @@ using System.Linq.Expressions;
 
 namespace Silk.Data.SQL.ORM.Queries
 {
-	public class SelectBuilder<T> : IQueryBuilder
+	public class SelectBuilder<T> : QueryBuilderBase<T>
 		where T : class
 	{
-		private readonly QueryExpression _source;
 		private List<AliasExpression> _projectionExpressions
 			= new List<AliasExpression>();
 		private List<IProjectedItem> _projections
@@ -26,44 +25,16 @@ namespace Silk.Data.SQL.ORM.Queries
 		private List<QueryExpression> _orderBy = new List<QueryExpression>();
 		private List<QueryExpression> _groupBy = new List<QueryExpression>();
 
-		private ExpressionConverter<T> _expressionConverter;
-		public ExpressionConverter<T> ExpressionConverter
-		{
-			get
-			{
-				if (_expressionConverter == null)
-					_expressionConverter = new ExpressionConverter<T>(Schema);
-				return _expressionConverter;
-			}
-		}
+		public SelectBuilder(Schema.Schema schema) : base(schema) { }
 
-		public Schema.Schema Schema { get; }
-		public EntitySchema<T> EntitySchema { get; }
+		public SelectBuilder(EntitySchema<T> schema) : base(schema) { }
 
-		public SelectBuilder(Schema.Schema schema)
-		{
-			Schema = schema;
-			EntitySchema = schema.GetEntitySchema<T>();
-			if (EntitySchema == null)
-				throw new Exception("Entity isn't configured in schema.");
-
-			_source = QueryExpression.Table(EntitySchema.EntityTable.TableName);
-		}
-
-		public SelectBuilder(EntitySchema<T> schema)
-		{
-			Schema = schema.Schema;
-			EntitySchema = schema;
-
-			_source = QueryExpression.Table(EntitySchema.EntityTable.TableName);
-		}
-
-		public QueryExpression BuildQuery()
+		public override QueryExpression BuildQuery()
 		{
 			return QueryExpression.Select(
 				projection: _projections.Select(q => QueryExpression.Alias(QueryExpression.Column(q.FieldName, new AliasIdentifierExpression(q.SourceName)), q.AliasName))
 					.Concat(_projectionExpressions).ToArray(),
-				from: _source,
+				from: Source,
 				joins: _tableJoins.Select(q => CreateJoin(q)).ToArray(),
 				where: _where,
 				having: _having,
