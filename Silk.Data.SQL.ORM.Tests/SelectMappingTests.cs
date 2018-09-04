@@ -26,7 +26,7 @@ namespace Silk.Data.SQL.ORM.Tests
 
 				await Insert(schema, provider, inObj);
 
-				var selectBuilder = new EntitySelectBuilder<FlatEntity>(schema);
+				var selectBuilder = new SelectBuilder<FlatEntity>(schema);
 				var mapper = selectBuilder.Project<FlatEntity>();
 				var query = selectBuilder.BuildQuery();
 
@@ -62,7 +62,7 @@ namespace Silk.Data.SQL.ORM.Tests
 				await Insert(schema, provider, inFlat);
 				await Insert(schema, provider, inRelated);
 
-				var queryBuilder = new EntitySelectBuilder<RelationshipEntity>(schema);
+				var queryBuilder = new SelectBuilder<RelationshipEntity>(schema);
 				var mapper = queryBuilder.Project<RelationshipEntity>();
 
 				using (var queryResult = await provider.ExecuteReaderAsync(queryBuilder.BuildQuery()))
@@ -100,7 +100,7 @@ namespace Silk.Data.SQL.ORM.Tests
 
 				await Insert(schema, provider, inObj);
 
-				var queryBuilder = new EntitySelectBuilder<RelationshipEntity>(schema);
+				var queryBuilder = new SelectBuilder<RelationshipEntity>(schema);
 				var mapper = queryBuilder.Project<RelationshipEntity>();
 				var selectQuery = queryBuilder.BuildQuery();
 
@@ -145,7 +145,7 @@ namespace Silk.Data.SQL.ORM.Tests
 				await Insert(schema, provider, inObj.Child.Child);
 				await Insert(schema, provider, inObj);
 
-				var queryBuilder = new EntitySelectBuilder<DeepRelationshipEntity>(schema);
+				var queryBuilder = new SelectBuilder<DeepRelationshipEntity>(schema);
 				var mapper = queryBuilder.Project<DeepRelationshipEntity>();
 				var selectQuery = queryBuilder.BuildQuery();
 
@@ -191,7 +191,7 @@ namespace Silk.Data.SQL.ORM.Tests
 				await Insert(schema, provider, inObj.Child);
 				await Insert(schema, provider, inObj);
 
-				var queryBuilder = new EntitySelectBuilder<DeepRelationshipEntity>(schema);
+				var queryBuilder = new SelectBuilder<DeepRelationshipEntity>(schema);
 				var mapper = queryBuilder.Project<DeepRelationshipEntity>();
 				var selectQuery = queryBuilder.BuildQuery();
 
@@ -226,7 +226,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					SQLite3.SQLite3.Raw("INSERT INTO [FlatEntity] VALUES (1, 2)")
 					);
 
-				var queryBuilder = new EntitySelectBuilder<FlatEntity>(schema);
+				var queryBuilder = new SelectBuilder<FlatEntity>(schema);
 				var mapper = queryBuilder.Project(q => Alias(Count(q.Id), "count"));
 				Assert.IsNotNull(mapper);
 				var selectQuery = queryBuilder.BuildQuery();
@@ -257,7 +257,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					SQLite3.SQLite3.Raw("INSERT INTO [FlatEntity] VALUES (1, 2)")
 					);
 
-				var queryBuilder = new EntitySelectBuilder<FlatEntity>(schema);
+				var queryBuilder = new SelectBuilder<FlatEntity>(schema);
 				var mapper = queryBuilder.Project(q => q.Data);
 				Assert.IsNotNull(mapper);
 

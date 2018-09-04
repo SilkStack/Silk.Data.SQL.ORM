@@ -3,6 +3,7 @@ using Silk.Data.SQL.ORM.Queries;
 using Silk.Data.SQL.ORM.Schema;
 using Silk.Data.SQL.Providers;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Silk.Data.SQL.ORM.Tests
@@ -28,13 +29,11 @@ namespace Silk.Data.SQL.ORM.Tests
 				var updateQuery = schema.CreateUpdate<PrimitivePoco>(obj);
 				await provider.ExecuteAsync(updateQuery);
 
-				var selectBuilder = new EntitySelectBuilder<PrimitivePoco>(schema);
-				var mapping = selectBuilder.Project(q => q.Data);
-				using (var queryResult = await provider.ExecuteReaderAsync(selectBuilder.BuildQuery()))
-				{
-					Assert.IsTrue(await queryResult.ReadAsync());
-					Assert.AreEqual(obj.Data, mapping.Read(queryResult));
-				}
+				var selectQuery = schema.CreateSelect<PrimitivePoco>();
+				await provider.ExecuteAsync(selectQuery);
+
+				Assert.AreEqual(1, selectQuery.Result.Count);
+				Assert.AreEqual(obj.Data, selectQuery.Result.First().Data);
 			}
 		}
 

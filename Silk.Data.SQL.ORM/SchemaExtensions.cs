@@ -20,6 +20,25 @@ namespace Silk.Data.SQL.ORM
 				throw new Exception("Entity type must have a primary key to generate update statements.");
 		}
 
+		public static QueryWithResult<T> CreateSelect<T>(this EntitySchema<T> schema, Action<SelectBuilder<T>> queryCallback = null)
+			where T : class
+		{
+			var queryBuilder = new SelectBuilder<T>(schema);
+			var mapping = queryBuilder.Project<T>();
+			queryCallback?.Invoke(queryBuilder);
+			return new QueryWithMappedResult<T>(queryBuilder.BuildQuery(), mapping);
+		}
+
+		public static QueryWithResult<T> CreateSelect<T>(this Schema.Schema schema, Action<SelectBuilder<T>> queryCallback = null)
+			where T : class
+		{
+			var entitySchema = schema.GetEntitySchema<T>();
+			if (entitySchema == null)
+				throw new Exception("Entity isn't configured in schema.");
+
+			return entitySchema.CreateSelect(queryCallback);
+		}
+
 		public static Query CreateInsert<T>(this EntitySchema<T> schema, params T[] entities)
 			where T : class
 		{
@@ -73,7 +92,7 @@ namespace Silk.Data.SQL.ORM
 					if (!isBulkInsert)
 					{
 						//  todo: when the SelectBuilder API is refactored come back here and make it sensible!
-						var selectPKQueryBuilder = new EntitySelectBuilder<T>(schema.Schema);
+						var selectPKQueryBuilder = new SelectBuilder<T>(schema.Schema);
 						selectPKQueryBuilder.Project<int>(QueryExpression.Alias(
 							QueryExpression.LastInsertIdFunction(), "__PK_IDENTITY"));
 						yield return selectPKQueryBuilder.BuildQuery();

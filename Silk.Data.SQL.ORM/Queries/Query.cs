@@ -1,5 +1,6 @@
 ﻿using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.Queries;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Silk.Data.SQL.ORM.Queries
@@ -64,6 +65,8 @@ namespace Silk.Data.SQL.ORM.Queries
 
 	public abstract class QueryWithResult<T> : Query
 	{
+		public ICollection<T> Result { get; protected set; }
+
 		public QueryWithResult(QueryExpression queryExpression)
 			: base(queryExpression, true)
 		{
@@ -73,9 +76,22 @@ namespace Silk.Data.SQL.ORM.Queries
 	public class QueryWithMappedResult<T> : QueryWithResult<T>
 		where T : class
 	{
-		public QueryWithMappedResult(QueryExpression queryExpression)
+		private readonly ObjectResultMapper<T> _resultMapper;
+
+		public QueryWithMappedResult(QueryExpression queryExpression, ObjectResultMapper<T> resultMapper)
 			: base(queryExpression)
 		{
+			_resultMapper = resultMapper;
+		}
+
+		public override void ProcessResult(QueryResult queryResult)
+		{
+			Result = _resultMapper.MapAll(queryResult);
+		}
+
+		public override async Task ProcessResultAsync(QueryResult queryResult)
+		{
+			Result = await _resultMapper.MapAllAsync(queryResult);
 		}
 	}
 

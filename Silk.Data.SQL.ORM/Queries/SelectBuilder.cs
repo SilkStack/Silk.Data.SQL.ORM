@@ -9,101 +9,23 @@ using System.Linq.Expressions;
 
 namespace Silk.Data.SQL.ORM.Queries
 {
-	public class SelectBuilder : IQueryBuilder
+	public class SelectBuilder<T> : IQueryBuilder
+		where T : class
 	{
-		protected QueryExpression Source { get; set; }
-		protected List<AliasExpression> ProjectionExpressions { get; }
+		private QueryExpression _source;
+		private List<AliasExpression> _projectionExpressions
 			= new List<AliasExpression>();
-		protected List<IProjectedItem> Projections { get; }
+		private List<IProjectedItem> _projections
 			= new List<IProjectedItem>();
-		protected List<ITableJoin> TableJoins { get; }
+		private List<ITableJoin> _tableJoins
 			= new List<ITableJoin>();
-		protected QueryExpression Where { get; private set; }
-		protected QueryExpression LimitExpression { get; private set; }
+		private QueryExpression _where;
+		private QueryExpression _having;
+		private QueryExpression _limit;
+		private QueryExpression _offset;
+		private List<QueryExpression> _orderBy = new List<QueryExpression>();
+		private List<QueryExpression> _groupBy = new List<QueryExpression>();
 
-		public QueryExpression BuildQuery()
-		{
-			return QueryExpression.Select(
-				projection: Projections.Select(q => QueryExpression.Alias(QueryExpression.Column(q.FieldName, new AliasIdentifierExpression(q.SourceName)), q.AliasName))
-					.Concat(ProjectionExpressions).ToArray(),
-				from: Source,
-				joins: TableJoins.Select(q => CreateJoin(q)).ToArray(),
-				where: Where,
-				limit: LimitExpression
-				);
-		}
-
-		public ValueResultMapper<T> Project<T>(QueryExpression queryExpression)
-			where T : struct
-		{
-			if (!SqlTypeHelper.IsSqlPrimitiveType(typeof(T)))
-				throw new Exception("Cannot project complex types.");
-
-			var aliasExpression = queryExpression as AliasExpression;
-			if (aliasExpression == null)
-			{
-				aliasExpression = QueryExpression.Alias(queryExpression, $"__AutoAlias_{ProjectionExpressions.Count}");
-			}
-			ProjectionExpressions.Add(aliasExpression);
-
-			return new ValueResultMapper<T>(1, aliasExpression.Identifier.Identifier);
-		}
-
-		private static JoinExpression CreateJoin(ITableJoin tableJoin)
-		{
-			var onCondition = default(QueryExpression);
-			var leftSource = new AliasIdentifierExpression(tableJoin.SourceName);
-			var rightSource = new AliasIdentifierExpression(tableJoin.TableAlias);
-			using (var leftEnumerator = ((ICollection<string>)tableJoin.LeftColumns).GetEnumerator())
-			using (var rightEnumerator = ((ICollection<string>)tableJoin.RightColumns).GetEnumerator())
-			{
-				while (leftEnumerator.MoveNext() && rightEnumerator.MoveNext())
-				{
-					var newCondition = QueryExpression.Compare(
-						QueryExpression.Column(leftEnumerator.Current, leftSource),
-						ComparisonOperator.AreEqual,
-						QueryExpression.Column(rightEnumerator.Current, rightSource)
-						);
-					onCondition = QueryExpression.CombineConditions(onCondition, ConditionType.AndAlso, newCondition);
-				}
-			}
-
-			return QueryExpression.Join(
-				QueryExpression.Alias(new AliasIdentifierExpression(tableJoin.TableName), tableJoin.TableAlias),
-				onCondition,
-				JoinDirection.Left
-				);
-		}
-
-		public void AndWhere(QueryExpression queryExpression)
-		{
-			Where = QueryExpression.CombineConditions(Where, ConditionType.AndAlso, queryExpression);
-		}
-
-		public void OrWhere(QueryExpression queryExpression)
-		{
-			Where = QueryExpression.CombineConditions(Where, ConditionType.OrElse, queryExpression);
-		}
-
-		public void Limit(int limit)
-		{
-			LimitExpression = QueryExpression.Value(limit);
-		}
-
-		public void Limit(QueryExpression queryExpression)
-		{
-			LimitExpression = queryExpression;
-		}
-	}
-
-	public class SelectBuilder<T> : SelectBuilder
-		where T : class
-	{
-	}
-
-	public class EntitySelectBuilder<T> : SelectBuilder<T>
-		where T : class
-	{
 		private ExpressionConverter<T> _expressionConverter;
 		private ExpressionConverter<T> ExpressionConverter
 		{
@@ -118,17 +40,41 @@ namespace Silk.Data.SQL.ORM.Queries
 		public Schema.Schema Schema { get; }
 		public EntitySchema<T> EntitySchema { get; }
 
-		public EntitySelectBuilder(Schema.Schema schema)
+		public SelectBuilder(Schema.Schema schema)
 		{
 			Schema = schema;
 			EntitySchema = schema.GetEntitySchema<T>();
 			if (EntitySchema == null)
 				throw new Exception("Entity isn't configured in schema.");
 
-			Source = QueryExpression.Table(EntitySchema.EntityTable.TableName);
+			_source = QueryExpression.Table(EntitySchema.EntityTable.TableName);
 		}
 
-		public ValueResultMapper<TProperty> Project<TProperty>(Expression<Func<T,TProperty>> projection)
+		public SelectBuilder(EntitySchema<T> schema)
+		{
+			Schema = schema.Schema;
+			EntitySchema = schema;
+
+			_source = QueryExpression.Table(EntitySchema.EntityTable.TableName);
+		}
+
+		public QueryExpression BuildQuery()
+		{
+			return QueryExpression.Select(
+				projection: _projections.Select(q => QueryExpression.Alias(QueryExpression.Column(q.FieldName, new AliasIdentifierExpression(q.SourceName)), q.AliasName))
+					.Concat(_projectionExpressions).ToArray(),
+				from: _source,
+				joins: _tableJoins.Select(q => CreateJoin(q)).ToArray(),
+				where: _where,
+				having: _having,
+				limit: _limit,
+				offset: _offset,
+				orderBy: _orderBy.ToArray(),
+				groupBy: _groupBy.ToArray()
+				);
+		}
+
+		public ValueResultMapper<TProperty> Project<TProperty>(Expression<Func<T, TProperty>> projection)
 			where TProperty : struct
 		{
 			if (!SqlTypeHelper.IsSqlPrimitiveType(typeof(TProperty)))
@@ -194,9 +140,9 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		private void AddProjection(ProjectionField projectionField)
 		{
-			if (Projections.Contains(projectionField))
+			if (_projections.Contains(projectionField))
 				return;
-			Projections.Add(projectionField);
+			_projections.Add(projectionField);
 			AddJoins(projectionField.Join);
 		}
 
@@ -241,10 +187,72 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		private void AddJoins(EntityFieldJoin join)
 		{
-			if (join == null || TableJoins.Contains(join))
+			if (join == null || _tableJoins.Contains(join))
 				return;
-			TableJoins.Add(join);
+			_tableJoins.Add(join);
 			AddJoins(join.DependencyJoins);
+		}
+
+		public ValueResultMapper<TValue> Project<TValue>(QueryExpression queryExpression)
+			where TValue : struct
+		{
+			if (!SqlTypeHelper.IsSqlPrimitiveType(typeof(TValue)))
+				throw new Exception("Cannot project complex types.");
+
+			var aliasExpression = queryExpression as AliasExpression;
+			if (aliasExpression == null)
+			{
+				aliasExpression = QueryExpression.Alias(queryExpression, $"__AutoAlias_{_projectionExpressions.Count}");
+			}
+			_projectionExpressions.Add(aliasExpression);
+
+			return new ValueResultMapper<TValue>(1, aliasExpression.Identifier.Identifier);
+		}
+
+		private static JoinExpression CreateJoin(ITableJoin tableJoin)
+		{
+			var onCondition = default(QueryExpression);
+			var leftSource = new AliasIdentifierExpression(tableJoin.SourceName);
+			var rightSource = new AliasIdentifierExpression(tableJoin.TableAlias);
+			using (var leftEnumerator = ((ICollection<string>)tableJoin.LeftColumns).GetEnumerator())
+			using (var rightEnumerator = ((ICollection<string>)tableJoin.RightColumns).GetEnumerator())
+			{
+				while (leftEnumerator.MoveNext() && rightEnumerator.MoveNext())
+				{
+					var newCondition = QueryExpression.Compare(
+						QueryExpression.Column(leftEnumerator.Current, leftSource),
+						ComparisonOperator.AreEqual,
+						QueryExpression.Column(rightEnumerator.Current, rightSource)
+						);
+					onCondition = QueryExpression.CombineConditions(onCondition, ConditionType.AndAlso, newCondition);
+				}
+			}
+
+			return QueryExpression.Join(
+				QueryExpression.Alias(new AliasIdentifierExpression(tableJoin.TableName), tableJoin.TableAlias),
+				onCondition,
+				JoinDirection.Left
+				);
+		}
+
+		public void AndWhere(QueryExpression queryExpression)
+		{
+			_where = QueryExpression.CombineConditions(_where, ConditionType.AndAlso, queryExpression);
+		}
+
+		public void OrWhere(QueryExpression queryExpression)
+		{
+			_where = QueryExpression.CombineConditions(_where, ConditionType.OrElse, queryExpression);
+		}
+
+		public void Limit(int limit)
+		{
+			_limit = QueryExpression.Value(limit);
+		}
+
+		public void Limit(QueryExpression queryExpression)
+		{
+			_limit = queryExpression;
 		}
 	}
 }

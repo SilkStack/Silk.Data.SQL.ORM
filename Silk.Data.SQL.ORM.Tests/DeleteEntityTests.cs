@@ -27,12 +27,9 @@ namespace Silk.Data.SQL.ORM.Tests
 				var deleteQuery = schema.CreateDelete<PrimitivePoco>(obj);
 				await provider.ExecuteAsync(deleteQuery);
 
-				var selectBuilder = new EntitySelectBuilder<PrimitivePoco>(schema);
-				var mapping = selectBuilder.Project(q => q.Data);
-				using (var queryResult = await provider.ExecuteReaderAsync(selectBuilder.BuildQuery()))
-				{
-					Assert.IsFalse(await queryResult.ReadAsync());
-				}
+				var selectQuery = schema.CreateSelect<PrimitivePoco>();
+				await provider.ExecuteAsync(selectQuery);
+				Assert.AreEqual(0, selectQuery.Result.Count);
 			}
 		}
 

@@ -1,7 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Silk.Data.SQL.ORM.Schema;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Tests
