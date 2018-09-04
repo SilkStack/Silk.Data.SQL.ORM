@@ -1,6 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Silk.Data.SQL.Expressions;
-using Silk.Data.SQL.ORM.Queries;
 using Silk.Data.SQL.ORM.Schema;
 using Silk.Data.SQL.Providers;
 using System;
@@ -21,10 +20,7 @@ namespace Silk.Data.SQL.ORM.Tests
 
 			using (var provider = TestHelper.CreateProvider())
 			{
-				var queryBuilder = new EntityCreateSchemaBuilder<Primitives>(schema);
-				var queryExpression = queryBuilder.BuildQuery();
-				await provider.ExecuteNonQueryAsync(queryExpression);
-
+				await provider.ExecuteAsync(schema.CreateBuildSchema<Primitives>());
 				await InsertDefaultRow<Primitives>(provider, schema);
 				await TestDefaultRow<Primitives>(provider, schema);
 			}
@@ -40,10 +36,7 @@ namespace Silk.Data.SQL.ORM.Tests
 
 			using (var provider = TestHelper.CreateProvider())
 			{
-				var queryBuilder = new EntityCreateSchemaBuilder<Primitives>(schema);
-				var queryExpression = queryBuilder.BuildQuery();
-				await provider.ExecuteNonQueryAsync(queryExpression);
-
+				await provider.ExecuteAsync(schema.CreateBuildSchema<Primitives>());
 				await InsertDefaultRow<Primitives>(provider, schema);
 				await TestDefaultRow<Primitives>(provider, schema);
 			}
@@ -59,10 +52,7 @@ namespace Silk.Data.SQL.ORM.Tests
 
 			using (var provider = TestHelper.CreateProvider())
 			{
-				var queryBuilder = new EntityCreateSchemaBuilder<Primitives>(schema);
-				var queryExpression = queryBuilder.BuildQuery();
-				await provider.ExecuteNonQueryAsync(queryExpression);
-
+				await provider.ExecuteAsync(schema.CreateBuildSchema<Primitives>());
 				await InsertDefaultRow<Primitives>(provider, schema);
 				await TestDefaultRow<Primitives>(provider, schema);
 

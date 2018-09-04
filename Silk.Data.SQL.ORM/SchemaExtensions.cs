@@ -20,6 +20,23 @@ namespace Silk.Data.SQL.ORM
 				throw new Exception("Entity type must have a primary key to generate update statements.");
 		}
 
+		public static Query CreateBuildSchema<T>(this EntitySchema<T> schema)
+			where T : class
+		{
+			var queryBuilder = new CreateSchemaBuilder<T>(schema);
+			return new QueryNoResult(queryBuilder.BuildQuery());
+		}
+
+		public static Query CreateBuildSchema<T>(this Schema.Schema schema)
+			where T : class
+		{
+			var entitySchema = schema.GetEntitySchema<T>();
+			if (entitySchema == null)
+				throw new Exception("Entity isn't configured in schema.");
+
+			return entitySchema.CreateBuildSchema();
+		}
+
 		public static QueryWithResult<int> CreateCount<T>(this EntitySchema<T> schema, Action<SelectBuilder<T>> queryCallback = null)
 			where T : class
 		{

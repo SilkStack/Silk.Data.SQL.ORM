@@ -20,10 +20,11 @@ namespace Silk.Data.SQL.ORM.Tests
 
 			using (var provider = TestHelper.CreateProvider())
 			{
-				await CreateSchema<PrimitivePoco>(schema, provider);
-
 				var obj = new PrimitivePoco { Data = 1 };
-				await provider.ExecuteAsync(schema.CreateInsert(obj));
+				await provider.ExecuteAsync(
+					schema.CreateBuildSchema<PrimitivePoco>(),
+					schema.CreateInsert(obj)
+					);
 
 				obj.Data = 2;
 				var updateQuery = schema.CreateUpdate<PrimitivePoco>(obj);
@@ -35,13 +36,6 @@ namespace Silk.Data.SQL.ORM.Tests
 				Assert.AreEqual(1, selectQuery.Result.Count);
 				Assert.AreEqual(obj.Data, selectQuery.Result.First().Data);
 			}
-		}
-
-		private async Task CreateSchema<T>(Schema.Schema schema, IDataProvider dataProvider)
-			where T : class
-		{
-			var createSchema = new EntityCreateSchemaBuilder<T>(schema);
-			await dataProvider.ExecuteNonQueryAsync(createSchema.BuildQuery());
 		}
 
 		private class PrimitivePoco

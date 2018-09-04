@@ -23,8 +23,6 @@ namespace Silk.Data.SQL.ORM.Tests
 
 			using (var provider = TestHelper.CreateProvider())
 			{
-				await CreateSchema<Primitives>(schema, provider);
-
 				var obj = new Primitives
 				{
 					Bool = true,
@@ -41,7 +39,7 @@ namespace Silk.Data.SQL.ORM.Tests
 				};
 
 				var query = schema.CreateInsert(obj);
-				await provider.ExecuteAsync(query);
+				await provider.ExecuteAsync(schema.CreateBuildSchema<Primitives>(), query);
 
 				using (var queryResult = await provider.ExecuteReaderAsync(
 					QueryExpression.Select(QueryExpression.All(), QueryExpression.Table(entitySchema.EntityTable.TableName))
@@ -96,14 +94,15 @@ namespace Silk.Data.SQL.ORM.Tests
 
 			using (var provider = TestHelper.CreateProvider())
 			{
-				await CreateSchema<HasGuidPK>(schema, provider);
-
 				var obj = new HasGuidPK
 				{
 					Data = "Hello World"
 				};
 
-				await provider.ExecuteAsync(schema.CreateInsert(obj));
+				await provider.ExecuteAsync(
+					schema.CreateBuildSchema<HasGuidPK>(),
+					schema.CreateInsert(obj)
+					);
 				Assert.AreNotEqual(Guid.Empty, obj.Id);
 			}
 		}
@@ -117,8 +116,6 @@ namespace Silk.Data.SQL.ORM.Tests
 
 			using (var provider = TestHelper.CreateProvider())
 			{
-				await CreateSchema<HasIntPK>(schema, provider);
-
 				var obj1 = new HasIntPK
 				{
 					Data = "Hello"
@@ -128,7 +125,10 @@ namespace Silk.Data.SQL.ORM.Tests
 					Data = "World"
 				};
 
-				await provider.ExecuteAsync(schema.CreateInsert(obj1, obj2));
+				await provider.ExecuteAsync(
+					schema.CreateBuildSchema<HasIntPK>(),
+					schema.CreateInsert(obj1, obj2)
+					);
 
 				Assert.AreNotEqual(0, obj1.Id);
 				Assert.AreNotEqual(0, obj2.Id);
@@ -150,8 +150,6 @@ namespace Silk.Data.SQL.ORM.Tests
 
 			using (var provider = TestHelper.CreateProvider())
 			{
-				await CreateSchema<HasRelationship>(schema, provider);
-
 				var obj = new HasRelationship
 				{
 					Data = "Hello",
@@ -161,7 +159,10 @@ namespace Silk.Data.SQL.ORM.Tests
 					}
 				};
 
-				await provider.ExecuteAsync(schema.CreateInsert(obj));
+				await provider.ExecuteAsync(
+					schema.CreateBuildSchema<HasRelationship>(),
+					schema.CreateInsert(obj)
+					);
 
 				Assert.AreNotEqual(Guid.Empty, obj.Id);
 				Assert.AreEqual(Guid.Empty, obj.Sub.Id);
@@ -196,9 +197,6 @@ namespace Silk.Data.SQL.ORM.Tests
 
 			using (var provider = TestHelper.CreateProvider())
 			{
-				await CreateSchema<HasGuidPK>(schema, provider);
-				await CreateSchema<HasRelationship>(schema, provider);
-
 				var obj = new HasRelationship
 				{
 					Data = "Hello",
@@ -209,6 +207,8 @@ namespace Silk.Data.SQL.ORM.Tests
 				};
 
 				await provider.ExecuteAsync(
+					schema.CreateBuildSchema<HasRelationship>(),
+					schema.CreateBuildSchema<HasGuidPK>(),
 					schema.CreateInsert(obj.Sub),
 					schema.CreateInsert(obj)
 					);
@@ -230,13 +230,6 @@ namespace Silk.Data.SQL.ORM.Tests
 		private void CheckValue<T>(T value, QueryResult queryResult, Column column)
 		{
 			Assert.AreEqual(value, queryResult.GetColumnValue(column));
-		}
-
-		private async Task CreateSchema<T>(Schema.Schema schema, IDataProvider dataProvider)
-			where T : class
-		{
-			var createSchema = new EntityCreateSchemaBuilder<T>(schema);
-			await dataProvider.ExecuteNonQueryAsync(createSchema.BuildQuery());
 		}
 
 		private class Primitives

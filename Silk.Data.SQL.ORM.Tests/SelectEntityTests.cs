@@ -3,9 +3,7 @@ using Silk.Data.SQL.ORM.Queries;
 using Silk.Data.SQL.ORM.Schema;
 using Silk.Data.SQL.Providers;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Silk.Data.SQL.ORM.Tests
@@ -22,15 +20,16 @@ namespace Silk.Data.SQL.ORM.Tests
 
 			using (var provider = TestHelper.CreateProvider())
 			{
-				await CreateSchema<PrimitivePoco>(schema, provider);
-
 				var inObjs = new[]
 				{
 					new PrimitivePoco { Data = 2 },
 					new PrimitivePoco { Data = 3 },
 					new PrimitivePoco { Data = 1 }
 				};
-				await provider.ExecuteAsync(schema.CreateInsert(inObjs));
+				await provider.ExecuteAsync(
+					schema.CreateBuildSchema<PrimitivePoco>(),
+					schema.CreateInsert(inObjs)
+					);
 
 				var selectQuery = schema.CreateCount<PrimitivePoco>(q => q.AndWhere(obj => obj.Data == 1 || obj.Data == 3));
 				await provider.ExecuteAsync(selectQuery);
@@ -48,15 +47,16 @@ namespace Silk.Data.SQL.ORM.Tests
 
 			using (var provider = TestHelper.CreateProvider())
 			{
-				await CreateSchema<PrimitivePoco>(schema, provider);
-
 				var inObjs = new[]
 				{
 					new PrimitivePoco { Data = 2 },
 					new PrimitivePoco { Data = 3 },
 					new PrimitivePoco { Data = 1 }
 				};
-				await provider.ExecuteAsync(schema.CreateInsert(inObjs));
+				await provider.ExecuteAsync(
+					schema.CreateBuildSchema<PrimitivePoco>(),
+					schema.CreateInsert(inObjs)
+					);
 
 				var selectQuery = schema.CreateSelect<PrimitivePoco>(q => q.AndWhere(obj => obj.Data == 1 || obj.Data == 3));
 				await provider.ExecuteAsync(selectQuery);
@@ -73,15 +73,16 @@ namespace Silk.Data.SQL.ORM.Tests
 
 			using (var provider = TestHelper.CreateProvider())
 			{
-				await CreateSchema<PrimitivePoco>(schema, provider);
-
 				var inObjs = new[]
 				{
 					new PrimitivePoco { Data = 2 },
 					new PrimitivePoco { Data = 3 },
 					new PrimitivePoco { Data = 1 }
 				};
-				await provider.ExecuteAsync(schema.CreateInsert(inObjs));
+				await provider.ExecuteAsync(
+					schema.CreateBuildSchema<PrimitivePoco>(),
+					schema.CreateInsert(inObjs)
+					);
 
 				var selectQuery = schema.CreateSelect<PrimitivePoco>(q =>
 				{
@@ -102,15 +103,16 @@ namespace Silk.Data.SQL.ORM.Tests
 
 			using (var provider = TestHelper.CreateProvider())
 			{
-				await CreateSchema<PrimitivePoco>(schema, provider);
-
 				var inObjs = new[]
 				{
 					new PrimitivePoco { Data = 1 },
 					new PrimitivePoco { Data = 1 },
 					new PrimitivePoco { Data = 1 }
 				};
-				await provider.ExecuteAsync(schema.CreateInsert(inObjs));
+				await provider.ExecuteAsync(
+					schema.CreateBuildSchema<PrimitivePoco>(),
+					schema.CreateInsert(inObjs)
+					);
 
 				var selectQuery = schema.CreateSelect<PrimitivePoco>(q => q.GroupBy(obj => obj.Data));
 				await provider.ExecuteAsync(selectQuery);
@@ -127,15 +129,16 @@ namespace Silk.Data.SQL.ORM.Tests
 
 			using (var provider = TestHelper.CreateProvider())
 			{
-				await CreateSchema<PrimitivePoco>(schema, provider);
-
 				var inObjs = new[]
 				{
 					new PrimitivePoco { Data = 2 },
 					new PrimitivePoco { Data = 3 },
 					new PrimitivePoco { Data = 1 }
 				};
-				await provider.ExecuteAsync(schema.CreateInsert(inObjs));
+				await provider.ExecuteAsync(
+					schema.CreateBuildSchema<PrimitivePoco>(),
+					schema.CreateInsert(inObjs)
+					);
 
 				var selectAscending = schema.CreateSelect<PrimitivePoco>(q => q.OrderBy(obj => obj.Data));
 				var selectDescending = schema.CreateSelect<PrimitivePoco>(q => q.OrderBy(obj => obj.Data, OrderDirection.Descending));
@@ -148,13 +151,6 @@ namespace Silk.Data.SQL.ORM.Tests
 					selectDescending.Result.Select(q => q.Data).SequenceEqual(new[] { 3, 2, 1 })
 					);
 			}
-		}
-
-		private async Task CreateSchema<T>(Schema.Schema schema, IDataProvider dataProvider)
-			where T : class
-		{
-			var createSchema = new EntityCreateSchemaBuilder<T>(schema);
-			await dataProvider.ExecuteNonQueryAsync(createSchema.BuildQuery());
 		}
 
 		private class PrimitivePoco
