@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using Silk.Data.SQL.Expressions;
-using Silk.Data.SQL.ORM.Expressions;
 using Silk.Data.SQL.ORM.Schema;
 
 namespace Silk.Data.SQL.ORM.Queries
@@ -33,7 +32,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			foreach (var (column, valueExpression) in field.GetColumnExpressionPairs())
 			{
 				AndWhere(QueryExpression.Compare(
-					QueryExpression.Column(column.ColumnName, Source),
+					column,
 					comparisonOperator,
 					valueExpression
 					));
@@ -53,7 +52,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			foreach (var (column, valueExpression) in field.GetColumnExpressionPairs())
 			{
 				OrWhere(QueryExpression.Compare(
-					QueryExpression.Column(column.ColumnName, Source),
+					column,
 					comparisonOperator,
 					valueExpression
 					));
@@ -73,25 +72,58 @@ namespace Silk.Data.SQL.ORM.Queries
 			_fieldAssignments.Add(fieldValuePair);
 		}
 
-		public void Set<TValue>(EntityField<TValue, T> entityField, TValue value)
-		{
-			Set(new FieldValueAssignment<TValue>(entityField, new StaticValueReader<TValue>(value)));
-		}
-
 		public void Set<TProperty>(Expression<Func<T, TProperty>> fieldSelector, TProperty value)
 		{
+			Set(fieldSelector, QueryExpression.Value(value));
+		}
+
+		public void Set<TProperty>(Expression<Func<T, TProperty>> fieldSelector, Expression<Func<T, TProperty>> valueExpression)
+		{
+			var selectorExpressionResult = ExpressionConverter.Convert(fieldSelector);
+			var valueExpressionResult = ExpressionConverter.Convert(valueExpression);
+
+			if (selectorExpressionResult.QueryExpression is ColumnExpression columnExpression)
+			{
+				_fieldAssignments.Add(new FieldExpressionAssignment<TProperty>(
+					columnExpression, valueExpressionResult.QueryExpression
+					));
+				return;
+			}
+			throw new ArgumentException("Field selector doesn't specify a valid column.", nameof(fieldSelector));
 		}
 
 		public void Set<TProperty>(Expression<Func<T, TProperty>> fieldSelector, Expression valueExpression)
 		{
+			var selectorExpressionResult = ExpressionConverter.Convert(fieldSelector);
+			var valueExpressionResult = ExpressionConverter.Convert(valueExpression);
+
+			if (selectorExpressionResult.QueryExpression is ColumnExpression columnExpression)
+			{
+				_fieldAssignments.Add(new FieldExpressionAssignment<TProperty>(
+					columnExpression, valueExpressionResult.QueryExpression
+					));
+				return;
+			}
+			throw new ArgumentException("Field selector doesn't specify a valid column.", nameof(fieldSelector));
 		}
 
 		public void Set<TProperty>(Expression<Func<T, TProperty>> fieldSelector, IQueryBuilder subQuery)
 		{
+			Set(fieldSelector, subQuery.BuildQuery());
 		}
 
 		public void Set<TProperty>(Expression<Func<T, TProperty>> fieldSelector, QueryExpression queryExpression)
 		{
+			var selectorExpressionResult = ExpressionConverter.Convert(fieldSelector);
+
+			if (selectorExpressionResult.QueryExpression is ColumnExpression columnExpression)
+			{
+				_fieldAssignments.Add(new FieldExpressionAssignment<TProperty>(
+					columnExpression, queryExpression
+					));
+				return;
+			}
+			throw new ArgumentException("Field selector doesn't specify a valid column.", nameof(fieldSelector));
 		}
 
 		public override QueryExpression BuildQuery()

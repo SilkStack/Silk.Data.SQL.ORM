@@ -37,7 +37,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		{
 			return QueryExpression.Insert(
 				Source.TableName,
-				_fieldAssignments.First().SelectMany(q => q.GetColumnExpressionPairs()).Select(q => q.Column.ColumnName).ToArray(),
+				_fieldAssignments.First().SelectMany(q => q.GetColumnExpressionPairs()).Select(q => q.ColumnExpression.ColumnName).ToArray(),
 				_fieldAssignments.Select(row =>
 					row.SelectMany(fieldValuePair => fieldValuePair.GetColumnExpressionPairs())
 						.Select(columnPair => columnPair.ValueExpression).ToArray()

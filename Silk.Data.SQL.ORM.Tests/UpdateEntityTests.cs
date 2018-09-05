@@ -12,7 +12,7 @@ namespace Silk.Data.SQL.ORM.Tests
 	public class UpdateEntityTests
 	{
 		[TestMethod]
-		public async Task UpdatePrimitives()
+		public async Task UpdateFullEntityPrimitives()
 		{
 			var schemaBuilder = new SchemaBuilder();
 			schemaBuilder.DefineEntity<PrimitivePoco>();
@@ -35,6 +35,33 @@ namespace Silk.Data.SQL.ORM.Tests
 
 				Assert.AreEqual(1, selectQuery.Result.Count);
 				Assert.AreEqual(obj.Data, selectQuery.Result.First().Data);
+			}
+		}
+
+		[TestMethod]
+		public async Task UpdateSingleFieldExpression()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<PrimitivePoco>();
+			var schema = schemaBuilder.Build();
+
+			using (var provider = TestHelper.CreateProvider())
+			{
+				var obj = new PrimitivePoco { Data = 1 };
+				await provider.ExecuteAsync(
+					schema.CreateBuildSchema<PrimitivePoco>(),
+					schema.CreateInsert(obj)
+					);
+
+				var queryBuilder = new UpdateBuilder<PrimitivePoco>(schema);
+				queryBuilder.Set(q => q.Data, q => q.Data + 1);
+				await provider.ExecuteNonQueryAsync(queryBuilder.BuildQuery());
+
+				var selectQuery = schema.CreateSelect<PrimitivePoco>();
+				await provider.ExecuteAsync(selectQuery);
+
+				Assert.AreEqual(1, selectQuery.Result.Count);
+				Assert.AreEqual(2, selectQuery.Result.First().Data);
 			}
 		}
 
