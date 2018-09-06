@@ -1,6 +1,7 @@
 ﻿using Silk.Data.SQL.ORM.Expressions;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 
 namespace Silk.Data.SQL.ORM.Schema
@@ -14,6 +15,8 @@ namespace Silk.Data.SQL.ORM.Schema
 			= new Dictionary<Type, EntitySchemaBuilder>();
 		private readonly Dictionary<MethodInfo, IMethodCallConverter> _methodCallConverters
 			= new Dictionary<MethodInfo, IMethodCallConverter>();
+		private readonly List<RelationshipBuilder> _relationshipBuilders
+			= new List<RelationshipBuilder>();
 
 		public SchemaBuilder()
 		{
@@ -40,6 +43,23 @@ namespace Silk.Data.SQL.ORM.Schema
 		public void AddMethodConverter(MethodInfo methodInfo, IMethodCallConverter methodCallConverter)
 		{
 			_methodCallConverters.Add(methodInfo, methodCallConverter);
+		}
+
+		public RelationshipBuilder<TLeft, TRight> DefineRelationship<TLeft, TRight>(string name)
+			where TLeft : class
+			where TRight : class
+		{
+			var relationship = _relationshipBuilders.FirstOrDefault(q =>
+				q.Left == typeof(TLeft) && q.Right == typeof(TRight) && q.Name == name);
+			if (relationship == null)
+			{
+				relationship = new RelationshipBuilder<TLeft, TRight>
+				{
+					Name = name
+				};
+				_relationshipBuilders.Add(relationship);
+			}
+			return relationship as RelationshipBuilder<TLeft, TRight>;
 		}
 
 		/// <summary>
@@ -74,8 +94,9 @@ namespace Silk.Data.SQL.ORM.Schema
 		{
 			var entityPrimitiveFields = BuildEntityPrimitiveFields();
 			while (DefineNewFields(entityPrimitiveFields)) { }
-			var entitySchemas = BuildEntitySchemas(entityPrimitiveFields);
-			return new Schema(entitySchemas, _methodCallConverters);
+			var entitySchemas = BuildEntitySchemas(entityPrimitiveFields).ToArray();
+			return new Schema(entitySchemas, _methodCallConverters,
+				_relationshipBuilders.Select(q => q.Build(entitySchemas)).ToArray());
 		}
 
 		private bool DefineNewFields(PartialEntitySchemaCollection partialEntitySchemas)

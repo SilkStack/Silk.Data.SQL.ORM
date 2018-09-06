@@ -282,7 +282,7 @@ namespace Silk.Data.SQL.ORM.Tests
 		private async Task CreateSchema<T>(Schema.Schema schema, IDataProvider dataProvider)
 			where T : class
 		{
-			var createSchema = new CreateSchemaBuilder<T>(schema);
+			var createSchema = new CreateTableBuilder<T>(schema);
 			await dataProvider.ExecuteNonQueryAsync(createSchema.BuildQuery());
 		}
 

@@ -39,7 +39,7 @@ namespace Silk.Data.SQL.ORM.Tests
 				};
 
 				var query = schema.CreateInsert(obj);
-				await provider.ExecuteAsync(schema.CreateBuildSchema<Primitives>(), query);
+				await provider.ExecuteAsync(schema.CreateTable<Primitives>(), query);
 
 				using (var queryResult = await provider.ExecuteReaderAsync(
 					QueryExpression.Select(QueryExpression.All(), QueryExpression.Table(entitySchema.EntityTable.TableName))
@@ -100,7 +100,7 @@ namespace Silk.Data.SQL.ORM.Tests
 				};
 
 				await provider.ExecuteAsync(
-					schema.CreateBuildSchema<HasGuidPK>(),
+					schema.CreateTable<HasGuidPK>(),
 					schema.CreateInsert(obj)
 					);
 				Assert.AreNotEqual(Guid.Empty, obj.Id);
@@ -126,7 +126,7 @@ namespace Silk.Data.SQL.ORM.Tests
 				};
 
 				await provider.ExecuteAsync(
-					schema.CreateBuildSchema<HasIntPK>(),
+					schema.CreateTable<HasIntPK>(),
 					schema.CreateInsert(obj1, obj2)
 					);
 
@@ -160,7 +160,7 @@ namespace Silk.Data.SQL.ORM.Tests
 				};
 
 				await provider.ExecuteAsync(
-					schema.CreateBuildSchema<HasRelationship>(),
+					schema.CreateTable<HasRelationship>(),
 					schema.CreateInsert(obj)
 					);
 
@@ -207,8 +207,8 @@ namespace Silk.Data.SQL.ORM.Tests
 				};
 
 				await provider.ExecuteAsync(
-					schema.CreateBuildSchema<HasRelationship>(),
-					schema.CreateBuildSchema<HasGuidPK>(),
+					schema.CreateTable<HasRelationship>(),
+					schema.CreateTable<HasGuidPK>(),
 					schema.CreateInsert(obj.Sub),
 					schema.CreateInsert(obj)
 					);

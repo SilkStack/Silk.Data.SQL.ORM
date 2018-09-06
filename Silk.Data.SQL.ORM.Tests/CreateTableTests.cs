@@ -20,7 +20,7 @@ namespace Silk.Data.SQL.ORM.Tests
 
 			using (var provider = TestHelper.CreateProvider())
 			{
-				await provider.ExecuteAsync(schema.CreateBuildSchema<Primitives>());
+				await provider.ExecuteAsync(schema.CreateTable<Primitives>());
 				await InsertDefaultRow<Primitives>(provider, schema);
 				await TestDefaultRow<Primitives>(provider, schema);
 			}
@@ -36,7 +36,7 @@ namespace Silk.Data.SQL.ORM.Tests
 
 			using (var provider = TestHelper.CreateProvider())
 			{
-				await provider.ExecuteAsync(schema.CreateBuildSchema<Primitives>());
+				await provider.ExecuteAsync(schema.CreateTable<Primitives>());
 				await InsertDefaultRow<Primitives>(provider, schema);
 				await TestDefaultRow<Primitives>(provider, schema);
 			}
@@ -52,7 +52,7 @@ namespace Silk.Data.SQL.ORM.Tests
 
 			using (var provider = TestHelper.CreateProvider())
 			{
-				await provider.ExecuteAsync(schema.CreateBuildSchema<Primitives>());
+				await provider.ExecuteAsync(schema.CreateTable<Primitives>());
 				await InsertDefaultRow<Primitives>(provider, schema);
 				await TestDefaultRow<Primitives>(provider, schema);
 

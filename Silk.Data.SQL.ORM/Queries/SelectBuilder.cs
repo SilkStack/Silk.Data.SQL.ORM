@@ -35,7 +35,7 @@ namespace Silk.Data.SQL.ORM.Queries
 				projection: _projections.Select(q => QueryExpression.Alias(QueryExpression.Column(q.FieldName, new AliasIdentifierExpression(q.SourceName)), q.AliasName))
 					.Concat(_projectionExpressions).ToArray(),
 				from: Source,
-				joins: _tableJoins.Select(q => CreateJoin(q)).ToArray(),
+				joins: _tableJoins.Select(q => q.GetJoinExpression()).ToArray(),
 				where: _where,
 				having: _having,
 				limit: _limit,
@@ -164,32 +164,6 @@ namespace Silk.Data.SQL.ORM.Queries
 			_projectionExpressions.Add(aliasExpression);
 
 			return new ValueResultMapper<TValue>(1, aliasExpression.Identifier.Identifier);
-		}
-
-		private static JoinExpression CreateJoin(ITableJoin tableJoin)
-		{
-			var onCondition = default(QueryExpression);
-			var leftSource = new AliasIdentifierExpression(tableJoin.SourceName);
-			var rightSource = new AliasIdentifierExpression(tableJoin.TableAlias);
-			using (var leftEnumerator = ((ICollection<string>)tableJoin.LeftColumns).GetEnumerator())
-			using (var rightEnumerator = ((ICollection<string>)tableJoin.RightColumns).GetEnumerator())
-			{
-				while (leftEnumerator.MoveNext() && rightEnumerator.MoveNext())
-				{
-					var newCondition = QueryExpression.Compare(
-						QueryExpression.Column(leftEnumerator.Current, leftSource),
-						ComparisonOperator.AreEqual,
-						QueryExpression.Column(rightEnumerator.Current, rightSource)
-						);
-					onCondition = QueryExpression.CombineConditions(onCondition, ConditionType.AndAlso, newCondition);
-				}
-			}
-
-			return QueryExpression.Join(
-				QueryExpression.Alias(new AliasIdentifierExpression(tableJoin.TableName), tableJoin.TableAlias),
-				onCondition,
-				JoinDirection.Left
-				);
 		}
 
 		public void AndWhere(QueryExpression queryExpression)

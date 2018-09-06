@@ -27,7 +27,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					new PrimitivePoco { Data = 1 }
 				};
 				await provider.ExecuteAsync(
-					schema.CreateBuildSchema<PrimitivePoco>(),
+					schema.CreateTable<PrimitivePoco>(),
 					schema.CreateInsert(inObjs)
 					);
 
@@ -54,7 +54,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					new PrimitivePoco { Data = 1 }
 				};
 				await provider.ExecuteAsync(
-					schema.CreateBuildSchema<PrimitivePoco>(),
+					schema.CreateTable<PrimitivePoco>(),
 					schema.CreateInsert(inObjs)
 					);
 
@@ -80,7 +80,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					new PrimitivePoco { Data = 1 }
 				};
 				await provider.ExecuteAsync(
-					schema.CreateBuildSchema<PrimitivePoco>(),
+					schema.CreateTable<PrimitivePoco>(),
 					schema.CreateInsert(inObjs)
 					);
 
@@ -110,7 +110,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					new PrimitivePoco { Data = 1 }
 				};
 				await provider.ExecuteAsync(
-					schema.CreateBuildSchema<PrimitivePoco>(),
+					schema.CreateTable<PrimitivePoco>(),
 					schema.CreateInsert(inObjs)
 					);
 
@@ -136,7 +136,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					new PrimitivePoco { Data = 1 }
 				};
 				await provider.ExecuteAsync(
-					schema.CreateBuildSchema<PrimitivePoco>(),
+					schema.CreateTable<PrimitivePoco>(),
 					schema.CreateInsert(inObjs)
 					);
 

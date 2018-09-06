@@ -20,21 +20,40 @@ namespace Silk.Data.SQL.ORM
 				throw new Exception("Entity type must have a primary key to generate update statements.");
 		}
 
-		public static Query CreateBuildSchema<T>(this EntitySchema<T> schema)
-			where T : class
+		public static Query CreateTable<TLeft, TRight>(this Relationship<TLeft, TRight> relationship)
+			where TLeft : class
+			where TRight : class
 		{
-			var queryBuilder = new CreateSchemaBuilder<T>(schema);
+			var queryBuilder = new CreateTableBuilder<TLeft, TRight>(relationship);
 			return new QueryNoResult(queryBuilder.BuildQuery());
 		}
 
-		public static Query CreateBuildSchema<T>(this Schema.Schema schema)
+		public static Query CreateTable<TLeft, TRight>(this Schema.Schema schema, string relationshipName)
+			where TLeft : class
+			where TRight : class
+		{
+			var relationship = schema.GetRelationship<TLeft, TRight>(relationshipName);
+			if (relationship == null)
+				throw new Exception("Relationship isn't configured in schema.");
+
+			return relationship.CreateTable();
+		}
+
+		public static Query CreateTable<T>(this EntitySchema<T> schema)
+			where T : class
+		{
+			var queryBuilder = new CreateTableBuilder<T>(schema);
+			return new QueryNoResult(queryBuilder.BuildQuery());
+		}
+
+		public static Query CreateTable<T>(this Schema.Schema schema)
 			where T : class
 		{
 			var entitySchema = schema.GetEntitySchema<T>();
 			if (entitySchema == null)
 				throw new Exception("Entity isn't configured in schema.");
 
-			return entitySchema.CreateBuildSchema();
+			return entitySchema.CreateTable();
 		}
 
 		public static QueryWithResult<int> CreateCount<T>(this EntitySchema<T> schema, Action<SelectBuilder<T>> queryCallback = null)

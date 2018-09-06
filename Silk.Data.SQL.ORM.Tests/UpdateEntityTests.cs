@@ -22,7 +22,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			{
 				var obj = new PrimitivePoco { Data = 1 };
 				await provider.ExecuteAsync(
-					schema.CreateBuildSchema<PrimitivePoco>(),
+					schema.CreateTable<PrimitivePoco>(),
 					schema.CreateInsert(obj)
 					);
 
@@ -49,7 +49,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			{
 				var obj = new PrimitivePoco { Data = 1 };
 				await provider.ExecuteAsync(
-					schema.CreateBuildSchema<PrimitivePoco>(),
+					schema.CreateTable<PrimitivePoco>(),
 					schema.CreateInsert(obj)
 					);
 
