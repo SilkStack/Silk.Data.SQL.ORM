@@ -1,7 +1,9 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Schema;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -18,7 +20,10 @@ namespace Silk.Data.SQL.ORM.Tests
 			schemaBuilder.DefineEntity<SimplePoco2>();
 			schemaBuilder.DefineRelationship<SimplePoco1, SimplePoco2>("Relationship");
 			var schema = schemaBuilder.Build();
-			var tableName = schema.GetRelationship<SimplePoco1, SimplePoco2>("Relationship").JunctionTable.TableName;
+			var relationship = schema.GetRelationship<SimplePoco1, SimplePoco2>("Relationship");
+			var tableName = relationship.JunctionTable.TableName;
+			var columnNames = relationship.RelationshipFields
+				.SelectMany(q => q.Columns).Select(q => q.ColumnName).ToArray();
 
 			using (var provider = TestHelper.CreateProvider())
 			{
@@ -28,8 +33,8 @@ namespace Silk.Data.SQL.ORM.Tests
 					schema.CreateTable<SimplePoco1, SimplePoco2>("Relationship")
 					);
 
-				await provider.ExecuteNonQueryAsync(SQLite3.SQLite3.Raw($"INSERT INTO {tableName} VALUES ('{Guid.NewGuid()}', '{Guid.NewGuid()}')"));
-				using (var result = await provider.ExecuteReaderAsync(SQLite3.SQLite3.Raw($"SELECT * FROM {tableName}")))
+				await provider.ExecuteNonQueryAsync(QueryExpression.Insert(tableName, columnNames, new object[] { Guid.NewGuid(), Guid.NewGuid() }));
+				using (var result = await provider.ExecuteReaderAsync(QueryExpression.Select(QueryExpression.All(), QueryExpression.Table(tableName))))
 				{
 					Assert.IsTrue(result.HasRows);
 				}
