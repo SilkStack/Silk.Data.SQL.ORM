@@ -233,6 +233,96 @@ namespace Silk.Data.SQL.ORM
 			return entitySchema.CreateInsert(entities);
 		}
 
+		public static Query CreateDelete<TLeft, TRight>(this Relationship<TLeft, TRight> relationship, TLeft left, params TRight[] right)
+			where TLeft : class
+			where TRight : class
+		{
+			if (left == null)
+				throw new ArgumentNullException(nameof(left));
+
+			var queryBuilder = new DeleteBuilder<TLeft, TRight>(relationship);
+			queryBuilder.AndWhere(relationship.LeftRelationship.GetFieldValuePair(left), ComparisonOperator.AreEqual);
+			if (right != null && right.Length > 0)
+			{
+				var rightExpression = default(QueryExpression);
+				foreach (var entity in right)
+				{
+					var entityExpression = default(QueryExpression);
+					foreach (var (columnExpression, valueExpression) in relationship.RightRelationship.GetFieldValuePair(entity).GetColumnExpressionPairs())
+					{
+						entityExpression = QueryExpression.CombineConditions(
+							entityExpression,
+							ConditionType.AndAlso,
+							QueryExpression.Compare(
+								columnExpression,
+								ComparisonOperator.AreEqual,
+								valueExpression
+							));
+					}
+					rightExpression = QueryExpression.CombineConditions(rightExpression, ConditionType.OrElse, entityExpression);
+				}
+				queryBuilder.AndWhere(rightExpression);
+			}
+
+			return new QueryNoResult(queryBuilder.BuildQuery());
+		}
+
+		public static Query CreateDelete<TLeft, TRight>(this Schema.Schema schema, string relationshipName, TLeft left, params TRight[] right)
+			where TLeft : class
+			where TRight : class
+		{
+			var relationship = schema.GetRelationship<TLeft, TRight>(relationshipName);
+			if (relationship == null)
+				throw new Exception("Relationship isn't configured in schema.");
+
+			return relationship.CreateDelete(left, right);
+		}
+
+		public static Query CreateDelete<TLeft, TRight>(this Relationship<TLeft, TRight> relationship, TRight right, params TLeft[] left)
+			where TLeft : class
+			where TRight : class
+		{
+			if (right == null)
+				throw new ArgumentNullException(nameof(right));
+
+			var queryBuilder = new DeleteBuilder<TLeft, TRight>(relationship);
+			queryBuilder.AndWhere(relationship.RightRelationship.GetFieldValuePair(right), ComparisonOperator.AreEqual);
+			if (left != null && left.Length > 0)
+			{
+				var rightExpression = default(QueryExpression);
+				foreach (var entity in left)
+				{
+					var entityExpression = default(QueryExpression);
+					foreach (var (columnExpression, valueExpression) in relationship.LeftRelationship.GetFieldValuePair(entity).GetColumnExpressionPairs())
+					{
+						entityExpression = QueryExpression.CombineConditions(
+							entityExpression,
+							ConditionType.AndAlso,
+							QueryExpression.Compare(
+								columnExpression,
+								ComparisonOperator.AreEqual,
+								valueExpression
+							));
+					}
+					rightExpression = QueryExpression.CombineConditions(rightExpression, ConditionType.OrElse, entityExpression);
+				}
+				queryBuilder.AndWhere(rightExpression);
+			}
+
+			return new QueryNoResult(queryBuilder.BuildQuery());
+		}
+
+		public static Query CreateDelete<TLeft, TRight>(this Schema.Schema schema, string relationshipName, TRight right, params TLeft[] left)
+			where TLeft : class
+			where TRight : class
+		{
+			var relationship = schema.GetRelationship<TLeft, TRight>(relationshipName);
+			if (relationship == null)
+				throw new Exception("Relationship isn't configured in schema.");
+
+			return relationship.CreateDelete(right, left);
+		}
+
 		public static Query CreateDelete<T>(this EntitySchema<T> schema, params T[] entities)
 			where T : class
 		{

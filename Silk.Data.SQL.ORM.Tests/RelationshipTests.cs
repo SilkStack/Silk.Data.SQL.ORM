@@ -4,7 +4,6 @@ using Silk.Data.SQL.ORM.Schema;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Silk.Data.SQL.ORM.Tests
@@ -12,8 +11,6 @@ namespace Silk.Data.SQL.ORM.Tests
 	[TestClass]
 	public class RelationshipTests
 	{
-		private IEnumerable<object> inPoco2s;
-
 		[TestMethod]
 		public async Task CreateRelationshipTable()
 		{
@@ -162,6 +159,284 @@ namespace Silk.Data.SQL.ORM.Tests
 					{
 						Assert.IsTrue(foundPoco1s.Contains(poco1));
 					}
+				}
+			}
+		}
+
+		[TestMethod]
+		public async Task DeleteAllLeftToRightRelationships()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<SimplePoco1>();
+			schemaBuilder.DefineEntity<SimplePoco2>();
+			schemaBuilder.DefineRelationship<SimplePoco1, SimplePoco2>("Relationship");
+			var schema = schemaBuilder.Build();
+			var relationship = schema.GetRelationship<SimplePoco1, SimplePoco2>("Relationship");
+			var tableName = relationship.JunctionTable.TableName;
+
+			using (var provider = TestHelper.CreateProvider())
+			{
+				var inPoco1s = new[]
+				{
+					new SimplePoco1 { Data = 1 },
+					new SimplePoco1 { Data = 2 }
+				};
+				var inPoco2s = new[]
+				{
+					new SimplePoco2 { Data = 3 },
+					new SimplePoco2 { Data = 4 }
+				};
+
+				await provider.ExecuteAsync(
+					schema.CreateTable<SimplePoco1>(),
+					schema.CreateTable<SimplePoco2>(),
+					relationship.CreateTable(),
+					schema.CreateInsert(inPoco1s),
+					schema.CreateInsert(inPoco2s),
+					relationship.CreateInsert(inPoco1s[0], inPoco2s),
+					relationship.CreateInsert(inPoco1s[1], inPoco2s)
+					);
+
+				using (var result = await provider.ExecuteReaderAsync(QueryExpression.Select(QueryExpression.All(), QueryExpression.Table(tableName))))
+				{
+					Assert.IsTrue(result.HasRows);
+
+					var outPairs = new List<(Guid, Guid)>();
+					while (await result.ReadAsync())
+					{
+						outPairs.Add(
+							(result.GetGuid(0), result.GetGuid(1))
+							);
+					}
+
+					Assert.AreEqual(4, outPairs.Count);
+				}
+
+				await provider.ExecuteAsync(relationship.CreateDelete(inPoco1s[0]));
+
+				using (var result = await provider.ExecuteReaderAsync(QueryExpression.Select(QueryExpression.All(), QueryExpression.Table(tableName))))
+				{
+					Assert.IsTrue(result.HasRows);
+
+					var outPairs = new List<(Guid, Guid)>();
+					while (await result.ReadAsync())
+					{
+						outPairs.Add(
+							(result.GetGuid(0), result.GetGuid(1))
+							);
+					}
+
+					Assert.AreEqual(2, outPairs.Count);
+				}
+			}
+		}
+
+		[TestMethod]
+		public async Task DeleteSelectiveLeftToRightRelationships()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<SimplePoco1>();
+			schemaBuilder.DefineEntity<SimplePoco2>();
+			schemaBuilder.DefineRelationship<SimplePoco1, SimplePoco2>("Relationship");
+			var schema = schemaBuilder.Build();
+			var relationship = schema.GetRelationship<SimplePoco1, SimplePoco2>("Relationship");
+			var tableName = relationship.JunctionTable.TableName;
+
+			using (var provider = TestHelper.CreateProvider())
+			{
+				var inPoco1s = new[]
+				{
+					new SimplePoco1 { Data = 1 },
+					new SimplePoco1 { Data = 2 },
+					new SimplePoco1 { Data = 3 }
+				};
+				var inPoco2s = new[]
+				{
+					new SimplePoco2 { Data = 4 },
+					new SimplePoco2 { Data = 5 },
+					new SimplePoco2 { Data = 6 }
+				};
+
+				await provider.ExecuteAsync(
+					schema.CreateTable<SimplePoco1>(),
+					schema.CreateTable<SimplePoco2>(),
+					relationship.CreateTable(),
+					schema.CreateInsert(inPoco1s),
+					schema.CreateInsert(inPoco2s),
+					relationship.CreateInsert(inPoco1s[0], inPoco2s),
+					relationship.CreateInsert(inPoco1s[1], inPoco2s),
+					relationship.CreateInsert(inPoco1s[2], inPoco2s)
+					);
+
+				using (var result = await provider.ExecuteReaderAsync(QueryExpression.Select(QueryExpression.All(), QueryExpression.Table(tableName))))
+				{
+					Assert.IsTrue(result.HasRows);
+
+					var outPairs = new List<(Guid, Guid)>();
+					while (await result.ReadAsync())
+					{
+						outPairs.Add(
+							(result.GetGuid(0), result.GetGuid(1))
+							);
+					}
+
+					Assert.AreEqual(9, outPairs.Count);
+				}
+
+				await provider.ExecuteAsync(relationship.CreateDelete(inPoco1s[0], inPoco2s[0], inPoco2s[1]));
+
+				using (var result = await provider.ExecuteReaderAsync(QueryExpression.Select(QueryExpression.All(), QueryExpression.Table(tableName))))
+				{
+					Assert.IsTrue(result.HasRows);
+
+					var outPairs = new List<(Guid, Guid)>();
+					while (await result.ReadAsync())
+					{
+						outPairs.Add(
+							(result.GetGuid(0), result.GetGuid(1))
+							);
+					}
+
+					Assert.AreEqual(7, outPairs.Count);
+				}
+			}
+		}
+
+		[TestMethod]
+		public async Task DeleteAllRightToLeftRelationships()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<SimplePoco1>();
+			schemaBuilder.DefineEntity<SimplePoco2>();
+			schemaBuilder.DefineRelationship<SimplePoco1, SimplePoco2>("Relationship");
+			var schema = schemaBuilder.Build();
+			var relationship = schema.GetRelationship<SimplePoco1, SimplePoco2>("Relationship");
+			var tableName = relationship.JunctionTable.TableName;
+
+			using (var provider = TestHelper.CreateProvider())
+			{
+				var inPoco1s = new[]
+				{
+					new SimplePoco1 { Data = 1 },
+					new SimplePoco1 { Data = 2 }
+				};
+				var inPoco2s = new[]
+				{
+					new SimplePoco2 { Data = 3 },
+					new SimplePoco2 { Data = 4 }
+				};
+
+				await provider.ExecuteAsync(
+					schema.CreateTable<SimplePoco1>(),
+					schema.CreateTable<SimplePoco2>(),
+					relationship.CreateTable(),
+					schema.CreateInsert(inPoco1s),
+					schema.CreateInsert(inPoco2s),
+					relationship.CreateInsert(inPoco1s[0], inPoco2s),
+					relationship.CreateInsert(inPoco1s[1], inPoco2s)
+					);
+
+				using (var result = await provider.ExecuteReaderAsync(QueryExpression.Select(QueryExpression.All(), QueryExpression.Table(tableName))))
+				{
+					Assert.IsTrue(result.HasRows);
+
+					var outPairs = new List<(Guid, Guid)>();
+					while (await result.ReadAsync())
+					{
+						outPairs.Add(
+							(result.GetGuid(0), result.GetGuid(1))
+							);
+					}
+
+					Assert.AreEqual(4, outPairs.Count);
+				}
+
+				await provider.ExecuteAsync(relationship.CreateDelete(inPoco2s[0]));
+
+				using (var result = await provider.ExecuteReaderAsync(QueryExpression.Select(QueryExpression.All(), QueryExpression.Table(tableName))))
+				{
+					Assert.IsTrue(result.HasRows);
+
+					var outPairs = new List<(Guid, Guid)>();
+					while (await result.ReadAsync())
+					{
+						outPairs.Add(
+							(result.GetGuid(0), result.GetGuid(1))
+							);
+					}
+
+					Assert.AreEqual(2, outPairs.Count);
+				}
+			}
+		}
+
+		[TestMethod]
+		public async Task DeleteSelectiveRightToLeftRelationships()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<SimplePoco1>();
+			schemaBuilder.DefineEntity<SimplePoco2>();
+			schemaBuilder.DefineRelationship<SimplePoco1, SimplePoco2>("Relationship");
+			var schema = schemaBuilder.Build();
+			var relationship = schema.GetRelationship<SimplePoco1, SimplePoco2>("Relationship");
+			var tableName = relationship.JunctionTable.TableName;
+
+			using (var provider = TestHelper.CreateProvider())
+			{
+				var inPoco1s = new[]
+				{
+					new SimplePoco1 { Data = 1 },
+					new SimplePoco1 { Data = 2 },
+					new SimplePoco1 { Data = 3 }
+				};
+				var inPoco2s = new[]
+				{
+					new SimplePoco2 { Data = 4 },
+					new SimplePoco2 { Data = 5 },
+					new SimplePoco2 { Data = 6 }
+				};
+
+				await provider.ExecuteAsync(
+					schema.CreateTable<SimplePoco1>(),
+					schema.CreateTable<SimplePoco2>(),
+					relationship.CreateTable(),
+					schema.CreateInsert(inPoco1s),
+					schema.CreateInsert(inPoco2s),
+					relationship.CreateInsert(inPoco1s[0], inPoco2s),
+					relationship.CreateInsert(inPoco1s[1], inPoco2s),
+					relationship.CreateInsert(inPoco1s[2], inPoco2s)
+					);
+
+				using (var result = await provider.ExecuteReaderAsync(QueryExpression.Select(QueryExpression.All(), QueryExpression.Table(tableName))))
+				{
+					Assert.IsTrue(result.HasRows);
+
+					var outPairs = new List<(Guid, Guid)>();
+					while (await result.ReadAsync())
+					{
+						outPairs.Add(
+							(result.GetGuid(0), result.GetGuid(1))
+							);
+					}
+
+					Assert.AreEqual(9, outPairs.Count);
+				}
+
+				await provider.ExecuteAsync(relationship.CreateDelete(inPoco2s[0], inPoco1s[0], inPoco1s[1]));
+
+				using (var result = await provider.ExecuteReaderAsync(QueryExpression.Select(QueryExpression.All(), QueryExpression.Table(tableName))))
+				{
+					Assert.IsTrue(result.HasRows);
+
+					var outPairs = new List<(Guid, Guid)>();
+					while (await result.ReadAsync())
+					{
+						outPairs.Add(
+							(result.GetGuid(0), result.GetGuid(1))
+							);
+					}
+
+					Assert.AreEqual(7, outPairs.Count);
 				}
 			}
 		}
