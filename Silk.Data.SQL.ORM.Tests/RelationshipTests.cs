@@ -22,8 +22,9 @@ namespace Silk.Data.SQL.ORM.Tests
 			var schema = schemaBuilder.Build();
 			var relationship = schema.GetRelationship<SimplePoco1, SimplePoco2>("Relationship");
 			var tableName = relationship.JunctionTable.TableName;
-			var columnNames = relationship.RelationshipFields
-				.SelectMany(q => q.Columns).Select(q => q.ColumnName).ToArray();
+			var columnNames = relationship.LeftRelationship.Columns.Select(q => q.ColumnName)
+				.Concat(relationship.RightRelationship.Columns.Select(q => q.ColumnName))
+				.ToArray();
 
 			using (var provider = TestHelper.CreateProvider())
 			{
@@ -37,6 +38,67 @@ namespace Silk.Data.SQL.ORM.Tests
 				using (var result = await provider.ExecuteReaderAsync(QueryExpression.Select(QueryExpression.All(), QueryExpression.Table(tableName))))
 				{
 					Assert.IsTrue(result.HasRows);
+				}
+			}
+		}
+
+		[TestMethod]
+		public async Task CreateLeftToRightRelationships()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<SimplePoco1>();
+			schemaBuilder.DefineEntity<SimplePoco2>();
+			schemaBuilder.DefineRelationship<SimplePoco1, SimplePoco2>("Relationship");
+			var schema = schemaBuilder.Build();
+			var relationship = schema.GetRelationship<SimplePoco1, SimplePoco2>("Relationship");
+			var tableName = relationship.JunctionTable.TableName;
+
+			using (var provider = TestHelper.CreateProvider())
+			{
+				var inPoco1 = new SimplePoco1 { Data = 1 };
+				var inPoco2s = new[]
+				{
+					new SimplePoco2 { Data = 2 },
+					new SimplePoco2 { Data = 3 }
+				};
+
+				await provider.ExecuteAsync(
+					schema.CreateTable<SimplePoco1>(),
+					schema.CreateTable<SimplePoco2>(),
+					relationship.CreateTable(),
+					schema.CreateInsert(inPoco1),
+					schema.CreateInsert(inPoco2s),
+					relationship.CreateInsert(inPoco1, inPoco2s)
+					);
+
+				using (var result = await provider.ExecuteReaderAsync(QueryExpression.Select(QueryExpression.All(), QueryExpression.Table(tableName))))
+				{
+					Assert.IsTrue(result.HasRows);
+					var outPairs = new List<(Guid, Guid)>();
+					foreach (var obj in inPoco2s)
+					{
+						Assert.IsTrue(await result.ReadAsync());
+						outPairs.Add(
+							(result.GetGuid(0), result.GetGuid(1))
+							);
+					}
+
+					Assert.IsFalse(await result.ReadAsync());
+					Assert.AreEqual(inPoco2s.Length, outPairs.Count);
+
+					var foundPoco2s = new List<SimplePoco2>();
+					foreach (var (poco1Id, poco2Id) in outPairs)
+					{
+						Assert.AreEqual(inPoco1.Id, poco1Id);
+
+						var poco2 = inPoco2s.First(q => q.Id == poco2Id);
+						foundPoco2s.Add(poco2);
+					}
+
+					foreach (var poco2 in inPoco2s)
+					{
+						Assert.IsTrue(foundPoco2s.Contains(poco2));
+					}
 				}
 			}
 		}

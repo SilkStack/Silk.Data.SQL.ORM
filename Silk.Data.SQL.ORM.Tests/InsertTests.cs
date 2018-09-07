@@ -50,37 +50,37 @@ namespace Silk.Data.SQL.ORM.Tests
 
 					CheckValue(
 						obj.Bool, queryResult,
-						entitySchema.EntityFields.First(q => q.ModelField.FieldName == nameof(obj.Bool)).Columns.First());
+						entitySchema.EntityFields.First(q => q.FieldName == nameof(obj.Bool)).Columns.First());
 					CheckValue(
 						obj.Byte, queryResult,
-						entitySchema.EntityFields.First(q => q.ModelField.FieldName == nameof(obj.Byte)).Columns.First());
+						entitySchema.EntityFields.First(q => q.FieldName == nameof(obj.Byte)).Columns.First());
 					CheckValue(
 						obj.DateTime, queryResult,
-						entitySchema.EntityFields.First(q => q.ModelField.FieldName == nameof(obj.DateTime)).Columns.First());
+						entitySchema.EntityFields.First(q => q.FieldName == nameof(obj.DateTime)).Columns.First());
 					CheckValue(
 						obj.Decimal, queryResult,
-						entitySchema.EntityFields.First(q => q.ModelField.FieldName == nameof(obj.Decimal)).Columns.First());
+						entitySchema.EntityFields.First(q => q.FieldName == nameof(obj.Decimal)).Columns.First());
 					CheckValue(
 						obj.Double, queryResult,
-						entitySchema.EntityFields.First(q => q.ModelField.FieldName == nameof(obj.Double)).Columns.First());
+						entitySchema.EntityFields.First(q => q.FieldName == nameof(obj.Double)).Columns.First());
 					CheckValue(
 						obj.Float, queryResult,
-						entitySchema.EntityFields.First(q => q.ModelField.FieldName == nameof(obj.Float)).Columns.First());
+						entitySchema.EntityFields.First(q => q.FieldName == nameof(obj.Float)).Columns.First());
 					CheckValue(
 						obj.Guid, queryResult,
-						entitySchema.EntityFields.First(q => q.ModelField.FieldName == nameof(obj.Guid)).Columns.First());
+						entitySchema.EntityFields.First(q => q.FieldName == nameof(obj.Guid)).Columns.First());
 					CheckValue(
 						obj.Int, queryResult,
-						entitySchema.EntityFields.First(q => q.ModelField.FieldName == nameof(obj.Int)).Columns.First());
+						entitySchema.EntityFields.First(q => q.FieldName == nameof(obj.Int)).Columns.First());
 					CheckValue(
 						obj.Long, queryResult,
-						entitySchema.EntityFields.First(q => q.ModelField.FieldName == nameof(obj.Long)).Columns.First());
+						entitySchema.EntityFields.First(q => q.FieldName == nameof(obj.Long)).Columns.First());
 					CheckValue(
 						obj.Short, queryResult,
-						entitySchema.EntityFields.First(q => q.ModelField.FieldName == nameof(obj.Short)).Columns.First());
+						entitySchema.EntityFields.First(q => q.FieldName == nameof(obj.Short)).Columns.First());
 					CheckValue(
 						obj.String, queryResult,
-						entitySchema.EntityFields.First(q => q.ModelField.FieldName == nameof(obj.String)).Columns.First());
+						entitySchema.EntityFields.First(q => q.FieldName == nameof(obj.String)).Columns.First());
 				}
 			}
 		}

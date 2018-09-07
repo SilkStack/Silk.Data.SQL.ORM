@@ -15,7 +15,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			Right = right;
 		}
 
-		public abstract Relationship Build(EntitySchema[] entitySchemas);
+		public abstract Relationship Build(PartialEntitySchemaCollection partialEntities);
 	}
 
 	public class RelationshipBuilder<TLeft, TRight> : RelationshipBuilder
@@ -24,31 +24,27 @@ namespace Silk.Data.SQL.ORM.Schema
 	{
 		public RelationshipBuilder() : base(typeof(TLeft), typeof(TRight)) { }
 
-		public override Relationship Build(EntitySchema[] entitySchemas)
+		public override Relationship Build(PartialEntitySchemaCollection partialEntities)
 		{
-			var leftEntitySchema = entitySchemas.OfType<EntitySchema<TLeft>>().First();
-			var rightEntitySchema = entitySchemas.OfType<EntitySchema<TRight>>().First();
+			if (!partialEntities.IsEntityTypeDefined(typeof(TLeft)) ||
+				!partialEntities.IsEntityTypeDefined(typeof(TRight)))
+				throw new Exception("Related entity types not registered in schema.");
 
-			var leftPrimaryKeys = leftEntitySchema.EntityFields.Where(q => q.IsPrimaryKey).ToArray();
-			var rightPrimaryKeys = rightEntitySchema.EntityFields.Where(q => q.IsPrimaryKey).ToArray();
+			var leftPartialSchema = partialEntities[typeof(TLeft)];
+			var rightPartialSchema = partialEntities[typeof(TRight)];
 
-			if (leftPrimaryKeys.Length == 0 || rightPrimaryKeys.Length == 0)
-				throw new Exception("Related entities must have primary keys.");
+			var leftRelationship = leftPartialSchema.CreateRelatedEntityField<TLeft>(
+				"Left", typeof(TLeft),
+				null, partialEntities, leftPartialSchema.TableName, new[] { "." }
+				);
+			var rightRelationship = rightPartialSchema.CreateRelatedEntityField<TRight>(
+				"Right", typeof(TRight),
+				null, partialEntities, rightPartialSchema.TableName, new[] { "." }
+				);
 
-			var leftColumns = leftPrimaryKeys
-				.SelectMany(q => q.Columns)
-				.Select(q => new Column($"{leftEntitySchema.EntityTable.TableName}_{q.ColumnName}", q.DataType, false))
-				.ToArray();
-			var rightColumns = rightPrimaryKeys
-				.SelectMany(q => q.Columns)
-				.Select(q => new Column($"{rightEntitySchema.EntityTable.TableName}_{q.ColumnName}", q.DataType, false))
-				.ToArray();
+			var table = new Table(Name, leftRelationship.Columns.Concat(rightRelationship.Columns).ToArray());
 
-			var columns = leftColumns.Concat(rightColumns).ToArray();
-
-			var table = new Table(Name, columns);
-
-			return new Relationship<TLeft, TRight>(Name, table, leftColumns, rightColumns);
+			return new Relationship<TLeft, TRight>(Name, table, leftRelationship, rightRelationship);
 		}
 	}
 }

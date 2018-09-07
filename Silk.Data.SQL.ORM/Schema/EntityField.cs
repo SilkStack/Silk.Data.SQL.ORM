@@ -12,7 +12,9 @@ namespace Silk.Data.SQL.ORM.Schema
 	public interface IEntityField : ITableField
 	{
 		Type DataType { get; }
+		TypeModel DataTypeModel { get; }
 		IPropertyField ModelField { get; }
+		string FieldName { get; }
 		string[] ModelPath { get; }
 		KeyType KeyType { get; }
 		ForeignKey[] ForeignKeys { get; }
@@ -43,33 +45,38 @@ namespace Silk.Data.SQL.ORM.Schema
 		private readonly static TypeModel<TEntity> _entityModel = TypeModel.GetModelOf<TEntity>();
 
 		public Type DataType { get; } = typeof(TValue);
-		public Column[] Columns { get; }
+		public TypeModel DataTypeModel { get; } = TypeModel.GetModelOf<TValue>();
 		public IPropertyField ModelField { get; }
+		public string FieldName { get; }
+		public Column[] Columns { get; }
 		public PrimaryKeyGenerator PrimaryKeyGenerator { get; }
 		public string[] ModelPath { get; }
 		public KeyType KeyType { get; }
 		public ForeignKey[] ForeignKeys { get; }
 		public bool IsPrimaryKey => PrimaryKeyGenerator != PrimaryKeyGenerator.NotPrimaryKey;
 
-		public EntityField(Column[] columns, IPropertyField modelField,
-			PrimaryKeyGenerator primaryKeyGenerator, string[] modelPath)
+		public EntityField(Column[] columns, string fieldName,
+			PrimaryKeyGenerator primaryKeyGenerator, string[] modelPath,
+			IPropertyField modelField)
 		{
 			Columns = columns;
-			ModelField = modelField;
+			FieldName = fieldName;
 			PrimaryKeyGenerator = primaryKeyGenerator;
 			ModelPath = modelPath;
 			KeyType = KeyType.None;
+			ModelField = modelField;
 		}
 
-		public EntityField(IPropertyField modelField, string[] modelPath, KeyType keyType,
-			ForeignKey[] foreignKeys)
+		public EntityField(string fieldName, string[] modelPath, KeyType keyType,
+			ForeignKey[] foreignKeys, IPropertyField modelField)
 		{
 			Columns = foreignKeys.Select(q => q.LocalColumn).ToArray();
-			ModelField = modelField;
+			FieldName = fieldName;
 			PrimaryKeyGenerator = PrimaryKeyGenerator.NotPrimaryKey;
 			ModelPath = modelPath;
 			ForeignKeys = foreignKeys;
 			KeyType = keyType;
+			ModelField = modelField;
 		}
 
 		public CoreBinding.Binding GetValueBinding()

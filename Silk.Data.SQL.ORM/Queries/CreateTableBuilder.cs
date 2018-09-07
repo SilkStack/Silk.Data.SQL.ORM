@@ -111,8 +111,10 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		private void AddEntityTable()
 		{
-			_fields.Add(Relationship.JunctionTable.TableName,
-				Relationship.RelationshipFields);
+			_fields.Add(Relationship.JunctionTable.TableName, new ITableField[] {
+				Relationship.LeftRelationship,
+				Relationship.RightRelationship
+			});
 		}
 
 		public QueryExpression BuildQuery()

@@ -152,7 +152,7 @@ namespace Silk.Data.SQL.ORM.Expressions
 						var joinChain = new List<EntityFieldJoin>();
 						foreach (var pathSegment in expressionPath.Skip(1))
 						{
-							entityField = currentSchema.EntityFields.FirstOrDefault(q => q.ModelField.FieldName == pathSegment);
+							entityField = currentSchema.EntityFields.FirstOrDefault(q => q.FieldName == pathSegment);
 							if (entityField == null)
 								throw new Exception("Couldn't resolve entity field on related object.");
 

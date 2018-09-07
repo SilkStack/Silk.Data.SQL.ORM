@@ -333,7 +333,8 @@ namespace Silk.Data.SQL.ORM.Schema
 					if (relatedEntityField == null)
 					{
 						relatedEntityField = entityPrimitiveFields[modelField.FieldType]
-							.CreateRelatedEntityField<T>(modelField, entityPrimitiveFields, modelField.FieldName, subPropertyPath);
+							.CreateRelatedEntityField<T>(modelField.FieldName, modelField.FieldType,
+							modelField, entityPrimitiveFields, modelField.FieldName, subPropertyPath);
 						yield return relatedEntityField;
 					}
 				}

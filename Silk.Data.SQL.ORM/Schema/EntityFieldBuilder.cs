@@ -79,7 +79,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			if (IsPrimaryKey)
 				primaryKeyGenerator = GetPrimaryKeyGenerator(SqlDataType);
 			return new EntityField<TValue, TEntity>(new[] { new Column($"{columnNamePrefix}{ColumnName}", SqlDataType, IsNullable) },
-				ModelField, primaryKeyGenerator, modelPath);
+				ModelField.FieldName, primaryKeyGenerator, modelPath, ModelField);
 		}
 
 		private static PrimaryKeyGenerator GetPrimaryKeyGenerator(SqlDataType sqlDataType)

@@ -9,21 +9,19 @@ namespace Silk.Data.SQL.ORM.Schema
 		public Type RightType { get; }
 		public string Name { get; }
 		public Table JunctionTable { get; }
-		public RelationshipField[] RelationshipFields { get; }
+		public IEntityField LeftRelationship { get; }
+		public IEntityField RightRelationship { get; }
 
 		public Relationship(Type left, Type right, string name,
-			Table table, Column[] leftColumns, Column[] rightColumns)
+			Table table, IEntityField leftRelationshipField,
+			IEntityField rightRelationshipField)
 		{
 			LeftType = left;
 			RightType = right;
 			Name = name;
 			JunctionTable = table;
-
-			RelationshipFields = new[]
-			{
-				new RelationshipField(leftColumns),
-				new RelationshipField(rightColumns)
-			};
+			LeftRelationship = leftRelationshipField;
+			RightRelationship = rightRelationshipField;
 		}
 	}
 
@@ -31,9 +29,16 @@ namespace Silk.Data.SQL.ORM.Schema
 		where TLeft : class
 		where TRight : class
 	{
-		public Relationship(string name, Table table, Column[] leftColumns, Column[] rightColumns)
-			: base(typeof(TLeft), typeof(TRight), name, table, leftColumns, rightColumns)
+		public new IEntityFieldOfEntity<TLeft> LeftRelationship { get; }
+		public new IEntityFieldOfEntity<TRight> RightRelationship { get; }
+
+		public Relationship(string name, Table table,
+			IEntityFieldOfEntity<TLeft> leftRelationshipField,
+			IEntityFieldOfEntity<TRight> rightRelationshipField)
+			: base(typeof(TLeft), typeof(TRight), name, table, leftRelationshipField, rightRelationshipField)
 		{
+			LeftRelationship = leftRelationshipField;
+			RightRelationship = rightRelationshipField;
 		}
 	}
 }

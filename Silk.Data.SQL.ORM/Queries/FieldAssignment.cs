@@ -57,7 +57,7 @@ namespace Silk.Data.SQL.ORM.Queries
 					{
 						var foreignKey = Field.ForeignKeys.First(q => q.LocalColumn == column);
 						var obj = ValueReader.Read();
-						var objectReadWriter = new ObjectReadWriter(obj, Field.ModelField.FieldTypeModel, Field.ModelField.FieldType);
+						var objectReadWriter = new ObjectReadWriter(obj, Field.DataTypeModel, Field.DataType);
 
 						yield return (QueryExpression.Column(column.ColumnName), QueryExpression.Value(
 							foreignKey.ReadValue(objectReadWriter, Field.ModelPath.Length)

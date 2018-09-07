@@ -96,7 +96,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			while (DefineNewFields(entityPrimitiveFields)) { }
 			var entitySchemas = BuildEntitySchemas(entityPrimitiveFields).ToArray();
 			return new Schema(entitySchemas, _methodCallConverters,
-				_relationshipBuilders.Select(q => q.Build(entitySchemas)).ToArray());
+				_relationshipBuilders.Select(q => q.Build(entityPrimitiveFields)).ToArray());
 		}
 
 		private bool DefineNewFields(PartialEntitySchemaCollection partialEntitySchemas)

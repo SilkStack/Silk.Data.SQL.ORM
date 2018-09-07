@@ -19,6 +19,10 @@ Part of the SilkStack project.</Description>
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Schema\EntitySchemaBuilder.cs~RF3e913a56.TMP" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Silk.Data.Modelling" Version="0.1.4" />
     <PackageReference Include="Silk.Data.SQL.Base" Version="0.1.0" />
   </ItemGroup>

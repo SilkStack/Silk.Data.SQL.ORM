@@ -39,7 +39,7 @@ namespace Silk.Data.SQL.ORM.Tests
 
 			foreach (var (type, name, dataType) in expectedFields)
 			{
-				var entityField = entitySchema.EntityFields.FirstOrDefault(q => q.DataType == type && q.ModelField.FieldName == name);
+				var entityField = entitySchema.EntityFields.FirstOrDefault(q => q.DataType == type && q.FieldName == name);
 				if (entityField == null)
 					Assert.Fail("Expected entity field not present on entity schema.");
 				var column = entitySchema.EntityTable.Columns.FirstOrDefault(q => q.ColumnName == name &&
@@ -49,7 +49,7 @@ namespace Silk.Data.SQL.ORM.Tests
 				var projectionField = entitySchema.ProjectionFields.FirstOrDefault(q =>
 					q.SourceName == entitySchema.EntityTable.TableName &&
 					q.FieldName == column.ColumnName &&
-					q.AliasName == entityField.ModelField.FieldName
+					q.AliasName == entityField.FieldName
 					);
 				if (projectionField == null)
 					Assert.Fail("Expected projection field not present on entity schema.");
@@ -67,7 +67,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			var schema = schemaBuilder.Build();
 			var entitySchema = schema.GetEntitySchema<ConventionPrimaryKey>();
 
-			var idField = entitySchema.EntityFields.First(q => q.ModelField.FieldName == nameof(ConventionPrimaryKey.Id));
+			var idField = entitySchema.EntityFields.First(q => q.FieldName == nameof(ConventionPrimaryKey.Id));
 			Assert.IsTrue(idField.IsPrimaryKey, "ID field is not a primary key.");
 		}
 
@@ -82,10 +82,10 @@ namespace Silk.Data.SQL.ORM.Tests
 			var schema = schemaBuilder.Build();
 			var entitySchema = schema.GetEntitySchema<CustomPrimaryKey>();
 
-			var idField = entitySchema.EntityFields.First(q => q.ModelField.FieldName == nameof(CustomPrimaryKey.Id));
+			var idField = entitySchema.EntityFields.First(q => q.FieldName == nameof(CustomPrimaryKey.Id));
 			Assert.IsFalse(idField.IsPrimaryKey, "ID field shouldn't be a primary key.");
 
-			var primaryKeyField = entitySchema.EntityFields.First(q => q.ModelField.FieldName == nameof(CustomPrimaryKey.PrimaryKey));
+			var primaryKeyField = entitySchema.EntityFields.First(q => q.FieldName == nameof(CustomPrimaryKey.PrimaryKey));
 			Assert.IsTrue(primaryKeyField.IsPrimaryKey, "Primary key field is not a primary key.");
 		}
 
@@ -100,7 +100,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			var parentSchema = schema.GetEntitySchema<Parent>();
 
 			Assert.IsNotNull(parentSchema);
-			var entityField = parentSchema.EntityFields.FirstOrDefault(q => q.ModelField.FieldName == nameof(Parent.Child));
+			var entityField = parentSchema.EntityFields.FirstOrDefault(q => q.FieldName == nameof(Parent.Child));
 			if (entityField == null)
 				Assert.Fail("Child entity field not present on entity schema.");
 			var foreignKeyColumn = parentSchema.EntityTable.Columns.FirstOrDefault(q => q.ColumnName == "FK_Child_Id");
@@ -130,7 +130,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			var schema = schemaBuilder.Build();
 			var parentSchema = schema.GetEntitySchema<DeepParent>();
 
-			var entityField = parentSchema.EntityFields.FirstOrDefault(q => q.ModelField.FieldName == nameof(DeepParent.Child));
+			var entityField = parentSchema.EntityFields.FirstOrDefault(q => q.FieldName == nameof(DeepParent.Child));
 			if (entityField == null)
 				Assert.Fail("Child entity field not present on entity schema.");
 			var foreignKeyColumn = parentSchema.EntityTable.Columns.FirstOrDefault(q => q.ColumnName == "FK_Child_Id");
@@ -166,7 +166,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			var schema = schemaBuilder.Build();
 			var entitySchema = schema.GetEntitySchema<DeepParent>();
 
-			var entityField = entitySchema.EntityFields.FirstOrDefault(q => q.ModelField.FieldName == nameof(DeepParent.Child));
+			var entityField = entitySchema.EntityFields.FirstOrDefault(q => q.FieldName == nameof(DeepParent.Child));
 			if (entityField == null)
 				Assert.Fail("Child entity field not present on entity schema.");
 
