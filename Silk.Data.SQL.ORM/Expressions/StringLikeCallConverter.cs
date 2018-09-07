@@ -7,9 +7,8 @@ namespace Silk.Data.SQL.ORM.Expressions
 {
 	public class StringLikeCallConverter : IMethodCallConverter
 	{
-		public ExpressionResult Convert<TEntity>(MethodInfo methodInfo, MethodCallExpression node,
-			ExpressionConverter<TEntity> expressionConverter)
-			where TEntity : class
+		public ExpressionResult Convert(MethodInfo methodInfo, MethodCallExpression node,
+			ExpressionConverter expressionConverter)
 		{
 			var searchField = expressionConverter.Convert(node.Arguments[0]);
 			var searchText = expressionConverter.Convert(node.Arguments[1]);

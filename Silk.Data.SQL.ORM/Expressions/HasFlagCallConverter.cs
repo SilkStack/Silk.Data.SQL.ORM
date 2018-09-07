@@ -7,9 +7,8 @@ namespace Silk.Data.SQL.ORM.Expressions
 {
 	public class HasFlagCallConverter : IMethodCallConverter
 	{
-		public ExpressionResult Convert<TEntity>(MethodInfo methodInfo, MethodCallExpression node,
-			ExpressionConverter<TEntity> expressionConverter)
-			where TEntity : class
+		public ExpressionResult Convert(MethodInfo methodInfo, MethodCallExpression node,
+			ExpressionConverter expressionConverter)
 		{
 			if (node.Arguments.Count != 1)
 				throw new System.Exception("Incorrect number of arguments to HasFlag");

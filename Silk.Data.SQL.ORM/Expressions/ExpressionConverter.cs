@@ -8,30 +8,20 @@ using System.Linq.Expressions;
 
 namespace Silk.Data.SQL.ORM.Expressions
 {
-	public class ExpressionConverter<T> where T : class
+	public abstract class ExpressionConverter
 	{
-		private IReadOnlyCollection<ParameterExpression> _parameters;
-
 		public Schema.Schema Schema { get; }
-		public EntitySchema<T> EntitySchema { get; }
+
+		protected Dictionary<ParameterExpression, EntitySchema> Parameters { get; set; }
 
 		public ExpressionConverter(Schema.Schema schema)
 		{
 			Schema = schema;
-			EntitySchema = schema.GetEntitySchema<T>();
-			if (EntitySchema == null)
-				throw new Exception("Entity isn't configured in schema.");
-		}
-
-		public ExpressionResult Convert<TResult>(Expression<Func<T, TResult>> expression)
-		{
-			_parameters = expression.Parameters;
-			return Convert((Expression)expression);
 		}
 
 		public ExpressionResult Convert(Expression expression)
 		{
-			var visitor = new Visitor(Schema, EntitySchema, this, _parameters);
+			var visitor = new Visitor(Schema, this, Parameters);
 			var result = visitor.ConvertToQueryExpression(expression);
 			return new ExpressionResult(result,
 				visitor.RequiredJoins.GroupBy(q => q).Select(q => q.First()).ToArray());
@@ -40,20 +30,19 @@ namespace Silk.Data.SQL.ORM.Expressions
 		private class Visitor : ExpressionVisitor
 		{
 			public Schema.Schema Schema { get; }
-			public EntitySchema<T> EntitySchema { get; }
+			//public EntitySchema<T> EntitySchema { get; }
 
 			public List<EntityFieldJoin> RequiredJoins { get; }
 				= new List<EntityFieldJoin>();
 
-			private readonly ExpressionConverter<T> _parent;
-			private IReadOnlyCollection<ParameterExpression> _expressionParameters;
+			private readonly ExpressionConverter _parent;
+			private Dictionary<ParameterExpression, EntitySchema> _expressionParameters;
 			private Stack<QueryExpression> _queryExpressionStack = new Stack<QueryExpression>();
 
-			public Visitor(Schema.Schema schema, EntitySchema<T> entitySchema, ExpressionConverter<T> parent,
-				IReadOnlyCollection<ParameterExpression> expressionParameters)
+			public Visitor(Schema.Schema schema, ExpressionConverter parent,
+				Dictionary<ParameterExpression, EntitySchema> expressionParameters)
 			{
 				Schema = schema;
-				EntitySchema = entitySchema;
 				_parent = parent;
 				_expressionParameters = expressionParameters;
 			}
@@ -101,13 +90,19 @@ namespace Silk.Data.SQL.ORM.Expressions
 
 			protected override Expression VisitParameter(ParameterExpression node)
 			{
-				var lambdaParameter = _expressionParameters.FirstOrDefault(q => ReferenceEquals(q, node));
-				if (lambdaParameter != null)
+				if (_expressionParameters.TryGetValue(node, out var schema))
 				{
 					SetConversionResult(
-						QueryExpression.Table(EntitySchema.EntityTable.TableName)
+						QueryExpression.Table(schema.EntityTable.TableName)
 						);
 				}
+				//var lambdaParameter = _expressionParameters.FirstOrDefault(q => ReferenceEquals(q, node));
+				//if (lambdaParameter != null)
+				//{
+				//	SetConversionResult(
+				//		QueryExpression.Table(EntitySchema.EntityTable.TableName)
+				//		);
+				//}
 				return node;
 			}
 
@@ -116,7 +111,7 @@ namespace Silk.Data.SQL.ORM.Expressions
 				var converter = Schema.GetMethodCallConverter(node.Method);
 				if (converter == null)
 					throw new Exception("Method call not supported.");
-				var result = converter.Convert<T>(node.Method, node, _parent);
+				var result = converter.Convert(node.Method, node, _parent);
 				if (result != null)
 				{
 					if (result.RequiredJoins != null)
@@ -129,13 +124,17 @@ namespace Silk.Data.SQL.ORM.Expressions
 			protected override Expression VisitMember(MemberExpression node)
 			{
 				var (allExpressions, expressionPath) = FlattenExpressionTree(node);
-				var lambdaParameter = _expressionParameters?.FirstOrDefault(q => ReferenceEquals(q, allExpressions[0]));
-				if (lambdaParameter != null)
+				var entitySchema = default(EntitySchema);
+				if (allExpressions[0] is ParameterExpression topParameterExpression)
+				{
+					_expressionParameters.TryGetValue(topParameterExpression, out entitySchema);
+				}
+				if (entitySchema != null)
 				{
 					//  visiting a member of expression parameter, ie. a field on the entity table
 					var reflectionMemberInfo = node.Member;
 					var sourceExpression = ConvertToQueryExpression(allExpressions[0]);
-					var entityField = EntitySchema.EntityFields
+					var entityField = entitySchema.EntityFields
 						.FirstOrDefault(q => q.ModelPath.SequenceEqual(expressionPath.Skip(1))) as IEntityField;
 					if (entityField != null && SqlTypeHelper.IsSqlPrimitiveType(entityField.DataType))
 					{
@@ -148,7 +147,7 @@ namespace Silk.Data.SQL.ORM.Expressions
 					if (entityField == null)
 					{
 						//  entity field not found on model, search for the entity field through a JOIN tree
-						var currentSchema = EntitySchema as EntitySchema;
+						var currentSchema = entitySchema;
 						var joinChain = new List<EntityFieldJoin>();
 						foreach (var pathSegment in expressionPath.Skip(1))
 						{
@@ -240,7 +239,7 @@ namespace Silk.Data.SQL.ORM.Expressions
 				var leftExpression = ConvertToQueryExpression(node.Left);
 				var rightExpression = ConvertToQueryExpression(node.Right);
 
-				switch(node.NodeType)
+				switch (node.NodeType)
 				{
 					case ExpressionType.AddChecked:
 					case ExpressionType.Add:
@@ -334,6 +333,56 @@ namespace Silk.Data.SQL.ORM.Expressions
 
 				return node;
 			}
+		}
+	}
+
+	public class ExpressionConverter<T> : ExpressionConverter
+		where T : class
+	{
+		public EntitySchema<T> EntitySchema { get; }
+
+		public ExpressionConverter(Schema.Schema schema)
+			: base(schema)
+		{
+			EntitySchema = schema.GetEntitySchema<T>();
+			if (EntitySchema == null)
+				throw new Exception("Entity isn't configured in schema.");
+		}
+
+		public ExpressionResult Convert<TResult>(Expression<Func<T, TResult>> expression)
+		{
+			Parameters = new Dictionary<ParameterExpression, EntitySchema>
+			{
+				{ expression.Parameters[0], EntitySchema }
+			};
+			return Convert((Expression)expression);
+		}
+	}
+
+	public class ExpressionConverter<TLeft, TRight> : ExpressionConverter
+		where TLeft : class
+		where TRight : class
+	{
+		public Relationship<TLeft, TRight> Relationship { get; }
+		public EntitySchema<TLeft> LeftEntitySchema { get; }
+		public EntitySchema<TRight> RightEntitySchema { get; }
+
+		public ExpressionConverter(Schema.Schema schema, string relationshipName)
+			: base(schema)
+		{
+			Relationship = schema.GetRelationship<TLeft, TRight>(relationshipName);
+			if (Relationship == null)
+				throw new Exception("Relationship isn't configured in schema.");
+		}
+
+		public ExpressionResult Convert<TResult>(Expression<Func<TLeft, TRight, TResult>> expression)
+		{
+			Parameters = new Dictionary<ParameterExpression, EntitySchema>
+			{
+				{ expression.Parameters[0], LeftEntitySchema },
+				{ expression.Parameters[1], RightEntitySchema }
+			};
+			return Convert((Expression)expression);
 		}
 	}
 }

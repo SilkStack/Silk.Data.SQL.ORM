@@ -6,9 +6,8 @@ namespace Silk.Data.SQL.ORM.Expressions
 {
 	public class AliasCallConverter : IMethodCallConverter
 	{
-		public ExpressionResult Convert<TEntity>(MethodInfo methodInfo, MethodCallExpression node,
-			ExpressionConverter<TEntity> expressionConverter)
-			where TEntity : class
+		public ExpressionResult Convert(MethodInfo methodInfo, MethodCallExpression node,
+			ExpressionConverter expressionConverter)
 		{
 			var expression = expressionConverter.Convert(node.Arguments[0]);
 			var alias = expressionConverter.Convert(node.Arguments[1]).QueryExpression as ValueExpression;

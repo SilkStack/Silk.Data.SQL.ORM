@@ -5,8 +5,7 @@ namespace Silk.Data.SQL.ORM.Expressions
 {
 	public interface IMethodCallConverter
 	{
-		ExpressionResult Convert<TEntity>(MethodInfo methodInfo, MethodCallExpression node,
-			ExpressionConverter<TEntity> expressionConverter)
-			where TEntity : class;
+		ExpressionResult Convert(MethodInfo methodInfo, MethodCallExpression node,
+			ExpressionConverter expressionConverter);
 	}
 }
