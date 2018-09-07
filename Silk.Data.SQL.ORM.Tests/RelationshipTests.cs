@@ -12,6 +12,8 @@ namespace Silk.Data.SQL.ORM.Tests
 	[TestClass]
 	public class RelationshipTests
 	{
+		private IEnumerable<object> inPoco2s;
+
 		[TestMethod]
 		public async Task CreateRelationshipTable()
 		{
@@ -98,6 +100,67 @@ namespace Silk.Data.SQL.ORM.Tests
 					foreach (var poco2 in inPoco2s)
 					{
 						Assert.IsTrue(foundPoco2s.Contains(poco2));
+					}
+				}
+			}
+		}
+
+		[TestMethod]
+		public async Task CreateRightToLeftRelationships()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<SimplePoco1>();
+			schemaBuilder.DefineEntity<SimplePoco2>();
+			schemaBuilder.DefineRelationship<SimplePoco1, SimplePoco2>("Relationship");
+			var schema = schemaBuilder.Build();
+			var relationship = schema.GetRelationship<SimplePoco1, SimplePoco2>("Relationship");
+			var tableName = relationship.JunctionTable.TableName;
+
+			using (var provider = TestHelper.CreateProvider())
+			{
+				var inPoco1s = new[]
+				{
+					new SimplePoco1 { Data = 1 },
+					new SimplePoco1 { Data = 2 }
+				};
+				var inPoco2 = new SimplePoco2 { Data = 3 };
+
+				await provider.ExecuteAsync(
+					schema.CreateTable<SimplePoco1>(),
+					schema.CreateTable<SimplePoco2>(),
+					relationship.CreateTable(),
+					schema.CreateInsert(inPoco1s),
+					schema.CreateInsert(inPoco2),
+					relationship.CreateInsert(inPoco2, inPoco1s)
+					);
+
+				using (var result = await provider.ExecuteReaderAsync(QueryExpression.Select(QueryExpression.All(), QueryExpression.Table(tableName))))
+				{
+					Assert.IsTrue(result.HasRows);
+					var outPairs = new List<(Guid, Guid)>();
+					foreach (var obj in inPoco1s)
+					{
+						Assert.IsTrue(await result.ReadAsync());
+						outPairs.Add(
+							(result.GetGuid(0), result.GetGuid(1))
+							);
+					}
+
+					Assert.IsFalse(await result.ReadAsync());
+					Assert.AreEqual(inPoco1s.Length, outPairs.Count);
+
+					var foundPoco1s = new List<SimplePoco1>();
+					foreach (var (poco1Id, poco2Id) in outPairs)
+					{
+						Assert.AreEqual(inPoco2.Id, poco2Id);
+
+						var poco1 = inPoco1s.First(q => q.Id == poco1Id);
+						foundPoco1s.Add(poco1);
+					}
+
+					foreach (var poco1 in inPoco1s)
+					{
+						Assert.IsTrue(foundPoco1s.Contains(poco1));
 					}
 				}
 			}

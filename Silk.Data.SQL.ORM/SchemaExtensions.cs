@@ -126,6 +126,38 @@ namespace Silk.Data.SQL.ORM
 			return relationship.CreateInsert(left, right);
 		}
 
+		public static Query CreateInsert<TLeft, TRight>(this Relationship<TLeft, TRight> relationship, TRight right, params TLeft[] left)
+			where TLeft : class
+			where TRight : class
+		{
+			if (right == null)
+				throw new ArgumentNullException(nameof(right));
+			if (left == null || left.Length == 0)
+				throw new ArgumentException("At least one related entity must be provided.", nameof(left));
+
+			var queryBuilder = new InsertBuilder<TLeft, TRight>(relationship);
+			foreach (var entity in left)
+			{
+				queryBuilder.NewRow();
+
+				queryBuilder.Set(relationship.LeftRelationship.GetFieldValuePair(entity));
+				queryBuilder.Set(relationship.RightRelationship.GetFieldValuePair(right));
+			}
+
+			return new QueryNoResult(queryBuilder.BuildQuery());
+		}
+
+		public static Query CreateInsert<TLeft, TRight>(this Schema.Schema schema, string relationshipName, TRight right, params TLeft[] left)
+			where TLeft : class
+			where TRight : class
+		{
+			var relationship = schema.GetRelationship<TLeft, TRight>(relationshipName);
+			if (relationship == null)
+				throw new Exception("Relationship isn't configured in schema.");
+
+			return relationship.CreateInsert(right, left);
+		}
+
 		public static Query CreateInsert<T>(this EntitySchema<T> schema, params T[] entities)
 			where T : class
 		{
