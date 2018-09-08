@@ -13,6 +13,7 @@ namespace Silk.Data.SQL.ORM.Expressions
 		public Schema.Schema Schema { get; }
 
 		protected Dictionary<ParameterExpression, EntitySchema> Parameters { get; set; }
+		protected Relationship Relationship { get; set; }
 
 		public ExpressionConverter(Schema.Schema schema)
 		{
@@ -21,7 +22,7 @@ namespace Silk.Data.SQL.ORM.Expressions
 
 		public ExpressionResult Convert(Expression expression)
 		{
-			var visitor = new Visitor(Schema, this, Parameters);
+			var visitor = new Visitor(Schema, this, Parameters, Relationship);
 			var result = visitor.ConvertToQueryExpression(expression);
 			return new ExpressionResult(result,
 				visitor.RequiredJoins.GroupBy(q => q).Select(q => q.First()).ToArray());
@@ -30,21 +31,23 @@ namespace Silk.Data.SQL.ORM.Expressions
 		private class Visitor : ExpressionVisitor
 		{
 			public Schema.Schema Schema { get; }
-			//public EntitySchema<T> EntitySchema { get; }
 
 			public List<EntityFieldJoin> RequiredJoins { get; }
 				= new List<EntityFieldJoin>();
 
 			private readonly ExpressionConverter _parent;
 			private Dictionary<ParameterExpression, EntitySchema> _expressionParameters;
+			private readonly Relationship _relationship;
 			private Stack<QueryExpression> _queryExpressionStack = new Stack<QueryExpression>();
 
 			public Visitor(Schema.Schema schema, ExpressionConverter parent,
-				Dictionary<ParameterExpression, EntitySchema> expressionParameters)
+				Dictionary<ParameterExpression, EntitySchema> expressionParameters,
+				Relationship relationship)
 			{
 				Schema = schema;
 				_parent = parent;
 				_expressionParameters = expressionParameters;
+				_relationship = relationship;
 			}
 
 			public QueryExpression ConvertToQueryExpression(Expression node)
@@ -96,13 +99,6 @@ namespace Silk.Data.SQL.ORM.Expressions
 						QueryExpression.Table(schema.EntityTable.TableName)
 						);
 				}
-				//var lambdaParameter = _expressionParameters.FirstOrDefault(q => ReferenceEquals(q, node));
-				//if (lambdaParameter != null)
-				//{
-				//	SetConversionResult(
-				//		QueryExpression.Table(EntitySchema.EntityTable.TableName)
-				//		);
-				//}
 				return node;
 			}
 
@@ -119,6 +115,36 @@ namespace Silk.Data.SQL.ORM.Expressions
 					SetConversionResult(result.QueryExpression);
 				}
 				return node;
+			}
+
+			private (ForeignKey, string) ResolveForeignKey(Column column, List<EntityFieldJoin> joinChain = null)
+			{
+				if (_relationship == null && joinChain == null)
+					return (null, null);
+
+				if (joinChain != null && joinChain.Count > 0)
+				{
+					var testJoin = joinChain.Last();
+					var fk = testJoin.EntityField.ForeignKeys.FirstOrDefault(q => q.ForeignColumn == column);
+					if (fk != null)
+					{
+						return (fk, testJoin.SourceName);
+					}
+				}
+
+				if (_relationship != null)
+				{
+					var fk = _relationship.LeftRelationship.ForeignKeys
+						.FirstOrDefault(q => q.ForeignColumn == column);
+					if (fk != null)
+						return (fk, _relationship.JunctionTable.TableName);
+
+					fk = _relationship.RightRelationship.ForeignKeys
+						.FirstOrDefault(q => q.ForeignColumn == column);
+					return (fk, _relationship.JunctionTable.TableName);
+				}
+
+				return (null, null);
 			}
 
 			protected override Expression VisitMember(MemberExpression node)
@@ -138,9 +164,19 @@ namespace Silk.Data.SQL.ORM.Expressions
 						.FirstOrDefault(q => q.ModelPath.SequenceEqual(expressionPath.Skip(1))) as IEntityField;
 					if (entityField != null && SqlTypeHelper.IsSqlPrimitiveType(entityField.DataType))
 					{
-						SetConversionResult(
-							QueryExpression.Column(entityField.Columns[0].ColumnName, sourceExpression)
-							);
+						var (foreignKey, foreignKeyTable) = ResolveForeignKey(entityField.Columns[0]);
+						if (foreignKey != null)
+						{
+							SetConversionResult(
+								QueryExpression.Column(foreignKey.LocalColumn.ColumnName, QueryExpression.Table(foreignKeyTable))
+								);
+						}
+						else
+						{
+							SetConversionResult(
+								QueryExpression.Column(entityField.Columns[0].ColumnName, sourceExpression)
+								);
+						}
 						return node;
 					}
 
@@ -169,13 +205,26 @@ namespace Silk.Data.SQL.ORM.Expressions
 
 						if (entityField != null && SqlTypeHelper.IsSqlPrimitiveType(entityField.DataType))
 						{
-							sourceExpression = new AliasIdentifierExpression(
-								joinChain.Last().TableAlias
-								);
-							SetConversionResult(
-								QueryExpression.Column(entityField.Columns[0].ColumnName, sourceExpression)
-								);
-							RequiredJoins.AddRange(joinChain);
+							var (foreignKey, foreignKeyTable) = ResolveForeignKey(entityField.Columns[0],
+								joinChain);
+
+							if (foreignKey != null)
+							{
+								SetConversionResult(
+									QueryExpression.Column(foreignKey.LocalColumn.ColumnName, new AliasIdentifierExpression(foreignKeyTable))
+									);
+								RequiredJoins.AddRange(joinChain.Take(joinChain.Count - 1));
+							}
+							else
+							{
+								sourceExpression = new AliasIdentifierExpression(
+									joinChain.Last().TableAlias
+									);
+								SetConversionResult(
+									QueryExpression.Column(entityField.Columns[0].ColumnName, sourceExpression)
+									);
+								RequiredJoins.AddRange(joinChain);
+							}
 							return node;
 						}
 					}
@@ -363,7 +412,6 @@ namespace Silk.Data.SQL.ORM.Expressions
 		where TLeft : class
 		where TRight : class
 	{
-		public Relationship<TLeft, TRight> Relationship { get; }
 		public EntitySchema<TLeft> LeftEntitySchema { get; }
 		public EntitySchema<TRight> RightEntitySchema { get; }
 
@@ -373,6 +421,9 @@ namespace Silk.Data.SQL.ORM.Expressions
 			Relationship = schema.GetRelationship<TLeft, TRight>(relationshipName);
 			if (Relationship == null)
 				throw new Exception("Relationship isn't configured in schema.");
+
+			LeftEntitySchema = schema.GetEntitySchema<TLeft>();
+			RightEntitySchema = schema.GetEntitySchema<TRight>();
 		}
 
 		public ExpressionResult Convert<TResult>(Expression<Func<TLeft, TRight, TResult>> expression)

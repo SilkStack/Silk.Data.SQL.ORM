@@ -360,6 +360,42 @@ namespace Silk.Data.SQL.ORM.Tests
 			Assert.AreEqual(ComparisonOperator.Like, checkExpression.Operator);
 		}
 
+		[TestMethod]
+		public void ConvertRelationshipKeys()
+		{
+			var expressionConverter = CreateRelationshipConverter<int, int>();
+			var conditionOne = expressionConverter.Convert((one, two) => one.Id);
+			var conditionTwo = expressionConverter.Convert((one, two) => two.Id);
+
+			var checkExpressionOne = conditionOne.QueryExpression as ColumnExpression;
+			var checkExpressionTwo = conditionTwo.QueryExpression as ColumnExpression;
+			Assert.IsNotNull(checkExpressionOne);
+			Assert.IsNotNull(checkExpressionTwo);
+			Assert.AreEqual(0, conditionOne.RequiredJoins.Length);
+			Assert.AreEqual(0, conditionTwo.RequiredJoins.Length);
+			Assert.AreEqual("FK_LeftTable_Id", checkExpressionOne.ColumnName);
+			Assert.AreEqual("FK_RightTable_Id", checkExpressionTwo.ColumnName);
+		}
+
+		[TestMethod]
+		public void ConvertManyToOneRelationshipKey()
+		{
+			var expressionConverter = CreateParentConverter<int, int>(true);
+			var condition = expressionConverter.Convert(q => q.Child1.Id);
+
+			var checkExpression = condition.QueryExpression as ColumnExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.AreEqual("FK_Child1_Id", checkExpression.ColumnName);
+			Assert.AreEqual(0, condition.RequiredJoins.Length);
+
+			condition = expressionConverter.Convert(q => q.Child2.Id);
+
+			checkExpression = condition.QueryExpression as ColumnExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.AreEqual("FK_Child2_Id", checkExpression.ColumnName);
+			Assert.AreEqual(0, condition.RequiredJoins.Length);
+		}
+
 		private ExpressionConverter<TestTuple<T1,T2>> CreateConverter<T1, T2>()
 		{
 			var schemaBuilder = new SchemaBuilder();
@@ -373,12 +409,29 @@ namespace Silk.Data.SQL.ORM.Tests
 			var schemaBuilder = new SchemaBuilder();
 			if (defineChildEntity)
 				schemaBuilder.DefineEntity<TestTuple<T1, T2>>().TableName = "TestTable";
-			schemaBuilder.DefineEntity<TupleParent<T1, T2>>();
+			schemaBuilder.DefineEntity<TupleParent<T1, T2>>().TableName = "ParentTable";
 			var schema = schemaBuilder.Build();
 			return new ExpressionConverter<TupleParent<T1, T2>>(schema);
 		}
 
+		private ExpressionConverter<TestTuple<T1, T2>, TestTupleTwo<T1, T2>> CreateRelationshipConverter<T1, T2>()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<TestTuple<T1, T2>>().TableName = "LeftTable";
+			schemaBuilder.DefineEntity<TestTupleTwo<T1, T2>>().TableName = "RightTable";
+			schemaBuilder.DefineRelationship<TestTuple<T1, T2>, TestTupleTwo<T1, T2>>("Relationship");
+			var schema = schemaBuilder.Build();
+			return new ExpressionConverter<TestTuple<T1, T2>, TestTupleTwo<T1, T2>>(schema, "Relationship");
+		}
+
 		private class TestTuple<T1, T2>
+		{
+			public Guid Id { get; private set; }
+			public T1 A { get; set; }
+			public T2 B { get; set; }
+		}
+
+		private class TestTupleTwo<T1, T2>
 		{
 			public Guid Id { get; private set; }
 			public T1 A { get; set; }
