@@ -11,10 +11,13 @@ namespace Silk.Data.SQL.ORM.Schema
 		public Table JunctionTable { get; }
 		public IEntityField LeftRelationship { get; }
 		public IEntityField RightRelationship { get; }
+		public EntityFieldJoin LeftJoin { get; }
+		public EntityFieldJoin RightJoin { get; }
 
 		public Relationship(Type left, Type right, string name,
 			Table table, IEntityField leftRelationshipField,
-			IEntityField rightRelationshipField)
+			IEntityField rightRelationshipField,
+			EntityFieldJoin leftJoin, EntityFieldJoin rightJoin)
 		{
 			LeftType = left;
 			RightType = right;
@@ -22,6 +25,8 @@ namespace Silk.Data.SQL.ORM.Schema
 			JunctionTable = table;
 			LeftRelationship = leftRelationshipField;
 			RightRelationship = rightRelationshipField;
+			LeftJoin = leftJoin;
+			RightJoin = rightJoin;
 		}
 	}
 
@@ -34,8 +39,10 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public Relationship(string name, Table table,
 			IEntityFieldOfEntity<TLeft> leftRelationshipField,
-			IEntityFieldOfEntity<TRight> rightRelationshipField)
-			: base(typeof(TLeft), typeof(TRight), name, table, leftRelationshipField, rightRelationshipField)
+			IEntityFieldOfEntity<TRight> rightRelationshipField,
+			EntityFieldJoin leftJoin, EntityFieldJoin rightJoin)
+			: base(typeof(TLeft), typeof(TRight), name, table, leftRelationshipField, rightRelationshipField,
+				  leftJoin, rightJoin)
 		{
 			LeftRelationship = leftRelationshipField;
 			RightRelationship = rightRelationshipField;

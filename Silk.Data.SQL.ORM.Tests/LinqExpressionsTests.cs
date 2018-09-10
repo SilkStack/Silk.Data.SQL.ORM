@@ -361,6 +361,25 @@ namespace Silk.Data.SQL.ORM.Tests
 		}
 
 		[TestMethod]
+		public void ConvertManyToOneRelationshipKey()
+		{
+			var expressionConverter = CreateParentConverter<int, int>(true);
+			var condition = expressionConverter.Convert(q => q.Child1.Id);
+
+			var checkExpression = condition.QueryExpression as ColumnExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.AreEqual("FK_Child1_Id", checkExpression.ColumnName);
+			Assert.AreEqual(0, condition.RequiredJoins.Length);
+
+			condition = expressionConverter.Convert(q => q.Child2.Id);
+
+			checkExpression = condition.QueryExpression as ColumnExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.AreEqual("FK_Child2_Id", checkExpression.ColumnName);
+			Assert.AreEqual(0, condition.RequiredJoins.Length);
+		}
+
+		[TestMethod]
 		public void ConvertRelationshipKeys()
 		{
 			var expressionConverter = CreateRelationshipConverter<int, int>();
@@ -378,22 +397,24 @@ namespace Silk.Data.SQL.ORM.Tests
 		}
 
 		[TestMethod]
-		public void ConvertManyToOneRelationshipKey()
+		public void ConvertRelatedColumn()
 		{
-			var expressionConverter = CreateParentConverter<int, int>(true);
-			var condition = expressionConverter.Convert(q => q.Child1.Id);
+			var expressionConverter = CreateRelationshipConverter<int, int>();
+			var condition = expressionConverter.Convert((one, two) => one.A);
 
 			var checkExpression = condition.QueryExpression as ColumnExpression;
 			Assert.IsNotNull(checkExpression);
-			Assert.AreEqual("FK_Child1_Id", checkExpression.ColumnName);
-			Assert.AreEqual(0, condition.RequiredJoins.Length);
+			Assert.AreEqual("A", checkExpression.ColumnName);
+			Assert.AreEqual(1, condition.RequiredJoins.Length);
+			Assert.AreEqual("Relationship_LeftTable", condition.RequiredJoins[0].TableAlias);
 
-			condition = expressionConverter.Convert(q => q.Child2.Id);
+			condition = expressionConverter.Convert((one, two) => two.A);
 
 			checkExpression = condition.QueryExpression as ColumnExpression;
 			Assert.IsNotNull(checkExpression);
-			Assert.AreEqual("FK_Child2_Id", checkExpression.ColumnName);
-			Assert.AreEqual(0, condition.RequiredJoins.Length);
+			Assert.AreEqual("A", checkExpression.ColumnName);
+			Assert.AreEqual(1, condition.RequiredJoins.Length);
+			Assert.AreEqual("Relationship_RightTable", condition.RequiredJoins[0].TableAlias);
 		}
 
 		private ExpressionConverter<TestTuple<T1,T2>> CreateConverter<T1, T2>()
@@ -440,6 +461,7 @@ namespace Silk.Data.SQL.ORM.Tests
 
 		private class TupleParent<T1, T2>
 		{
+			public Guid Id { get; private set; }
 			public TestTuple<T1, T2> Child1 { get; set; }
 			public TestTuple<T1, T2> Child2 { get; set; }
 		}

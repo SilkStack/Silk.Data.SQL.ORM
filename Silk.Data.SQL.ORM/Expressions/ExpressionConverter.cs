@@ -176,6 +176,13 @@ namespace Silk.Data.SQL.ORM.Expressions
 							SetConversionResult(
 								QueryExpression.Column(entityField.Columns[0].ColumnName, sourceExpression)
 								);
+							if (_relationship != null)
+							{
+								RequiredJoins.Add(
+									entitySchema.EntityType == _relationship.LeftType ?
+										_relationship.LeftJoin : _relationship.RightJoin
+									);
+							}
 						}
 						return node;
 					}
