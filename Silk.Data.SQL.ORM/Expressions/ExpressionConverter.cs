@@ -192,6 +192,15 @@ namespace Silk.Data.SQL.ORM.Expressions
 						//  entity field not found on model, search for the entity field through a JOIN tree
 						var currentSchema = entitySchema;
 						var joinChain = new List<EntityFieldJoin>();
+
+						if (_relationship != null)
+						{
+							joinChain.Add(
+								entitySchema.EntityType == _relationship.LeftType ?
+									_relationship.LeftJoin : _relationship.RightJoin
+								);
+						}
+
 						foreach (var pathSegment in expressionPath.Skip(1))
 						{
 							entityField = currentSchema.EntityFields.FirstOrDefault(q => q.FieldName == pathSegment);
@@ -205,6 +214,16 @@ namespace Silk.Data.SQL.ORM.Expressions
 									);
 								if (join == null)
 									throw new Exception("Couldn't resolve JOIN for related field.");
+
+								if (_relationship != null && joinChain.Count == 1)
+								{
+									//  make a modified join that will work with the many-to-many join
+									join = new EntityFieldJoin(
+										join.TableName, join.TableAlias, joinChain[0].TableAlias, join.LeftColumns,
+										join.RightColumns, join.EntityField, join.DependencyJoins
+										);
+								}
+
 								joinChain.Add(join);
 								currentSchema = Schema.GetEntitySchema(entityField.DataType);
 							}

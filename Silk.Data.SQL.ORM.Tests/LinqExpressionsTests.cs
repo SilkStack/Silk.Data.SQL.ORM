@@ -417,6 +417,27 @@ namespace Silk.Data.SQL.ORM.Tests
 			Assert.AreEqual("Relationship_RightTable", condition.RequiredJoins[0].TableAlias);
 		}
 
+		[TestMethod]
+		public void ConvertSingleJoinThroughRelationship()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<TestTupleTwo<int, int>>().TableName = "LeftTable";
+			schemaBuilder.DefineEntity<TupleParent<int, int>>().TableName = "RightTable";
+			schemaBuilder.DefineEntity<TestTuple<int, int>>().TableName = "ChildTable";
+			schemaBuilder.DefineRelationship<TestTupleTwo<int, int>, TupleParent<int, int>>("Relationship");
+			var schema = schemaBuilder.Build();
+			var expressionConverter = new ExpressionConverter<TestTupleTwo<int, int>, TupleParent<int, int>>(schema, "Relationship");
+
+			var condition = expressionConverter.Convert((tupleTwo, tupleParent) => tupleParent.Child1.A);
+
+			var checkExpression = condition.QueryExpression as ColumnExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.AreEqual("A", checkExpression.ColumnName);
+			Assert.AreEqual(2, condition.RequiredJoins.Length);
+			Assert.AreEqual("Relationship_RightTable", condition.RequiredJoins[0].TableAlias);
+			Assert.AreEqual("__joinAlias_Child1", condition.RequiredJoins[1].TableAlias);
+		}
+
 		private ExpressionConverter<TestTuple<T1,T2>> CreateConverter<T1, T2>()
 		{
 			var schemaBuilder = new SchemaBuilder();
