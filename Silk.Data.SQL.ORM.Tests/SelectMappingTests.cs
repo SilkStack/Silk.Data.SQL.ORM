@@ -326,6 +326,59 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 		}
 
+		[TestMethod]
+		public async Task SelectRelatedRelationship()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<FlatEntity>();
+			schemaBuilder.DefineEntity<FlatEntityTwo>();
+			schemaBuilder.DefineEntity<RelationshipEntityTwo>();
+			schemaBuilder.DefineRelationship<FlatEntityTwo, RelationshipEntityTwo>("Relationship");
+			var schema = schemaBuilder.Build();
+
+			var relationship = schema.GetRelationship<FlatEntityTwo, RelationshipEntityTwo>("Relationship");
+
+			using (var provider = TestHelper.CreateProvider())
+			{
+				var inObjTwos = new[]
+				{
+					new FlatEntityTwo { Data = 1 }
+				};
+				var inObjs = new[]
+				{
+					new FlatEntity { Data = 2 }
+				};
+				var inRelationships = new[]
+				{
+					new RelationshipEntityTwo { Data = 3, Child = inObjs[0] }
+				};
+
+				await provider.ExecuteAsync(
+					schema.CreateTable<FlatEntity>(),
+					schema.CreateTable<FlatEntityTwo>(),
+					schema.CreateTable<RelationshipEntityTwo>(),
+					relationship.CreateTable(),
+					schema.CreateInsert(inObjs),
+					schema.CreateInsert(inObjTwos),
+					schema.CreateInsert(inRelationships),
+					relationship.CreateInsert(inObjTwos[0], inRelationships[0])
+					);
+
+				var selectQuery = relationship.CreateSelect();
+				await provider.ExecuteAsync(selectQuery);
+
+				var result = selectQuery.Result;
+				Assert.AreEqual(1, result.Count);
+				var relatedData = result.First();
+				Assert.AreEqual(inObjTwos[0].Id, relatedData.Item1.Id);
+				Assert.AreEqual(inObjTwos[0].Data, relatedData.Item1.Data);
+				Assert.AreEqual(inRelationships[0].Id, relatedData.Item2.Id);
+				Assert.AreEqual(inRelationships[0].Data, relatedData.Item2.Data);
+				Assert.AreEqual(inRelationships[0].Child.Id, relatedData.Item2.Child.Id);
+				Assert.AreEqual(inRelationships[0].Child.Data, relatedData.Item2.Child.Data);
+			}
+		}
+
 		private Task Insert<T>(Schema.Schema schema, IDataProvider provider, T obj)
 			where T : class
 		{
@@ -353,6 +406,13 @@ namespace Silk.Data.SQL.ORM.Tests
 
 		private class RelationshipEntity
 		{
+			public FlatEntity Child { get; set; }
+			public int Data { get; set; }
+		}
+
+		private class RelationshipEntityTwo
+		{
+			public Guid Id { get; private set; }
 			public FlatEntity Child { get; set; }
 			public int Data { get; set; }
 		}

@@ -55,6 +55,12 @@ namespace Silk.Data.SQL.ORM.Schema
 				partialEntities.GetEntityPrimaryKeys<TRight>().SelectMany(q => q.Columns).Select(q => q.ColumnName).ToArray(),
 				rightRelationship, new EntityFieldJoin[0]);
 
+			if (leftJoin.LeftColumns.Length == 0 || leftJoin.RightColumns.Length == 0 ||
+				rightJoin.LeftColumns.Length == 0 || rightJoin.RightColumns.Length == 0)
+			{
+				throw new Exception("Relationship entities must have primary keys declared.");
+			}
+
 			return new Relationship<TLeft, TRight>(Name, table, leftRelationship, rightRelationship, leftJoin, rightJoin);
 		}
 	}

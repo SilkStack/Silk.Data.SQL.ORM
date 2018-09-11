@@ -4,6 +4,8 @@ namespace Silk.Data.SQL.ORM.Schema
 {
 	public interface ITableJoin
 	{
+		string TableAlias { get; }
+
 		JoinExpression GetJoinExpression();
 	}
 

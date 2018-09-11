@@ -505,7 +505,31 @@ namespace Silk.Data.SQL.ORM.Queries
 			}
 
 			_projectionExpressions.Add(expression);
-			AddJoins(projectionField.Join);
+
+			if (projectionField.Join == null)
+				return;
+
+			//  todo: don't use magic strings here
+			if (projectionField.Join.DependencyJoins.Length == 0 &&
+				aliasPrefix == "__Left_")
+			{
+				AddJoins(new EntityFieldJoin(
+					projectionField.Join.TableName, projectionField.Join.TableAlias, Relationship.LeftJoin.TableAlias,
+					projectionField.Join.LeftColumns, projectionField.Join.RightColumns, projectionField.Join.EntityField, projectionField.Join.DependencyJoins
+					));
+			}
+			else if (projectionField.Join.DependencyJoins.Length == 0 &&
+				aliasPrefix == "__Right_")
+			{
+				AddJoins(new EntityFieldJoin(
+					projectionField.Join.TableName, projectionField.Join.TableAlias, Relationship.RightJoin.TableAlias,
+					projectionField.Join.LeftColumns, projectionField.Join.RightColumns, projectionField.Join.EntityField, projectionField.Join.DependencyJoins
+					));
+			}
+			else
+			{
+				AddJoins(projectionField.Join);
+			}
 		}
 
 		private void AddJoins(EntityFieldJoin[] joins)
@@ -520,7 +544,8 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		private void AddJoins(EntityFieldJoin join)
 		{
-			if (join == null || _tableJoins.Contains(join))
+			if (join == null || _tableJoins.Contains(join) ||
+				_tableJoins.Any(q => q.TableAlias == join.TableAlias))
 				return;
 			_tableJoins.Add(join);
 			AddJoins(join.DependencyJoins);
