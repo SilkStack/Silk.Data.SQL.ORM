@@ -65,9 +65,10 @@ namespace Silk.Data.SQL.ORM.Queries
 		public ObjectResultMapper<TView> Project<TView>()
 			where TView : class
 		{
-			var projectionSchema = EntitySchema;
+			var projectionSchema = EntitySchema as EntitySchema;
 			if (typeof(TView) != typeof(T))
 			{
+				projectionSchema = EntitySchema.GetProjection<TView>();
 			}
 
 			foreach (var projectionField in projectionSchema.ProjectionFields)

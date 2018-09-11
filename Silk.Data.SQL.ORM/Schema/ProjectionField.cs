@@ -1,4 +1,6 @@
-﻿using Silk.Data.SQL.Expressions;
+﻿using Silk.Data.Modelling;
+using Silk.Data.Modelling.Mapping.Binding;
+using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Schema.Binding;
 using CoreBinding = Silk.Data.Modelling.Mapping.Binding;
 
@@ -85,6 +87,65 @@ namespace Silk.Data.SQL.ORM.Schema
 				SqlTypeHelper.GetConstructor(typeof(TEntity)),
 				new[] { $"{aliasPrefix}{AliasName}" },
 				ModelPath);
+		}
+	}
+
+	public class MappedProjectionField : ProjectionField
+	{
+		public override bool IsNullCheck { get; }
+
+		private readonly ProjectionField _sourceProjection;
+		private readonly MappingBinding _mappingBinding;
+
+		public MappedProjectionField(string sourceName, string fieldName, string aliasName, string[] modelPath,
+			EntityFieldJoin join, bool isNullCheck, ProjectionField sourceProjection, MappingBinding mappingBinding)
+			: base(sourceName, fieldName, aliasName, modelPath, join)
+		{
+			IsNullCheck = isNullCheck;
+			_sourceProjection = sourceProjection;
+			_mappingBinding = mappingBinding;
+		}
+
+		public override CoreBinding.Binding GetMappingBinding(string aliasPrefix)
+		{
+			var sourceBinding = _sourceProjection.GetMappingBinding(aliasPrefix);
+			return new MappedBinding(sourceBinding, _mappingBinding);
+		}
+
+		private class MappedBinding : CoreBinding.Binding
+		{
+			private readonly CoreBinding.Binding _sourceBinding;
+			private readonly MappingBinding _mappingBinding;
+
+			public MappedBinding(CoreBinding.Binding sourceBinding, MappingBinding mappingBinding)
+			{
+				_sourceBinding = sourceBinding;
+				_mappingBinding = mappingBinding;
+			}
+
+			public override void PerformBinding(IModelReadWriter from, IModelReadWriter to)
+			{
+				var mappedReadWriter = new MappedReadWriter();
+				_sourceBinding.PerformBinding(from, mappedReadWriter);
+				_mappingBinding.PerformBinding(mappedReadWriter, to);
+			}
+		}
+
+		private class MappedReadWriter : IModelReadWriter
+		{
+			private object _value;
+
+			public IModel Model => throw new System.NotImplementedException();
+
+			public T ReadField<T>(string[] path, int offset)
+			{
+				return (T)_value;
+			}
+
+			public void WriteField<T>(string[] path, int offset, T value)
+			{
+				_value = value;
+			}
 		}
 	}
 }

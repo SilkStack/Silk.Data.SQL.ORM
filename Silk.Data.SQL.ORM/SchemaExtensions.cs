@@ -155,6 +155,27 @@ namespace Silk.Data.SQL.ORM
 			return entitySchema.CreateSelect(queryCallback);
 		}
 
+		public static QueryWithResult<TView> CreateSelect<T, TView>(this EntitySchema<T> schema, Action<SelectBuilder<T>> queryCallback = null)
+			where T : class
+			where TView : class
+		{
+			var queryBuilder = new SelectBuilder<T>(schema);
+			var mapping = queryBuilder.Project<TView>();
+			queryCallback?.Invoke(queryBuilder);
+			return new QueryWithMappedResult<TView>(queryBuilder.BuildQuery(), mapping);
+		}
+
+		public static QueryWithResult<TView> CreateSelect<T, TView>(this Schema.Schema schema, Action<SelectBuilder<T>> queryCallback = null)
+			where T : class
+			where TView : class
+		{
+			var entitySchema = schema.GetEntitySchema<T>();
+			if (entitySchema == null)
+				throw new Exception("Entity isn't configured in schema.");
+
+			return entitySchema.CreateSelect<T, TView>(queryCallback);
+		}
+
 		public static Query CreateInsert<TLeft, TRight>(this Relationship<TLeft, TRight> relationship, TLeft left, params TRight[] right)
 			where TLeft : class
 			where TRight : class
