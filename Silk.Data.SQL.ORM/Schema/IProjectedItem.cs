@@ -1,4 +1,6 @@
-﻿namespace Silk.Data.SQL.ORM.Schema
+﻿using Silk.Data.SQL.Expressions;
+
+namespace Silk.Data.SQL.ORM.Schema
 {
 	/// <summary>
 	/// An item projected in a SELECT query.
@@ -17,5 +19,7 @@
 		/// Gets the alias the field should be projected as.
 		/// </summary>
 		string AliasName { get; }
+
+		AliasExpression GetExpression(string aliasPrefix);
 	}
 }

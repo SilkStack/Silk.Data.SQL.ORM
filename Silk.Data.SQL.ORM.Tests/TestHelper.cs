@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.Providers;
 using Silk.Data.SQL.Queries;
@@ -18,6 +19,7 @@ namespace Silk.Data.SQL.ORM.Tests
 		private class DataProviderDebuggingProxy : IDataProvider
 		{
 			private readonly DataProviderCommonBase _baseProvider;
+			private readonly List<string> _queryLog = new List<string>();
 
 			public DataProviderDebuggingProxy(DataProviderCommonBase baseProvider)
 			{
@@ -37,12 +39,18 @@ namespace Silk.Data.SQL.ORM.Tests
 			public Task<int> ExecuteNonQueryAsync(QueryExpression queryExpression)
 			{
 				var query = _baseProvider.ConvertExpressionToQuery(queryExpression);
+				_queryLog.Add(query.SqlText);
 				return _baseProvider.ExecuteNonQueryAsync(queryExpression);
 			}
 
 			public QueryResult ExecuteReader(QueryExpression queryExpression) => _baseProvider.ExecuteReader(queryExpression);
 
-			public Task<QueryResult> ExecuteReaderAsync(QueryExpression queryExpression) => _baseProvider.ExecuteReaderAsync(queryExpression);
+			public Task<QueryResult> ExecuteReaderAsync(QueryExpression queryExpression)
+			{
+				var query = _baseProvider.ConvertExpressionToQuery(queryExpression);
+				_queryLog.Add(query.SqlText);
+				return _baseProvider.ExecuteReaderAsync(queryExpression);
+			}
 		}
 	}
 }

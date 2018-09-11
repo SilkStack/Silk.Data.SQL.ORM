@@ -436,6 +436,15 @@ namespace Silk.Data.SQL.ORM.Tests
 			Assert.AreEqual(2, condition.RequiredJoins.Length);
 			Assert.AreEqual("Relationship_RightTable", condition.RequiredJoins[0].TableAlias);
 			Assert.AreEqual("__joinAlias_Child1", condition.RequiredJoins[1].TableAlias);
+
+			condition = expressionConverter.Convert((tupleTwo, tupleParent) => tupleParent.Child2.B);
+
+			checkExpression = condition.QueryExpression as ColumnExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.AreEqual("B", checkExpression.ColumnName);
+			Assert.AreEqual(2, condition.RequiredJoins.Length);
+			Assert.AreEqual("Relationship_RightTable", condition.RequiredJoins[0].TableAlias);
+			Assert.AreEqual("__joinAlias_Child2", condition.RequiredJoins[1].TableAlias);
 		}
 
 		private ExpressionConverter<TestTuple<T1,T2>> CreateConverter<T1, T2>()

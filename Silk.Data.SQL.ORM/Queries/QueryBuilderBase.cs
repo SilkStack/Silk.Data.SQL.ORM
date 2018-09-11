@@ -48,10 +48,23 @@ namespace Silk.Data.SQL.ORM.Queries
 		where TLeft : class
 		where TRight : class
 	{
+		private ExpressionConverter<TLeft, TRight> _expressionConverter;
+		public ExpressionConverter<TLeft, TRight> ExpressionConverter
+		{
+			get
+			{
+				if (_expressionConverter == null)
+					_expressionConverter = new ExpressionConverter<TLeft, TRight>(Schema, Relationship.Name);
+				return _expressionConverter;
+			}
+		}
+
 		protected TableExpression Source { get; }
 
 		public Schema.Schema Schema { get; }
 		public Relationship<TLeft, TRight> Relationship { get; }
+		public EntitySchema<TLeft> LeftSchema { get; }
+		public EntitySchema<TRight> RightSchema { get; }
 
 		public QueryBuilderBase(Schema.Schema schema, string relationshipName)
 		{
@@ -61,6 +74,8 @@ namespace Silk.Data.SQL.ORM.Queries
 				throw new Exception("Relationship isn't configured in schema.");
 
 			Source = QueryExpression.Table(Relationship.JunctionTable.TableName);
+			LeftSchema = Schema.GetEntitySchema<TLeft>();
+			RightSchema = Schema.GetEntitySchema<TRight>();
 		}
 
 		public QueryBuilderBase(Relationship<TLeft, TRight> relationship)
@@ -68,6 +83,8 @@ namespace Silk.Data.SQL.ORM.Queries
 			Relationship = relationship;
 			Schema = relationship.Schema;
 			Source = QueryExpression.Table(relationship.JunctionTable.TableName);
+			LeftSchema = Schema.GetEntitySchema<TLeft>();
+			RightSchema = Schema.GetEntitySchema<TRight>();
 		}
 
 		public abstract QueryExpression BuildQuery();

@@ -104,13 +104,13 @@ namespace Silk.Data.SQL.ORM.Queries
 			}
 		}
 
-		//public void AndWhere(Expression<Func<T, bool>> expression)
-		//{
-		//	var condition = ExpressionConverter.Convert(expression);
-		//	if (condition.RequiredJoins != null && condition.RequiredJoins.Length > 0)
-		//		throw new Exception("Condition requires a JOIN which DELETE doesn't support, consider using a sub-query instead.");
-		//	AndWhere(condition.QueryExpression);
-		//}
+		public void AndWhere(Expression<Func<TLeft, TRight, bool>> expression)
+		{
+			var condition = ExpressionConverter.Convert(expression);
+			if (condition.RequiredJoins != null && condition.RequiredJoins.Length > 0)
+				throw new Exception("Condition requires a JOIN which DELETE doesn't support, consider using a sub-query instead.");
+			AndWhere(condition.QueryExpression);
+		}
 
 		public void OrWhere(FieldAssignment field, ComparisonOperator comparisonOperator)
 		{
@@ -124,13 +124,13 @@ namespace Silk.Data.SQL.ORM.Queries
 			}
 		}
 
-		//public void OrWhere(Expression<Func<T, bool>> expression)
-		//{
-		//	var condition = ExpressionConverter.Convert(expression);
-		//	if (condition.RequiredJoins != null && condition.RequiredJoins.Length > 0)
-		//		throw new Exception("Condition requires a JOIN which DELETE doesn't support, consider using a sub-query instead.");
-		//	OrWhere(condition.QueryExpression);
-		//}
+		public void OrWhere(Expression<Func<TLeft, TRight, bool>> expression)
+		{
+			var condition = ExpressionConverter.Convert(expression);
+			if (condition.RequiredJoins != null && condition.RequiredJoins.Length > 0)
+				throw new Exception("Condition requires a JOIN which DELETE doesn't support, consider using a sub-query instead.");
+			OrWhere(condition.QueryExpression);
+		}
 
 		public override QueryExpression BuildQuery()
 		{

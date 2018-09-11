@@ -3,6 +3,7 @@ using Silk.Data.SQL.ORM.Queries;
 using Silk.Data.SQL.ORM.Schema;
 using Silk.Data.SQL.Providers;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using static Silk.Data.SQL.ORM.DatabaseFunctions;
 
@@ -273,6 +274,58 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 		}
 
+		[TestMethod]
+		public async Task SelectRelationship()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<FlatEntity>();
+			schemaBuilder.DefineEntity<FlatEntityTwo>();
+			schemaBuilder.DefineRelationship<FlatEntity, FlatEntityTwo>("Relationship");
+			var schema = schemaBuilder.Build();
+
+			var relationship = schema.GetRelationship<FlatEntity, FlatEntityTwo>("Relationship");
+
+			var inFlatOnes = new[]
+			{
+				new FlatEntity { Data = 1 },
+				new FlatEntity { Data = 2 },
+				new FlatEntity { Data = 3 }
+			};
+			var inFlatTwos = new[]
+			{
+				new FlatEntityTwo { Data = 4 },
+				new FlatEntityTwo { Data = 5 },
+				new FlatEntityTwo { Data = 6 }
+			};
+
+			using (var provider = TestHelper.CreateProvider())
+			{
+				await provider.ExecuteAsync(
+					schema.CreateTable<FlatEntity>(),
+					schema.CreateTable<FlatEntityTwo>(),
+					relationship.CreateTable(),
+					schema.CreateInsert(inFlatOnes),
+					schema.CreateInsert(inFlatTwos),
+					relationship.CreateInsert(inFlatOnes[0], inFlatTwos[0]),
+					relationship.CreateInsert(inFlatOnes[1], inFlatTwos[0], inFlatTwos[1]),
+					relationship.CreateInsert(inFlatOnes[2], inFlatTwos[0], inFlatTwos[1], inFlatTwos[2])
+					);
+
+				var selectQuery = relationship.CreateSelect();
+				await provider.ExecuteAsync(selectQuery);
+
+				var resultSet = selectQuery.Result;
+
+				Assert.AreEqual(6, resultSet.Count);
+				Assert.IsTrue(resultSet.Any(q => q.Item1.Data == 1 && q.Item2.Data == 4));
+				Assert.IsTrue(resultSet.Any(q => q.Item1.Data == 2 && q.Item2.Data == 4));
+				Assert.IsTrue(resultSet.Any(q => q.Item1.Data == 2 && q.Item2.Data == 5));
+				Assert.IsTrue(resultSet.Any(q => q.Item1.Data == 3 && q.Item2.Data == 4));
+				Assert.IsTrue(resultSet.Any(q => q.Item1.Data == 3 && q.Item2.Data == 5));
+				Assert.IsTrue(resultSet.Any(q => q.Item1.Data == 3 && q.Item2.Data == 6));
+			}
+		}
+
 		private Task Insert<T>(Schema.Schema schema, IDataProvider provider, T obj)
 			where T : class
 		{
@@ -287,6 +340,12 @@ namespace Silk.Data.SQL.ORM.Tests
 		}
 
 		private class FlatEntity
+		{
+			public Guid Id { get; private set; }
+			public int Data { get; set; }
+		}
+
+		private class FlatEntityTwo
 		{
 			public Guid Id { get; private set; }
 			public int Data { get; set; }

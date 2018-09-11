@@ -116,4 +116,27 @@ namespace Silk.Data.SQL.ORM.Queries
 			Result = await _resultMapper.ReadAllAsync(queryResult);
 		}
 	}
+
+	public class QueryWithTupleResult<T1, T2> : QueryWithResult<(T1, T2)>
+		where T1 : class
+		where T2 : class
+	{
+		private readonly TupleResultMapper<T1, T2> _resultMapper;
+
+		public QueryWithTupleResult(QueryExpression queryExpression, TupleResultMapper<T1, T2> resultMapper)
+			: base(queryExpression)
+		{
+			_resultMapper = resultMapper;
+		}
+
+		public override void ProcessResult(QueryResult queryResult)
+		{
+			Result = _resultMapper.MapAll(queryResult);
+		}
+
+		public override async Task ProcessResultAsync(QueryResult queryResult)
+		{
+			Result = await _resultMapper.MapAllAsync(queryResult);
+		}
+	}
 }

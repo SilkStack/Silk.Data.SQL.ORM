@@ -1,4 +1,5 @@
-﻿using Silk.Data.SQL.ORM.Schema.Binding;
+﻿using Silk.Data.SQL.Expressions;
+using Silk.Data.SQL.ORM.Schema.Binding;
 using CoreBinding = Silk.Data.Modelling.Mapping.Binding;
 
 namespace Silk.Data.SQL.ORM.Schema
@@ -39,7 +40,12 @@ namespace Silk.Data.SQL.ORM.Schema
 			Join = join;
 		}
 
-		public abstract CoreBinding.Binding GetMappingBinding();
+		public abstract CoreBinding.Binding GetMappingBinding(string aliasPrefix);
+
+		public AliasExpression GetExpression(string aliasPrefix)
+		{
+			return QueryExpression.Alias(QueryExpression.Column(FieldName, new AliasIdentifierExpression(SourceName)), $"{aliasPrefix}{AliasName}");
+		}
 	}
 
 	public class ProjectionField<T> : ProjectionField
@@ -52,7 +58,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			IsNullCheck = !SqlTypeHelper.IsSqlPrimitiveType(typeof(T));
 		}
 
-		public override CoreBinding.Binding GetMappingBinding()
+		public override CoreBinding.Binding GetMappingBinding(string aliasPrefix)
 		{
 			if (IsNullCheck)
 				return new CreateInstanceWithNullCheck<T, bool>(
@@ -60,7 +66,7 @@ namespace Silk.Data.SQL.ORM.Schema
 					new[] { AliasName },
 					ModelPath);
 
-			return new CoreBinding.CopyBinding<T>(new[] { AliasName }, ModelPath);
+			return new CoreBinding.CopyBinding<T>(new[] { $"{aliasPrefix}{AliasName}" }, ModelPath);
 		}
 	}
 
@@ -73,11 +79,11 @@ namespace Silk.Data.SQL.ORM.Schema
 		{
 		}
 
-		public override CoreBinding.Binding GetMappingBinding()
+		public override CoreBinding.Binding GetMappingBinding(string aliasPrefix)
 		{
 			return new CreateInstanceWithNullCheck<TEntity, TKeyValue>(
 				SqlTypeHelper.GetConstructor(typeof(TEntity)),
-				new[] { AliasName },
+				new[] { $"{aliasPrefix}{AliasName}" },
 				ModelPath);
 		}
 	}
