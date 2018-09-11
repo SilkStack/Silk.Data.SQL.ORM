@@ -20,6 +20,46 @@ namespace Silk.Data.SQL.ORM
 				throw new Exception("Entity type must have a primary key to generate update statements.");
 		}
 
+		public static QueryWithResult<bool> CreateTableExists<TLeft, TRight>(this Relationship<TLeft, TRight> relationship)
+			where TLeft : class
+			where TRight : class
+		{
+			return new QueryWithScalarResult<bool>(
+				QueryExpression.TableExists(relationship.JunctionTable.TableName),
+				new ValueResultMapper<bool>(1, null)
+				);
+		}
+
+		public static QueryWithResult<bool> CreateTableExists<TLeft, TRight>(this Schema.Schema schema, string relationshipName)
+			where TLeft : class
+			where TRight : class
+		{
+			var relationship = schema.GetRelationship<TLeft, TRight>(relationshipName);
+			if (relationship == null)
+				throw new Exception("Relationship isn't configured in schema.");
+
+			return relationship.CreateTableExists();
+		}
+
+		public static QueryWithResult<bool> CreateTableExists<T>(this EntitySchema<T> schema)
+			where T : class
+		{
+			return new QueryWithScalarResult<bool>(
+				QueryExpression.TableExists(schema.EntityTable.TableName),
+				new ValueResultMapper<bool>(1, null)
+				);
+		}
+
+		public static QueryWithResult<bool> CreateTableExists<T>(this Schema.Schema schema)
+			where T : class
+		{
+			var entitySchema = schema.GetEntitySchema<T>();
+			if (entitySchema == null)
+				throw new Exception("Entity isn't configured in schema.");
+
+			return entitySchema.CreateTableExists();
+		}
+
 		public static Query CreateTable<TLeft, TRight>(this Relationship<TLeft, TRight> relationship)
 			where TLeft : class
 			where TRight : class

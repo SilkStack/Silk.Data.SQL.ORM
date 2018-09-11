@@ -37,7 +37,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			if (!_typeReaders.TryGetValue(typeof(T), out var @delegate))
 				throw new Exception("Unsupported data type.");
 
-			var ord = QueryResult.GetOrdinal(path[0]);
+			var ord = path[0] == null ? 0 : QueryResult.GetOrdinal(path[0]);
 			if (QueryResult.IsDBNull(ord))
 				return default(T);
 
