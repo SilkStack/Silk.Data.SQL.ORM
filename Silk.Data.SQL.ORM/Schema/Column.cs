@@ -1,26 +1,19 @@
-namespace Silk.Data.SQL.ORM.Schema
+﻿namespace Silk.Data.SQL.ORM.Schema
 {
+	/// <summary>
+	/// Database column.
+	/// </summary>
 	public class Column
 	{
 		public string ColumnName { get; }
-		public SqlDataType SqlDataType { get; }
-		public bool IsPrimaryKey { get; }
-		public bool IsServerGenerated { get; }
-		public bool IsClientGenerated { get; }
+		public SqlDataType DataType { get; }
 		public bool IsNullable { get; }
-		public Index Index { get; }
 
-		public Column(string columnName, SqlDataType sqlDataType,
-			bool isPrimaryKey = false, bool isServerGenerated = false, bool isClientGenerated = false,
-			bool isNullable = false, Index index = null)
+		public Column(string columnName, SqlDataType dataType, bool isNullable)
 		{
 			ColumnName = columnName;
-			SqlDataType = sqlDataType;
-			IsPrimaryKey = isPrimaryKey;
-			IsClientGenerated = isClientGenerated;
-			IsServerGenerated = isServerGenerated;
+			DataType = dataType;
 			IsNullable = isNullable;
-			Index = index;
 		}
 	}
 }

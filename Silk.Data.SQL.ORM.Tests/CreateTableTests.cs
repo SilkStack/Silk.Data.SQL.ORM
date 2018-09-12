@@ -1,9 +1,10 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Silk.Data.SQL.ORM.Operations;
+using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Schema;
-using Silk.Data.SQL.SQLite3;
+using Silk.Data.SQL.Providers;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Silk.Data.SQL.ORM.Tests
 {
@@ -11,54 +12,135 @@ namespace Silk.Data.SQL.ORM.Tests
 	public class CreateTableTests
 	{
 		[TestMethod]
-		public void DontCreateCompositePrimaryKeyWithSingleObjectRelationships()
+		public async Task CreatePrimitiveTable()
 		{
 			var schemaBuilder = new SchemaBuilder();
-			schemaBuilder.DefineEntity<Poco>();
-			schemaBuilder.DefineEntity<EmbeddedPoco>();
+			schemaBuilder.DefineEntity<Primitives>();
 			var schema = schemaBuilder.Build();
 
-			var relationshipColumn = schema.GetEntityModel<Poco>().EntityTable.Columns
-				.First(q => q.ColumnName == nameof(Poco.Deep));
-
-			Assert.IsFalse(relationshipColumn.IsPrimaryKey);
-			Assert.IsFalse(relationshipColumn.IsClientGenerated);
-			Assert.IsFalse(relationshipColumn.IsServerGenerated);
-
-			using (var provider = new SQLite3DataProvider(":memory:"))
+			using (var provider = TestHelper.CreateProvider())
 			{
-				provider.ExecuteNonReader(CreateTableOperation.Create(schema.GetEntityModel<Poco>().EntityTable));
+				await provider.ExecuteAsync(schema.CreateTable<Primitives>());
+				await InsertDefaultRow<Primitives>(provider, schema);
+				await TestDefaultRow<Primitives>(provider, schema);
 			}
 		}
 
 		[TestMethod]
-		public void IndexSingleRelationshipKey()
+		public async Task CreatePrimitiveTableWithCustomTableName()
 		{
 			var schemaBuilder = new SchemaBuilder();
-			schemaBuilder.DefineEntity<Poco>()
-				.For(x => x.Deep.Id).Index();
-			schemaBuilder.DefineEntity<EmbeddedPoco>();
+			schemaBuilder.DefineEntity<Primitives>().TableName = "CustomTable";
 			var schema = schemaBuilder.Build();
+			Assert.AreEqual("CustomTable", schema.GetEntitySchema<Primitives>().EntityTable.TableName);
 
-			var relationshipColumn = schema.GetEntityModel<Poco>().EntityTable.Columns
-				.First(q => q.ColumnName == nameof(Poco.Deep));
-			Assert.IsNotNull(relationshipColumn.Index);
-
-			using (var provider = new SQLite3DataProvider(":memory:"))
+			using (var provider = TestHelper.CreateProvider())
 			{
-				provider.ExecuteNonReader(CreateTableOperation.Create(schema.GetEntityModel<Poco>().EntityTable));
+				await provider.ExecuteAsync(schema.CreateTable<Primitives>());
+				await InsertDefaultRow<Primitives>(provider, schema);
+				await TestDefaultRow<Primitives>(provider, schema);
 			}
 		}
 
-		private class Poco
+		[TestMethod]
+		public async Task CreatePrimitiveTableWithUniqueIndex()
 		{
-			public Guid Id { get; private set; }
-			public EmbeddedPoco Deep { get; set; }
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<Primitives>()
+				.Index("testIndex", true, q => q.Bool, q => q.Int);
+			var schema = schemaBuilder.Build();
+
+			using (var provider = TestHelper.CreateProvider())
+			{
+				await provider.ExecuteAsync(schema.CreateTable<Primitives>());
+				await InsertDefaultRow<Primitives>(provider, schema);
+				await TestDefaultRow<Primitives>(provider, schema);
+
+				try
+				{
+					await InsertDefaultRow<Primitives>(provider, schema);
+					Assert.Fail("Inserted row that should violate unique index.");
+				}
+				catch { }
+			}
 		}
 
-		private class EmbeddedPoco
+		private static async Task InsertDefaultRow<T>(IDataProvider dataProvider, Schema.Schema schema)
 		{
-			public Guid Id { get; private set; }
+			var entitySchema = schema.GetEntitySchema<T>();
+			var expression = QueryExpression.Insert(
+				entitySchema.EntityTable.TableName,
+				entitySchema.EntityTable.Columns.Select(q => q.ColumnName).ToArray(),
+				entitySchema.EntityTable.Columns.Select(q => GetDefaultValue(q)).ToArray()
+				);
+			await dataProvider.ExecuteNonQueryAsync(expression);
+		}
+
+		private static async Task TestDefaultRow<T>(IDataProvider dataProvider, Schema.Schema schema)
+		{
+			var entitySchema = schema.GetEntitySchema<T>();
+			using (var queryResult = await dataProvider.ExecuteReaderAsync(
+				QueryExpression.Select(QueryExpression.All(), QueryExpression.Table(entitySchema.EntityTable.TableName))
+				))
+			{
+				Assert.IsTrue(queryResult.HasRows);
+				Assert.IsTrue(await queryResult.ReadAsync());
+				foreach (var column in entitySchema.EntityTable.Columns)
+				{
+					Assert.AreEqual(GetDefaultValue(column), queryResult.GetColumnValue(column),
+						$"Column value doesn't match expected value on column: {column.ColumnName}");
+				}
+			}
+		}
+
+		private static object GetDefaultValue(Column column)
+		{
+			switch (column.DataType.BaseType)
+			{
+				case SqlBaseType.Bit:
+					return true;
+				case SqlBaseType.BigInt:
+					return 1L;
+				case SqlBaseType.Int:
+					return 1;
+				case SqlBaseType.SmallInt:
+					return (short)1;
+				case SqlBaseType.TinyInt:
+					return (byte)1;
+				case SqlBaseType.Float:
+					if (column.DataType.Parameters[0] <= SqlDataType.FLOAT_MAX_PRECISION)
+						return 1.0f;
+					return 1.0d;
+				case SqlBaseType.Date:
+				case SqlBaseType.DateTime:
+					return DateTime.Today;
+				case SqlBaseType.Decimal:
+					return 1.0m;
+				case SqlBaseType.Guid:
+					return Guid.Parse("{2E02EFD7-A0EE-40BD-A487-EDF2EA6D5CD5}");
+				case SqlBaseType.Text:
+					return "Hello World";
+			}
+			throw new Exception("Unsupported data type.");
+		}
+
+		private class Primitives
+		{
+			public bool Bool { get; set; }
+			public sbyte SByte { get; set; }
+			public byte Byte { get; set; }
+			public ushort UShort { get; set; }
+			public short Short { get; set; }
+			public uint UInt { get; set; }
+			public int Int { get; set; }
+			public ulong ULong { get; set; }
+			public long Long { get; set; }
+			public string String { get; set; }
+			public DateTime DateTime { get; set; }
+			public Guid Guid { get; set; }
+			public float Float { get; set; }
+			public double Double { get; set; }
+			public decimal Decimal { get; set; }
 		}
 	}
 }

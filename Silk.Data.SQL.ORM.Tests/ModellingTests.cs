@@ -1,9 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Silk.Data.Modelling;
-using Silk.Data.SQL.ORM.Modelling;
 using Silk.Data.SQL.ORM.Schema;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Tests
@@ -12,271 +9,321 @@ namespace Silk.Data.SQL.ORM.Tests
 	public class ModellingTests
 	{
 		[TestMethod]
-		public void ModelSqlPrimitiveTypes()
+		public void ModelPrimitivePoco()
 		{
-			var builder = new SchemaBuilder();
-			builder.DefineEntity<PrimitiveSQLTypes>();
-			var schema = builder.Build();
-			var model = schema.GetEntityModel<PrimitiveSQLTypes>();
+			var expectedFields = new (Type type, string Name, SqlDataType DataType)[]
+			{
+				(typeof(bool), "Bool", SqlDataType.Bit()),
+				(typeof(byte), "Byte", SqlDataType.TinyInt()),
+				(typeof(short), "Short", SqlDataType.SmallInt()),
+				(typeof(int), "Int", SqlDataType.Int()),
+				(typeof(long), "Long", SqlDataType.BigInt()),
+				(typeof(float), "Float", SqlDataType.Float(SqlDataType.FLOAT_MAX_PRECISION)),
+				(typeof(double), "Double", SqlDataType.Float(SqlDataType.DOUBLE_MAX_PRECISION)),
+				(typeof(decimal), "Decimal", SqlDataType.Decimal()),
+				(typeof(DateTime), "DateTime", SqlDataType.DateTime()),
+				(typeof(Guid), "Guid", SqlDataType.Guid()),
+				(typeof(string), "String", SqlDataType.Text())
+			};
 
-			Assert.IsNotNull(model);
-			Assert.AreEqual(typeof(PrimitiveSQLTypes), model.EntityType);
-			Assert.AreEqual(16, model.Fields.Length);
-			Assert.IsNotNull(model.EntityTable);
-			Assert.AreEqual(16, model.EntityTable.Columns.Length);
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<Primitives>();
 
-			Assert.IsTrue(model.Fields.OfType<IValueField>().Any(field =>
-				field.FieldName == nameof(PrimitiveSQLTypes.Bool) && field.Column.SqlDataType.BaseType == SqlBaseType.Bit
-				));
-			Assert.IsTrue(model.Fields.OfType<IValueField>().Any(field =>
-				field.FieldName == nameof(PrimitiveSQLTypes.Byte) && field.Column.SqlDataType.BaseType == SqlBaseType.TinyInt && field.Column.SqlDataType.Unsigned
-				));
-			Assert.IsTrue(model.Fields.OfType<IValueField>().Any(field =>
-				field.FieldName == nameof(PrimitiveSQLTypes.SByte) && field.Column.SqlDataType.BaseType == SqlBaseType.TinyInt && !field.Column.SqlDataType.Unsigned
-				));
-			Assert.IsTrue(model.Fields.OfType<IValueField>().Any(field =>
-				field.FieldName == nameof(PrimitiveSQLTypes.UShort) && field.Column.SqlDataType.BaseType == SqlBaseType.SmallInt && field.Column.SqlDataType.Unsigned
-				));
-			Assert.IsTrue(model.Fields.OfType<IValueField>().Any(field =>
-				field.FieldName == nameof(PrimitiveSQLTypes.Short) && field.Column.SqlDataType.BaseType == SqlBaseType.SmallInt && !field.Column.SqlDataType.Unsigned
-				));
-			Assert.IsTrue(model.Fields.OfType<IValueField>().Any(field =>
-				field.FieldName == nameof(PrimitiveSQLTypes.UInt) && field.Column.SqlDataType.BaseType == SqlBaseType.Int && field.Column.SqlDataType.Unsigned
-				));
-			Assert.IsTrue(model.Fields.OfType<IValueField>().Any(field =>
-				field.FieldName == nameof(PrimitiveSQLTypes.Int) && field.Column.SqlDataType.BaseType == SqlBaseType.Int && !field.Column.SqlDataType.Unsigned
-				));
-			Assert.IsTrue(model.Fields.OfType<IValueField>().Any(field =>
-				field.FieldName == nameof(PrimitiveSQLTypes.ULong) && field.Column.SqlDataType.BaseType == SqlBaseType.BigInt && field.Column.SqlDataType.Unsigned
-				));
-			Assert.IsTrue(model.Fields.OfType<IValueField>().Any(field =>
-				field.FieldName == nameof(PrimitiveSQLTypes.Long) && field.Column.SqlDataType.BaseType == SqlBaseType.BigInt && !field.Column.SqlDataType.Unsigned
-				));
-			Assert.IsTrue(model.Fields.OfType<IValueField>().Any(field =>
-				field.FieldName == nameof(PrimitiveSQLTypes.Float) && field.Column.SqlDataType.BaseType == SqlBaseType.Float
-				));
-			Assert.IsTrue(model.Fields.OfType<IValueField>().Any(field =>
-				field.FieldName == nameof(PrimitiveSQLTypes.Double) && field.Column.SqlDataType.BaseType == SqlBaseType.Float
-				));
-			Assert.IsTrue(model.Fields.OfType<IValueField>().Any(field =>
-				field.FieldName == nameof(PrimitiveSQLTypes.Decimal) && field.Column.SqlDataType.BaseType == SqlBaseType.Decimal
-				));
-			Assert.IsTrue(model.Fields.OfType<IValueField>().Any(field =>
-				field.FieldName == nameof(PrimitiveSQLTypes.DateTime) && field.Column.SqlDataType.BaseType == SqlBaseType.DateTime
-				));
-			Assert.IsTrue(model.Fields.OfType<IValueField>().Any(field =>
-				field.FieldName == nameof(PrimitiveSQLTypes.Guid) && field.Column.SqlDataType.BaseType == SqlBaseType.Guid
-				));
-			Assert.IsTrue(model.Fields.OfType<IValueField>().Any(field =>
-				field.FieldName == nameof(PrimitiveSQLTypes.String) && field.Column.SqlDataType.BaseType == SqlBaseType.Text
-				));
-			Assert.IsTrue(model.Fields.OfType<IValueField>().Any(field =>
-				field.FieldName == nameof(PrimitiveSQLTypes.Enum) && field.Column.SqlDataType.BaseType == SqlBaseType.Int
-				));
+			var schema = schemaBuilder.Build();
+			var entitySchema = schema.GetEntitySchema<Primitives>();
+
+			Assert.IsNotNull(entitySchema);
+			Assert.AreEqual(expectedFields.Length, entitySchema.EntityFields.Length);
+			Assert.AreEqual(expectedFields.Length, entitySchema.EntityTable.Columns.Length);
+			Assert.AreEqual(expectedFields.Length, entitySchema.ProjectionFields.Length);
+
+			foreach (var (type, name, dataType) in expectedFields)
+			{
+				var entityField = entitySchema.EntityFields.FirstOrDefault(q => q.DataType == type && q.FieldName == name);
+				if (entityField == null)
+					Assert.Fail("Expected entity field not present on entity schema.");
+				var column = entitySchema.EntityTable.Columns.FirstOrDefault(q => q.ColumnName == name &&
+					TypesAreEqual(dataType, q.DataType));
+				if (column == null)
+					Assert.Fail("Expected column not present in entity table.");
+				var projectionField = entitySchema.ProjectionFields.FirstOrDefault(q =>
+					q.SourceName == entitySchema.EntityTable.TableName &&
+					q.FieldName == column.ColumnName &&
+					q.AliasName == entityField.FieldName
+					);
+				if (projectionField == null)
+					Assert.Fail("Expected projection field not present on entity schema.");
+				Assert.IsTrue(projectionField.ModelPath.SequenceEqual(new[] { name }),
+					"Projection field model path is invalid.");
+			}
 		}
 
 		[TestMethod]
-		public void EmbedPocoTypeIntoSchema()
+		public void ModelPrimaryKeyByConvention()
 		{
-			var builder = new SchemaBuilder();
-			builder.DefineEntity<ClassWithEmbeddedPoco>();
-			builder.DefineEntity<HasIntId>();
-			var schema = builder.Build();
-			var model = schema.GetEntityModel<ClassWithEmbeddedPoco>();
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<ConventionPrimaryKey>();
 
-			Assert.AreEqual(2, model.Fields.Length);
-			Assert.AreEqual(6, model.EntityTable.Columns.Length);
-			var tableColumns = model.EntityTable.Columns;
+			var schema = schemaBuilder.Build();
+			var entitySchema = schema.GetEntitySchema<ConventionPrimaryKey>();
 
-			Assert.IsTrue(model.Fields.OfType<IValueField>().Any(q => q.FieldName == "Data"));
-			var embeddedField = model.Fields.OfType<IEmbeddedObjectField>().FirstOrDefault();
-			Assert.IsNotNull(embeddedField);
-			Assert.AreEqual("Embedded", embeddedField.FieldName);
-			Assert.AreEqual(2, embeddedField.EmbeddedFields.Length);
-			Assert.IsTrue(tableColumns.Any(q => q.ColumnName == "Data" && q.SqlDataType.BaseType == SqlBaseType.Text));
-			Assert.IsTrue(tableColumns.Any(q => q.ColumnName == "Embedded" && q.SqlDataType.BaseType == SqlBaseType.Bit));
-
-			Assert.IsTrue(embeddedField.EmbeddedFields.OfType<IValueField>().Any(q => q.FieldName == "Data"));
-			embeddedField = embeddedField.EmbeddedFields.OfType<IEmbeddedObjectField>().FirstOrDefault();
-			Assert.IsNotNull(embeddedField);
-			Assert.AreEqual("SubEmbedded", embeddedField.FieldName);
-			Assert.AreEqual(2, embeddedField.EmbeddedFields.Length);
-			Assert.IsTrue(tableColumns.Any(q => q.ColumnName == "Embedded_Data" && q.SqlDataType.BaseType == SqlBaseType.Text));
-			Assert.IsTrue(tableColumns.Any(q => q.ColumnName == "Embedded_SubEmbedded" && q.SqlDataType.BaseType == SqlBaseType.Bit));
-
-			Assert.IsTrue(embeddedField.EmbeddedFields.OfType<IValueField>().Any(q => q.FieldName == "Data"));
-			var singleRelatedObjectField = embeddedField.EmbeddedFields.OfType<ISingleRelatedObjectField>().FirstOrDefault();
-			var dataField = embeddedField.EmbeddedFields.OfType<IValueField>().FirstOrDefault();
-			Assert.ReferenceEquals(singleRelatedObjectField.RelatedObjectProjection, singleRelatedObjectField.RelatedObjectModel);
-			Assert.IsNotNull(singleRelatedObjectField);
-			Assert.IsNotNull(dataField);
-			Assert.AreEqual("Relationship", singleRelatedObjectField.FieldName);
-			Assert.AreEqual("Data", dataField.FieldName);
-			Assert.IsTrue(tableColumns.Any(q => q.ColumnName == "Embedded_SubEmbedded_Data" && q.SqlDataType.BaseType == SqlBaseType.Text));
-			Assert.IsTrue(tableColumns.Any(q => q.ColumnName == "Embedded_SubEmbedded_Relationship" && q.SqlDataType.BaseType == SqlBaseType.Int));
+			var idField = entitySchema.EntityFields.First(q => q.FieldName == nameof(ConventionPrimaryKey.Id));
+			Assert.IsTrue(idField.IsPrimaryKey, "ID field is not a primary key.");
 		}
 
 		[TestMethod]
-		public void ModelSingleObjectRelationship()
+		public void ModelCustomPrimaryKey()
 		{
-			var builder = new SchemaBuilder();
-			builder.DefineEntity<HasSingleRelationship>();
-			builder.DefineEntity<HasIntId>();
-			var schema = builder.Build();
-			var model = schema.GetEntityModel<HasSingleRelationship>();
-			var relatedModel = schema.GetEntityModel<HasIntId>();
-			var primaryKeyField = relatedModel.Fields.OfType<IValueField>().First(q => q.Column.IsPrimaryKey);
+			var schemaBuilder = new SchemaBuilder();
+			var entityBuilder = schemaBuilder.DefineEntity<CustomPrimaryKey>();
+			entityBuilder.For(q => q.Id).IsPrimaryKey = false;
+			entityBuilder.For(q => q.PrimaryKey).IsPrimaryKey = true;
 
-			Assert.AreEqual(1, model.Fields.Length);
-			Assert.AreEqual(1, model.EntityTable.Columns.Length);
-			Assert.AreEqual(primaryKeyField.Column.SqlDataType.BaseType, model.EntityTable.Columns[0].SqlDataType.BaseType);
-			var field = model.Fields.First();
-			Assert.IsInstanceOfType(field, typeof(ISingleRelatedObjectField));
+			var schema = schemaBuilder.Build();
+			var entitySchema = schema.GetEntitySchema<CustomPrimaryKey>();
 
-			var relatedObjectField = field as ISingleRelatedObjectField;
-			Assert.ReferenceEquals(relatedObjectField.RelatedObjectProjection, relatedObjectField.RelatedObjectModel);
-			Assert.ReferenceEquals(relatedModel, relatedObjectField.RelatedObjectModel);
-			Assert.ReferenceEquals(primaryKeyField, relatedObjectField.RelatedPrimaryKey);
+			var idField = entitySchema.EntityFields.First(q => q.FieldName == nameof(CustomPrimaryKey.Id));
+			Assert.IsFalse(idField.IsPrimaryKey, "ID field shouldn't be a primary key.");
+
+			var primaryKeyField = entitySchema.EntityFields.First(q => q.FieldName == nameof(CustomPrimaryKey.PrimaryKey));
+			Assert.IsTrue(primaryKeyField.IsPrimaryKey, "Primary key field is not a primary key.");
 		}
 
 		[TestMethod]
-		public void ModelMultipleObjectRelationship()
+		public void ModelManyToOneRelationship()
 		{
-			var builder = new SchemaBuilder();
-			builder.DefineEntity<HasManyPrimitives>();
-			builder.DefineEntity<HasIntId>();
-			var schema = builder.Build();
-			var model = schema.GetEntityModel<HasManyPrimitives>();
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<Parent>();
+			schemaBuilder.DefineEntity<Child>();
 
-			Assert.AreEqual(2, model.Fields.Length);
-			var field = model.Fields.OfType<IManyRelatedObjectField>().FirstOrDefault();
-			Assert.IsInstanceOfType(field, typeof(ManyRelatedObjectField<List<HasIntId>, HasIntId, int>));
-			Assert.IsNotNull(field);
-			Assert.AreEqual("Relationships", field.FieldName);
-			Assert.AreEqual(typeof(HasIntId), field.ElementType);
-			Assert.ReferenceEquals(TypeModel.GetModelOf<HasIntId>(), field.ElementModel);
-			Assert.IsNotNull(field.JunctionTable);
-			Assert.IsNotNull(field.LocalColumn);
-			Assert.IsNotNull(field.LocalJunctionColumn);
-			Assert.IsNotNull(field.LocalIdentifierField);
-			Assert.IsNotNull(field.Mapping);
-			Assert.IsNotNull(field.RelatedJunctionColumn);
-			Assert.IsNotNull(field.RelatedObjectModel);
-			Assert.ReferenceEquals(TypeModel.GetModelOf<HasIntId>(), field.RelatedObjectModel);
-			Assert.IsNotNull(field.RelatedPrimaryKey);
-			Assert.ReferenceEquals(field.RelatedObjectProjection, field.RelatedObjectModel);
+			var schema = schemaBuilder.Build();
+			var parentSchema = schema.GetEntitySchema<Parent>();
+
+			Assert.IsNotNull(parentSchema);
+			var entityField = parentSchema.EntityFields.FirstOrDefault(q => q.FieldName == nameof(Parent.Child));
+			if (entityField == null)
+				Assert.Fail("Child entity field not present on entity schema.");
+			var foreignKeyColumn = parentSchema.EntityTable.Columns.FirstOrDefault(q => q.ColumnName == "FK_Child_Id");
+			if (foreignKeyColumn == null)
+				Assert.Fail("Foreign key column not present in entity table.");
+			var projectionField = parentSchema.ProjectionFields.FirstOrDefault(q => q.AliasName == "Child_Id");
+			if (projectionField == null)
+				Assert.Fail("Child Id field not present in projection.");
+			Assert.IsTrue(projectionField.ModelPath.SequenceEqual(new[] { "Child", "Id" }), "Child Id model path is incorrect.");
+			projectionField = parentSchema.ProjectionFields.FirstOrDefault(q => q.AliasName == "Child_Data");
+			if (projectionField == null)
+				Assert.Fail("Child Data field not present in projection.");
+			Assert.IsTrue(projectionField.ModelPath.SequenceEqual(new[] { "Child", "Data" }), "Child Data model path is incorrect.");
+			var join = parentSchema.EntityJoins.FirstOrDefault(q => q.TableName == "Child");
+			if (join == null)
+				Assert.Fail("Join to child table not present.");
 		}
 
 		[TestMethod]
-		public void ModelIntegerIdAsAutoIncrementPrimaryKey()
+		public void ModelDeepManyToOneRelationship()
 		{
-			var builder = new SchemaBuilder();
-			builder.DefineEntity<HasShortId>();
-			builder.DefineEntity<HasIntId>();
-			builder.DefineEntity<HasLongId>();
-			var schema = builder.Build();
-			EntityModel model = schema.GetEntityModel<HasShortId>();
-			var field = model.Fields.OfType<IValueField>().First();
-			Assert.IsTrue(field.Column.IsPrimaryKey);
-			Assert.IsTrue(field.Column.IsServerGenerated);
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<Child>();
+			schemaBuilder.DefineEntity<Parent>();
+			schemaBuilder.DefineEntity<DeepParent>();
 
-			model = schema.GetEntityModel<HasIntId>();
-			field = model.Fields.OfType<IValueField>().First();
-			Assert.IsTrue(field.Column.IsPrimaryKey);
-			Assert.IsTrue(field.Column.IsServerGenerated);
+			var schema = schemaBuilder.Build();
+			var parentSchema = schema.GetEntitySchema<DeepParent>();
 
-			model = schema.GetEntityModel<HasLongId>();
-			field = model.Fields.OfType<IValueField>().First();
-			Assert.IsTrue(field.Column.IsPrimaryKey);
-			Assert.IsTrue(field.Column.IsServerGenerated);
+			var entityField = parentSchema.EntityFields.FirstOrDefault(q => q.FieldName == nameof(DeepParent.Child));
+			if (entityField == null)
+				Assert.Fail("Child entity field not present on entity schema.");
+			var foreignKeyColumn = parentSchema.EntityTable.Columns.FirstOrDefault(q => q.ColumnName == "FK_Child_Id");
+			if (foreignKeyColumn == null)
+				Assert.Fail("Foreign key column not present in entity table.");
+			var projectionField = parentSchema.ProjectionFields.FirstOrDefault(q => q.AliasName == "Child_Id");
+			if (projectionField == null)
+				Assert.Fail("Child Id field not present in projection.");
+			Assert.IsTrue(projectionField.ModelPath.SequenceEqual(new[] { "Child", "Id" }), "Child Id model path is incorrect.");
+			projectionField = parentSchema.ProjectionFields.FirstOrDefault(q => q.AliasName == "Child_Child_Id");
+			if (projectionField == null)
+				Assert.Fail("Deep child Id field not present in projection.");
+			Assert.IsTrue(projectionField.ModelPath.SequenceEqual(new[] { "Child", "Child", "Id" }), "Deep child Id model path is incorrect.");
+			projectionField = parentSchema.ProjectionFields.FirstOrDefault(q => q.AliasName == "Child_Child_Data");
+			if (projectionField == null)
+				Assert.Fail("Deep child Data field not present in projection.");
+			Assert.IsTrue(projectionField.ModelPath.SequenceEqual(new[] { "Child", "Child", "Data" }), "Deep child Data model path is incorrect.");
+
+			var join = parentSchema.EntityJoins.FirstOrDefault(q => q.TableName == "Parent");
+			if (join == null)
+				Assert.Fail("Join to parent table not present.");
+			join = parentSchema.EntityJoins.FirstOrDefault(q => q.TableName == "Child");
+			if (join == null)
+				Assert.Fail("Join to child table not present.");
 		}
 
 		[TestMethod]
-		public void ModelGuidIdAsGeneratedPrimaryKey()
+		public void ModelNestedEmbeddedObjects()
 		{
-			var builder = new SchemaBuilder();
-			builder.DefineEntity<HasGuidId>();
-			var schema = builder.Build();
-			var model = schema.GetEntityModel<HasGuidId>();
-			var field = model.Fields.OfType<IValueField>().First();
-			Assert.IsTrue(field.Column.IsPrimaryKey);
-			Assert.IsTrue(field.Column.IsClientGenerated);
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<DeepParent>();
+
+			var schema = schemaBuilder.Build();
+			var entitySchema = schema.GetEntitySchema<DeepParent>();
+
+			var entityField = entitySchema.EntityFields.FirstOrDefault(q => q.FieldName == nameof(DeepParent.Child));
+			if (entityField == null)
+				Assert.Fail("Child entity field not present on entity schema.");
+
+			var expectedProjections = new (string FieldName, string Alias, string Source, string[] Path)[]
+			{
+				("Child_Id", "Child_Id", "DeepParent", new[]{ "Child", "Id" }),
+				("Child_Child_Id", "Child_Child_Id", "DeepParent", new[]{ "Child", "Child", "Id" }),
+				("Child_Child_Data", "Child_Child_Data", "DeepParent", new[]{ "Child", "Child", "Data" })
+			};
+			CheckForProjections(entitySchema, expectedProjections);
+
+			//  all columns are in table
+			var expectedColumns = new (string FieldName, SqlBaseType SqlBaseType)[]
+			{
+				("Child", SqlBaseType.Bit), //  Child property null check
+				("Child_Id", SqlBaseType.Int),
+				("Child_Child", SqlBaseType.Bit), //  Child.Child property null check
+				("Child_Child_Id", SqlBaseType.Int),
+				("Child_Child_Data", SqlBaseType.Text)
+			};
+			CheckForColumns(entitySchema, expectedColumns);
 		}
 
-		private class PrimitiveSQLTypes
+		[TestMethod]
+		public void ModelEmbeddedObjectWithRelationship()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<DeepParent>();
+			schemaBuilder.DefineEntity<Child>();
+
+			var schema = schemaBuilder.Build();
+			var entitySchema = schema.GetEntitySchema<DeepParent>();
+
+			var expectedProjections = new(string FieldName, string Alias, string Source, string[] Path)[]
+			{
+				("Child_Id", "Child_Id", "DeepParent", new[]{ "Child", "Id" }),
+				("Id", "Child_Child_Id", "__joinAlias_Child_Child", new[]{ "Child", "Child", "Id" }),
+				("Data", "Child_Child_Data", "__joinAlias_Child_Child", new[]{ "Child", "Child", "Data" })
+			};
+			CheckForProjections(entitySchema, expectedProjections);
+
+			//  all columns are in table
+			var expectedColumns = new(string FieldName, SqlBaseType SqlBaseType)[]
+			{
+				("Child", SqlBaseType.Bit),			//  Child property null check
+				("Child_Id", SqlBaseType.Int),		//  Embedded Child.Id
+				("FK_Child_Id", SqlBaseType.Int)	//  Child.Child property null check
+			};
+			CheckForColumns(entitySchema, expectedColumns);
+		}
+
+		[TestMethod]
+		public void ModelRelationshipWithEmbeddedObjects()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<DeepParent>();
+			schemaBuilder.DefineEntity<Parent>().For(q => q.Child.Id).IsPrimaryKey = false;
+
+			var schema = schemaBuilder.Build();
+			var entitySchema = schema.GetEntitySchema<DeepParent>();
+
+			var expectedProjections = new(string FieldName, string Alias, string Source, string[] Path)[]
+			{
+				("Id", "Child_Id", "__joinAlias_Child", new[]{ "Child", "Id" }),
+				("Child_Id", "Child_Child_Id", "__joinAlias_Child", new[]{ "Child", "Child", "Id" }),
+				("Child_Data", "Child_Child_Data", "__joinAlias_Child", new[]{ "Child", "Child", "Data" })
+			};
+			CheckForProjections(entitySchema, expectedProjections);
+
+			//  all columns are in table
+			var expectedColumns = new(string FieldName, SqlBaseType SqlBaseType)[]
+			{
+				("FK_Child_Id", SqlBaseType.Int)	//  Child.Child property null check
+			};
+			CheckForColumns(entitySchema, expectedColumns);
+		}
+
+		private static void CheckForProjections(EntitySchema entitySchema,
+			(string FieldName, string Alias, string Source, string[] Path)[] expectedProjections)
+		{
+			foreach (var expectedProjection in expectedProjections)
+			{
+				var projection = entitySchema.ProjectionFields.FirstOrDefault(q => !q.IsNullCheck && q.FieldName == expectedProjection.FieldName);
+				Assert.IsNotNull(projection, $"Projection \"{expectedProjection.FieldName}\" not found.");
+				Assert.AreEqual(expectedProjection.Alias, projection.AliasName);
+				Assert.AreEqual(expectedProjection.Source, projection.SourceName);
+				Assert.IsTrue(expectedProjection.Path.SequenceEqual(projection.ModelPath));
+			}
+		}
+
+		private static void CheckForColumns(EntitySchema entitySchema,
+			(string FieldName, SqlBaseType SqlBaseType)[] expectedColumns)
+		{
+			foreach (var expectedColumn in expectedColumns)
+			{
+				var column = entitySchema.EntityTable.Columns.FirstOrDefault(q => q.ColumnName == expectedColumn.FieldName);
+				Assert.IsNotNull(column, $"Column \"{expectedColumn.FieldName}\" not found.");
+				Assert.AreEqual(expectedColumn.SqlBaseType, column.DataType.BaseType);
+			}
+		}
+
+		private static bool TypesAreEqual(SqlDataType one, SqlDataType two)
+		{
+			if (one.BaseType != two.BaseType)
+				return false;
+			if (one.Unsigned != two.Unsigned)
+				return false;
+			if (one.Parameters == null && two.Parameters != null)
+				return false;
+			if (one.Parameters != null && two.Parameters == null)
+				return false;
+			if (one.Parameters != null && two.Parameters != null && !one.Parameters.SequenceEqual(two.Parameters))
+				return false;
+			return true;
+		}
+
+		private class Primitives
 		{
 			public bool Bool { get; set; }
 			public byte Byte { get; set; }
-			public sbyte SByte { get; set; }
 			public short Short { get; set; }
-			public ushort UShort { get; set; }
 			public int Int { get; set; }
-			public uint UInt { get; set; }
 			public long Long { get; set; }
-			public ulong ULong { get; set; }
+			public string String { get; set; }
+			public DateTime DateTime { get; set; }
+			public Guid Guid { get; set; }
 			public float Float { get; set; }
 			public double Double { get; set; }
 			public decimal Decimal { get; set; }
-			public DateTime DateTime { get; set; }
-			public Guid Guid { get; set; }
-			public string String { get; set; }
-			public Enum Enum { get; set; }
 		}
 
-		private class HasShortId
+		private class ConventionPrimaryKey
 		{
-			public short Id { get; set; }
+			public int Id { get; private set; }
 		}
 
-		private class HasIntId
+		private class CustomPrimaryKey
 		{
 			public int Id { get; set; }
+			public int PrimaryKey { get; private set; }
 		}
 
-		private class HasLongId
+		private class Parent
 		{
-			public long Id { get; set; }
+			public int Id { get; private set; }
+			public Child Child { get; set; }
 		}
 
-		private class HasGuidId
+		private class Child
 		{
-			public Guid Id { get; set; }
-		}
-
-		private enum Enum
-		{
-			Value1,
-			Value2
-		}
-
-		private class HasSingleRelationship
-		{
-			public HasIntId Relationship { get; set; }
-		}
-
-		private class HasManyPrimitives
-		{
-			public int Id { get; set; }
-			public List<HasIntId> Relationships { get; set; }
-				= new List<HasIntId>();
-		}
-
-		private class ClassWithEmbeddedPoco
-		{
-			public EmbeddedPocoTier1 Embedded { get; set; }
+			public int Id { get; private set; }
 			public string Data { get; set; }
 		}
 
-		private class EmbeddedPocoTier1
+		private class DeepParent
 		{
-			public EmbeddedPocoTier2 SubEmbedded { get; set; }
-			public string Data { get; set; }
-		}
-
-		private class EmbeddedPocoTier2
-		{
-			public HasIntId Relationship { get; set; }
-			public string Data { get; set; }
+			public Parent Child { get; set; }
 		}
 	}
 }

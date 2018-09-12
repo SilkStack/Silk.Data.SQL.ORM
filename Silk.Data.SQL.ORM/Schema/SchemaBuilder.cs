@@ -1,70 +1,131 @@
-﻿using System;
+﻿using Silk.Data.SQL.ORM.Expressions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using Silk.Data.SQL.ORM.Modelling;
+using System.Reflection;
 
 namespace Silk.Data.SQL.ORM.Schema
 {
+	/// <summary>
+	/// Used to configure and build a schema to create queries against.
+	/// </summary>
 	public class SchemaBuilder
 	{
-		private readonly List<EntitySchemaOptions> _entityTypes
-			= new List<EntitySchemaOptions>();
+		private readonly Dictionary<Type, EntitySchemaBuilder> _entitySchemaBuilders
+			= new Dictionary<Type, EntitySchemaBuilder>();
+		private readonly Dictionary<MethodInfo, IMethodCallConverter> _methodCallConverters
+			= new Dictionary<MethodInfo, IMethodCallConverter>();
+		private readonly List<RelationshipBuilder> _relationshipBuilders
+			= new List<RelationshipBuilder>();
 
-		protected virtual IEnumerable<Table> GetNonEntityTables(EntityModelCollection entityModels) => null;
-
-		public EntitySchemaOptions<T> DefineEntity<T>()
+		public SchemaBuilder()
 		{
-			var options = new EntitySchemaOptions<T>(this);
-			_entityTypes.Add(options);
-			return options;
-		}
-
-		public EntityModelTransformer GetModelTransformer(Type type)
-		{
-			var options = _entityTypes.FirstOrDefault(q => q.GetEntityModel().EntityType == type);
-			if (options == null)
-				return null;
-			return options.ModelTransformer;
-		}
-
-		public Schema Build()
-		{
-			var fieldAdded = true;
-			while (fieldAdded)
-			{
-				fieldAdded = false;
-				foreach (var entityType in _entityTypes)
-				{
-					if (entityType.PerformTransformationPass())
-						fieldAdded = true;
-				}
-			}
-
-			var entityModelCollection = new EntityModelCollection(
-				_entityTypes.Select(q => q.GetEntityModel())
-			);
-
-			var tables = new List<Table>(
-				entityModelCollection.Select(q => q.EntityTable)
+			_methodCallConverters.Add(
+				typeof(Enum).GetMethod(nameof(Enum.HasFlag)), new HasFlagCallConverter()
 				);
-			var schema = new Schema(entityModelCollection);
-			foreach (var fieldWithBuildFinalizer in entityModelCollection.SelectMany(q => q.Fields)
-				.OfType<IModelBuildFinalizerField>())
+			_methodCallConverters.Add(
+				typeof(DatabaseFunctions).GetMethod(nameof(DatabaseFunctions.Like)), new StringLikeCallConverter()
+				);
+			_methodCallConverters.Add(
+				typeof(DatabaseFunctions).GetMethod(nameof(DatabaseFunctions.Alias)), new AliasCallConverter()
+				);
+			_methodCallConverters.Add(
+				typeof(DatabaseFunctions).GetMethod(nameof(DatabaseFunctions.Count)), new CountCallConverter()
+				);
+			_methodCallConverters.Add(
+				typeof(DatabaseFunctions).GetMethod(nameof(DatabaseFunctions.Random)), new RandomCallConverter()
+				);
+			_methodCallConverters.Add(
+				typeof(DatabaseFunctions).GetMethod(nameof(DatabaseFunctions.IsIn)), new IsInCallConverter()
+				);
+		}
+
+		public void AddMethodConverter(MethodInfo methodInfo, IMethodCallConverter methodCallConverter)
+		{
+			_methodCallConverters.Add(methodInfo, methodCallConverter);
+		}
+
+		public RelationshipBuilder<TLeft, TRight> DefineRelationship<TLeft, TRight>(string name)
+			where TLeft : class
+			where TRight : class
+		{
+			var relationship = _relationshipBuilders.FirstOrDefault(q =>
+				q.Left == typeof(TLeft) && q.Right == typeof(TRight) && q.Name == name);
+			if (relationship == null)
 			{
-				fieldWithBuildFinalizer.FinalizeModelBuild(schema, tables);
+				relationship = new RelationshipBuilder<TLeft, TRight>
+				{
+					Name = name
+				};
+				_relationshipBuilders.Add(relationship);
 			}
+			return relationship as RelationshipBuilder<TLeft, TRight>;
+		}
 
-			foreach (var modelWithBuildFinalizer in entityModelCollection.OfType<IModelBuilderFinalizer>())
+		/// <summary>
+		/// Add an entity type to the schema and return the EntitySchemaBuilder for customizing how the entity is stored.
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <returns></returns>
+		public EntitySchemaBuilder<T> DefineEntity<T>()
+			where T : class
+		{
+			var entityType = typeof(T);
+			if (_entitySchemaBuilders.TryGetValue(entityType, out var builder))
+				return builder as EntitySchemaBuilder<T>;
+			builder = new EntitySchemaBuilder<T>();
+			_entitySchemaBuilders.Add(entityType, builder);
+			return builder as EntitySchemaBuilder<T>;
+		}
+
+		public EntitySchemaBuilder<T> DefineEntity<T>(Action<EntitySchemaBuilder<T>> configureCallback)
+			where T : class
+		{
+			var builder = DefineEntity<T>();
+			configureCallback?.Invoke(builder);
+			return builder;
+		}
+
+		/// <summary>
+		/// Build the schema.
+		/// </summary>
+		/// <returns></returns>
+		public virtual Schema Build()
+		{
+			var entityPrimitiveFields = BuildEntityPrimitiveFields();
+			while (DefineNewFields(entityPrimitiveFields)) { }
+			var entitySchemas = BuildEntitySchemas(entityPrimitiveFields).ToArray();
+			return new Schema(entitySchemas, _methodCallConverters,
+				_relationshipBuilders.Select(q => q.Build(entityPrimitiveFields)).ToArray());
+		}
+
+		private bool DefineNewFields(PartialEntitySchemaCollection partialEntitySchemas)
+		{
+			var result = false;
+			foreach (var kvp in _entitySchemaBuilders)
 			{
-				modelWithBuildFinalizer.FinalizeBuiltModel(schema, tables);
+				if (kvp.Value.DefineNewSchemaFields(partialEntitySchemas))
+					result = true;
 			}
+			return result;
+		}
 
-			var additionalTables = GetNonEntityTables(entityModelCollection);
-			if (additionalTables != null)
-				tables.AddRange(additionalTables);
+		private PartialEntitySchemaCollection BuildEntityPrimitiveFields()
+		{
+			var primitiveFields = new PartialEntitySchemaCollection(_entitySchemaBuilders.Keys);
+			foreach (var kvp in _entitySchemaBuilders)
+			{
+				primitiveFields[kvp.Key] = kvp.Value.BuildPartialSchema(primitiveFields);
+			}
+			return primitiveFields;
+		}
 
-			schema.SetTables(tables);
-			return schema;
+		private IEnumerable<EntitySchema> BuildEntitySchemas(PartialEntitySchemaCollection entityPrimitiveFields)
+		{
+			foreach (var kvp in _entitySchemaBuilders)
+			{
+				yield return kvp.Value.BuildSchema(entityPrimitiveFields);
+			}
 		}
 	}
 }

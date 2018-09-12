@@ -1,18 +1,24 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-
-namespace Silk.Data.SQL.ORM.Schema
+﻿namespace Silk.Data.SQL.ORM.Schema
 {
+	/// <summary>
+	/// Database table.
+	/// </summary>
 	public class Table
 	{
+		/// <summary>
+		/// Gets the table's name.
+		/// </summary>
 		public string TableName { get; }
 
+		/// <summary>
+		/// Gets an array of columns in the table.
+		/// </summary>
 		public Column[] Columns { get; }
 
-		public Table(string name, IEnumerable<Column> columns)
+		public Table(string tableName, Column[] columns)
 		{
-			TableName = name;
-			Columns = columns.ToArray();
+			TableName = tableName;
+			Columns = columns;
 		}
 	}
 }
