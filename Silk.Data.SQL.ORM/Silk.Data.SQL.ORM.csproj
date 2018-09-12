@@ -24,7 +24,7 @@ Part of the SilkStack project.</Description>
 
   <ItemGroup>
     <PackageReference Include="Silk.Data.Modelling" Version="0.1.4" />
-    <PackageReference Include="Silk.Data.SQL.Base" Version="0.1.0" />
+    <PackageReference Include="Silk.Data.SQL.Base" Version="0.1.1" />
   </ItemGroup>
 
 </Project>
