@@ -327,6 +327,19 @@ namespace Silk.Data.SQL.ORM.Queries
 			return CreateResultMapper<TLeftView, TRightView>(1, leftProjectionSchema, rightProjectionSchema);
 		}
 
+		public ValueResultMapper<TProperty> Project<TProperty>(Expression<Func<TLeft, TRight, TProperty>> projection)
+			where TProperty : struct
+		{
+			if (!SqlTypeHelper.IsSqlPrimitiveType(typeof(TProperty)))
+				throw new Exception("Cannot project complex types, call Project<TView>() instead.");
+
+			var expressionResult = ExpressionConverter.Convert(projection);
+
+			var mapper = Project<TProperty>(expressionResult.QueryExpression);
+			AddJoins(expressionResult.RequiredJoins);
+			return mapper;
+		}
+
 		public ValueResultMapper<TValue> Project<TValue>(QueryExpression queryExpression)
 			where TValue : struct
 		{

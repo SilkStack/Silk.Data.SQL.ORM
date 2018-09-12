@@ -117,6 +117,42 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 		}
 
+		[TestMethod]
+		public async Task ProjectEmptyRelatedPrimitivesInRelationship()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<ParentPocoModel>();
+			schemaBuilder.DefineEntity<SimplePocoModel>();
+			schemaBuilder.DefineEntity<RelatedPoco>();
+			schemaBuilder.DefineRelationship<ParentPocoModel, RelatedPoco>("Relationship");
+			var schema = schemaBuilder.Build();
+
+			var relationship = schema.GetRelationship<ParentPocoModel, RelatedPoco>("Relationship");
+
+			var inRelatedObj = new RelatedPoco { Data = 2 };
+			var inObj = new ParentPocoModel { Poco = new SimplePocoModel { Data = 1 } };
+
+			using (var provider = TestHelper.CreateProvider())
+			{
+				await provider.ExecuteAsync(
+					schema.CreateTable<ParentPocoModel>(),
+					schema.CreateTable<SimplePocoModel>(),
+					schema.CreateTable<RelatedPoco>(),
+					relationship.CreateTable(),
+					schema.CreateInsert(inRelatedObj),
+					schema.CreateInsert(inObj.Poco),
+					schema.CreateInsert(inObj),
+					relationship.CreateInsert(inObj, inRelatedObj)
+					);
+
+				var selectQuery = relationship.CreateSelect<ParentPocoModel, RelatedPoco, object, SimplePocoView>();
+				await provider.ExecuteAsync(selectQuery);
+
+				Assert.AreEqual(1, selectQuery.Result.Count);
+				Assert.AreEqual(2, selectQuery.Result.First().Item2.Data);
+			}
+		}
+
 		private class SimplePocoModel
 		{
 			public Guid Id { get; private set; }
