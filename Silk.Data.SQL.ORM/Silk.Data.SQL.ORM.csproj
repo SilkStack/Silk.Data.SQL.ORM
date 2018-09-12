@@ -1,8 +1,8 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard1.3</TargetFramework>
-    <Version>0.0.8</Version>
+    <Version>0.0.9-alpha5</Version>
     <Authors>John Carruthers</Authors>
     <Company />
     <Product>SilkStack</Product>
@@ -14,7 +14,7 @@ Part of the SilkStack project.</Description>
 
   <ItemGroup>
     <PackageReference Include="Silk.Data.Modelling" Version="0.1.4" />
-    <PackageReference Include="Silk.Data.SQL.Base" Version="0.0.4" />
+    <PackageReference Include="Silk.Data.SQL.Base" Version="0.0.6-alpha2" />
   </ItemGroup>
 
 </Project>

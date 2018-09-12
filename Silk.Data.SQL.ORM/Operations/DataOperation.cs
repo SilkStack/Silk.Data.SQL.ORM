@@ -28,11 +28,21 @@ namespace Silk.Data.SQL.ORM.Operations
 		public abstract Task ProcessResultAsync(QueryResult queryResult);
 	}
 
-	public abstract class DataOperationWithResult<T> : DataOperation
+	public abstract class DataOperationWithResult : DataOperation
+	{
+		/// <summary>
+		/// Gets the result of the data operation without a known static type.
+		/// </summary>
+		public abstract object UntypedResult { get; }
+	}
+
+	public abstract class DataOperationWithResult<T> : DataOperationWithResult
 	{
 		/// <summary>
 		/// Gets the result of the data operation.
 		/// </summary>
 		public abstract T Result { get; }
+
+		public override object UntypedResult => Result;
 	}
 }

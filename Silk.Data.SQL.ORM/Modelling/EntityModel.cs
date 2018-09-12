@@ -22,9 +22,10 @@ namespace Silk.Data.SQL.ORM.Modelling
 			EntityType = entityType;
 		}
 
-		public ProjectionModel GetProjection<TProjection>()
+		public ProjectionModel GetProjection<TProjection>() => GetProjection(typeof(TProjection));
+
+		public ProjectionModel GetProjection(Type type)
 		{
-			var type = typeof(TProjection);
 			if (_projectionCache.TryGetValue(type, out var projection))
 				return projection;
 
@@ -33,7 +34,7 @@ namespace Silk.Data.SQL.ORM.Modelling
 				if (_projectionCache.TryGetValue(type, out projection))
 					return projection;
 
-				var transformer = new ProjectionModelTransformer(typeof(TProjection));
+				var transformer = new ProjectionModelTransformer(type);
 				Transform(transformer);
 				projection = transformer.GetProjectionModel();
 				_projectionCache.Add(type, projection);

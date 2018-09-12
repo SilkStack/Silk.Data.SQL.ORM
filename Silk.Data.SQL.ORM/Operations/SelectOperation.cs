@@ -185,7 +185,7 @@ namespace Silk.Data.SQL.ORM.Operations
 			return new SelectOperation<TProjection>(query, projectionModel);
 		}
 
-		private static QueryExpression CreateQuery(ProjectionModel projectionModel, EntityModel entityModel,
+		public static QueryExpression CreateQuery(ProjectionModel projectionModel, EntityModel entityModel,
 			Condition where = null, Condition having = null,
 			OrderBy[] orderBy = null, GroupBy[] groupBy = null,
 			int? offset = null, int? limit = null)
