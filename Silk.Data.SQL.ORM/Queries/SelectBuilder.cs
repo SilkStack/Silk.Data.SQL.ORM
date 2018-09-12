@@ -303,14 +303,16 @@ namespace Silk.Data.SQL.ORM.Queries
 			where TLeftView : class
 			where TRightView : class
 		{
-			var leftProjectionSchema = LeftSchema;
+			var leftProjectionSchema = LeftSchema as EntitySchema;
 			if (typeof(TLeftView) != typeof(TLeft))
 			{
+				leftProjectionSchema = LeftSchema.GetProjection<TLeftView>();
 			}
 
-			var rightProjectionSchema = RightSchema;
+			var rightProjectionSchema = RightSchema as EntitySchema;
 			if (typeof(TRightView) != typeof(TRight))
 			{
+				rightProjectionSchema = RightSchema.GetProjection<TRightView>();
 			}
 
 			AddJoins(Relationship.LeftJoin);

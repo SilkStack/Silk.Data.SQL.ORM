@@ -136,6 +136,31 @@ namespace Silk.Data.SQL.ORM
 			return relationship.CreateSelect(queryCallback);
 		}
 
+		public static QueryWithResult<(TLeftView, TRightView)> CreateSelect<TLeft, TRight, TLeftView, TRightView>(this Relationship<TLeft, TRight> relationship, Action<SelectBuilder<TLeft, TRight>> queryCallback = null)
+			where TLeft : class
+			where TRight : class
+			where TLeftView : class
+			where TRightView : class
+		{
+			var queryBuilder = new SelectBuilder<TLeft, TRight>(relationship);
+			var mapping = queryBuilder.Project<TLeftView, TRightView>();
+			queryCallback?.Invoke(queryBuilder);
+			return new QueryWithTupleResult<TLeftView, TRightView>(queryBuilder.BuildQuery(), mapping);
+		}
+
+		public static QueryWithResult<(TLeftView, TRightView)> CreateSelect<TLeft, TRight, TLeftView, TRightView>(this Schema.Schema schema, string relationshipName, Action<SelectBuilder<TLeft, TRight>> queryCallback = null)
+			where TLeft : class
+			where TRight : class
+			where TLeftView : class
+			where TRightView : class
+		{
+			var relationship = schema.GetRelationship<TLeft, TRight>(relationshipName);
+			if (relationship == null)
+				throw new Exception("Relationship isn't configured in schema.");
+
+			return relationship.CreateSelect<TLeft, TRight, TLeftView, TRightView>(queryCallback);
+		}
+
 		public static QueryWithResult<T> CreateSelect<T>(this EntitySchema<T> schema, Action<SelectBuilder<T>> queryCallback = null)
 			where T : class
 		{
