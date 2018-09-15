@@ -404,17 +404,21 @@ namespace Silk.Data.SQL.ORM.Tests
 
 			var checkExpression = condition.QueryExpression as ColumnExpression;
 			Assert.IsNotNull(checkExpression);
+			var checkSource = checkExpression.Source as TableExpression;
 			Assert.AreEqual("A", checkExpression.ColumnName);
 			Assert.AreEqual(1, condition.RequiredJoins.Length);
 			Assert.AreEqual("Relationship_LeftTable", condition.RequiredJoins[0].TableAlias);
+			Assert.AreEqual("Relationship_LeftTable", checkSource.TableName);
 
 			condition = expressionConverter.Convert((one, two) => two.A);
 
 			checkExpression = condition.QueryExpression as ColumnExpression;
 			Assert.IsNotNull(checkExpression);
+			checkSource = checkExpression.Source as TableExpression;
 			Assert.AreEqual("A", checkExpression.ColumnName);
 			Assert.AreEqual(1, condition.RequiredJoins.Length);
 			Assert.AreEqual("Relationship_RightTable", condition.RequiredJoins[0].TableAlias);
+			Assert.AreEqual("Relationship_RightTable", checkSource.TableName);
 		}
 
 		[TestMethod]

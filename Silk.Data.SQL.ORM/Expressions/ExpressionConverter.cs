@@ -173,16 +173,20 @@ namespace Silk.Data.SQL.ORM.Expressions
 						}
 						else
 						{
-							SetConversionResult(
-								QueryExpression.Column(entityField.Columns[0].ColumnName, sourceExpression)
-								);
 							if (_relationship != null)
 							{
 								RequiredJoins.Add(
 									entitySchema.EntityType == _relationship.LeftType ?
 										_relationship.LeftJoin : _relationship.RightJoin
 									);
+								sourceExpression = new TableExpression(
+									entitySchema.EntityType == _relationship.LeftType ?
+										_relationship.LeftJoin.TableAlias : _relationship.RightJoin.TableAlias
+									);
 							}
+							SetConversionResult(
+								QueryExpression.Column(entityField.Columns[0].ColumnName, sourceExpression)
+							);
 						}
 						return node;
 					}
