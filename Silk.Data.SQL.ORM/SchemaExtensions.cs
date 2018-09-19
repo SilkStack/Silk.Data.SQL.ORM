@@ -20,6 +20,57 @@ namespace Silk.Data.SQL.ORM
 				throw new Exception("Entity type must have a primary key to generate update statements.");
 		}
 
+		public static QueryNoResult CreateInsert<T>(this EntitySchema<T> schema, Action<InsertBuilder<T>> queryCallback)
+			where T : class
+		{
+			var builder = new InsertBuilder<T>(schema);
+			queryCallback?.Invoke(builder);
+			return new QueryNoResult(builder.BuildQuery());
+		}
+
+		public static QueryNoResult CreateInsert<T>(this Schema.Schema schema, Action<InsertBuilder<T>> queryCallback)
+			where T : class
+		{
+			var entitySchema = schema.GetEntitySchema<T>();
+			if (entitySchema == null)
+				throw new Exception("Entity isn't configured in schema.");
+			return entitySchema.CreateInsert<T>(queryCallback);
+		}
+
+		public static QueryNoResult CreateUpdate<T>(this EntitySchema<T> schema, Action<UpdateBuilder<T>> queryCallback)
+			where T : class
+		{
+			var builder = new UpdateBuilder<T>(schema);
+			queryCallback?.Invoke(builder);
+			return new QueryNoResult(builder.BuildQuery());
+		}
+
+		public static QueryNoResult CreateUpdate<T>(this Schema.Schema schema, Action<UpdateBuilder<T>> queryCallback)
+			where T : class
+		{
+			var entitySchema = schema.GetEntitySchema<T>();
+			if (entitySchema == null)
+				throw new Exception("Entity isn't configured in schema.");
+			return entitySchema.CreateUpdate<T>(queryCallback);
+		}
+
+		public static QueryNoResult CreateDelete<T>(this EntitySchema<T> schema, Action<DeleteBuilder<T>> queryCallback)
+			where T : class
+		{
+			var builder = new DeleteBuilder<T>(schema);
+			queryCallback?.Invoke(builder);
+			return new QueryNoResult(builder.BuildQuery());
+		}
+
+		public static QueryNoResult CreateDelete<T>(this Schema.Schema schema, Action<DeleteBuilder<T>> queryCallback)
+			where T : class
+		{
+			var entitySchema = schema.GetEntitySchema<T>();
+			if (entitySchema == null)
+				throw new Exception("Entity isn't configured in schema.");
+			return entitySchema.CreateDelete<T>(queryCallback);
+		}
+
 		public static QueryWithResult<bool> CreateTableExists<TLeft, TRight>(this Relationship<TLeft, TRight> relationship)
 			where TLeft : class
 			where TRight : class
