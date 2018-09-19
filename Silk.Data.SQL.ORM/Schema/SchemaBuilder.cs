@@ -62,6 +62,15 @@ namespace Silk.Data.SQL.ORM.Schema
 			return relationship as RelationshipBuilder<TLeft, TRight>;
 		}
 
+		public RelationshipBuilder<TLeft, TRight> DefineRelationship<TLeft, TRight>(string name, Action<RelationshipBuilder<TLeft, TRight>> callback)
+			where TLeft : class
+			where TRight : class
+		{
+			var relationship = DefineRelationship<TLeft, TRight>(name);
+			callback?.Invoke(relationship);
+			return relationship;
+		}
+
 		/// <summary>
 		/// Add an entity type to the schema and return the EntitySchemaBuilder for customizing how the entity is stored.
 		/// </summary>

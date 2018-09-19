@@ -21,7 +21,7 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		CoreBinding.Binding GetValueBinding();
 
-		ForeignKey BuildForeignKey(string propertyPathPrefix, string[] modelPath);
+		ForeignKey BuildForeignKey(string propertyPathPrefix, string[] modelPath, string columnName = null);
 
 		ProjectionField BuildProjectionField(string sourceName, string fieldName,
 			string aliasName, string[] modelPath, EntityFieldJoin join);
@@ -88,11 +88,11 @@ namespace Silk.Data.SQL.ORM.Schema
 			return new CoreBinding.CopyBinding<TValue>(new[] { Columns[0].ColumnName }, ModelPath);
 		}
 
-		public ForeignKey BuildForeignKey(string propertyPathPrefix, string[] modelPath)
+		public ForeignKey BuildForeignKey(string propertyPathPrefix, string[] modelPath, string columnName = null)
 		{
 			var column = Columns[0];
 			return new ForeignKey<TEntity, TValue>(new Column(
-					$"FK_{propertyPathPrefix}_{column.ColumnName}", column.DataType, true
+					columnName ?? $"FK_{propertyPathPrefix}_{column.ColumnName}", column.DataType, true
 					), column, modelPath.Concat(ModelPath).ToArray());
 		}
 

@@ -20,7 +20,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		public abstract IEntityFieldOfEntity<TEntity> CreateRelatedEntityField<TEntity>(
 			string fieldName, Type fieldType, IPropertyField modelField,
 			PartialEntitySchemaCollection entityPrimitiveFields, string propertyPathPrefix,
-			string[] modelPath);
+			string[] modelPath, Dictionary<IPropertyField, string> columNames = null);
 	}
 
 	public class PartialEntitySchema<T> : PartialEntitySchema
@@ -35,10 +35,15 @@ namespace Silk.Data.SQL.ORM.Schema
 		public override IEntityFieldOfEntity<TEntity> CreateRelatedEntityField<TEntity>(
 			string fieldName, Type fieldType, IPropertyField modelField,
 			PartialEntitySchemaCollection entityPrimitiveFields, string propertyPathPrefix,
-			string[] modelPath)
+			string[] modelPath, Dictionary<IPropertyField, string> columNames = null)
 		{
 			var primaryKeyFields = entityPrimitiveFields.GetEntityPrimaryKeys(fieldType);
-			var foreignKeys = primaryKeyFields.Select(q => q.BuildForeignKey(propertyPathPrefix, modelPath)).ToArray();
+			var foreignKeys = primaryKeyFields.Select(q =>
+			{
+				if (columNames != null && columNames.TryGetValue(q.ModelField, out var columnName))
+					return q.BuildForeignKey(propertyPathPrefix, modelPath, columnName);
+				return q.BuildForeignKey(propertyPathPrefix, modelPath);
+			}).ToArray();
 			return new EntityField<T, TEntity>(fieldName, modelPath, KeyType.ManyToOne, foreignKeys.ToArray(), modelField);
 		}
 	}

@@ -451,6 +451,33 @@ namespace Silk.Data.SQL.ORM.Tests
 			Assert.AreEqual("__joinAlias_Child2", condition.RequiredJoins[1].TableAlias);
 		}
 
+		[TestMethod]
+		public void ConvertCustomRelationshipColumns()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<TestTupleTwo<int, int>>().TableName = "LeftTable";
+			schemaBuilder.DefineEntity<TestTuple<int, int>>().TableName = "RightTable";
+			schemaBuilder.DefineRelationship<TestTupleTwo<int, int>, TestTuple<int, int>>("Relationship", builder =>
+			{
+				builder.For((left, right) => left.Id).ColumnName = "CustomLeftId";
+				builder.For((left, right) => right.Id).ColumnName = "CustomRightId";
+			});
+			var schema = schemaBuilder.Build();
+			var expressionConverter = new ExpressionConverter<TestTupleTwo<int, int>, TestTuple<int, int>>(schema, "Relationship");
+
+			var condition = expressionConverter.Convert((left, right) => left.Id);
+			var checkExpression = condition.QueryExpression as ColumnExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.AreEqual("CustomLeftId", checkExpression.ColumnName);
+			Assert.AreEqual(0, condition.RequiredJoins.Length);
+
+			condition = expressionConverter.Convert((left, right) => right.Id);
+			checkExpression = condition.QueryExpression as ColumnExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.AreEqual("CustomRightId", checkExpression.ColumnName);
+			Assert.AreEqual(0, condition.RequiredJoins.Length);
+		}
+
 		private ExpressionConverter<TestTuple<T1,T2>> CreateConverter<T1, T2>()
 		{
 			var schemaBuilder = new SchemaBuilder();
