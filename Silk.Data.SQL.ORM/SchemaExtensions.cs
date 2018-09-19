@@ -71,7 +71,7 @@ namespace Silk.Data.SQL.ORM
 			return entitySchema.CreateDelete<T>(queryCallback);
 		}
 
-		public static QueryWithResult<bool> CreateTableExists<TLeft, TRight>(this Relationship<TLeft, TRight> relationship)
+		public static QueryWithScalarResult<bool> CreateTableExists<TLeft, TRight>(this Relationship<TLeft, TRight> relationship)
 			where TLeft : class
 			where TRight : class
 		{
@@ -81,7 +81,7 @@ namespace Silk.Data.SQL.ORM
 				);
 		}
 
-		public static QueryWithResult<bool> CreateTableExists<TLeft, TRight>(this Schema.Schema schema, string relationshipName)
+		public static QueryWithScalarResult<bool> CreateTableExists<TLeft, TRight>(this Schema.Schema schema, string relationshipName)
 			where TLeft : class
 			where TRight : class
 		{
@@ -92,7 +92,7 @@ namespace Silk.Data.SQL.ORM
 			return relationship.CreateTableExists();
 		}
 
-		public static QueryWithResult<bool> CreateTableExists<T>(this EntitySchema<T> schema)
+		public static QueryWithScalarResult<bool> CreateTableExists<T>(this EntitySchema<T> schema)
 			where T : class
 		{
 			return new QueryWithScalarResult<bool>(
@@ -101,7 +101,7 @@ namespace Silk.Data.SQL.ORM
 				);
 		}
 
-		public static QueryWithResult<bool> CreateTableExists<T>(this Schema.Schema schema)
+		public static QueryWithScalarResult<bool> CreateTableExists<T>(this Schema.Schema schema)
 			where T : class
 		{
 			var entitySchema = schema.GetEntitySchema<T>();
@@ -111,7 +111,7 @@ namespace Silk.Data.SQL.ORM
 			return entitySchema.CreateTableExists();
 		}
 
-		public static Query CreateTable<TLeft, TRight>(this Relationship<TLeft, TRight> relationship)
+		public static QueryNoResult CreateTable<TLeft, TRight>(this Relationship<TLeft, TRight> relationship)
 			where TLeft : class
 			where TRight : class
 		{
@@ -119,7 +119,7 @@ namespace Silk.Data.SQL.ORM
 			return new QueryNoResult(queryBuilder.BuildQuery());
 		}
 
-		public static Query CreateTable<TLeft, TRight>(this Schema.Schema schema, string relationshipName)
+		public static QueryNoResult CreateTable<TLeft, TRight>(this Schema.Schema schema, string relationshipName)
 			where TLeft : class
 			where TRight : class
 		{
@@ -130,14 +130,14 @@ namespace Silk.Data.SQL.ORM
 			return relationship.CreateTable();
 		}
 
-		public static Query CreateTable<T>(this EntitySchema<T> schema)
+		public static QueryNoResult CreateTable<T>(this EntitySchema<T> schema)
 			where T : class
 		{
 			var queryBuilder = new CreateTableBuilder<T>(schema);
 			return new QueryNoResult(queryBuilder.BuildQuery());
 		}
 
-		public static Query CreateTable<T>(this Schema.Schema schema)
+		public static QueryNoResult CreateTable<T>(this Schema.Schema schema)
 			where T : class
 		{
 			var entitySchema = schema.GetEntitySchema<T>();
@@ -147,7 +147,7 @@ namespace Silk.Data.SQL.ORM
 			return entitySchema.CreateTable();
 		}
 
-		public static QueryWithResult<int> CreateCount<T>(this EntitySchema<T> schema, Action<SelectBuilder<T>> queryCallback = null)
+		public static QueryWithScalarResult<int> CreateCount<T>(this EntitySchema<T> schema, Action<SelectBuilder<T>> queryCallback = null)
 			where T : class
 		{
 			var queryBuilder = new SelectBuilder<T>(schema);
@@ -156,7 +156,7 @@ namespace Silk.Data.SQL.ORM
 			return new QueryWithScalarResult<int>(queryBuilder.BuildQuery(), mapping);
 		}
 
-		public static QueryWithResult<int> CreateCount<T>(this Schema.Schema schema, Action<SelectBuilder<T>> queryCallback = null)
+		public static QueryWithScalarResult<int> CreateCount<T>(this Schema.Schema schema, Action<SelectBuilder<T>> queryCallback = null)
 			where T : class
 		{
 			var entitySchema = schema.GetEntitySchema<T>();
@@ -166,7 +166,7 @@ namespace Silk.Data.SQL.ORM
 			return entitySchema.CreateCount(queryCallback);
 		}
 
-		public static QueryWithResult<int> CreateCount<TLeft, TRight>(this Relationship<TLeft, TRight> relationship, Action<SelectBuilder<TLeft, TRight>> queryCallback = null)
+		public static QueryWithScalarResult<int> CreateCount<TLeft, TRight>(this Relationship<TLeft, TRight> relationship, Action<SelectBuilder<TLeft, TRight>> queryCallback = null)
 			where TLeft : class
 			where TRight : class
 		{
@@ -176,7 +176,7 @@ namespace Silk.Data.SQL.ORM
 			return new QueryWithScalarResult<int>(queryBuilder.BuildQuery(), mapping);
 		}
 
-		public static QueryWithResult<int> CreateCount<TLeft, TRight>(this Schema.Schema schema, string relationshipName, Action<SelectBuilder<TLeft, TRight>> queryCallback = null)
+		public static QueryWithScalarResult<int> CreateCount<TLeft, TRight>(this Schema.Schema schema, string relationshipName, Action<SelectBuilder<TLeft, TRight>> queryCallback = null)
 			where TLeft : class
 			where TRight : class
 		{
@@ -187,7 +187,7 @@ namespace Silk.Data.SQL.ORM
 			return relationship.CreateCount(queryCallback);
 		}
 
-		public static QueryWithResult<(TLeft, TRight)> CreateSelect<TLeft, TRight>(this Relationship<TLeft, TRight> relationship, Action<SelectBuilder<TLeft, TRight>> queryCallback = null)
+		public static QueryWithTupleResult<TLeft, TRight> CreateSelect<TLeft, TRight>(this Relationship<TLeft, TRight> relationship, Action<SelectBuilder<TLeft, TRight>> queryCallback = null)
 			where TLeft : class
 			where TRight : class
 		{
@@ -197,7 +197,7 @@ namespace Silk.Data.SQL.ORM
 			return new QueryWithTupleResult<TLeft, TRight>(queryBuilder.BuildQuery(), mapping);
 		}
 
-		public static QueryWithResult<(TLeft, TRight)> CreateSelect<TLeft, TRight>(this Schema.Schema schema, string relationshipName, Action<SelectBuilder<TLeft, TRight>> queryCallback = null)
+		public static QueryWithTupleResult<TLeft, TRight> CreateSelect<TLeft, TRight>(this Schema.Schema schema, string relationshipName, Action<SelectBuilder<TLeft, TRight>> queryCallback = null)
 			where TLeft : class
 			where TRight : class
 		{
@@ -208,7 +208,7 @@ namespace Silk.Data.SQL.ORM
 			return relationship.CreateSelect(queryCallback);
 		}
 
-		public static QueryWithResult<(TLeftView, TRightView)> CreateSelect<TLeft, TRight, TLeftView, TRightView>(this Relationship<TLeft, TRight> relationship, Action<SelectBuilder<TLeft, TRight>> queryCallback = null)
+		public static QueryWithTupleResult<TLeftView, TRightView> CreateSelect<TLeft, TRight, TLeftView, TRightView>(this Relationship<TLeft, TRight> relationship, Action<SelectBuilder<TLeft, TRight>> queryCallback = null)
 			where TLeft : class
 			where TRight : class
 			where TLeftView : class
@@ -220,7 +220,7 @@ namespace Silk.Data.SQL.ORM
 			return new QueryWithTupleResult<TLeftView, TRightView>(queryBuilder.BuildQuery(), mapping);
 		}
 
-		public static QueryWithResult<(TLeftView, TRightView)> CreateSelect<TLeft, TRight, TLeftView, TRightView>(this Schema.Schema schema, string relationshipName, Action<SelectBuilder<TLeft, TRight>> queryCallback = null)
+		public static QueryWithTupleResult<TLeftView, TRightView> CreateSelect<TLeft, TRight, TLeftView, TRightView>(this Schema.Schema schema, string relationshipName, Action<SelectBuilder<TLeft, TRight>> queryCallback = null)
 			where TLeft : class
 			where TRight : class
 			where TLeftView : class
@@ -233,7 +233,7 @@ namespace Silk.Data.SQL.ORM
 			return relationship.CreateSelect<TLeft, TRight, TLeftView, TRightView>(queryCallback);
 		}
 
-		public static QueryWithResult<T> CreateSelect<T>(this EntitySchema<T> schema, Action<SelectBuilder<T>> queryCallback = null)
+		public static QueryWithMappedResult<T> CreateSelect<T>(this EntitySchema<T> schema, Action<SelectBuilder<T>> queryCallback = null)
 			where T : class
 		{
 			var queryBuilder = new SelectBuilder<T>(schema);
@@ -242,7 +242,7 @@ namespace Silk.Data.SQL.ORM
 			return new QueryWithMappedResult<T>(queryBuilder.BuildQuery(), mapping);
 		}
 
-		public static QueryWithResult<T> CreateSelect<T>(this Schema.Schema schema, Action<SelectBuilder<T>> queryCallback = null)
+		public static QueryWithMappedResult<T> CreateSelect<T>(this Schema.Schema schema, Action<SelectBuilder<T>> queryCallback = null)
 			where T : class
 		{
 			var entitySchema = schema.GetEntitySchema<T>();
@@ -252,7 +252,7 @@ namespace Silk.Data.SQL.ORM
 			return entitySchema.CreateSelect(queryCallback);
 		}
 
-		public static QueryWithResult<TView> CreateSelect<T, TView>(this EntitySchema<T> schema, Action<SelectBuilder<T>> queryCallback = null)
+		public static QueryWithMappedResult<TView> CreateSelect<T, TView>(this EntitySchema<T> schema, Action<SelectBuilder<T>> queryCallback = null)
 			where T : class
 			where TView : class
 		{
@@ -262,7 +262,7 @@ namespace Silk.Data.SQL.ORM
 			return new QueryWithMappedResult<TView>(queryBuilder.BuildQuery(), mapping);
 		}
 
-		public static QueryWithResult<TView> CreateSelect<T, TView>(this Schema.Schema schema, Action<SelectBuilder<T>> queryCallback = null)
+		public static QueryWithMappedResult<TView> CreateSelect<T, TView>(this Schema.Schema schema, Action<SelectBuilder<T>> queryCallback = null)
 			where T : class
 			where TView : class
 		{
@@ -273,7 +273,7 @@ namespace Silk.Data.SQL.ORM
 			return entitySchema.CreateSelect<T, TView>(queryCallback);
 		}
 
-		public static Query CreateInsert<TLeft, TRight>(this Relationship<TLeft, TRight> relationship, TLeft left, params TRight[] right)
+		public static QueryNoResult CreateInsert<TLeft, TRight>(this Relationship<TLeft, TRight> relationship, TLeft left, params TRight[] right)
 			where TLeft : class
 			where TRight : class
 		{
@@ -294,7 +294,7 @@ namespace Silk.Data.SQL.ORM
 			return new QueryNoResult(queryBuilder.BuildQuery());
 		}
 
-		public static Query CreateInsert<TLeft, TRight>(this Schema.Schema schema, string relationshipName, TLeft left, params TRight[] right)
+		public static QueryNoResult CreateInsert<TLeft, TRight>(this Schema.Schema schema, string relationshipName, TLeft left, params TRight[] right)
 			where TLeft : class
 			where TRight : class
 		{
@@ -305,7 +305,7 @@ namespace Silk.Data.SQL.ORM
 			return relationship.CreateInsert(left, right);
 		}
 
-		public static Query CreateInsert<TLeft, TRight>(this Relationship<TLeft, TRight> relationship, TRight right, params TLeft[] left)
+		public static QueryNoResult CreateInsert<TLeft, TRight>(this Relationship<TLeft, TRight> relationship, TRight right, params TLeft[] left)
 			where TLeft : class
 			where TRight : class
 		{
@@ -326,7 +326,7 @@ namespace Silk.Data.SQL.ORM
 			return new QueryNoResult(queryBuilder.BuildQuery());
 		}
 
-		public static Query CreateInsert<TLeft, TRight>(this Schema.Schema schema, string relationshipName, TRight right, params TLeft[] left)
+		public static QueryNoResult CreateInsert<TLeft, TRight>(this Schema.Schema schema, string relationshipName, TRight right, params TLeft[] left)
 			where TLeft : class
 			where TRight : class
 		{
@@ -412,7 +412,7 @@ namespace Silk.Data.SQL.ORM
 			return entitySchema.CreateInsert(entities);
 		}
 
-		public static Query CreateDelete<TLeft, TRight>(this Relationship<TLeft, TRight> relationship, TLeft left, params TRight[] right)
+		public static QueryNoResult CreateDelete<TLeft, TRight>(this Relationship<TLeft, TRight> relationship, TLeft left, params TRight[] right)
 			where TLeft : class
 			where TRight : class
 		{
@@ -446,7 +446,7 @@ namespace Silk.Data.SQL.ORM
 			return new QueryNoResult(queryBuilder.BuildQuery());
 		}
 
-		public static Query CreateDelete<TLeft, TRight>(this Schema.Schema schema, string relationshipName, TLeft left, params TRight[] right)
+		public static QueryNoResult CreateDelete<TLeft, TRight>(this Schema.Schema schema, string relationshipName, TLeft left, params TRight[] right)
 			where TLeft : class
 			where TRight : class
 		{
@@ -457,7 +457,7 @@ namespace Silk.Data.SQL.ORM
 			return relationship.CreateDelete(left, right);
 		}
 
-		public static Query CreateDelete<TLeft, TRight>(this Relationship<TLeft, TRight> relationship, TRight right, params TLeft[] left)
+		public static QueryNoResult CreateDelete<TLeft, TRight>(this Relationship<TLeft, TRight> relationship, TRight right, params TLeft[] left)
 			where TLeft : class
 			where TRight : class
 		{
@@ -491,7 +491,7 @@ namespace Silk.Data.SQL.ORM
 			return new QueryNoResult(queryBuilder.BuildQuery());
 		}
 
-		public static Query CreateDelete<TLeft, TRight>(this Schema.Schema schema, string relationshipName, TRight right, params TLeft[] left)
+		public static QueryNoResult CreateDelete<TLeft, TRight>(this Schema.Schema schema, string relationshipName, TRight right, params TLeft[] left)
 			where TLeft : class
 			where TRight : class
 		{
@@ -502,7 +502,7 @@ namespace Silk.Data.SQL.ORM
 			return relationship.CreateDelete(right, left);
 		}
 
-		public static Query CreateDelete<T>(this EntitySchema<T> schema, params T[] entities)
+		public static QueryNoResult CreateDelete<T>(this EntitySchema<T> schema, params T[] entities)
 			where T : class
 		{
 			SanityCheckArgs(schema, entities);
@@ -526,7 +526,7 @@ namespace Silk.Data.SQL.ORM
 			}
 		}
 
-		public static Query CreateDelete<T>(this Schema.Schema schema, params T[] entities)
+		public static QueryNoResult CreateDelete<T>(this Schema.Schema schema, params T[] entities)
 			where T : class
 		{
 			var entitySchema = schema.GetEntitySchema<T>();
@@ -536,7 +536,7 @@ namespace Silk.Data.SQL.ORM
 			return entitySchema.CreateDelete(entities);
 		}
 
-		public static Query CreateUpdate<T>(this EntitySchema<T> schema, params T[] entities)
+		public static QueryNoResult CreateUpdate<T>(this EntitySchema<T> schema, params T[] entities)
 			where T : class
 		{
 			SanityCheckArgs(schema, entities);
@@ -562,7 +562,7 @@ namespace Silk.Data.SQL.ORM
 			}
 		}
 
-		public static Query CreateUpdate<T>(this Schema.Schema schema, params T[] entities)
+		public static QueryNoResult CreateUpdate<T>(this Schema.Schema schema, params T[] entities)
 			where T : class
 		{
 			var entitySchema = schema.GetEntitySchema<T>();
