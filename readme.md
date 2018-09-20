@@ -42,8 +42,8 @@ To get a good idea of how `Silk.Data.SQL.ORM` is intended to be used here's a ba
 	var schema = schemaBuilder.Build();
 
 	//  second, query the database
-	UserAccount joey;
-	UserAccount monica;
+	var joey = default(UserAccount);
+	var monica = default(UserAccount);
 	await sqlProvider.ExecuteAsync(
 	  schema
     	  .CreateSelect<UserAccount>(query => query.AndWhere(user => user.FullName == "Monica Geller"))
@@ -99,7 +99,11 @@ Create a projection view and query:
 		public DateTime ProfileDateOfBirth { get; set; }
 	}
 
-	TODO: Code for query here
+	var dateOfBirth = default(DateTime);
+	await provider.ExecuteAsync(
+	  schema.CreateSelect<UserAccount, UserDobView>()
+    	  .WithFirstResult(r => dateOfBirth = r.ProfileDateOfBirth)
+    );
 
 Here the property `ProfileDateOfBirth` is flattened from `UserAccount`.**`Profile`** and `UserProfile`.**`DateOfBirth`**.
 
