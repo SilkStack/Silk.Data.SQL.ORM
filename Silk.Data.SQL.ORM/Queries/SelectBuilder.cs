@@ -43,7 +43,6 @@ namespace Silk.Data.SQL.ORM.Queries
 		}
 
 		public ValueResultMapper<TProperty> Project<TProperty>(Expression<Func<T, TProperty>> projection)
-			where TProperty : struct
 		{
 			if (!SqlTypeHelper.IsSqlPrimitiveType(typeof(TProperty)))
 				throw new Exception("Cannot project complex types, call Project<TView>() instead.");
@@ -150,7 +149,6 @@ namespace Silk.Data.SQL.ORM.Queries
 		}
 
 		public ValueResultMapper<TValue> Project<TValue>(QueryExpression queryExpression)
-			where TValue : struct
 		{
 			if (!SqlTypeHelper.IsSqlPrimitiveType(typeof(TValue)))
 				throw new Exception("Cannot project complex types.");
