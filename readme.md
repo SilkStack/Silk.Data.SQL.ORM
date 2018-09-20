@@ -1,10 +1,18 @@
 # Silk.Data.SQL.ORM
 
-**This document outlines the intended state of the API by the time vNext targets are reached - it's too long for a readme but serves also as a living design document.**
+## Goals
+
+* Strongly typed SQL queries
+* Obvious query generation - no quessing at what queries are being executed, or when (no lazy-loading)
+* Minimize round-trips to the database server
+* Run against any database provider
+* Capability to run (queries like UPDATE a SET b = b + 1? expressions?)
+* Middle-ground between EF/nHibernate and micro-ORMs Dapper/massive
+
 
 ## Summary
 
-`Silk.Data.SQL.ORM` is a data orientated API for working with entities and building SQL statements that execute against *almost* any SQL server (MySQL, Postgresql, SQLite3 and Microsoft SQL Server). The goal is to build a simple ORM that sits in the middleground between big, complicated ORMs like EntityFramework or nHibernate and the small, feature limited "ORMs" like Dapper or massive.
+`Silk.Data.SQL.ORM` is an ORM.
 
 ### What it does
 
@@ -26,62 +34,38 @@
 
 To get a good idea of how `Silk.Data.SQL.ORM` is intended to be used here's a basic example:
 
-	//  first, create a data domain to work with
+	//  first, create a schema to work with
+	//  the schema will contain information about all our entity types
 	var sqlProvider = new SQLite3Provider("friends.db");
-	var domainDefinition = new DataDomainDefinition();
-	domainDefinition.AddEntityType<UserAccount>();
-	var dataDomain = domainDefinition.Build();
+	var schemaBuilder = new SchemaBuilder();
+	schemaBuilder.DefineEntityType<UserAccount>();
+	var schema = schemaBuilder.Build();
 
-	//  second, create the schema - this will CREATE all tables, indexes and relationship constraints
-	await dataDomain.Schema.Create().ExecuteAsync(sqlProvider);
+	//  second, query the database
+	UserAccount joey;
+	UserAccount monica;
+	await sqlProvider.ExecuteAsync(
+	  schema
+    	  .CreateSelect<UserAccount>(query => query.AndWhere(user => user.FullName == "Monica Geller"))
+    	  .WithFirstResult(r => monica = r);
+	  schema
+    	  .CreateSelect<UserAccount>(query => query.AnsWhere(user => user.FullName == "Joey Tribiani"))
+    	  .WithFirstResult(r => joey = r);
+	);
 
-	//  third, now query the entities in the database
-	IDatabase<T> database = new EntityDatabase<UserAccount>(dataDomain);
-	var (joey, monica) = await database
-		.Insert(
-			new UserAccount { Username = "joey.tribiani", EmailAddress = "joey@friends.com" },
-			new UserAccount { Username = "monica.geller", EmailAddress = "monica@friends.com" }
-		)
-		.SelectSingle(
-			userAccount => userAccount.Username == "joey.tribiani"
-		)
-		.SelectSingle(
-			userAccount => userAccount.Username == "monica.geller"
-		)
-		.AsBatch()
-		.ExecuteAsync(sqlProvider);
+### Schema
 
-### DataDomain
-
-The first thing you might notice is the `DataDomain`. This object contains all the collected knowledge about your schema and entities; each of the data components in your project can register entities in the domain as it's being built so the domain can orchestrate the loading of related entities without components having to be aware of each other.
-
-A `DataDomain` is built from a `DataDomainDefinition` to which you register your entity types and provide opinions on how you want your schema to be designed.
-
-### IDatabase(T)
-
-`IDatabase<T>` is the easiest, but not the only, way to work with entities. It provides a fluent API for working with a single type of entity **but should not be considered a repository in your application's design!**
-
-The standard implementation of `IDatabase<T>` is `EntityDatabase<T>` though you might want to implement your own and register that in your IoC container.
-
-Of course, the example queries are a little inefficient - we could query Joey and Monica in a single statement - but it shows how `Silk.Data.SQL.ORM` is designed to allow you to batch SQL statements together - that is, perform all the above SQL in a single round-trip to the SQL server.
+The schema contains all the information about the entity types you can query against in the database. Most SQL APIs are extension methods on `Schema`.
 
 ### Executing queries
 
-Queries remain in-memory expression trees until `Execute` or `ExecuteAsync` are invoked. Each requires an `IDataProvider` instance to query against - above we use an SQLite3 database provider.
+The APIs that hang off `Schema` only generate queries, they don't execute them. To execute queries you need a data provider: Sqlite3, MySQL/MariaDB, Postgresql and Sql Server are all supported currently and it's easy to write your own provider for another server type yourself.
 
-Different providers have slightly different SQL syntaxes so no SQL is actually written until `Execute` or `ExecuteAsync` is invoked.
+See `Silk.Data.SQL.Base` for how to produce your own data provider.
 
 ### Batching
 
-Batching writes all your SQL statements into a single SQL statement, reducing the network latency cost of going to your SQL server in many round trips.
-
-Just add an `AsBatch()` call to your query to create a batched query.
-
-**Beware: any data created on the SQL server, like auto incremented integer IDs, aren't available in a batched query so followup queries can fail if a generated field value is required.**
-
-### Transactions
-
-Just add an `AsTransaction()` call to your query to create a transaction. Batched queries can also be executed as a transaction!
+One of the main design goals of `Silk.Data.SQL.ORM` is to minimize round-trips to the database server. `Execute` and `ExecuteAsync` APIs hang off the `IDataProvider` interface and will execute any number of SQL queries you provide in a single trip to the SQL server.
 
 ### Projection
 
@@ -115,68 +99,50 @@ Create a projection view and query:
 		public DateTime ProfileDateOfBirth { get; set; }
 	}
 
-	var userDatabase = new EntityDatabase<UserAccount>(dataDomain);  // use full entity type
-	var userDob = (await userDatabase
-		.SelectSingle<UserDobView>(userAccount => userAccount.Id == userId)
-		.ExecuteAsync(sqlProvider))
-		.ProfileDateOfBirth;
+	TODO: Code for query here
 
 Here the property `ProfileDateOfBirth` is flattened from `UserAccount`.**`Profile`** and `UserProfile`.**`DateOfBirth`**.
 
 Using projection will also permit you to INSERT, UPDATE or DELETE incomplete entities so long as the primary key field(s) are present on the projected type.
 
-#### Other projections
+### Expression queries
 
-It's possible to project without mapping from a type, any `Silk.Data.Modelling` `Model` can be used to create a projection for use in queries - however you will need to map your query result to something.
+`Silk.Data.SQL.ORM` provides API methods for executing queries against entity instances. For example:
+
+    public class MyEntity
+    {
+        public int Id { get; private set; }
+        public int Count { get; set; }
+    }
+    
+Let's say we want to update the `Count` property of the `MyEntity` instance with an `Id` value of `1`.
+
+    await provider.ExecuteAsync(
+      schema.CreateUpdate<MyEntity>(query => {
+        query.Set(entity => entity.Count, entity => entity.Count + 1);
+        query.AndWhere(entity => entity.Id == 1);
+      });
+    );
 
 ### SQL functions
 
-Unlike EntityFramework, `Silk.Data.SQL.ORM` has no support for translating native C# methods into SQL. This is because it's desired that it be *very* explicit which SQL functions are supported and writing out a list of supported and not-supported extension and LINQ methods would be a hard API surface to program against.
+`Silk.Data.SQL.ORM` contains support for converting a C# method call expression into SQL in your queries - you can add your own converters to the `SchemaBuilder` when constructing you `Schema`.
 
-To solve this issue `Silk.Data.SQL.ORM` provides the static `SQLFunctions` class that can build SQL function calls in your query expressions for you:
+By default the `DatabaseFunctions` static class methods are supported:
 
-	var username = "JoEy.TrIBianI";
-	var query = userDatabase.Select(userAccount => SQLFunctions.IsIn(
-		SQLFunctions.ToLower(userAccount.Username),
-		SQLFunctions.ToLower("MONicA.GeLLeR"), SQLFunctions.ToLower(username)
-		));
+  * IsIn
+  * Like
+  * Count
+  * Random
+  * Alias
 
-As you can see these functions work on variables, literals, entity properties and even the results of other SQL function calls.
+Example:
 
-## DataDomain in-depth
+    var idArray = new[] { 1, 2, 4, 5 };
+    schema.CreateSelect<MyEntity>(
+      query => query.AndWhere(
+        entity => DatabaseFunctions.IsIn(entity.Id, idArray)
+      )
+    );
 
-### Conventions
-
-When a `DataDomain` is built (`DataDomainDefinition`.`Build`) entity types are modeled into a schema, complete with primary keys, foreign key constraints, data types - the works.
-
-A collection of conventions are used to control how the schema is designed - you can override any schema design behavior by providing your own conventions to `DataDomainDefinition`.`Build`.
-
-A separate set of conventions are used to create projections and can also be provided to `DataDomainDefinition`.`Build`.
-
-### Schema opinions
-
-`DataDomainDefinition`.`AddEntityType<T>` returns an `EntityTypeDefinition` instance which can be used to configure how you want your entity type stored. These opinions can be used to add to or override what a convention might decide to do to store your entity type.
-
-	var entityTypeDefinition = dataDomainDefinition.AddEntityType<UserAccount>();
-	//  set a primary key
-	entityTypeDefinition.For(userAccount => userAccount.AccountId).IsPrimaryKey();
-	//  add a custom index
-	entityTypeDefinition.For(userAccount => userAccount.Username).Index();
-	//  require email address to be unique
-	entityTypeDefinition.For(userAccount => userAccount.EmailAddress).Index(requireUnique: true);
-	//  set a maximum length for the user name
-	entityTypeDefinition.For(userAccount => userAccount.Username).Length(100);
-
-### Examining the schema
-
-`DataDomain`.`Schema` is an instance of `DomainSchema` that exposes the details of the database schema that has been designed for the SQL server.
-
-You can get the schema designed for a specific entity type using `DomainSchema`.`GetEntitySchema<T>`.
-
-## Components
-
-Components provided to make building your own ORM features a bit easier:
-
-* Query builders - SELECT, INSERT, UPDATE, DELETE query builders write `ORMQuery` expression trees
-* LINQ expression converter - converts LINQ expressions for WHERE, HAVING etc. clauses into `QueryExpression` instances
-* QueryCollection types - the underlying API used by `EntityDatabase<T>` to contain and execute a collection of queries
+### SchemaBuilder customization
