@@ -6,7 +6,7 @@
 * Obvious query generation - no quessing at what queries are being executed, or when (no lazy-loading)
 * Minimize round-trips to the database server
 * Run against any database provider
-* Capability to run (queries like UPDATE a SET b = b + 1? expressions?)
+* Capability for individual, property expression queries (`SET field = expression/value` instead of a full entity update)
 * Middle-ground between EF/nHibernate and micro-ORMs Dapper/massive
 
 
