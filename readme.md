@@ -10,6 +10,11 @@
 * Capability for individual, property expression queries (`SET field = expression/value` instead of a full entity update)
 * Middle-ground between EF/nHibernate and micro-ORMs Dapper/massive
 
+## Getting it
+
+Currently this library is only published to my myget feed. You can get the package here: https://www.myget.org/feed/silkstack/package/nuget/Silk.Data.SQL.ORM
+
+Data providers are available as stand-alone packages on the same feed or you can just drop in the provider bundle package which gives you providers for MySQL/MariaDB, Postgresql, SQL Server and SQLite3: https://www.myget.org/feed/silkstack/package/nuget/Silk.Data.SQL.ProvidersBundle
 
 ## Summary
 
