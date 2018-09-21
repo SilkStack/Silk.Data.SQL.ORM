@@ -1,14 +1,14 @@
 ﻿using Silk.Data.SQL.ORM.Queries;
 using Silk.Data.SQL.ORM.Queries.Expressions;
-using Silk.Data.SQL.Providers;
 using System.Linq;
 using System.Threading.Tasks;
+using IQueryProvider = Silk.Data.SQL.Providers.IQueryProvider;
 
 namespace Silk.Data.SQL.ORM
 {
-	public static class DataProviderExtensions
+	public static class QueryProviderExtensions
 	{
-		public static void Execute(this IDataProvider dataProvider, params Query[] queries)
+		public static void Execute(this IQueryProvider dataProvider, params Query[] queries)
 		{
 			var compositeQuery = new CompositeQueryExpression(
 				queries.Select(q => q.QueryExpression)
@@ -29,7 +29,7 @@ namespace Silk.Data.SQL.ORM
 			}
 		}
 
-		public static async Task ExecuteAsync(this IDataProvider dataProvider, params Query[] queries)
+		public static async Task ExecuteAsync(this IQueryProvider dataProvider, params Query[] queries)
 		{
 			var compositeQuery = new CompositeQueryExpression(
 				queries.Select(q => q.QueryExpression)
