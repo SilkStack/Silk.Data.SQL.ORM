@@ -34,15 +34,29 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public T ReadField<T>(string[] path, int offset)
 		{
-			if (!_typeReaders.TryGetValue(typeof(T), out var @delegate))
+			var isEnum = typeof(T).IsEnum;
+
+			var readType = typeof(T);
+			if (isEnum)
+				readType = typeof(int);
+
+			if (!_typeReaders.TryGetValue(readType, out var @delegate))
 				throw new Exception("Unsupported data type.");
 
 			var ord = path[0] == null ? 0 : QueryResult.GetOrdinal(path[0]);
 			if (QueryResult.IsDBNull(ord))
 				return default(T);
 
-			var readFunc = @delegate as Func<QueryResult, int, T>;
-			return readFunc(QueryResult, ord);
+			if (isEnum)
+			{
+				var readFunc = @delegate as Func<QueryResult, int, int>;
+				return (T)(object)readFunc(QueryResult, ord);
+			}
+			else
+			{
+				var readFunc = @delegate as Func<QueryResult, int, T>;
+				return readFunc(QueryResult, ord);
+			}
 		}
 
 		public void WriteField<T>(string[] path, int offset, T value)

@@ -426,6 +426,32 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 		}
 
+		[TestMethod]
+		public async Task SelectEntityWithEnum()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<FlatEntityWithEnum>();
+			var schema = schemaBuilder.Build();
+
+			var inObj = new FlatEntityWithEnum { Enum = EnumType.Two };
+
+			using (var provider = TestHelper.CreateProvider())
+			{
+				await provider.ExecuteAsync(
+					schema.CreateTable<FlatEntityWithEnum>(),
+					schema.CreateInsert(inObj)
+					);
+
+				var outObj = default(FlatEntityWithEnum);
+				var select = schema.CreateSelect<FlatEntityWithEnum>();
+				await provider.ExecuteAsync(
+					select.WithFirstResult(r => outObj = r)
+					);
+				Assert.IsNotNull(outObj);
+				Assert.AreEqual(inObj.Enum, outObj.Enum);
+			}
+		}
+
 		private Task Insert<T>(Schema.Schema schema, IDataProvider provider, T obj)
 			where T : class
 		{
@@ -467,6 +493,18 @@ namespace Silk.Data.SQL.ORM.Tests
 		private class DeepRelationshipEntity
 		{
 			public RelationshipEntity Child { get; set; }
+		}
+
+		private class FlatEntityWithEnum
+		{
+			public EnumType Enum { get; set; }
+		}
+
+		private enum EnumType
+		{
+			One,
+			Two,
+			Three
 		}
 	}
 }
