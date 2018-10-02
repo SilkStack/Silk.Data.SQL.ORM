@@ -233,7 +233,9 @@ namespace Silk.Data.SQL.ORM.Schema
 
 				if (SqlTypeHelper.IsSqlPrimitiveType(modelField.FieldType))
 				{
-					var entityField = entityFields.First(q => q.ModelField == modelField);
+					var entityField = entityFields.FirstOrDefault(q => q.ModelField == modelField);
+					if (entityField == null) //  opted out of modelling this field
+						continue;
 					var entityJoin = entityJoins.FirstOrDefault(q => q.EntityField == joinEntityField);
 					var sourceName = entityJoin?.TableAlias ?? TableName;
 					var prefix = propertyPath.Length == 0 ? "" : $"{string.Join("_", propertyPath)}_";
@@ -245,7 +247,9 @@ namespace Silk.Data.SQL.ORM.Schema
 				}
 				else if (partialEntities.IsEntityTypeDefined(modelField.FieldType))
 				{
-					var entityField = entityFields.First(q => q.ModelField == modelField);
+					var entityField = entityFields.FirstOrDefault(q => q.ModelField == modelField);
+					if (entityField == null) //  opted out of modelling this field
+						continue;
 					var relatedEntityType = partialEntities[modelField.FieldType];
 
 					var entityJoin = entityJoins.FirstOrDefault(q => q.EntityField == entityField);
@@ -266,7 +270,9 @@ namespace Silk.Data.SQL.ORM.Schema
 				}
 				else
 				{
-					var entityField = entityFields.First(q => q.ModelField == modelField);
+					var entityField = entityFields.FirstOrDefault(q => q.ModelField == modelField);
+					if (entityField == null) //  opted out of modelling this field
+						continue;
 					var entityJoin = entityJoins.FirstOrDefault(q => q.EntityField == joinEntityField);
 					var sourceName = entityJoin?.TableAlias ?? TableName;
 					var prefix = propertyPath.Length == 0 ? "" : $"{string.Join("_", propertyPath)}_";
@@ -309,7 +315,7 @@ namespace Silk.Data.SQL.ORM.Schema
 						continue;
 
 					var builder = GetFieldBuilder(modelField);
-					if (builder == null)
+					if (builder == null || !builder.IsModelled)
 						continue;
 
 					var entityField = builder.Build(propertyNamePrefix, subPropertyPath);
@@ -346,7 +352,7 @@ namespace Silk.Data.SQL.ORM.Schema
 					if (embeddedEntityField == null)
 					{
 						var builder = GetFieldBuilder(modelField);
-						if (builder == null)
+						if (builder == null || !builder.IsModelled)
 							continue;
 
 						embeddedEntityField = builder.Build(propertyNamePrefix, subPropertyPath);

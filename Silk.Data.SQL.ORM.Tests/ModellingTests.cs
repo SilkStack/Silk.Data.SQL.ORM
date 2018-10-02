@@ -27,7 +27,10 @@ namespace Silk.Data.SQL.ORM.Tests
 			};
 
 			var schemaBuilder = new SchemaBuilder();
-			schemaBuilder.DefineEntity<Primitives>();
+			schemaBuilder.DefineEntity<Primitives>(builder =>
+			{
+				builder.For(q => q.IgnoredBool).IsModelled = false;
+			});
 
 			var schema = schemaBuilder.Build();
 			var entitySchema = schema.GetEntitySchema<Primitives>();
@@ -296,6 +299,8 @@ namespace Silk.Data.SQL.ORM.Tests
 			public float Float { get; set; }
 			public double Double { get; set; }
 			public decimal Decimal { get; set; }
+
+			public bool IgnoredBool { get; set; }
 		}
 
 		private class ConventionPrimaryKey

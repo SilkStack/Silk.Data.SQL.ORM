@@ -14,6 +14,11 @@ namespace Silk.Data.SQL.ORM.Schema
 		public abstract IPropertyField ModelField { get; }
 
 		/// <summary>
+		/// Gets or sets a value that indicates if the field is to be modelled.
+		/// </summary>
+		public bool IsModelled { get; set; } = true;
+
+		/// <summary>
 		/// Gets or sets the column name to use to store the field.
 		/// </summary>
 		public string ColumnName { get; set; }
