@@ -26,6 +26,8 @@ namespace Silk.Data.SQL.ORM.Schema
 		{
 			EntityFields = entityFields;
 		}
+
+		public abstract IEnumerable<Modelling.Mapping.Binding.Binding> CreateMappingBindings(string aliasPrefix);
 	}
 
 	public class ProjectionSchema<T> : EntitySchema
@@ -45,6 +47,15 @@ namespace Silk.Data.SQL.ORM.Schema
 			EntityJoins = manyToOneJoins;
 			Indexes = indexes;
 			EntityType = entityType;
+		}
+
+		public override IEnumerable<Modelling.Mapping.Binding.Binding> CreateMappingBindings(string aliasPrefix)
+		{
+			yield return new CreateInstanceIfNull<T>(SqlTypeHelper.GetConstructor(typeof(T)), new[] { "." });
+			foreach (var field in ProjectionFields)
+			{
+				yield return field.GetMappingBinding(aliasPrefix);
+			}
 		}
 	}
 
@@ -68,21 +79,34 @@ namespace Silk.Data.SQL.ORM.Schema
 		{
 			var mapping = GetMapping(EntityType, typeof(TProjection));
 			var projections = new List<ProjectionField>();
+			var visitor = new MappingVisitor();
+			visitor.Visit(mapping);
 
-			foreach (var mappingBinding in mapping.Bindings.OfType<MappingBinding>())
+			foreach (var binding in mapping.Bindings)
 			{
-				var fromPath = mappingBinding.FromPath;
-				var toPath = mappingBinding.ToPath;
+				if (binding is AssignmentBinding assignmentBinding)
+				{
 
-				var sourceProjection = ProjectionFields.FirstOrDefault(q => q.ModelPath.SequenceEqual(fromPath));
-				if (sourceProjection == null)
-					continue;
+				}
+				else if (binding is SubmappingBindingBase submappingBinding)
+				{
 
-				projections.Add(new MappedProjectionField(
-					sourceProjection.SourceName, sourceProjection.FieldName, sourceProjection.AliasName,
-					toPath, sourceProjection.Join, sourceProjection.IsNullCheck, sourceProjection,
-					mappingBinding
-					));
+				}
+				else if (binding is MappingBinding mappingBinding)
+				{
+					var fromPath = mappingBinding.FromPath;
+					var toPath = mappingBinding.ToPath;
+
+					var sourceProjection = ProjectionFields.FirstOrDefault(q => q.ModelPath.SequenceEqual(fromPath));
+					if (sourceProjection == null)
+						continue;
+
+					projections.Add(new MappedProjectionField(
+						sourceProjection.SourceName, sourceProjection.FieldName, sourceProjection.AliasName,
+						toPath, sourceProjection.Join, sourceProjection.IsNullCheck, sourceProjection,
+						mappingBinding
+						));
+				}
 			}
 
 			return new ProjectionSchema<TProjection>(
@@ -113,6 +137,43 @@ namespace Silk.Data.SQL.ORM.Schema
 					mappingBuilder.AddConvention(convention);
 				}
 				return mappingBuilder.BuildMapping();
+			}
+		}
+
+		private class MappingVisitor
+		{
+			public void Visit(Mapping mapping)
+			{
+				foreach (var binding in mapping.Bindings)
+				{
+					if (binding is AssignmentBinding assignmentBinding)
+					{
+						VisitAssignmentBinding(assignmentBinding);
+					}
+					else if (binding is SubmappingBindingBase submappingBinding)
+					{
+						VisitSubmappingBinding(submappingBinding);
+					}
+					else if (binding is MappingBinding mappingBinding)
+					{
+						VisitMappingBinding(mappingBinding);
+					}
+				}
+			}
+
+			public void VisitAssignmentBinding(AssignmentBinding assignmentBinding)
+			{
+
+			}
+
+			public void VisitSubmappingBinding(SubmappingBindingBase submappingBinding)
+			{
+
+			}
+
+			public void VisitMappingBinding(MappingBinding mappingBinding)
+			{
+
 			}
 		}
 	}

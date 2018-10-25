@@ -117,11 +117,7 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		private IEnumerable<Binding> CreateMappingBindings<TView>(EntitySchema projectionSchema)
 		{
-			yield return new CreateInstanceIfNull<TView>(SqlTypeHelper.GetConstructor(typeof(TView)), new[] { "." });
-			foreach (var field in projectionSchema.ProjectionFields)
-			{
-				yield return field.GetMappingBinding("");
-			}
+			return projectionSchema.CreateMappingBindings("");
 		}
 
 		private ObjectResultMapper<TView> CreateResultMapper<TView>(int resultSetCount, EntitySchema projectionSchema)
@@ -481,11 +477,7 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		private IEnumerable<Binding> CreateMappingBindings<TView>(EntitySchema projectionSchema, string aliasPrefix)
 		{
-			yield return new CreateInstanceIfNull<TView>(SqlTypeHelper.GetConstructor(typeof(TView)), new[] { "." });
-			foreach (var field in projectionSchema.ProjectionFields)
-			{
-				yield return field.GetMappingBinding(aliasPrefix);
-			}
+			return projectionSchema.CreateMappingBindings(aliasPrefix);
 		}
 
 		private TupleResultMapper<TLeftView, TRightView> CreateResultMapper<TLeftView, TRightView>(int resultSetCount, EntitySchema leftProjectionSchema, EntitySchema rightProjectionSchema)
