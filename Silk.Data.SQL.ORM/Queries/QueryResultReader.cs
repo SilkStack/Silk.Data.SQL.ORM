@@ -43,7 +43,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			QueryResult = queryResult;
 		}
 
-		public T ReadField<T>(string[] path, int offset)
+		public T ReadField<T>(Span<string> path)
 		{
 			var isEnum = typeof(T).IsEnum;
 
@@ -70,7 +70,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			}
 		}
 
-		public void WriteField<T>(string[] path, int offset, T value)
+		public void WriteField<T>(Span<string> path, T value)
 		{
 			throw new NotImplementedException();
 		}

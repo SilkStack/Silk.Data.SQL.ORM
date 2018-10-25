@@ -2,6 +2,7 @@
 using Silk.Data.Modelling.Mapping.Binding;
 using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Schema.Binding;
+using System;
 using CoreBinding = Silk.Data.Modelling.Mapping.Binding;
 
 namespace Silk.Data.SQL.ORM.Schema
@@ -137,12 +138,12 @@ namespace Silk.Data.SQL.ORM.Schema
 
 			public IModel Model => throw new System.NotImplementedException();
 
-			public T ReadField<T>(string[] path, int offset)
+			public T ReadField<T>(Span<string> path)
 			{
 				return (T)_value;
 			}
 
-			public void WriteField<T>(string[] path, int offset, T value)
+			public void WriteField<T>(Span<string> path, T value)
 			{
 				_value = value;
 			}

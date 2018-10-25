@@ -1,5 +1,6 @@
 ﻿using Silk.Data.Modelling;
 using Silk.Data.SQL.ORM.Queries;
+using System;
 
 namespace Silk.Data.SQL.ORM.Schema
 {
@@ -35,7 +36,7 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public override object ReadValue(IModelReadWriter writeToModelReadWriter, int offset)
 		{
-			return writeToModelReadWriter.ReadField<TValue>(ModelPath, offset);
+			return writeToModelReadWriter.ReadField<TValue>(new Span<string>(ModelPath).Slice(offset));
 		}
 	}
 }

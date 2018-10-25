@@ -121,7 +121,7 @@ namespace Silk.Data.SQL.ORM.Schema
 
 			TValue IValueReader<TValue>.Read()
 			{
-				return _objectReadWriter.ReadField<TValue>(_modelPath, 0);
+				return _objectReadWriter.ReadField<TValue>(_modelPath);
 			}
 		}
 	}

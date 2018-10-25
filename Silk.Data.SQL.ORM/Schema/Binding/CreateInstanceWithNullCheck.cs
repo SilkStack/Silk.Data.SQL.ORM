@@ -18,7 +18,7 @@ namespace Silk.Data.SQL.ORM.Schema.Binding
 
 		public override void AssignBindingValue(IModelReadWriter from, IModelReadWriter to)
 		{
-			if (EqualityComparer<TKeyValue>.Default.Equals(from.ReadField<TKeyValue>(_readPath, 0), default(TKeyValue)))
+			if (EqualityComparer<TKeyValue>.Default.Equals(from.ReadField<TKeyValue>(_readPath), default(TKeyValue)))
 				return;
 
 			_impl.PerformBinding(from, to);

@@ -33,7 +33,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		public T Read(QueryResult queryResult)
 		{
 			var queryReader = new QueryResultReader(queryResult);
-			return queryReader.ReadField<T>(_aliasPath, 0);
+			return queryReader.ReadField<T>(_aliasPath);
 		}
 
 		public ICollection<T> ReadResultSet(QueryResult queryResult)
@@ -42,7 +42,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			var queryReader = new QueryResultReader(queryResult);
 			while (queryResult.Read())
 			{
-				result.Add(queryReader.ReadField<T>(_aliasPath, 0));
+				result.Add(queryReader.ReadField<T>(_aliasPath));
 			}
 			return result;
 		}
@@ -53,7 +53,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			var queryReader = new QueryResultReader(queryResult);
 			while (await queryResult.ReadAsync())
 			{
-				result.Add(queryReader.ReadField<T>(_aliasPath, 0));
+				result.Add(queryReader.ReadField<T>(_aliasPath));
 			}
 			return result;
 		}
@@ -66,7 +66,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			{
 				while (queryResult.Read())
 				{
-					result.Add(queryReader.ReadField<T>(_aliasPath, 0));
+					result.Add(queryReader.ReadField<T>(_aliasPath));
 				}
 
 				if (!queryResult.NextResult())
@@ -83,7 +83,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			{
 				while (await queryResult.ReadAsync())
 				{
-					result.Add(queryReader.ReadField<T>(_aliasPath, 0));
+					result.Add(queryReader.ReadField<T>(_aliasPath));
 				}
 
 				if (!await queryResult.NextResultAsync())
@@ -118,7 +118,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			var objectReadWriter = new ObjectReadWriter(null, _typeModel, typeof(T));
 			var queryReader = new QueryResultReader(queryResult);
 			Bind(queryReader, objectReadWriter);
-			return objectReadWriter.ReadField<T>(_selfPath, 0);
+			return objectReadWriter.ReadField<T>(_selfPath);
 		}
 
 		public ICollection<T> MapResultSet(QueryResult queryResult)
@@ -129,7 +129,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			{
 				var objectReadWriter = new ObjectReadWriter(null, _typeModel, typeof(T));
 				Bind(queryReader, objectReadWriter);
-				result.Add(objectReadWriter.ReadField<T>(_selfPath, 0));
+				result.Add(objectReadWriter.ReadField<T>(_selfPath));
 			}
 			return result;
 		}
@@ -142,7 +142,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			{
 				var objectReadWriter = new ObjectReadWriter(null, _typeModel, typeof(T));
 				Bind(queryReader, objectReadWriter);
-				result.Add(objectReadWriter.ReadField<T>(_selfPath, 0));
+				result.Add(objectReadWriter.ReadField<T>(_selfPath));
 			}
 			return result;
 		}
@@ -157,7 +157,7 @@ namespace Silk.Data.SQL.ORM.Queries
 				{
 					var objectReadWriter = new ObjectReadWriter(null, _typeModel, typeof(T));
 					Bind(queryReader, objectReadWriter);
-					result.Add(objectReadWriter.ReadField<T>(_selfPath, 0));
+					result.Add(objectReadWriter.ReadField<T>(_selfPath));
 				}
 
 				if (!queryResult.NextResult())
@@ -176,7 +176,7 @@ namespace Silk.Data.SQL.ORM.Queries
 				{
 					var objectReadWriter = new ObjectReadWriter(null, _typeModel, typeof(T));
 					Bind(queryReader, objectReadWriter);
-					result.Add(objectReadWriter.ReadField<T>(_selfPath, 0));
+					result.Add(objectReadWriter.ReadField<T>(_selfPath));
 				}
 
 				if (!await queryResult.NextResultAsync())
@@ -219,8 +219,8 @@ namespace Silk.Data.SQL.ORM.Queries
 			BindType1(queryReader, object1ReadWriter);
 			BindType2(queryReader, object2ReadWriter);
 			return (
-				object1ReadWriter.ReadField<T1>(_selfPath, 0),
-				object2ReadWriter.ReadField<T2>(_selfPath, 0)
+				object1ReadWriter.ReadField<T1>(_selfPath),
+				object2ReadWriter.ReadField<T2>(_selfPath)
 				);
 		}
 
@@ -235,8 +235,8 @@ namespace Silk.Data.SQL.ORM.Queries
 				BindType1(queryReader, object1ReadWriter);
 				BindType2(queryReader, object2ReadWriter);
 				result.Add((
-					object1ReadWriter.ReadField<T1>(_selfPath, 0),
-					object2ReadWriter.ReadField<T2>(_selfPath, 0)
+					object1ReadWriter.ReadField<T1>(_selfPath),
+					object2ReadWriter.ReadField<T2>(_selfPath)
 				));
 			}
 			return result;
@@ -253,8 +253,8 @@ namespace Silk.Data.SQL.ORM.Queries
 				BindType1(queryReader, object1ReadWriter);
 				BindType2(queryReader, object2ReadWriter);
 				result.Add((
-					object1ReadWriter.ReadField<T1>(_selfPath, 0),
-					object2ReadWriter.ReadField<T2>(_selfPath, 0)
+					object1ReadWriter.ReadField<T1>(_selfPath),
+					object2ReadWriter.ReadField<T2>(_selfPath)
 				));
 			}
 			return result;
@@ -273,8 +273,8 @@ namespace Silk.Data.SQL.ORM.Queries
 					BindType1(queryReader, object1ReadWriter);
 					BindType2(queryReader, object2ReadWriter);
 					result.Add((
-						object1ReadWriter.ReadField<T1>(_selfPath, 0),
-						object2ReadWriter.ReadField<T2>(_selfPath, 0)
+						object1ReadWriter.ReadField<T1>(_selfPath),
+						object2ReadWriter.ReadField<T2>(_selfPath)
 					));
 				}
 
@@ -297,8 +297,8 @@ namespace Silk.Data.SQL.ORM.Queries
 					BindType1(queryReader, object1ReadWriter);
 					BindType2(queryReader, object2ReadWriter);
 					result.Add((
-						object1ReadWriter.ReadField<T1>(_selfPath, 0),
-						object2ReadWriter.ReadField<T2>(_selfPath, 0)
+						object1ReadWriter.ReadField<T1>(_selfPath),
+						object2ReadWriter.ReadField<T2>(_selfPath)
 					));
 				}
 
