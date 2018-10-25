@@ -37,25 +37,29 @@ namespace Silk.Data.SQL.ORM.Schema
 		public override SchemaIndex[] Indexes { get; }
 		public override ProjectionField[] ProjectionFields { get; }
 		public override EntityFieldJoin[] EntityJoins { get; }
+		public Mapping Mapping { get; }
+		private MappingVisitor _mappingVisitor = new MappingVisitor();
 
 		public ProjectionSchema(Table entityTable, IEntityField[] entityFields,
 			ProjectionField[] projectionFields, EntityFieldJoin[] manyToOneJoins,
-			SchemaIndex[] indexes, Type entityType) : base(entityFields)
+			SchemaIndex[] indexes, Type entityType, Mapping mapping) : base(entityFields)
 		{
 			EntityTable = entityTable;
 			ProjectionFields = projectionFields;
 			EntityJoins = manyToOneJoins;
 			Indexes = indexes;
 			EntityType = entityType;
+			Mapping = mapping;
 		}
 
 		public override IEnumerable<Modelling.Mapping.Binding.Binding> CreateMappingBindings(string aliasPrefix)
 		{
-			yield return new CreateInstanceIfNull<T>(SqlTypeHelper.GetConstructor(typeof(T)), new[] { "." });
-			foreach (var field in ProjectionFields)
-			{
-				yield return field.GetMappingBinding(aliasPrefix);
-			}
+			return _mappingVisitor.Visit(Mapping, aliasPrefix);
+			//yield return new CreateInstanceIfNull<T>(SqlTypeHelper.GetConstructor(typeof(T)), new[] { "." });
+			//foreach (var field in ProjectionFields)
+			//{
+			//	yield return field.GetMappingBinding(aliasPrefix);
+			//}
 		}
 	}
 
@@ -69,9 +73,18 @@ namespace Silk.Data.SQL.ORM.Schema
 		public EntitySchema(Table entityTable, IEntityFieldOfEntity<T>[] entityFields,
 			ProjectionField[] projectionFields, EntityFieldJoin[] manyToOneJoins,
 			SchemaIndex[] indexes) : base(entityTable, entityFields, projectionFields,
-				manyToOneJoins, indexes, typeof(T))
+				manyToOneJoins, indexes, typeof(T), null)
 		{
 			EntityFields = entityFields;
+		}
+
+		public override IEnumerable<Modelling.Mapping.Binding.Binding> CreateMappingBindings(string aliasPrefix)
+		{
+			yield return new CreateInstanceIfNull<T>(SqlTypeHelper.GetConstructor(typeof(T)), new[] { "." });
+			foreach (var field in ProjectionFields)
+			{
+				yield return field.GetMappingBinding(aliasPrefix);
+			}
 		}
 
 		public ProjectionSchema<TProjection> GetProjection<TProjection>()
@@ -79,8 +92,6 @@ namespace Silk.Data.SQL.ORM.Schema
 		{
 			var mapping = GetMapping(EntityType, typeof(TProjection));
 			var projections = new List<ProjectionField>();
-			var visitor = new MappingVisitor();
-			visitor.Visit(mapping);
 
 			foreach (var binding in mapping.Bindings)
 			{
@@ -111,7 +122,7 @@ namespace Silk.Data.SQL.ORM.Schema
 
 			return new ProjectionSchema<TProjection>(
 				EntityTable, EntityFields, projections.ToArray(),
-				EntityJoins, Indexes, EntityType
+				EntityJoins, Indexes, EntityType, mapping
 				);
 		}
 
@@ -139,42 +150,43 @@ namespace Silk.Data.SQL.ORM.Schema
 				return mappingBuilder.BuildMapping();
 			}
 		}
+	}
 
-		private class MappingVisitor
+	internal class MappingVisitor
+	{
+		public IEnumerable<Modelling.Mapping.Binding.Binding> Visit(Mapping mapping, string prefix)
 		{
-			public void Visit(Mapping mapping)
+			foreach (var binding in mapping.Bindings)
 			{
-				foreach (var binding in mapping.Bindings)
+				if (binding is AssignmentBinding assignmentBinding)
 				{
-					if (binding is AssignmentBinding assignmentBinding)
-					{
-						VisitAssignmentBinding(assignmentBinding);
-					}
-					else if (binding is SubmappingBindingBase submappingBinding)
-					{
-						VisitSubmappingBinding(submappingBinding);
-					}
-					else if (binding is MappingBinding mappingBinding)
-					{
-						VisitMappingBinding(mappingBinding);
-					}
+					yield return VisitAssignmentBinding(assignmentBinding);
+				}
+				else if (binding is SubmappingBindingBase submappingBinding)
+				{
+					foreach (var subBinding in VisitSubmappingBinding(submappingBinding))
+						yield return subBinding;
+				}
+				else if (binding is MappingBinding mappingBinding)
+				{
+					yield return VisitMappingBinding(mappingBinding);
 				}
 			}
+		}
 
-			public void VisitAssignmentBinding(AssignmentBinding assignmentBinding)
-			{
+		public Modelling.Mapping.Binding.Binding VisitAssignmentBinding(AssignmentBinding assignmentBinding)
+		{
+			return null;
+		}
 
-			}
+		public IEnumerable<Modelling.Mapping.Binding.Binding> VisitSubmappingBinding(SubmappingBindingBase submappingBinding)
+		{
+			yield break;
+		}
 
-			public void VisitSubmappingBinding(SubmappingBindingBase submappingBinding)
-			{
-
-			}
-
-			public void VisitMappingBinding(MappingBinding mappingBinding)
-			{
-
-			}
+		public Modelling.Mapping.Binding.Binding VisitMappingBinding(MappingBinding mappingBinding)
+		{
+			return null;
 		}
 	}
 }

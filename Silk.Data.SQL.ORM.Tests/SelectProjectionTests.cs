@@ -153,6 +153,28 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 		}
 
+		[TestMethod]
+		public async Task ProjectComplexEmbeddedData()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<ParentPocoModel>();
+			var schema = schemaBuilder.Build();
+
+			using (var provider = TestHelper.CreateProvider())
+			{
+				await provider.ExecuteAsync(
+					schema.CreateTable<ParentPocoModel>(),
+					schema.CreateInsert(new ParentPocoModel { Poco = new SimplePocoModel { Data = 1 } })
+					);
+
+				var selectQuery = schema.CreateSelect<ParentPocoModel, ParentPocoComplexView>();
+				await provider.ExecuteAsync(selectQuery);
+
+				Assert.AreEqual(1, selectQuery.Result.Count);
+				Assert.AreEqual(1, selectQuery.Result.First().Poco.Data);
+			}
+		}
+
 		private class SimplePocoModel
 		{
 			public Guid Id { get; private set; }
@@ -180,6 +202,12 @@ namespace Silk.Data.SQL.ORM.Tests
 		{
 			public Guid Id { get; private set; }
 			public int Data { get; set; }
+		}
+
+		private class ParentPocoComplexView
+		{
+			public Guid Id { get; private set; }
+			public SimplePocoView Poco { get; set; }
 		}
 	}
 }
