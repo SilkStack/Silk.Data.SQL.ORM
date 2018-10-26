@@ -38,7 +38,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		public override ProjectionField[] ProjectionFields { get; }
 		public override EntityFieldJoin[] EntityJoins { get; }
 		public Mapping Mapping { get; }
-		private MappingVisitor _mappingVisitor = new MappingVisitor();
+		private MappingVisitor _mappingVisitor;
 
 		public ProjectionSchema(Table entityTable, IEntityField[] entityFields,
 			ProjectionField[] projectionFields, EntityFieldJoin[] manyToOneJoins,
@@ -50,16 +50,13 @@ namespace Silk.Data.SQL.ORM.Schema
 			Indexes = indexes;
 			EntityType = entityType;
 			Mapping = mapping;
+
+			_mappingVisitor = new MappingVisitor(projectionFields.OfType<MappedProjectionField>().ToArray());
 		}
 
 		public override IEnumerable<Modelling.Mapping.Binding.Binding> CreateMappingBindings(string aliasPrefix)
 		{
 			return _mappingVisitor.Visit(Mapping, aliasPrefix);
-			//yield return new CreateInstanceIfNull<T>(SqlTypeHelper.GetConstructor(typeof(T)), new[] { "." });
-			//foreach (var field in ProjectionFields)
-			//{
-			//	yield return field.GetMappingBinding(aliasPrefix);
-			//}
 		}
 	}
 
@@ -93,37 +90,48 @@ namespace Silk.Data.SQL.ORM.Schema
 			var mapping = GetMapping(EntityType, typeof(TProjection));
 			var projections = new List<ProjectionField>();
 
-			foreach (var binding in mapping.Bindings)
-			{
-				if (binding is AssignmentBinding assignmentBinding)
-				{
-
-				}
-				else if (binding is SubmappingBindingBase submappingBinding)
-				{
-
-				}
-				else if (binding is MappingBinding mappingBinding)
-				{
-					var fromPath = mappingBinding.FromPath;
-					var toPath = mappingBinding.ToPath;
-
-					var sourceProjection = ProjectionFields.FirstOrDefault(q => q.ModelPath.SequenceEqual(fromPath));
-					if (sourceProjection == null)
-						continue;
-
-					projections.Add(new MappedProjectionField(
-						sourceProjection.SourceName, sourceProjection.FieldName, sourceProjection.AliasName,
-						toPath, sourceProjection.Join, sourceProjection.IsNullCheck, sourceProjection,
-						mappingBinding
-						));
-				}
-			}
+			GetProjections(mapping.Bindings);
 
 			return new ProjectionSchema<TProjection>(
 				EntityTable, EntityFields, projections.ToArray(),
 				EntityJoins, Indexes, EntityType, mapping
 				);
+
+			void GetProjections(Modelling.Mapping.Binding.Binding[] bindings, string[] toPath = null,
+				string[] fromPath = null)
+			{
+				if (toPath == null)
+					toPath = new string[0];
+				if (fromPath == null)
+					fromPath = new string[0];
+
+				foreach (var binding in bindings)
+				{
+					if (binding is SubmappingBindingBase submappingBinding)
+					{
+						GetProjections(
+							submappingBinding.Mapping.Bindings,
+							toPath.Concat(submappingBinding.ToPath).ToArray(),
+							fromPath.Concat(submappingBinding.FromPath).ToArray()
+							);
+					}
+					else if (binding is MappingBinding mappingBinding)
+					{
+						var mappingFromPath = fromPath.Concat(mappingBinding.FromPath);
+						var mappingToPath = toPath.Concat(mappingBinding.ToPath).ToArray();
+
+						var sourceProjection = ProjectionFields.FirstOrDefault(q => q.ModelPath.SequenceEqual(mappingFromPath));
+						if (sourceProjection == null)
+							continue;
+
+						projections.Add(new MappedProjectionField(
+							sourceProjection.SourceName, sourceProjection.FieldName, sourceProjection.AliasName,
+							mappingToPath, sourceProjection.Join, sourceProjection.IsNullCheck, sourceProjection,
+							mappingBinding
+							));
+					}
+				}
+			}
 		}
 
 		private readonly static object _syncObject = new object();
@@ -154,39 +162,134 @@ namespace Silk.Data.SQL.ORM.Schema
 
 	internal class MappingVisitor
 	{
-		public IEnumerable<Modelling.Mapping.Binding.Binding> Visit(Mapping mapping, string prefix)
+		private readonly MappedProjectionField[] _projectionFields;
+
+		public MappingVisitor(MappedProjectionField[] projectionFields)
 		{
+			_projectionFields = projectionFields;
+		}
+
+		public IEnumerable<Modelling.Mapping.Binding.Binding> Visit(Mapping mapping, string prefix,
+			string[] path = null)
+		{
+			if (path == null)
+				path = new string[0];
+
 			foreach (var binding in mapping.Bindings)
 			{
 				if (binding is AssignmentBinding assignmentBinding)
 				{
-					yield return VisitAssignmentBinding(assignmentBinding);
+					var projectionBinding = VisitAssignmentBinding(assignmentBinding, prefix, path);
+					if (projectionBinding != null)
+						yield return projectionBinding;
 				}
 				else if (binding is SubmappingBindingBase submappingBinding)
 				{
-					foreach (var subBinding in VisitSubmappingBinding(submappingBinding))
+					foreach (var subBinding in VisitSubmappingBinding(submappingBinding, prefix, path))
 						yield return subBinding;
 				}
 				else if (binding is MappingBinding mappingBinding)
 				{
-					yield return VisitMappingBinding(mappingBinding);
+					var projectionBinding = VisitMappingBinding(mappingBinding, prefix, path);
+					if (projectionBinding != null)
+						yield return projectionBinding;
 				}
 			}
 		}
 
-		public Modelling.Mapping.Binding.Binding VisitAssignmentBinding(AssignmentBinding assignmentBinding)
+		public Modelling.Mapping.Binding.Binding VisitAssignmentBinding(AssignmentBinding assignmentBinding, string prefix, string[] path)
 		{
-			return null;
+			return new MappedBinding(null, assignmentBinding, path);
 		}
 
-		public IEnumerable<Modelling.Mapping.Binding.Binding> VisitSubmappingBinding(SubmappingBindingBase submappingBinding)
+		public IEnumerable<Modelling.Mapping.Binding.Binding> VisitSubmappingBinding(SubmappingBindingBase submappingBinding, string prefix, string[] path)
 		{
-			yield break;
+			return Visit(submappingBinding.Mapping, prefix, path.Concat(submappingBinding.ToPath).ToArray());
 		}
 
-		public Modelling.Mapping.Binding.Binding VisitMappingBinding(MappingBinding mappingBinding)
+		public Modelling.Mapping.Binding.Binding VisitMappingBinding(MappingBinding mappingBinding, string prefix, string[] path)
 		{
-			return null;
+			var sourceProjection = _projectionFields.FirstOrDefault(
+				q => q.ModelPath.SequenceEqual(path.Concat(mappingBinding.ToPath))
+				);
+			if (sourceProjection == null)
+				return null;
+
+			return new MappedBinding(sourceProjection.GetMappingBinding(prefix), mappingBinding, path);
+		}
+
+		private class MappedBinding : Modelling.Mapping.Binding.Binding
+		{
+			private readonly Modelling.Mapping.Binding.Binding _sourceBinding;
+			private readonly Modelling.Mapping.Binding.Binding _mappingBinding;
+			private readonly string[] _path;
+
+			public MappedBinding(Modelling.Mapping.Binding.Binding sourceBinding, Modelling.Mapping.Binding.Binding mappingBinding,
+				string[] path)
+			{
+				_sourceBinding = sourceBinding;
+				_mappingBinding = mappingBinding;
+				_path = path;
+			}
+
+			public override void PerformBinding(IModelReadWriter from, IModelReadWriter to)
+			{
+				var proxyReadWriter = _path.Length < 1 ? to : new SubmappingModelReadWriter(to, to.Model, _path);
+				if (_sourceBinding != null)
+				{
+					var mappedReadWriter = new MappedReadWriter();
+					_sourceBinding.PerformBinding(from, mappedReadWriter);
+					_mappingBinding.PerformBinding(mappedReadWriter, proxyReadWriter);
+				}
+				else
+				{
+					_mappingBinding.PerformBinding(from, proxyReadWriter);
+				}
+			}
+		}
+
+		private class SubmappingModelReadWriter : IModelReadWriter
+		{
+			public IModel Model { get; }
+			public IModelReadWriter RealReadWriter { get; }
+			public string[] PrefixPath { get; }
+
+			public SubmappingModelReadWriter(IModelReadWriter modelReadWriter, IModel model,
+				string[] prefixPath)
+			{
+				Model = model;
+				RealReadWriter = modelReadWriter;
+				PrefixPath = prefixPath;
+			}
+
+			public T ReadField<T>(Span<string> path)
+			{
+				var fixedPath = PrefixPath.Concat(path.ToArray()).ToArray();
+				return RealReadWriter.ReadField<T>(fixedPath);
+			}
+
+			public void WriteField<T>(Span<string> path, T value)
+			{
+				var fixedPath = PrefixPath.Concat(path.ToArray()).ToArray();
+				RealReadWriter.WriteField<T>(fixedPath, value);
+			}
+		}
+
+		private class MappedReadWriter : IModelReadWriter
+		{
+			private object _value;
+
+			public IModel Model => throw new System.NotImplementedException();
+
+			public T ReadField<T>(Span<string> path)
+			{
+				return (T)_value;
+			}
+
+			public void WriteField<T>(Span<string> path, T value)
+			{
+				_value = value;
+			}
 		}
 	}
 }

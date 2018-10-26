@@ -98,6 +98,8 @@ namespace Silk.Data.SQL.ORM.Schema
 		private readonly ProjectionField _sourceProjection;
 		private readonly MappingBinding _mappingBinding;
 
+		public MappingBinding MappingBinding => _mappingBinding;
+
 		public MappedProjectionField(string sourceName, string fieldName, string aliasName, string[] modelPath,
 			EntityFieldJoin join, bool isNullCheck, ProjectionField sourceProjection, MappingBinding mappingBinding)
 			: base(sourceName, fieldName, aliasName, modelPath, join)
