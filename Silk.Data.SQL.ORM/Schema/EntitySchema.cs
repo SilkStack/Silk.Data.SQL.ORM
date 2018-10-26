@@ -65,6 +65,9 @@ namespace Silk.Data.SQL.ORM.Schema
 	/// </summary>
 	public class EntitySchema<T> : ProjectionSchema<T>
 	{
+		private readonly Dictionary<Type, EntitySchema> _projectionCache
+			= new Dictionary<Type, EntitySchema>();
+
 		public new IEntityFieldOfEntity<T>[] EntityFields { get; }
 
 		public EntitySchema(Table entityTable, IEntityFieldOfEntity<T>[] entityFields,
@@ -87,15 +90,24 @@ namespace Silk.Data.SQL.ORM.Schema
 		public ProjectionSchema<TProjection> GetProjection<TProjection>()
 			where TProjection : class
 		{
-			var mapping = GetMapping(EntityType, typeof(TProjection));
-			var projections = new List<ProjectionField>();
+			if (_projectionCache.TryGetValue(typeof(TProjection), out var projection))
+				return projection as ProjectionSchema<TProjection>;
 
-			GetProjections(mapping.Bindings);
+			var projections = default(List<ProjectionField>);
+			lock (_projectionCache)
+			{
+				var mapping = GetMapping(EntityType, typeof(TProjection));
+				projections = new List<ProjectionField>();
 
-			return new ProjectionSchema<TProjection>(
-				EntityTable, EntityFields, projections.ToArray(),
-				EntityJoins, Indexes, EntityType, mapping
-				);
+				GetProjections(mapping.Bindings);
+
+				projection = new ProjectionSchema<TProjection>(
+					EntityTable, EntityFields, projections.ToArray(),
+					EntityJoins, Indexes, EntityType, mapping
+					);
+				_projectionCache.Add(typeof(TProjection), projection);
+				return projection as ProjectionSchema<TProjection>;
+			}
 
 			void GetProjections(Modelling.Mapping.Binding.Binding[] bindings, string[] toPath = null,
 				string[] fromPath = null)
