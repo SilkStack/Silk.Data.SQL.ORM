@@ -1,4 +1,5 @@
-﻿using Silk.Data.SQL.ORM.Expressions;
+﻿using Silk.Data.Modelling;
+using Silk.Data.SQL.ORM.Expressions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,6 +18,9 @@ namespace Silk.Data.SQL.ORM.Schema
 			= new Dictionary<MethodInfo, IMethodCallConverter>();
 		private readonly List<RelationshipBuilder> _relationshipBuilders
 			= new List<RelationshipBuilder>();
+
+		public MappingOptions ProjectionMappingOptions { get; set; }
+			= MappingOptions.CreateObjectMappingOptions();
 
 		public SchemaBuilder()
 		{
@@ -105,7 +109,8 @@ namespace Silk.Data.SQL.ORM.Schema
 			while (DefineNewFields(entityPrimitiveFields)) { }
 			var entitySchemas = BuildEntitySchemas(entityPrimitiveFields).ToArray();
 			return new Schema(entitySchemas, _methodCallConverters,
-				_relationshipBuilders.Select(q => q.Build(entityPrimitiveFields)).ToArray());
+				_relationshipBuilders.Select(q => q.Build(entityPrimitiveFields)).ToArray(),
+				ProjectionMappingOptions);
 		}
 
 		private bool DefineNewFields(PartialEntitySchemaCollection partialEntitySchemas)

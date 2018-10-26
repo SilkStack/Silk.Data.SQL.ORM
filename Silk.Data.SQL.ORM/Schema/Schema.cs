@@ -1,4 +1,5 @@
-﻿using Silk.Data.SQL.ORM.Expressions;
+﻿using Silk.Data.Modelling;
+using Silk.Data.SQL.ORM.Expressions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,10 +16,16 @@ namespace Silk.Data.SQL.ORM.Schema
 		private readonly Dictionary<MethodInfo, IMethodCallConverter> _methodCallConverters;
 		private readonly Relationship[] _relationships;
 
+		public MappingOptions ProjectionMappingOptions { get; }
+
 		public Schema(IEnumerable<EntitySchema> entitySchemas,
 			Dictionary<MethodInfo, IMethodCallConverter> methodCallConverters,
-			Relationship[] relationships)
+			Relationship[] relationships, MappingOptions projectionMappingOptions)
 		{
+			if (projectionMappingOptions == null)
+				projectionMappingOptions = MappingOptions.DefaultObjectMappingOptions;
+			ProjectionMappingOptions = projectionMappingOptions;
+
 			_relationships = relationships;
 			_entitySchemas = entitySchemas.ToDictionary(q => q.EntityType);
 			foreach(var schema in _entitySchemas.Values)

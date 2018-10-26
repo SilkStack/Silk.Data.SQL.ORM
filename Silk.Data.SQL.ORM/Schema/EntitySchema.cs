@@ -96,7 +96,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			var projections = default(List<ProjectionField>);
 			lock (_projectionCache)
 			{
-				var mapping = GetMapping(EntityType, typeof(TProjection));
+				var mapping = GetMapping(EntityType, typeof(TProjection), Schema.ProjectionMappingOptions);
 				projections = new List<ProjectionField>();
 
 				GetProjections(mapping.Bindings);
@@ -148,9 +148,9 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		private readonly static object _syncObject = new object();
 		private readonly static MappingStore _mappingStore = new MappingStore();
-		private readonly static MappingOptions _options = MappingOptions.DefaultObjectMappingOptions;
 
-		private static Silk.Data.Modelling.Mapping.Mapping GetMapping(Type fromType, Type toType)
+		private static Silk.Data.Modelling.Mapping.Mapping GetMapping(Type fromType, Type toType,
+			MappingOptions options)
 		{
 			var fromModel = TypeModel.GetModelOf(fromType);
 			var toModel = TypeModel.GetModelOf(toType);
@@ -163,7 +163,7 @@ namespace Silk.Data.SQL.ORM.Schema
 					return mapping;
 
 				var mappingBuilder = new MappingBuilder(fromModel, toModel, _mappingStore);
-				foreach (var convention in _options.Conventions)
+				foreach (var convention in options.Conventions)
 				{
 					mappingBuilder.AddConvention(convention);
 				}
