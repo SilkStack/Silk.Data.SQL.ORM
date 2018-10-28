@@ -127,13 +127,9 @@ namespace Silk.Data.SQL.ORM.Tests
 		private class Primitives
 		{
 			public bool Bool { get; set; }
-			public sbyte SByte { get; set; }
 			public byte Byte { get; set; }
-			public ushort UShort { get; set; }
 			public short Short { get; set; }
-			public uint UInt { get; set; }
 			public int Int { get; set; }
-			public ulong ULong { get; set; }
 			public long Long { get; set; }
 			public string String { get; set; }
 			public DateTime DateTime { get; set; }
