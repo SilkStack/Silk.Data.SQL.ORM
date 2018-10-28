@@ -73,7 +73,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			foreach (var projectionField in projectionSchema.ProjectionFields)
 				AddProjection(projectionField);
 
-			return CreateResultMapper<TView>(1, projectionSchema);
+			return new ObjectResultMapper<TView>(1, projectionSchema.Mapping);
 		}
 
 		private ProjectionField ResolveProjectionField<TProperty>(Expression<Func<T, TProperty>> property)
@@ -113,17 +113,6 @@ namespace Silk.Data.SQL.ORM.Queries
 				return;
 			_projectionExpressions.Add(expression);
 			AddJoins(projectionField.Join);
-		}
-
-		private IEnumerable<Binding> CreateMappingBindings<TView>(EntitySchema projectionSchema)
-		{
-			return projectionSchema.CreateMappingBindings("");
-		}
-
-		private ObjectResultMapper<TView> CreateResultMapper<TView>(int resultSetCount, EntitySchema projectionSchema)
-		{
-			return new ObjectResultMapper<TView>(resultSetCount,
-				CreateMappingBindings<TView>(projectionSchema));
 		}
 
 		private void AddJoins(EntityFieldJoin[] joins)
@@ -477,7 +466,8 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		private IEnumerable<Binding> CreateMappingBindings<TView>(EntitySchema projectionSchema, string aliasPrefix)
 		{
-			return projectionSchema.CreateMappingBindings(aliasPrefix);
+			return null;
+			//return projectionSchema.CreateMappingBindings(aliasPrefix);
 		}
 
 		private TupleResultMapper<TLeftView, TRightView> CreateResultMapper<TLeftView, TRightView>(int resultSetCount, EntitySchema leftProjectionSchema, EntitySchema rightProjectionSchema)

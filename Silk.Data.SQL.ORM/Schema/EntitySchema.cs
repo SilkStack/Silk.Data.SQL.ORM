@@ -19,6 +19,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		public abstract SchemaIndex[] Indexes { get; }
 		public abstract ProjectionField[] ProjectionFields { get; }
 		public abstract EntityFieldJoin[] EntityJoins { get; }
+		public Mapping Mapping { get; private set; }
 
 		public IEntityField[] EntityFields { get; }
 
@@ -27,7 +28,13 @@ namespace Silk.Data.SQL.ORM.Schema
 			EntityFields = entityFields;
 		}
 
-		public abstract IEnumerable<Modelling.Mapping.Binding.Binding> CreateMappingBindings(string aliasPrefix);
+		protected void CreateMapping()
+		{
+			Mapping = new Mapping(TypeModel.GetModelOf(EntityType), null,
+				CreateMappingBindings().ToArray());
+		}
+
+		protected abstract IEnumerable<Modelling.Mapping.Binding.Binding> CreateMappingBindings();
 	}
 
 	public class ProjectionSchema<T> : EntitySchema
@@ -37,26 +44,28 @@ namespace Silk.Data.SQL.ORM.Schema
 		public override SchemaIndex[] Indexes { get; }
 		public override ProjectionField[] ProjectionFields { get; }
 		public override EntityFieldJoin[] EntityJoins { get; }
-		public Mapping Mapping { get; }
+		private Mapping _entityToViewTypeMapping { get; }
 		private MappingVisitor _mappingVisitor;
 
 		public ProjectionSchema(Table entityTable, IEntityField[] entityFields,
 			ProjectionField[] projectionFields, EntityFieldJoin[] manyToOneJoins,
-			SchemaIndex[] indexes, Type entityType, Mapping mapping) : base(entityFields)
+			SchemaIndex[] indexes, Type entityType, Mapping entityToViewTypeMapping) : base(entityFields)
 		{
 			EntityTable = entityTable;
 			ProjectionFields = projectionFields;
 			EntityJoins = manyToOneJoins;
 			Indexes = indexes;
 			EntityType = entityType;
-			Mapping = mapping;
+			_entityToViewTypeMapping = entityToViewTypeMapping;
 
 			_mappingVisitor = new MappingVisitor(projectionFields.OfType<MappedProjectionField>().ToArray());
+
+			CreateMapping();
 		}
 
-		public override IEnumerable<Modelling.Mapping.Binding.Binding> CreateMappingBindings(string aliasPrefix)
+		protected override IEnumerable<Modelling.Mapping.Binding.Binding> CreateMappingBindings()
 		{
-			return _mappingVisitor.Visit(Mapping, aliasPrefix);
+			return _mappingVisitor.Visit(_entityToViewTypeMapping);
 		}
 	}
 
@@ -76,14 +85,15 @@ namespace Silk.Data.SQL.ORM.Schema
 				manyToOneJoins, indexes, typeof(T), null)
 		{
 			EntityFields = entityFields;
+			CreateMapping();
 		}
 
-		public override IEnumerable<Modelling.Mapping.Binding.Binding> CreateMappingBindings(string aliasPrefix)
+		protected override IEnumerable<Modelling.Mapping.Binding.Binding> CreateMappingBindings()
 		{
 			yield return new CreateInstanceIfNull<T>(SqlTypeHelper.GetConstructor(typeof(T)), new[] { "." });
 			foreach (var field in ProjectionFields)
 			{
-				yield return field.GetMappingBinding(aliasPrefix);
+				yield return field.GetMappingBinding("");
 			}
 		}
 
@@ -181,8 +191,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			_projectionFields = projectionFields;
 		}
 
-		public IEnumerable<Modelling.Mapping.Binding.Binding> Visit(Mapping mapping, string prefix,
-			string[] path = null)
+		public IEnumerable<Modelling.Mapping.Binding.Binding> Visit(Mapping mapping, string[] path = null)
 		{
 			if (path == null)
 				path = new string[0];
@@ -191,35 +200,35 @@ namespace Silk.Data.SQL.ORM.Schema
 			{
 				if (binding is AssignmentBinding assignmentBinding)
 				{
-					var projectionBinding = VisitAssignmentBinding(assignmentBinding, prefix, path);
+					var projectionBinding = VisitAssignmentBinding(assignmentBinding, path);
 					if (projectionBinding != null)
 						yield return projectionBinding;
 				}
 				else if (binding is SubmappingBindingBase submappingBinding)
 				{
-					foreach (var subBinding in VisitSubmappingBinding(submappingBinding, prefix, path))
+					foreach (var subBinding in VisitSubmappingBinding(submappingBinding, path))
 						yield return subBinding;
 				}
 				else if (binding is MappingBinding mappingBinding)
 				{
-					var projectionBinding = VisitMappingBinding(mappingBinding, prefix, path);
+					var projectionBinding = VisitMappingBinding(mappingBinding, path);
 					if (projectionBinding != null)
 						yield return projectionBinding;
 				}
 			}
 		}
 
-		public Modelling.Mapping.Binding.Binding VisitAssignmentBinding(AssignmentBinding assignmentBinding, string prefix, string[] path)
+		public Modelling.Mapping.Binding.Binding VisitAssignmentBinding(AssignmentBinding assignmentBinding, string[] path)
 		{
 			return new MappedBinding(null, assignmentBinding, path);
 		}
 
-		public IEnumerable<Modelling.Mapping.Binding.Binding> VisitSubmappingBinding(SubmappingBindingBase submappingBinding, string prefix, string[] path)
+		public IEnumerable<Modelling.Mapping.Binding.Binding> VisitSubmappingBinding(SubmappingBindingBase submappingBinding, string[] path)
 		{
-			return Visit(submappingBinding.Mapping, prefix, path.Concat(submappingBinding.ToPath).ToArray());
+			return Visit(submappingBinding.Mapping, path.Concat(submappingBinding.ToPath).ToArray());
 		}
 
-		public Modelling.Mapping.Binding.Binding VisitMappingBinding(MappingBinding mappingBinding, string prefix, string[] path)
+		public Modelling.Mapping.Binding.Binding VisitMappingBinding(MappingBinding mappingBinding, string[] path)
 		{
 			var sourceProjection = _projectionFields.FirstOrDefault(
 				q => q.ModelPath.SequenceEqual(path.Concat(mappingBinding.ToPath))
@@ -227,7 +236,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			if (sourceProjection == null)
 				return null;
 
-			return new MappedBinding(sourceProjection.GetMappingBinding(prefix), mappingBinding, path);
+			return new MappedBinding(sourceProjection.GetMappingBinding(""), mappingBinding, path);
 		}
 
 		private class MappedBinding : Modelling.Mapping.Binding.Binding

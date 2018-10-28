@@ -1,4 +1,5 @@
 ﻿using Silk.Data.Modelling;
+using Silk.Data.Modelling.Mapping;
 using Silk.Data.Modelling.Mapping.Binding;
 using Silk.Data.SQL.Queries;
 using System.Collections.Generic;
@@ -98,26 +99,26 @@ namespace Silk.Data.SQL.ORM.Queries
 		private readonly static string[] _selfPath = new[] { "." };
 		private readonly static TypeModel<T> _typeModel = TypeModel.GetModelOf<T>();
 
-		private readonly Binding[] _bindings;
+		private readonly Mapping _mapping;
 
-		public ObjectResultMapper(int resultSetCount, IEnumerable<Binding> bindings)
+		public ObjectResultMapper(int resultSetCount, Mapping mapping)
 			: base(resultSetCount)
 		{
-			_bindings = bindings.ToArray();
+			_mapping = mapping;
 		}
 
 		public void Inject(T obj, QueryResult queryResult)
 		{
 			var objectReadWriter = new ObjectReadWriter(obj, _typeModel, typeof(T));
 			var queryReader = new QueryResultReader(queryResult);
-			Bind(queryReader, objectReadWriter);
+			_mapping.PerformMapping(queryReader, objectReadWriter);
 		}
 
 		public T Map(QueryResult queryResult)
 		{
 			var objectReadWriter = new ObjectReadWriter(null, _typeModel, typeof(T));
 			var queryReader = new QueryResultReader(queryResult);
-			Bind(queryReader, objectReadWriter);
+			_mapping.PerformMapping(queryReader, objectReadWriter);
 			return objectReadWriter.ReadField<T>(_selfPath);
 		}
 
@@ -128,7 +129,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			while (queryResult.Read())
 			{
 				var objectReadWriter = new ObjectReadWriter(null, _typeModel, typeof(T));
-				Bind(queryReader, objectReadWriter);
+				_mapping.PerformMapping(queryReader, objectReadWriter);
 				result.Add(objectReadWriter.ReadField<T>(_selfPath));
 			}
 			return result;
@@ -141,7 +142,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			while (await queryResult.ReadAsync())
 			{
 				var objectReadWriter = new ObjectReadWriter(null, _typeModel, typeof(T));
-				Bind(queryReader, objectReadWriter);
+				_mapping.PerformMapping(queryReader, objectReadWriter);
 				result.Add(objectReadWriter.ReadField<T>(_selfPath));
 			}
 			return result;
@@ -156,7 +157,7 @@ namespace Silk.Data.SQL.ORM.Queries
 				while (queryResult.Read())
 				{
 					var objectReadWriter = new ObjectReadWriter(null, _typeModel, typeof(T));
-					Bind(queryReader, objectReadWriter);
+					_mapping.PerformMapping(queryReader, objectReadWriter);
 					result.Add(objectReadWriter.ReadField<T>(_selfPath));
 				}
 
@@ -175,7 +176,7 @@ namespace Silk.Data.SQL.ORM.Queries
 				while (await queryResult.ReadAsync())
 				{
 					var objectReadWriter = new ObjectReadWriter(null, _typeModel, typeof(T));
-					Bind(queryReader, objectReadWriter);
+					_mapping.PerformMapping(queryReader, objectReadWriter);
 					result.Add(objectReadWriter.ReadField<T>(_selfPath));
 				}
 
@@ -183,14 +184,6 @@ namespace Silk.Data.SQL.ORM.Queries
 					break;
 			}
 			return result;
-		}
-
-		private void Bind(IModelReadWriter from, IModelReadWriter to)
-		{
-			foreach (var binding in _bindings)
-			{
-				binding.PerformBinding(from, to);
-			}
 		}
 	}
 

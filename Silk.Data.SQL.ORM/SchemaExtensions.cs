@@ -1,4 +1,5 @@
 ﻿using Silk.Data.Modelling;
+using Silk.Data.Modelling.Mapping;
 using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Queries;
 using Silk.Data.SQL.ORM.Queries.Expressions;
@@ -353,7 +354,12 @@ namespace Silk.Data.SQL.ORM
 
 			return new QueryInjectResult<T> (
 				new CompositeQueryExpression(BuildExpressions()),
-				new ObjectResultMapper<T>(entities.Length, schema.EntityFields.Where(q => q.PrimaryKeyGenerator == PrimaryKeyGenerator.ServerGenerated).Select(q => q.GetValueBinding())),
+				new ObjectResultMapper<T>(
+					entities.Length,
+					new Mapping(
+						null, null,
+						schema.EntityFields.Where(q => q.PrimaryKeyGenerator == PrimaryKeyGenerator.ServerGenerated).Select(q => q.GetValueBinding()).ToArray()
+					)),
 				entities
 				);
 
