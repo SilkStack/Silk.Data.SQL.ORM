@@ -61,6 +61,21 @@ namespace Silk.Data.SQL.ORM.Queries
 			return mapper;
 		}
 
+		public ValueResultMapper<TValue> Project<TValue>(QueryExpression queryExpression)
+		{
+			if (!SqlTypeHelper.IsSqlPrimitiveType(typeof(TValue)))
+				throw new Exception("Cannot project complex types.");
+
+			var aliasExpression = queryExpression as AliasExpression;
+			if (aliasExpression == null)
+			{
+				aliasExpression = QueryExpression.Alias(queryExpression, $"__AutoAlias_{_projectionExpressions.Count}");
+			}
+			_projectionExpressions.Add(aliasExpression);
+
+			return new ValueResultMapper<TValue>(1, aliasExpression.Identifier.Identifier);
+		}
+
 		public ObjectResultMapper<TView> Project<TView>()
 			where TView : class
 		{
@@ -131,21 +146,6 @@ namespace Silk.Data.SQL.ORM.Queries
 				return;
 			_tableJoins.Add(join);
 			AddJoins(join.DependencyJoins);
-		}
-
-		public ValueResultMapper<TValue> Project<TValue>(QueryExpression queryExpression)
-		{
-			if (!SqlTypeHelper.IsSqlPrimitiveType(typeof(TValue)))
-				throw new Exception("Cannot project complex types.");
-
-			var aliasExpression = queryExpression as AliasExpression;
-			if (aliasExpression == null)
-			{
-				aliasExpression = QueryExpression.Alias(queryExpression, $"__AutoAlias_{_projectionExpressions.Count}");
-			}
-			_projectionExpressions.Add(aliasExpression);
-
-			return new ValueResultMapper<TValue>(1, aliasExpression.Identifier.Identifier);
 		}
 
 		public void AndWhere(QueryExpression queryExpression)

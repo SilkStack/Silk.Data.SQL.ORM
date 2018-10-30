@@ -42,7 +42,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		/// Builds the entity field.
 		/// </summary>
 		/// <returns>Null when the field shouldn't be stored in the schema being built.</returns>
-		public abstract IEntityField Build(string columnNamePrefix, string[] modelPath);
+		public abstract BuiltEntityField Build(string columnNamePrefix, string[] modelPath);
 	}
 
 	/// <summary>
@@ -75,7 +75,7 @@ namespace Silk.Data.SQL.ORM.Schema
 				IsPrimaryKey = true;
 		}
 
-		public override IEntityField Build(string columnNamePrefix, string[] modelPath)
+		public override BuiltEntityField Build(string columnNamePrefix, string[] modelPath)
 		{
 			if (SqlDataType == null || !ModelField.CanRead || ModelField.IsEnumerable)
 				return null;
@@ -83,8 +83,10 @@ namespace Silk.Data.SQL.ORM.Schema
 			var primaryKeyGenerator = PrimaryKeyGenerator.NotPrimaryKey;
 			if (IsPrimaryKey)
 				primaryKeyGenerator = GetPrimaryKeyGenerator(SqlDataType);
-			return new EntityField<TValue, TEntity>(new[] { new Column($"{columnNamePrefix}{ColumnName}", SqlDataType, IsNullable) },
+			var entityField = new EntityField<TValue, TEntity>(
+				new[] { new Column($"{columnNamePrefix}{ColumnName}", SqlDataType, IsNullable) },
 				ModelField.FieldName, primaryKeyGenerator, modelPath, ModelField);
+			return new BuiltEntityField<TValue, TEntity>(entityField);
 		}
 
 		private static PrimaryKeyGenerator GetPrimaryKeyGenerator(SqlDataType sqlDataType)

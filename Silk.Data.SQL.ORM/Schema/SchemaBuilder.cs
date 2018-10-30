@@ -12,8 +12,8 @@ namespace Silk.Data.SQL.ORM.Schema
 	/// </summary>
 	public class SchemaBuilder
 	{
-		private readonly Dictionary<Type, EntitySchemaBuilder> _entitySchemaBuilders
-			= new Dictionary<Type, EntitySchemaBuilder>();
+		private readonly Dictionary<Type, (IEntitySchemaDefinition Definition, IEntitySchemaBuilder Builder)> _entitySchemaBuilders
+			= new Dictionary<Type, (IEntitySchemaDefinition Definition, IEntitySchemaBuilder Builder)>();
 		private readonly Dictionary<MethodInfo, IMethodCallConverter> _methodCallConverters
 			= new Dictionary<MethodInfo, IMethodCallConverter>();
 		private readonly List<RelationshipBuilder> _relationshipBuilders
@@ -24,22 +24,22 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public SchemaBuilder()
 		{
-			_methodCallConverters.Add(
+			AddMethodConverter(
 				typeof(Enum).GetMethod(nameof(Enum.HasFlag)), new HasFlagCallConverter()
 				);
-			_methodCallConverters.Add(
+			AddMethodConverter(
 				typeof(DatabaseFunctions).GetMethod(nameof(DatabaseFunctions.Like)), new StringLikeCallConverter()
 				);
-			_methodCallConverters.Add(
+			AddMethodConverter(
 				typeof(DatabaseFunctions).GetMethod(nameof(DatabaseFunctions.Alias)), new AliasCallConverter()
 				);
-			_methodCallConverters.Add(
+			AddMethodConverter(
 				typeof(DatabaseFunctions).GetMethod(nameof(DatabaseFunctions.Count)), new CountCallConverter()
 				);
-			_methodCallConverters.Add(
+			AddMethodConverter(
 				typeof(DatabaseFunctions).GetMethod(nameof(DatabaseFunctions.Random)), new RandomCallConverter()
 				);
-			_methodCallConverters.Add(
+			AddMethodConverter(
 				typeof(DatabaseFunctions).GetMethod(nameof(DatabaseFunctions.IsIn)), new IsInCallConverter()
 				);
 		}
@@ -80,18 +80,20 @@ namespace Silk.Data.SQL.ORM.Schema
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <returns></returns>
-		public EntitySchemaBuilder<T> DefineEntity<T>()
+		public EntitySchemaDefinition<T> DefineEntity<T>()
 			where T : class
 		{
 			var entityType = typeof(T);
-			if (_entitySchemaBuilders.TryGetValue(entityType, out var builder))
-				return builder as EntitySchemaBuilder<T>;
-			builder = new EntitySchemaBuilder<T>();
-			_entitySchemaBuilders.Add(entityType, builder);
-			return builder as EntitySchemaBuilder<T>;
+			if (_entitySchemaBuilders.TryGetValue(entityType, out var definitionBuilderPair))
+				return definitionBuilderPair.Definition as EntitySchemaDefinition<T>;
+			var definition = new EntitySchemaDefinition<T>();
+			var builder = new EntitySchemaBuilder<T>(definition);
+			definitionBuilderPair = (definition, builder);
+			_entitySchemaBuilders.Add(entityType, definitionBuilderPair);
+			return definition;
 		}
 
-		public EntitySchemaBuilder<T> DefineEntity<T>(Action<EntitySchemaBuilder<T>> configureCallback)
+		public EntitySchemaDefinition<T> DefineEntity<T>(Action<EntitySchemaDefinition<T>> configureCallback)
 			where T : class
 		{
 			var builder = DefineEntity<T>();
@@ -105,41 +107,48 @@ namespace Silk.Data.SQL.ORM.Schema
 		/// <returns></returns>
 		public virtual Schema Build()
 		{
-			var entityPrimitiveFields = BuildEntityPrimitiveFields();
-			while (DefineNewFields(entityPrimitiveFields)) { }
-			var entitySchemas = BuildEntitySchemas(entityPrimitiveFields).ToArray();
-			return new Schema(entitySchemas, _methodCallConverters,
-				_relationshipBuilders.Select(q => q.Build(entityPrimitiveFields)).ToArray(),
-				ProjectionMappingOptions);
+			CreateEntitySchemaAssemblages();
+			throw new Exception("Being refactored!");
+			//var entityPrimitiveFields = BuildEntityPrimitiveFields();
+			//while (DefineNewFields(entityPrimitiveFields)) { }
+			//var entitySchemas = BuildEntitySchemas(entityPrimitiveFields).ToArray();
+			//return new Schema(entitySchemas, _methodCallConverters,
+			//	_relationshipBuilders.Select(q => q.Build(entityPrimitiveFields)).ToArray(),
+			//	ProjectionMappingOptions);
 		}
 
-		private bool DefineNewFields(PartialEntitySchemaCollection partialEntitySchemas)
+		private void CreateEntitySchemaAssemblages()
 		{
-			var result = false;
-			foreach (var kvp in _entitySchemaBuilders)
-			{
-				if (kvp.Value.DefineNewSchemaFields(partialEntitySchemas))
-					result = true;
-			}
-			return result;
+
 		}
 
-		private PartialEntitySchemaCollection BuildEntityPrimitiveFields()
-		{
-			var primitiveFields = new PartialEntitySchemaCollection(_entitySchemaBuilders.Keys);
-			foreach (var kvp in _entitySchemaBuilders)
-			{
-				primitiveFields[kvp.Key] = kvp.Value.BuildPartialSchema(primitiveFields);
-			}
-			return primitiveFields;
-		}
+		//private bool DefineNewFields(PartialEntitySchemaCollection partialEntitySchemas)
+		//{
+		//	var result = false;
+		//	foreach (var kvp in _entitySchemaBuilders)
+		//	{
+		//		if (kvp.Value.Builder.DefineNewSchemaFields(partialEntitySchemas))
+		//			result = true;
+		//	}
+		//	return result;
+		//}
 
-		private IEnumerable<EntitySchema> BuildEntitySchemas(PartialEntitySchemaCollection entityPrimitiveFields)
-		{
-			foreach (var kvp in _entitySchemaBuilders)
-			{
-				yield return kvp.Value.BuildSchema(entityPrimitiveFields);
-			}
-		}
+		//private PartialEntitySchemaCollection BuildEntityPrimitiveFields()
+		//{
+		//	var primitiveFields = new PartialEntitySchemaCollection(_entitySchemaBuilders.Keys);
+		//	foreach (var kvp in _entitySchemaBuilders)
+		//	{
+		//		primitiveFields[kvp.Key] = kvp.Value.Builder.BuildPartialSchema(primitiveFields);
+		//	}
+		//	return primitiveFields;
+		//}
+
+		//private IEnumerable<EntitySchema> BuildEntitySchemas(PartialEntitySchemaCollection entityPrimitiveFields)
+		//{
+		//	foreach (var kvp in _entitySchemaBuilders)
+		//	{
+		//		yield return kvp.Value.Builder.BuildSchema(entityPrimitiveFields);
+		//	}
+		//}
 	}
 }

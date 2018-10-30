@@ -19,7 +19,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		public abstract SchemaIndex[] Indexes { get; }
 		public abstract ProjectionField[] ProjectionFields { get; }
 		public abstract EntityFieldJoin[] EntityJoins { get; }
-		public Mapping Mapping { get; private set; }
+		public Mapping Mapping { get; protected set; }
 
 		public IEntityField[] EntityFields { get; }
 
@@ -81,11 +81,11 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public EntitySchema(Table entityTable, IEntityFieldOfEntity<T>[] entityFields,
 			ProjectionField[] projectionFields, EntityFieldJoin[] manyToOneJoins,
-			SchemaIndex[] indexes) : base(entityTable, entityFields, projectionFields,
+			SchemaIndex[] indexes, Mapping mapping) : base(entityTable, entityFields, projectionFields,
 				manyToOneJoins, indexes, typeof(T), null)
 		{
 			EntityFields = entityFields;
-			CreateMapping();
+			Mapping = mapping;
 		}
 
 		protected override IEnumerable<Modelling.Mapping.Binding.Binding> CreateMappingBindings()

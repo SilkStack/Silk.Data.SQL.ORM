@@ -8,10 +8,10 @@ namespace Silk.Data.SQL.ORM.Schema
 	public abstract class PartialEntitySchema
 	{
 		public abstract Type EntityType { get; }
-		public List<IEntityField> EntityFields { get; } = new List<IEntityField>();
+		public List<BuiltEntityField> EntityFields { get; } = new List<BuiltEntityField>();
 		public string TableName { get; }
 
-		public PartialEntitySchema(IEntityField[] primitiveFields, string tableName)
+		public PartialEntitySchema(BuiltEntityField[] primitiveFields, string tableName)
 		{
 			EntityFields.AddRange(primitiveFields);
 			TableName = tableName;
@@ -27,7 +27,7 @@ namespace Silk.Data.SQL.ORM.Schema
 	{
 		public override Type EntityType { get; } = typeof(T);
 
-		public PartialEntitySchema(IEntityField[] primitiveFields, string tableName) :
+		public PartialEntitySchema(BuiltEntityField[] primitiveFields, string tableName) :
 			base(primitiveFields, tableName)
 		{
 		}
@@ -40,7 +40,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			var primaryKeyFields = entityPrimitiveFields.GetEntityPrimaryKeys(fieldType);
 			var foreignKeys = primaryKeyFields.Select(q =>
 			{
-				if (columNames != null && columNames.TryGetValue(q.ModelField, out var columnName))
+				if (columNames != null && columNames.TryGetValue(q.EntityField.ModelField, out var columnName))
 					return q.BuildForeignKey(propertyPathPrefix, modelPath, columnName);
 				return q.BuildForeignKey(propertyPathPrefix, modelPath);
 			}).ToArray();

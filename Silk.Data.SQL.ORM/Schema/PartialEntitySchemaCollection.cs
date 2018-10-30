@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace Silk.Data.SQL.ORM.Schema
 {
@@ -33,13 +32,13 @@ namespace Silk.Data.SQL.ORM.Schema
 			return ContainsKey(type);
 		}
 
-		public IEnumerable<IEntityField> GetEntityPrimaryKeys<T>() => GetEntityPrimaryKeys(typeof(T));
+		public IEnumerable<BuiltEntityField> GetEntityPrimaryKeys<T>() => GetEntityPrimaryKeys(typeof(T));
 
-		public IEnumerable<IEntityField> GetEntityPrimaryKeys(Type type)
+		public IEnumerable<BuiltEntityField> GetEntityPrimaryKeys(Type type)
 		{
 			if (TryGetValue(type, out var partialEntitySchema))
 			{
-				return partialEntitySchema.EntityFields.Where(q => q.IsPrimaryKey);
+				return partialEntitySchema.EntityFields.Where(q => q.EntityField.IsPrimaryKey);
 			}
 			return null;
 		}

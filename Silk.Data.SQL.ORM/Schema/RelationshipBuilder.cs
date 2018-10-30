@@ -120,12 +120,12 @@ namespace Silk.Data.SQL.ORM.Schema
 			var leftJoin = new EntityFieldJoin(leftPartialSchema.TableName, $"{Name}_{leftPartialSchema.TableName}",
 				Name,
 				leftRelationship.Columns.Select(q => q.ColumnName).ToArray(),
-				partialEntities.GetEntityPrimaryKeys<TLeft>().SelectMany(q => q.Columns).Select(q => q.ColumnName).ToArray(),
+				partialEntities.GetEntityPrimaryKeys<TLeft>().SelectMany(q => q.EntityField.Columns).Select(q => q.ColumnName).ToArray(),
 				leftRelationship, new EntityFieldJoin[0]);
 			var rightJoin = new EntityFieldJoin(rightPartialSchema.TableName, $"{Name}_{rightPartialSchema.TableName}",
 				Name,
 				rightRelationship.Columns.Select(q => q.ColumnName).ToArray(),
-				partialEntities.GetEntityPrimaryKeys<TRight>().SelectMany(q => q.Columns).Select(q => q.ColumnName).ToArray(),
+				partialEntities.GetEntityPrimaryKeys<TRight>().SelectMany(q => q.EntityField.Columns).Select(q => q.ColumnName).ToArray(),
 				rightRelationship, new EntityFieldJoin[0]);
 
 			if (leftJoin.LeftColumns.Length == 0 || leftJoin.RightColumns.Length == 0 ||
