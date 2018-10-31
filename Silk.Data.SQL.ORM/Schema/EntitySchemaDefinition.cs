@@ -1,10 +1,8 @@
 ﻿using Silk.Data.Modelling;
-using Silk.Data.Modelling.Mapping;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using CoreBinding = Silk.Data.Modelling.Mapping.Binding;
 
 namespace Silk.Data.SQL.ORM.Schema
 {
@@ -26,8 +24,8 @@ namespace Silk.Data.SQL.ORM.Schema
 		where T : class
 	{
 		private readonly TypeModel<T> _entityTypeModel = TypeModel.GetModelOf<T>();
-		private readonly Dictionary<IPropertyField, EntityFieldBuilder> _entityFieldBuilders
-			= new Dictionary<IPropertyField, EntityFieldBuilder>();
+		private readonly Dictionary<IPropertyField, EntityFieldDefinition> _entityFieldBuilders
+			= new Dictionary<IPropertyField, EntityFieldDefinition>();
 		private readonly Dictionary<string, SchemaIndexBuilder<T>> _indexBuilders
 			= new Dictionary<string, SchemaIndexBuilder<T>>();
 
@@ -54,36 +52,41 @@ namespace Silk.Data.SQL.ORM.Schema
 			return indexBuilder;
 		}
 
-		public virtual EntityFieldBuilder<TProperty, T> For<TProperty>(Expression<Func<T, TProperty>> property)
+		public EntityFieldDefinition<TProperty, T> For<TProperty>(PropertyField<TProperty> propertyField)
+		{
+			if (_entityFieldBuilders.TryGetValue(propertyField, out var builder))
+				return builder as EntityFieldDefinition<TProperty, T>;
+
+			builder = new EntityFieldDefinition<TProperty, T>(propertyField);
+			_entityFieldBuilders.Add(propertyField, builder);
+			return builder as EntityFieldDefinition<TProperty, T>;
+		}
+
+		public virtual EntityFieldDefinition<TProperty, T> For<TProperty>(Expression<Func<T, TProperty>> property)
 		{
 			if (property.Body is MemberExpression memberExpression)
 			{
 				var path = new List<string>();
 				PopulatePath(property.Body, path);
 
-				var field = GetField(path);
+				var field = GetField<TProperty>(path);
 				if (field == null)
 					throw new ArgumentException("Field selector expression doesn't specify a valid member.", nameof(property));
 
-				if (_entityFieldBuilders.TryGetValue(field, out var fieldBuilder))
-					return fieldBuilder as EntityFieldBuilder<TProperty, T>;
-
-				fieldBuilder = new EntityFieldBuilder<TProperty, T>(field);
-				_entityFieldBuilders.Add(field, fieldBuilder);
-				return fieldBuilder as EntityFieldBuilder<TProperty, T>;
+				return For(field);
 			}
 			throw new ArgumentException("Field selector must be a MemberExpression.", nameof(property));
 		}
 
-		public EntityFieldBuilder<TProperty, T> For<TProperty>(Expression<Func<T, TProperty>> property,
-			Action<EntityFieldBuilder<TProperty, T>> configureCallback)
+		public EntityFieldDefinition<TProperty, T> For<TProperty>(Expression<Func<T, TProperty>> property,
+			Action<EntityFieldDefinition<TProperty, T>> configureCallback)
 		{
 			var builder = For(property);
 			configureCallback?.Invoke(builder);
 			return builder;
 		}
 
-		private IPropertyField GetField(IEnumerable<string> path)
+		private PropertyField<TProperty> GetField<TProperty>(IEnumerable<string> path)
 		{
 			var fields = _entityTypeModel.Fields;
 			var field = default(IPropertyField);
@@ -92,7 +95,7 @@ namespace Silk.Data.SQL.ORM.Schema
 				field = fields.FirstOrDefault(q => q.FieldName == segment);
 				fields = field.FieldTypeModel?.Fields;
 			}
-			return field;
+			return field as PropertyField<TProperty>;
 		}
 
 		private void PopulatePath(Expression expression, List<string> path)
@@ -429,25 +432,5 @@ namespace Silk.Data.SQL.ORM.Schema
 		//		}
 		//	}
 		//}
-
-		private EntityFieldBuilder GetFieldBuilder(IPropertyField propertyField)
-		{
-			if (_entityFieldBuilders.TryGetValue(propertyField, out var builder))
-				return builder;
-			builder = CreateFieldBuilder(propertyField);
-			_entityFieldBuilders.Add(propertyField, builder);
-			return builder;
-		}
-
-		private EntityFieldBuilder CreateFieldBuilder(IPropertyField propertyField)
-		{
-			//  reflection justification:
-			//    building a schema is a rare occurance, using reflection here should make the use of generic types
-			//    possible through the entire codebase while only executing slow reflection code this once
-			return Activator.CreateInstance(
-				typeof(EntityFieldBuilder<,>).MakeGenericType(propertyField.FieldType, typeof(T)),
-				new object[] { propertyField }
-				) as EntityFieldBuilder;
-		}
 	}
 }

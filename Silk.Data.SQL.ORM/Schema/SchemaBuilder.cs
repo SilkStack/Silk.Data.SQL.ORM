@@ -107,8 +107,17 @@ namespace Silk.Data.SQL.ORM.Schema
 		/// <returns></returns>
 		public virtual Schema Build()
 		{
-			CreateEntitySchemaAssemblages();
-			throw new Exception("Being refactored!");
+			var assemblages = CreateEntitySchemaAssemblages().ToArray();
+			foreach (var assemblage in assemblages)
+			{
+
+			}
+			var entitySchemas = assemblages.Select(q => q.Builder.BuildSchema())
+				.ToArray();
+			return new Schema(
+				entitySchemas, _methodCallConverters,
+				new Relationship[0], ProjectionMappingOptions
+				);
 			//var entityPrimitiveFields = BuildEntityPrimitiveFields();
 			//while (DefineNewFields(entityPrimitiveFields)) { }
 			//var entitySchemas = BuildEntitySchemas(entityPrimitiveFields).ToArray();
@@ -117,9 +126,12 @@ namespace Silk.Data.SQL.ORM.Schema
 			//	ProjectionMappingOptions);
 		}
 
-		private void CreateEntitySchemaAssemblages()
+		private IEnumerable<IEntitySchemaAssemblage> CreateEntitySchemaAssemblages()
 		{
-
+			foreach (var kvp in _entitySchemaBuilders)
+			{
+				yield return kvp.Value.Builder.CreateAssemblage();
+			}
 		}
 
 		//private bool DefineNewFields(PartialEntitySchemaCollection partialEntitySchemas)

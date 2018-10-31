@@ -1,0 +1,45 @@
+﻿using Silk.Data.Modelling;
+using System;
+
+namespace Silk.Data.SQL.ORM.Schema
+{
+	/// <summary>
+	/// Helper class for visiting fields declared on entity types.
+	/// </summary>
+	internal static class EntityTypeVisitor
+	{
+		public delegate void VisitNode(IPropertyField entityPropertyField, Span<string> path);
+
+		public static void Visit(TypeModel entityTypeModel, VisitNode visitNodeCallback)
+		{
+			var pathArray = new string[255];
+			DoVisit(entityTypeModel, 0);
+
+			void DoVisit(TypeModel currentTypeModel, int pathLength)
+			{
+				CheckPathArrayBounds(pathLength);
+				var path = new Span<string>(pathArray, 0, pathLength);
+				foreach (var entityPropertyField in currentTypeModel.Fields)
+				{
+					pathArray[pathLength] = entityPropertyField.FieldName;
+					var pathWithFieldName = new Span<string>(pathArray, 0, pathLength + 1);
+
+					if (SqlTypeHelper.IsSqlPrimitiveType(entityPropertyField.FieldType))
+					{
+						visitNodeCallback(entityPropertyField, pathWithFieldName);
+					}
+				}
+			}
+
+			void CheckPathArrayBounds(int length)
+			{
+				if (pathArray.Length == length)
+				{
+					var newArray = new string[pathArray.Length + 255];
+					Array.Copy(pathArray, newArray, pathArray.Length);
+					pathArray = newArray;
+				}
+			}
+		}
+	}
+}
