@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Schema
@@ -8,6 +9,7 @@ namespace Silk.Data.SQL.ORM.Schema
 	/// </summary>
 	public interface IEntitySchemaAssemblage
 	{
+		Type EntityType { get; }
 		IEntitySchemaBuilder Builder { get; }
 		IEntitySchemaDefinition Definition { get; }
 
@@ -31,6 +33,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		private readonly List<Column> _columns
 			= new List<Column>();
 
+		public Type EntityType { get; } = typeof(T);
 		public string TableName { get; }
 		public IReadOnlyCollection<IEntityFieldAssemblage> Fields => _fields;
 

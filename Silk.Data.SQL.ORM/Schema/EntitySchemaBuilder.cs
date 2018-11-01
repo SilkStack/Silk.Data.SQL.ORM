@@ -40,11 +40,16 @@ namespace Silk.Data.SQL.ORM.Schema
 	{
 		private readonly TypeModel<T> _entityTypeModel = TypeModel.GetModelOf<T>();
 		private readonly EntitySchemaDefinition<T> _entitySchemaDefinition;
+		private readonly IReadOnlyCollection<IEntitySchemaAssemblage> _entitySchemaAssemblages;
 		private EntitySchemaAssemblage<T> _entitySchemaAssemblage;
 
-		public EntitySchemaBuilder(EntitySchemaDefinition<T> entitySchemaDefinition)
+		public EntitySchemaBuilder(
+			EntitySchemaDefinition<T> entitySchemaDefinition,
+			IReadOnlyCollection<IEntitySchemaAssemblage> entitySchemaAssemblages
+			)
 		{
 			_entitySchemaDefinition = entitySchemaDefinition;
+			_entitySchemaAssemblages = entitySchemaAssemblages;
 		}
 
 		public IEntitySchemaAssemblage CreateAssemblage()
@@ -60,7 +65,7 @@ namespace Silk.Data.SQL.ORM.Schema
 
 			void VisitCallback(IPropertyField propertyField, Span<string> path)
 			{
-				if (!SqlTypeHelper.IsSqlPrimitiveType(propertyField.FieldType))
+				if (path.Length != 1 || !SqlTypeHelper.IsSqlPrimitiveType(propertyField.FieldType))
 					return;
 
 				var (fieldDefinition, fieldBuilder) = GetFieldDefinitionAndBuilder(propertyField);
@@ -121,9 +126,21 @@ namespace Silk.Data.SQL.ORM.Schema
 				if (SqlTypeHelper.IsSqlPrimitiveType(propertyField.FieldType))
 				{
 					var fieldAssemblage = FindField(path);
-					var entityField = fieldAssemblage.Builder.Build() as IEntityFieldOfEntity<T>;
-					if (entityField != null)
+					if (fieldAssemblage.Builder.Build() is IEntityFieldOfEntity<T> entityField)
 						entityFields.Add(entityField);
+					return;
+				}
+
+				var fieldTypeAssemblage = _entitySchemaAssemblages.FirstOrDefault(
+					q => q.EntityType == propertyField.FieldType
+					);
+				if (fieldTypeAssemblage == null)
+				{
+
+				}
+				else
+				{
+
 				}
 			}
 		}

@@ -23,10 +23,12 @@ namespace Silk.Data.SQL.ORM.Schema
 				{
 					pathArray[pathLength] = entityPropertyField.FieldName;
 					var pathWithFieldName = new Span<string>(pathArray, 0, pathLength + 1);
+					visitNodeCallback(entityPropertyField, pathWithFieldName);
 
-					if (SqlTypeHelper.IsSqlPrimitiveType(entityPropertyField.FieldType))
+					if (!SqlTypeHelper.IsSqlPrimitiveType(entityPropertyField.FieldType))
 					{
-						visitNodeCallback(entityPropertyField, pathWithFieldName);
+						var propertyTypeModel = TypeModel.GetModelOf(entityPropertyField.FieldType);
+						DoVisit(propertyTypeModel, pathLength + 1);
 					}
 				}
 			}

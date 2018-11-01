@@ -18,6 +18,8 @@ namespace Silk.Data.SQL.ORM.Schema
 			= new Dictionary<MethodInfo, IMethodCallConverter>();
 		private readonly List<RelationshipBuilder> _relationshipBuilders
 			= new List<RelationshipBuilder>();
+		private readonly List<IEntitySchemaAssemblage> _entitySchemaAssemblages
+			= new List<IEntitySchemaAssemblage>();
 
 		public MappingOptions ProjectionMappingOptions { get; set; }
 			= MappingOptions.CreateObjectMappingOptions();
@@ -87,7 +89,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			if (_entitySchemaBuilders.TryGetValue(entityType, out var definitionBuilderPair))
 				return definitionBuilderPair.Definition as EntitySchemaDefinition<T>;
 			var definition = new EntitySchemaDefinition<T>();
-			var builder = new EntitySchemaBuilder<T>(definition);
+			var builder = new EntitySchemaBuilder<T>(definition, _entitySchemaAssemblages);
 			definitionBuilderPair = (definition, builder);
 			_entitySchemaBuilders.Add(entityType, definitionBuilderPair);
 			return definition;
@@ -107,12 +109,12 @@ namespace Silk.Data.SQL.ORM.Schema
 		/// <returns></returns>
 		public virtual Schema Build()
 		{
-			var assemblages = CreateEntitySchemaAssemblages().ToArray();
-			foreach (var assemblage in assemblages)
+			_entitySchemaAssemblages.AddRange(CreateEntitySchemaAssemblages());
+			foreach (var assemblage in _entitySchemaAssemblages)
 			{
 
 			}
-			var entitySchemas = assemblages.Select(q => q.Builder.BuildSchema())
+			var entitySchemas = _entitySchemaAssemblages.Select(q => q.Builder.BuildSchema())
 				.ToArray();
 			return new Schema(
 				entitySchemas, _methodCallConverters,
