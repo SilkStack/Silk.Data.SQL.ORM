@@ -36,6 +36,50 @@ namespace Silk.Data.SQL.ORM.Schema
 		FieldAssignment GetFieldValuePair(TEntity obj);
 	}
 
+	public class EmbeddedPocoField<TEntity> : IEntityFieldOfValue<bool>, IEntityFieldOfEntity<TEntity>
+	{
+		public Type DataType => ModelField.FieldType;
+		public TypeModel DataTypeModel { get; }
+		public IPropertyField ModelField { get; }
+		public string FieldName => ModelField.FieldName;
+		public Column[] Columns { get; }
+		public PrimaryKeyGenerator PrimaryKeyGenerator => PrimaryKeyGenerator.NotPrimaryKey;
+		public string[] ModelPath { get; }
+		public KeyType KeyType => KeyType.None;
+		public ForeignKey[] ForeignKeys { get; } = new ForeignKey[0];
+		public bool IsPrimaryKey => false;
+
+		public EmbeddedPocoField(IPropertyField modelField, string[] modelPath)
+		{
+			DataTypeModel = TypeModel.GetModelOf(modelField.FieldType);
+			ModelPath = modelPath;
+			ModelField = modelField;
+			Columns = new[] { new Column(
+				string.Join("_", modelPath), SqlDataType.Bit(), false
+				) };
+		}
+
+		public CoreBinding.Binding GetValueBinding()
+		{
+			return new CoreBinding.CopyBinding<bool>(new[] { Columns[0].ColumnName }, ModelPath);
+		}
+
+		public ForeignKey BuildForeignKey(string propertyPathPrefix, string[] modelPath, string columnName = null)
+		{
+			throw new NotImplementedException();
+		}
+
+		public ProjectionField BuildProjectionField(string sourceName, string fieldName, string aliasName, string[] modelPath, EntityFieldJoin join)
+		{
+			throw new NotImplementedException();
+		}
+
+		public FieldAssignment GetFieldValuePair(TEntity obj)
+		{
+			throw new NotImplementedException();
+		}
+	}
+
 	/// <summary>
 	/// An entity field that stores type TValue.
 	/// </summary>

@@ -68,10 +68,7 @@ namespace Silk.Data.SQL.ORM.Schema
 				if (path.Length != 1 || !SqlTypeHelper.IsSqlPrimitiveType(propertyField.FieldType))
 					return;
 
-				var (fieldDefinition, fieldBuilder) = GetFieldDefinitionAndBuilder(propertyField);
-				_entitySchemaAssemblage.AddField(
-					fieldBuilder.CreateAssemblage(path.ToArray())
-					);
+				FindOrCreateField(propertyField, path);
 			}
 		}
 
@@ -96,25 +93,6 @@ namespace Silk.Data.SQL.ORM.Schema
 			throw new NotImplementedException();
 		}
 
-		private (EntityFieldDefinition Definition, IEntityFieldBuilder Builder) GetFieldDefinitionAndBuilder(IPropertyField propertyField)
-		{
-			//  reflection justification:
-			//    building a schema is a rare occurance, using reflection here should make the use of generic types
-			//    possible through the entire codebase while only executing slow reflection code this once
-			var methodInfo = typeof(EntitySchemaBuilder<T>)
-				.GetMethods(BindingFlags.Instance | BindingFlags.NonPublic)
-				.First(q => q.Name == nameof(GetFieldDefinitionAndBuilder) && q.IsGenericMethod)
-				.MakeGenericMethod(propertyField.FieldType);
-			return ((EntityFieldDefinition, IEntityFieldBuilder))methodInfo.Invoke(this, new object[] { propertyField });
-		}
-
-		private (EntityFieldDefinition Definition, IEntityFieldBuilder Builder) GetFieldDefinitionAndBuilder<TProperty>(PropertyField<TProperty> propertyField)
-		{
-			var fieldDefinition = _entitySchemaDefinition.For(propertyField);
-			var builder = new EntityFieldBuilder<TProperty, T>(fieldDefinition);
-			return (fieldDefinition, builder);
-		}
-
 		private IEntityFieldOfEntity<T>[] GetEntityFields()
 		{
 			var entityFields = new List<IEntityFieldOfEntity<T>>();
@@ -125,7 +103,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			{
 				if (SqlTypeHelper.IsSqlPrimitiveType(propertyField.FieldType))
 				{
-					var fieldAssemblage = FindField(path);
+					var fieldAssemblage = FindOrCreateField(propertyField, path);
 					if (fieldAssemblage.Builder.Build() is IEntityFieldOfEntity<T> entityField)
 						entityFields.Add(entityField);
 					return;
@@ -136,7 +114,7 @@ namespace Silk.Data.SQL.ORM.Schema
 					);
 				if (fieldTypeAssemblage == null)
 				{
-
+					entityFields.Add(new EmbeddedPocoField<T>(propertyField, path.ToArray()));
 				}
 				else
 				{
@@ -155,7 +133,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			{
 				if (SqlTypeHelper.IsSqlPrimitiveType(propertyField.FieldType))
 				{
-					var fieldAssemblage = FindField(path);
+					var fieldAssemblage = FindOrCreateField(propertyField, path);
 					var sourceName = _entitySchemaAssemblage.TableName;
 					var columnName = fieldAssemblage.FieldDefinition.ColumnName;
 					var aliasName = string.Join("_", path.ToArray());
@@ -164,18 +142,63 @@ namespace Silk.Data.SQL.ORM.Schema
 						);
 
 					projectionFields.Add(projectionField);
+					return;
+				}
+
+				var fieldTypeAssemblage = _entitySchemaAssemblages.FirstOrDefault(
+					q => q.EntityType == propertyField.FieldType
+					);
+				if (fieldTypeAssemblage == null)
+				{
+					var sourceName = _entitySchemaAssemblage.TableName;
+					var columnName = string.Join("_", path.ToArray());
+					var aliasName = $"__NULL_CHECK_{string.Join("_", path.ToArray())}";
+					projectionFields.Add(new EmbeddedPocoNullCheckProjection(
+						sourceName, columnName, aliasName, path.ToArray(), null
+						));
+				}
+				else
+				{
+
 				}
 			}
 		}
 
-		private IEntityFieldAssemblage FindField(Span<string> path)
+		private IEntityFieldAssemblage FindOrCreateField(IPropertyField propertyField, Span<string> path)
 		{
 			foreach (var field in _entitySchemaAssemblage.Fields)
 			{
 				if (path.SequenceEqual(new ReadOnlySpan<string>(field.ModelPath)))
 					return field;
 			}
-			return null;
+
+			var (fieldDefinition, fieldBuilder) = GetFieldDefinitionAndBuilder(propertyField);
+			var newField = fieldBuilder.CreateAssemblage(path.ToArray());
+			_entitySchemaAssemblage.AddField(newField);
+			return newField;
+		}
+
+		private (EntityFieldDefinition Definition, IEntityFieldBuilder Builder) GetFieldDefinitionAndBuilder(IPropertyField propertyField)
+		{
+			//  reflection justification:
+			//    building a schema is a rare occurance, using reflection here should make the use of generic types
+			//    possible through the entire codebase while only executing slow reflection code this once
+			var methodInfo = typeof(EntitySchemaBuilder<T>)
+				.GetMethods(BindingFlags.Instance | BindingFlags.NonPublic)
+				.First(q => q.Name == nameof(GetFieldDefinitionAndBuilder) && q.IsGenericMethod)
+				.MakeGenericMethod(propertyField.FieldType);
+			return ((EntityFieldDefinition, IEntityFieldBuilder))methodInfo.Invoke(this, new object[] { propertyField });
+		}
+
+		private (EntityFieldDefinition Definition, IEntityFieldBuilder Builder) GetFieldDefinitionAndBuilder<TProperty>(PropertyField<TProperty> propertyField)
+		{
+			var fieldDefinition = _entitySchemaDefinition.For(propertyField);
+			IEntityFieldBuilder builder;
+			if (SqlTypeHelper.IsSqlPrimitiveType(propertyField.FieldType))
+				builder = new SqlPrimitiveEntityFieldBuilder<TProperty, T>(fieldDefinition);
+			else
+				builder = new ObjectEntityFieldBuilder<TProperty, T>(fieldDefinition);
+			return (fieldDefinition, builder);
 		}
 	}
 }

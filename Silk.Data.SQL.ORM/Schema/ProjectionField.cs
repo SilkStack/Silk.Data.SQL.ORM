@@ -51,6 +51,25 @@ namespace Silk.Data.SQL.ORM.Schema
 		}
 	}
 
+	public class EmbeddedPocoNullCheckProjection : ProjectionField
+	{
+		public EmbeddedPocoNullCheckProjection(string sourceName, string fieldName, string aliasName, string[] modelPath, EntityFieldJoin join)
+			: base(sourceName, fieldName, aliasName, modelPath, join)
+		{
+		}
+
+		public override bool IsNullCheck => true;
+
+		public override CoreBinding.Binding GetMappingBinding(string aliasPrefix)
+		{
+			throw new NotImplementedException();
+			//return new CreateInstanceWithNullCheck<T, bool>(
+			//	SqlTypeHelper.GetConstructor(typeof(T)),
+			//	new[] { AliasName },
+			//	ModelPath);
+		}
+	}
+
 	public class ProjectionField<T> : ProjectionField
 	{
 		public override bool IsNullCheck { get; }

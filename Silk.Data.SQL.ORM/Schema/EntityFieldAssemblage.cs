@@ -10,7 +10,7 @@
 		string[] ModelPath { get; }
 	}
 
-	public class EntityFieldAssemblage<TValue, TEntity> : IEntityFieldAssemblage
+	public class SqlPrimitiveEntityFieldAssemblage<TValue, TEntity> : IEntityFieldAssemblage
 		where TEntity : class
 	{
 		public IEntityFieldBuilder Builder { get; }
@@ -19,9 +19,30 @@
 
 		public string[] ModelPath { get; }
 
-		public EntityFieldAssemblage(
+		public SqlPrimitiveEntityFieldAssemblage(
 			string[] modelPath,
-			EntityFieldBuilder<TValue, TEntity> builder,
+			SqlPrimitiveEntityFieldBuilder<TValue, TEntity> builder,
+			EntityFieldDefinition<TValue, TEntity> fieldDefinition
+			)
+		{
+			ModelPath = modelPath;
+			Builder = builder;
+			FieldDefinition = fieldDefinition;
+		}
+	}
+
+	public class ObjectEntityFieldAssemblage<TValue, TEntity> : IEntityFieldAssemblage
+		where TEntity : class
+	{
+		public IEntityFieldBuilder Builder { get; }
+
+		public EntityFieldDefinition FieldDefinition { get; }
+
+		public string[] ModelPath { get; }
+
+		public ObjectEntityFieldAssemblage(
+			string[] modelPath,
+			ObjectEntityFieldBuilder<TValue, TEntity> builder,
 			EntityFieldDefinition<TValue, TEntity> fieldDefinition
 			)
 		{

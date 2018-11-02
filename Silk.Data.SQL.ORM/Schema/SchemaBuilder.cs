@@ -120,12 +120,6 @@ namespace Silk.Data.SQL.ORM.Schema
 				entitySchemas, _methodCallConverters,
 				new Relationship[0], ProjectionMappingOptions
 				);
-			//var entityPrimitiveFields = BuildEntityPrimitiveFields();
-			//while (DefineNewFields(entityPrimitiveFields)) { }
-			//var entitySchemas = BuildEntitySchemas(entityPrimitiveFields).ToArray();
-			//return new Schema(entitySchemas, _methodCallConverters,
-			//	_relationshipBuilders.Select(q => q.Build(entityPrimitiveFields)).ToArray(),
-			//	ProjectionMappingOptions);
 		}
 
 		private IEnumerable<IEntitySchemaAssemblage> CreateEntitySchemaAssemblages()
@@ -135,34 +129,5 @@ namespace Silk.Data.SQL.ORM.Schema
 				yield return kvp.Value.Builder.CreateAssemblage();
 			}
 		}
-
-		//private bool DefineNewFields(PartialEntitySchemaCollection partialEntitySchemas)
-		//{
-		//	var result = false;
-		//	foreach (var kvp in _entitySchemaBuilders)
-		//	{
-		//		if (kvp.Value.Builder.DefineNewSchemaFields(partialEntitySchemas))
-		//			result = true;
-		//	}
-		//	return result;
-		//}
-
-		//private PartialEntitySchemaCollection BuildEntityPrimitiveFields()
-		//{
-		//	var primitiveFields = new PartialEntitySchemaCollection(_entitySchemaBuilders.Keys);
-		//	foreach (var kvp in _entitySchemaBuilders)
-		//	{
-		//		primitiveFields[kvp.Key] = kvp.Value.Builder.BuildPartialSchema(primitiveFields);
-		//	}
-		//	return primitiveFields;
-		//}
-
-		//private IEnumerable<EntitySchema> BuildEntitySchemas(PartialEntitySchemaCollection entityPrimitiveFields)
-		//{
-		//	foreach (var kvp in _entitySchemaBuilders)
-		//	{
-		//		yield return kvp.Value.Builder.BuildSchema(entityPrimitiveFields);
-		//	}
-		//}
 	}
 }
