@@ -27,14 +27,6 @@ namespace Silk.Data.SQL.ORM.Schema
 		{
 			EntityFields = entityFields;
 		}
-
-		protected void CreateMapping()
-		{
-			Mapping = new Mapping(TypeModel.GetModelOf(EntityType), null,
-				CreateMappingBindings().ToArray());
-		}
-
-		protected abstract IEnumerable<Modelling.Mapping.Binding.Binding> CreateMappingBindings();
 	}
 
 	public class ProjectionSchema<T> : EntitySchema
@@ -45,7 +37,6 @@ namespace Silk.Data.SQL.ORM.Schema
 		public override ProjectionField[] ProjectionFields { get; }
 		public override EntityFieldJoin[] EntityJoins { get; }
 		private Mapping _entityToViewTypeMapping { get; }
-		private MappingVisitor _mappingVisitor;
 
 		public ProjectionSchema(Table entityTable, IEntityField[] entityFields,
 			ProjectionField[] projectionFields, EntityFieldJoin[] manyToOneJoins,
@@ -57,15 +48,6 @@ namespace Silk.Data.SQL.ORM.Schema
 			Indexes = indexes;
 			EntityType = entityType;
 			_entityToViewTypeMapping = entityToViewTypeMapping;
-
-			_mappingVisitor = new MappingVisitor(projectionFields.OfType<MappedProjectionField>().ToArray());
-
-			CreateMapping();
-		}
-
-		protected override IEnumerable<Modelling.Mapping.Binding.Binding> CreateMappingBindings()
-		{
-			return _mappingVisitor.Visit(_entityToViewTypeMapping);
 		}
 	}
 
@@ -86,15 +68,6 @@ namespace Silk.Data.SQL.ORM.Schema
 		{
 			EntityFields = entityFields;
 			Mapping = mapping;
-		}
-
-		protected override IEnumerable<Modelling.Mapping.Binding.Binding> CreateMappingBindings()
-		{
-			yield return new CreateInstanceIfNull<T>(SqlTypeHelper.GetConstructor(typeof(T)), new[] { "." });
-			foreach (var field in ProjectionFields)
-			{
-				yield return field.GetMappingBinding("");
-			}
 		}
 
 		public ProjectionSchema<TProjection> GetProjection<TProjection>()
@@ -236,7 +209,8 @@ namespace Silk.Data.SQL.ORM.Schema
 			if (sourceProjection == null)
 				return null;
 
-			return new MappedBinding(sourceProjection.GetMappingBinding(""), mappingBinding, path);
+			throw new NotImplementedException();
+			//return new MappedBinding(sourceProjection.GetMappingBinding(""), mappingBinding, path);
 		}
 
 		private class MappedBinding : Modelling.Mapping.Binding.Binding

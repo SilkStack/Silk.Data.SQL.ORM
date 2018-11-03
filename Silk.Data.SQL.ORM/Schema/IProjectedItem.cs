@@ -20,6 +20,6 @@ namespace Silk.Data.SQL.ORM.Schema
 		/// </summary>
 		string AliasName { get; }
 
-		AliasExpression GetExpression(string aliasPrefix);
+		//AliasExpression GetExpression(string aliasPrefix);
 	}
 }

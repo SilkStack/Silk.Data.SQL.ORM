@@ -43,12 +43,12 @@ namespace Silk.Data.SQL.ORM.Schema
 			Join = join;
 		}
 
-		public abstract CoreBinding.Binding GetMappingBinding(string aliasPrefix);
+		//public abstract CoreBinding.Binding GetMappingBinding(string aliasPrefix);
 
-		public AliasExpression GetExpression(string aliasPrefix)
-		{
-			return QueryExpression.Alias(QueryExpression.Column(FieldName, new AliasIdentifierExpression(SourceName)), $"{aliasPrefix}{AliasName}");
-		}
+		//public AliasExpression GetExpression(string aliasPrefix)
+		//{
+		//	return QueryExpression.Alias(QueryExpression.Column(FieldName, new AliasIdentifierExpression(SourceName)), $"{aliasPrefix}{AliasName}");
+		//}
 	}
 
 	public class EmbeddedPocoNullCheckProjection : ProjectionField
@@ -60,14 +60,14 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public override bool IsNullCheck => true;
 
-		public override CoreBinding.Binding GetMappingBinding(string aliasPrefix)
-		{
-			throw new NotImplementedException();
-			//return new CreateInstanceWithNullCheck<T, bool>(
-			//	SqlTypeHelper.GetConstructor(typeof(T)),
-			//	new[] { AliasName },
-			//	ModelPath);
-		}
+		//public override CoreBinding.Binding GetMappingBinding(string aliasPrefix)
+		//{
+		//	throw new NotImplementedException();
+		//	//return new CreateInstanceWithNullCheck<T, bool>(
+		//	//	SqlTypeHelper.GetConstructor(typeof(T)),
+		//	//	new[] { AliasName },
+		//	//	ModelPath);
+		//}
 	}
 
 	public class ProjectionField<T> : ProjectionField
@@ -80,16 +80,16 @@ namespace Silk.Data.SQL.ORM.Schema
 			IsNullCheck = !SqlTypeHelper.IsSqlPrimitiveType(typeof(T));
 		}
 
-		public override CoreBinding.Binding GetMappingBinding(string aliasPrefix)
-		{
-			if (IsNullCheck)
-				return new CreateInstanceWithNullCheck<T, bool>(
-					SqlTypeHelper.GetConstructor(typeof(T)),
-					new[] { AliasName },
-					ModelPath);
+		//public override CoreBinding.Binding GetMappingBinding(string aliasPrefix)
+		//{
+		//	if (IsNullCheck)
+		//		return new CreateInstanceWithNullCheck<T, bool>(
+		//			SqlTypeHelper.GetConstructor(typeof(T)),
+		//			new[] { AliasName },
+		//			ModelPath);
 
-			return new CoreBinding.CopyBinding<T>(new[] { $"{aliasPrefix}{AliasName}" }, ModelPath);
-		}
+		//	return new CoreBinding.CopyBinding<T>(new[] { $"{aliasPrefix}{AliasName}" }, ModelPath);
+		//}
 	}
 
 	public class ProjectionField<TEntity, TKeyValue> : ProjectionField
@@ -101,13 +101,13 @@ namespace Silk.Data.SQL.ORM.Schema
 		{
 		}
 
-		public override CoreBinding.Binding GetMappingBinding(string aliasPrefix)
-		{
-			return new CreateInstanceWithNullCheck<TEntity, TKeyValue>(
-				SqlTypeHelper.GetConstructor(typeof(TEntity)),
-				new[] { $"{aliasPrefix}{AliasName}" },
-				ModelPath);
-		}
+		//public override CoreBinding.Binding GetMappingBinding(string aliasPrefix)
+		//{
+		//	return new CreateInstanceWithNullCheck<TEntity, TKeyValue>(
+		//		SqlTypeHelper.GetConstructor(typeof(TEntity)),
+		//		new[] { $"{aliasPrefix}{AliasName}" },
+		//		ModelPath);
+		//}
 	}
 
 	public class MappedProjectionField : ProjectionField
@@ -128,11 +128,11 @@ namespace Silk.Data.SQL.ORM.Schema
 			_mappingBinding = mappingBinding;
 		}
 
-		public override CoreBinding.Binding GetMappingBinding(string aliasPrefix)
-		{
-			var sourceBinding = _sourceProjection.GetMappingBinding(aliasPrefix);
-			return new MappedBinding(sourceBinding, _mappingBinding);
-		}
+		//public override CoreBinding.Binding GetMappingBinding(string aliasPrefix)
+		//{
+		//	var sourceBinding = _sourceProjection.GetMappingBinding(aliasPrefix);
+		//	return new MappedBinding(sourceBinding, _mappingBinding);
+		//}
 
 		private class MappedBinding : CoreBinding.Binding
 		{

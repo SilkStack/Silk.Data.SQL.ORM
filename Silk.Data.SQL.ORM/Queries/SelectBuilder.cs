@@ -123,11 +123,11 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		private void AddProjection(ProjectionField projectionField)
 		{
-			var expression = projectionField.GetExpression("");
-			if (_projectionExpressions.Any(q => q.Identifier.Identifier == expression.Identifier.Identifier))
-				return;
-			_projectionExpressions.Add(expression);
-			AddJoins(projectionField.Join);
+			//var expression = projectionField.GetExpression("");
+			//if (_projectionExpressions.Any(q => q.Identifier.Identifier == expression.Identifier.Identifier))
+			//	return;
+			//_projectionExpressions.Add(expression);
+			//AddJoins(projectionField.Join);
 		}
 
 		private void AddJoins(EntityFieldJoin[] joins)
@@ -479,53 +479,53 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		private void AddProjection(ProjectionField projectionField, string aliasPrefix)
 		{
-			var expression = projectionField.GetExpression(aliasPrefix);
-			if (_projectionExpressions.Any(q => q.Identifier.Identifier == expression.Identifier.Identifier))
-				return;
+			//var expression = projectionField.GetExpression(aliasPrefix);
+			//if (_projectionExpressions.Any(q => q.Identifier.Identifier == expression.Identifier.Identifier))
+			//	return;
 
-			var columnExpression = expression.Expression as ColumnExpression;
-			var aliasIdExpression = columnExpression.Source as AliasIdentifierExpression;
-			var sourceName = aliasIdExpression.Identifier;
+			//var columnExpression = expression.Expression as ColumnExpression;
+			//var aliasIdExpression = columnExpression.Source as AliasIdentifierExpression;
+			//var sourceName = aliasIdExpression.Identifier;
 
-			if (sourceName == LeftSchema.EntityTable.TableName)
-			{
-				expression = QueryExpression.Alias(
-					QueryExpression.Column(columnExpression.ColumnName, new AliasIdentifierExpression(Relationship.LeftJoin.TableAlias)),
-					expression.Identifier.Identifier);
-			}
-			else if (sourceName == RightSchema.EntityTable.TableName)
-			{
-				expression = QueryExpression.Alias(
-					QueryExpression.Column(columnExpression.ColumnName, new AliasIdentifierExpression(Relationship.RightJoin.TableAlias)),
-					expression.Identifier.Identifier);
-			}
+			//if (sourceName == LeftSchema.EntityTable.TableName)
+			//{
+			//	expression = QueryExpression.Alias(
+			//		QueryExpression.Column(columnExpression.ColumnName, new AliasIdentifierExpression(Relationship.LeftJoin.TableAlias)),
+			//		expression.Identifier.Identifier);
+			//}
+			//else if (sourceName == RightSchema.EntityTable.TableName)
+			//{
+			//	expression = QueryExpression.Alias(
+			//		QueryExpression.Column(columnExpression.ColumnName, new AliasIdentifierExpression(Relationship.RightJoin.TableAlias)),
+			//		expression.Identifier.Identifier);
+			//}
 
-			_projectionExpressions.Add(expression);
+			//_projectionExpressions.Add(expression);
 
-			if (projectionField.Join == null)
-				return;
+			//if (projectionField.Join == null)
+			//	return;
 
-			//  todo: don't use magic strings here
-			if (projectionField.Join.DependencyJoins.Length == 0 &&
-				aliasPrefix == "__Left_")
-			{
-				AddJoins(new EntityFieldJoin(
-					projectionField.Join.TableName, projectionField.Join.TableAlias, Relationship.LeftJoin.TableAlias,
-					projectionField.Join.LeftColumns, projectionField.Join.RightColumns, projectionField.Join.EntityField, projectionField.Join.DependencyJoins
-					));
-			}
-			else if (projectionField.Join.DependencyJoins.Length == 0 &&
-				aliasPrefix == "__Right_")
-			{
-				AddJoins(new EntityFieldJoin(
-					projectionField.Join.TableName, projectionField.Join.TableAlias, Relationship.RightJoin.TableAlias,
-					projectionField.Join.LeftColumns, projectionField.Join.RightColumns, projectionField.Join.EntityField, projectionField.Join.DependencyJoins
-					));
-			}
-			else
-			{
-				AddJoins(projectionField.Join);
-			}
+			////  todo: don't use magic strings here
+			//if (projectionField.Join.DependencyJoins.Length == 0 &&
+			//	aliasPrefix == "__Left_")
+			//{
+			//	AddJoins(new EntityFieldJoin(
+			//		projectionField.Join.TableName, projectionField.Join.TableAlias, Relationship.LeftJoin.TableAlias,
+			//		projectionField.Join.LeftColumns, projectionField.Join.RightColumns, projectionField.Join.EntityField, projectionField.Join.DependencyJoins
+			//		));
+			//}
+			//else if (projectionField.Join.DependencyJoins.Length == 0 &&
+			//	aliasPrefix == "__Right_")
+			//{
+			//	AddJoins(new EntityFieldJoin(
+			//		projectionField.Join.TableName, projectionField.Join.TableAlias, Relationship.RightJoin.TableAlias,
+			//		projectionField.Join.LeftColumns, projectionField.Join.RightColumns, projectionField.Join.EntityField, projectionField.Join.DependencyJoins
+			//		));
+			//}
+			//else
+			//{
+			//	AddJoins(projectionField.Join);
+			//}
 		}
 
 		private void AddJoins(EntityFieldJoin[] joins)
