@@ -23,7 +23,7 @@ Part of the SilkStack project.</Description>
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Silk.Data.Modelling" Version="0.2.0.1" />
+    <PackageReference Include="Silk.Data.Modelling" Version="0.3.0" />
     <PackageReference Include="Silk.Data.SQL.Base" Version="0.1.2" />
   </ItemGroup>
 
