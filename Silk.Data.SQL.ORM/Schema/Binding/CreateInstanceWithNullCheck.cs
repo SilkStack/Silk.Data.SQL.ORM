@@ -7,18 +7,17 @@ namespace Silk.Data.SQL.ORM.Schema.Binding
 {
 	public class CreateInstanceWithNullCheck<TEntity, TKeyValue> : AssignmentBinding
 	{
-		private readonly string[] _readPath;
 		private readonly CreateInstanceIfNull<TEntity> _impl;
 
-		public CreateInstanceWithNullCheck(ConstructorInfo constructorInfo, string[] readPath, string[] toPath) : base(toPath)
+		public CreateInstanceWithNullCheck(ConstructorInfo constructorInfo, string[] readPath, IFieldReference toField)
+			: base(toField)
 		{
-			_readPath = readPath;
-			_impl = new CreateInstanceIfNull<TEntity>(constructorInfo, toPath);
+			_impl = new CreateInstanceIfNull<TEntity>(constructorInfo, toField);
 		}
 
 		public override void AssignBindingValue(IModelReadWriter from, IModelReadWriter to)
 		{
-			if (EqualityComparer<TKeyValue>.Default.Equals(from.ReadField<TKeyValue>(_readPath), default(TKeyValue)))
+			if (EqualityComparer<TKeyValue>.Default.Equals(from.ReadField<TKeyValue>(To), default(TKeyValue)))
 				return;
 
 			_impl.PerformBinding(from, to);

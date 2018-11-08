@@ -386,7 +386,7 @@ namespace Silk.Data.SQL.ORM
 							var newId = Guid.NewGuid();
 							//  write generated ID to the object directly so that following queries can reference it
 							var readWriter = new ObjectReadWriter(entity, entityTypeModel, typeof(T));
-							readWriter.WriteField<Guid>(field.ModelPath, newId);
+							readWriter.WriteField<Guid>(field.FieldReference, newId);
 						}
 
 						queryBuilder.Set(field.GetFieldValuePair(entity));

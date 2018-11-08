@@ -60,7 +60,7 @@ namespace Silk.Data.SQL.ORM.Queries
 						var objectReadWriter = new ObjectReadWriter(obj, Field.DataTypeModel, Field.DataType);
 
 						yield return (QueryExpression.Column(column.ColumnName), QueryExpression.Value(
-							foreignKey.ReadValue(objectReadWriter, Field.ModelPath.Length)
+							foreignKey.ReadValue(objectReadWriter, Field.FieldReference.Length)
 							));
 					}
 				}

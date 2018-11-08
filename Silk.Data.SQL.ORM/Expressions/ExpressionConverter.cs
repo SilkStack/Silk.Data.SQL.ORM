@@ -160,8 +160,8 @@ namespace Silk.Data.SQL.ORM.Expressions
 					//  visiting a member of expression parameter, ie. a field on the entity table
 					var reflectionMemberInfo = node.Member;
 					var sourceExpression = ConvertToQueryExpression(allExpressions[0]);
-					var entityField = entitySchema.EntityFields
-						.FirstOrDefault(q => q.ModelPath.SequenceEqual(expressionPath.Skip(1))) as IEntityField;
+					var entityField = entitySchema.SchemaFields
+						.FirstOrDefault(q => q.FieldReference.SequenceEqual(expressionPath.Skip(1))) as IEntityField;
 					if (entityField != null && SqlTypeHelper.IsSqlPrimitiveType(entityField.DataType))
 					{
 						var (foreignKey, foreignKeyTable) = ResolveForeignKey(entityField.Columns[0]);
@@ -207,7 +207,7 @@ namespace Silk.Data.SQL.ORM.Expressions
 
 						foreach (var pathSegment in expressionPath.Skip(1))
 						{
-							entityField = currentSchema.EntityFields.FirstOrDefault(q => q.FieldName == pathSegment);
+							entityField = currentSchema.SchemaFields.FirstOrDefault(q => q.FieldName == pathSegment);
 							if (entityField == null)
 								throw new Exception("Couldn't resolve entity field on related object.");
 
