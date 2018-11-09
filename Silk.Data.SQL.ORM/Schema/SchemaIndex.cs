@@ -6,19 +6,19 @@ namespace Silk.Data.SQL.ORM.Schema
 	{
 		public string IndexName { get; }
 		public bool HasUniqueConstraint { get; }
-		public IEntityField[] EntityFields { get; }
+		public ISchemaField[] SchemaFields { get; }
 		public Table Table { get; }
 		public string[] ColumnNames { get; }
 		public string SourceName => Table.TableName;
 
-		public SchemaIndex(string indexName, bool hasUniqueConstraint, IEntityField[] entityFields,
+		public SchemaIndex(string indexName, bool hasUniqueConstraint, ISchemaField[] schemaFields,
 			Table table)
 		{
 			IndexName = indexName;
 			HasUniqueConstraint = hasUniqueConstraint;
-			EntityFields = entityFields;
+			SchemaFields = schemaFields;
 			Table = table;
-			ColumnNames = entityFields.SelectMany(field => field.Columns)
+			ColumnNames = schemaFields.Select(field => field.Column)
 				.Select(column => column.ColumnName).ToArray();
 		}
 	}

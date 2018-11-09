@@ -19,13 +19,6 @@ namespace Silk.Data.SQL.ORM.Schema
 		IEntitySchemaAssemblage CreateAssemblage();
 
 		/// <summary>
-		/// Define new schema fields based on fields defined by other entities.
-		/// </summary>
-		/// <param name="partialEntities"></param>
-		/// <returns>True if any new fields were defined.</returns>
-		bool DefineNewSchemaFields(PartialEntitySchemaCollection partialEntities);
-
-		/// <summary>
 		/// Builds the completed entity schema.
 		/// </summary>
 		/// <returns></returns>
@@ -76,53 +69,51 @@ namespace Silk.Data.SQL.ORM.Schema
 		{
 			var table = new Table(_entitySchemaAssemblage.TableName,
 				_entitySchemaAssemblage.Columns.ToArray());
-			var entityFields = GetEntityFields();
-			var projectionFields = GetProjectionFields();
 			var joins = new EntityFieldJoin[0];
 			var indexes = new SchemaIndex[0];
 			var mapping = default(Mapping);
 			var entitySchema = new EntitySchema<T>(
-				table, entityFields, projectionFields,
+				table, GetSchemaFields(),
 				joins, indexes, mapping
 				);
 			return entitySchema;
 		}
 
-		public bool DefineNewSchemaFields(PartialEntitySchemaCollection partialEntities)
+		private ISchemaField[] GetSchemaFields()
 		{
 			throw new NotImplementedException();
 		}
 
-		private IEntityFieldOfEntity<T>[] GetEntityFields()
-		{
-			var entityFields = new List<IEntityFieldOfEntity<T>>();
-			EntityTypeVisitor.Visit(_entityTypeModel, Callback);
-			return entityFields.ToArray();
+		//private IEntityFieldOfEntity<T>[] GetEntityFields()
+		//{
+		//	var entityFields = new List<IEntityFieldOfEntity<T>>();
+		//	EntityTypeVisitor.Visit(_entityTypeModel, Callback);
+		//	return entityFields.ToArray();
 
-			void Callback(IPropertyField propertyField, Span<string> path)
-			{
-				var fieldAssemblage = FindOrCreateField(propertyField, path);
-				if (fieldAssemblage.Builder.BuildEntityField() is IEntityFieldOfEntity<T> entityField)
-					entityFields.Add(entityField);
-			}
-		}
+		//	void Callback(IPropertyField propertyField, Span<string> path)
+		//	{
+		//		var fieldAssemblage = FindOrCreateField(propertyField, path);
+		//		if (fieldAssemblage.Builder.BuildEntityField() is IEntityFieldOfEntity<T> entityField)
+		//			entityFields.Add(entityField);
+		//	}
+		//}
 
-		private ProjectionField[] GetProjectionFields()
-		{
-			var projectionFields = new List<ProjectionField>();
-			EntityTypeVisitor.Visit(_entityTypeModel, Callback);
-			return projectionFields.ToArray();
+		//private ProjectionField[] GetProjectionFields()
+		//{
+		//	var projectionFields = new List<ProjectionField>();
+		//	EntityTypeVisitor.Visit(_entityTypeModel, Callback);
+		//	return projectionFields.ToArray();
 
-			void Callback(IPropertyField propertyField, Span<string> path)
-			{
-				var fieldAssemblage = FindOrCreateField(propertyField, path);
-				var projectionField = fieldAssemblage.Builder.BuildProjectionField();
-				if (projectionField != null)
-					projectionFields.Add(projectionField);
-			}
-		}
+		//	void Callback(IPropertyField propertyField, Span<string> path)
+		//	{
+		//		var fieldAssemblage = FindOrCreateField(propertyField, path);
+		//		var projectionField = fieldAssemblage.Builder.BuildProjectionField();
+		//		if (projectionField != null)
+		//			projectionFields.Add(projectionField);
+		//	}
+		//}
 
-		private IEntityFieldAssemblage FindOrCreateField(IPropertyField propertyField, Span<string> path)
+		private ISchemaFieldAssemblage FindOrCreateField(IPropertyField propertyField, Span<string> path)
 		{
 			foreach (var field in _entitySchemaAssemblage.Fields)
 			{
@@ -136,7 +127,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			return newField;
 		}
 
-		private (EntityFieldDefinition Definition, IEntityFieldBuilder Builder) GetFieldDefinitionAndBuilder(IPropertyField propertyField, Span<string> path)
+		private (SchemaFieldDefinition Definition, ISchemaFieldBuilder Builder) GetFieldDefinitionAndBuilder(IPropertyField propertyField, Span<string> path)
 		{
 			//  reflection justification:
 			//    building a schema is a rare occurance, using reflection here should make the use of generic types
@@ -145,15 +136,15 @@ namespace Silk.Data.SQL.ORM.Schema
 				.GetMethods(BindingFlags.Instance | BindingFlags.NonPublic)
 				.First(q => q.Name == nameof(GetFieldDefinitionAndBuilder) && q.IsGenericMethod)
 				.MakeGenericMethod(propertyField.FieldType);
-			return ((EntityFieldDefinition, IEntityFieldBuilder))methodInfo.Invoke(this, new object[] { propertyField, path.ToArray() });
+			return ((SchemaFieldDefinition, ISchemaFieldBuilder))methodInfo.Invoke(this, new object[] { propertyField, path.ToArray() });
 		}
 
-		private (EntityFieldDefinition Definition, IEntityFieldBuilder Builder) GetFieldDefinitionAndBuilder<TProperty>(PropertyField<TProperty> propertyField, string[] path)
+		private (SchemaFieldDefinition Definition, ISchemaFieldBuilder Builder) GetFieldDefinitionAndBuilder<TProperty>(PropertyField<TProperty> propertyField, string[] path)
 		{
 			var fieldDefinition = _entitySchemaDefinition.For(propertyField);
-			IEntityFieldBuilder builder;
+			ISchemaFieldBuilder builder;
 			if (SqlTypeHelper.IsSqlPrimitiveType(propertyField.FieldType))
-				builder = new SqlPrimitiveEntityFieldBuilder<TProperty, T>(_entitySchemaAssemblage, fieldDefinition);
+				builder = new SqlPrimitiveSchemaFieldBuilder<TProperty, T>(_entitySchemaAssemblage, fieldDefinition);
 			else
 				builder = new ObjectEntityFieldBuilder<TProperty, T>(_entitySchemaAssemblage, _entitySchemaAssemblages, fieldDefinition);
 			return (fieldDefinition, builder);

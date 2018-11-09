@@ -6,7 +6,7 @@ namespace Silk.Data.SQL.ORM.Schema
 	/// <summary>
 	/// Configures and builds an entity field.
 	/// </summary>
-	public abstract class EntityFieldDefinition
+	public abstract class SchemaFieldDefinition
 	{
 		/// <summary>
 		/// Gets the model field the field builder represents.
@@ -38,25 +38,25 @@ namespace Silk.Data.SQL.ORM.Schema
 		/// </summary>
 		public SqlDataType SqlDataType { get; set; }
 
-		/// <summary>
-		/// Builds the entity field.
-		/// </summary>
-		/// <returns>Null when the field shouldn't be stored in the schema being built.</returns>
-		public abstract BuiltEntityField Build(string columnNamePrefix, string[] modelPath);
+		///// <summary>
+		///// Builds the entity field.
+		///// </summary>
+		///// <returns>Null when the field shouldn't be stored in the schema being built.</returns>
+		//public abstract BuiltEntityField Build(string columnNamePrefix, string[] modelPath);
 	}
 
 	/// <summary>
 	/// Configures and builds an entity field of type T.
 	/// </summary>
 	/// <typeparam name="TValue"></typeparam>
-	public class EntityFieldDefinition<TValue, TEntity> : EntityFieldDefinition
+	public class SchemaFieldDefinition<TValue, TEntity> : SchemaFieldDefinition
 	{
 		/// <summary>
 		/// Gets the model field the field builder represents.
 		/// </summary>
 		public override IPropertyField ModelField { get; }
 
-		public EntityFieldDefinition(IPropertyField modelField)
+		public SchemaFieldDefinition(IPropertyField modelField)
 		{
 			ModelField = modelField;
 			ColumnName = modelField.FieldName;
@@ -75,19 +75,19 @@ namespace Silk.Data.SQL.ORM.Schema
 				IsPrimaryKey = true;
 		}
 
-		public override BuiltEntityField Build(string columnNamePrefix, string[] modelPath)
-		{
-			if (SqlDataType == null || !ModelField.CanRead || ModelField.IsEnumerable)
-				return null;
+		//public override BuiltEntityField Build(string columnNamePrefix, string[] modelPath)
+		//{
+		//	if (SqlDataType == null || !ModelField.CanRead || ModelField.IsEnumerable)
+		//		return null;
 
-			var primaryKeyGenerator = PrimaryKeyGenerator.NotPrimaryKey;
-			if (IsPrimaryKey)
-				primaryKeyGenerator = GetPrimaryKeyGenerator(SqlDataType);
-			var entityField = new EntityField<TValue, TEntity>(
-				new[] { new Column($"{columnNamePrefix}{ColumnName}", SqlDataType, IsNullable) },
-				ModelField.FieldName, primaryKeyGenerator, modelPath, ModelField);
-			return new BuiltEntityField<TValue, TEntity>(entityField);
-		}
+		//	var primaryKeyGenerator = PrimaryKeyGenerator.NotPrimaryKey;
+		//	if (IsPrimaryKey)
+		//		primaryKeyGenerator = GetPrimaryKeyGenerator(SqlDataType);
+		//	var entityField = new EntityField<TValue, TEntity>(
+		//		new[] { new Column($"{columnNamePrefix}{ColumnName}", SqlDataType, IsNullable) },
+		//		ModelField.FieldName, primaryKeyGenerator, modelPath, ModelField);
+		//	return new BuiltEntityField<TValue, TEntity>(entityField);
+		//}
 
 		private static PrimaryKeyGenerator GetPrimaryKeyGenerator(SqlDataType sqlDataType)
 		{

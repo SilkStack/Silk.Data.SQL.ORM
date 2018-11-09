@@ -2,5 +2,6 @@
 {
 	public interface ISchemaField
 	{
+		Column Column { get; }
 	}
 }

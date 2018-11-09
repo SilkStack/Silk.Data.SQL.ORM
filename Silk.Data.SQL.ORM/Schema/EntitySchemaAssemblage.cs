@@ -16,9 +16,9 @@ namespace Silk.Data.SQL.ORM.Schema
 		string TableName { get; }
 		IReadOnlyCollection<Column> Columns { get; }
 
-		IReadOnlyCollection<IEntityFieldAssemblage> Fields { get; }
+		IReadOnlyCollection<ISchemaFieldAssemblage> Fields { get; }
 
-		void AddField(IEntityFieldAssemblage fieldAssemblage);
+		void AddField(ISchemaFieldAssemblage fieldAssemblage);
 	}
 
 	/// <summary>
@@ -28,14 +28,14 @@ namespace Silk.Data.SQL.ORM.Schema
 	public class EntitySchemaAssemblage<T> : IEntitySchemaAssemblage
 		where T : class
 	{
-		private readonly List<IEntityFieldAssemblage> _fields
-			= new List<IEntityFieldAssemblage>();
+		private readonly List<ISchemaFieldAssemblage> _fields
+			= new List<ISchemaFieldAssemblage>();
 		private readonly List<Column> _columns
 			= new List<Column>();
 
 		public Type EntityType { get; } = typeof(T);
 		public string TableName { get; }
-		public IReadOnlyCollection<IEntityFieldAssemblage> Fields => _fields;
+		public IReadOnlyCollection<ISchemaFieldAssemblage> Fields => _fields;
 
 		public IEntitySchemaBuilder Builder { get; }
 
@@ -51,13 +51,13 @@ namespace Silk.Data.SQL.ORM.Schema
 			Definition = definition;
 		}
 
-		public void AddField(IEntityFieldAssemblage fieldAssemblage)
+		public void AddField(ISchemaFieldAssemblage fieldAssemblage)
 		{
 			_fields.Add(fieldAssemblage);
 			AddColumns(fieldAssemblage);
 		}
 
-		private void AddColumns(IEntityFieldAssemblage fieldAssemblage)
+		private void AddColumns(ISchemaFieldAssemblage fieldAssemblage)
 		{
 			_columns.Add(new Column(
 				fieldAssemblage.FieldDefinition.ColumnName,
