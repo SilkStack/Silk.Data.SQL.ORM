@@ -44,54 +44,59 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public ValueResultMapper<TProperty> Project<TProperty>(Expression<Func<T, TProperty>> projection)
 		{
-			if (!SqlTypeHelper.IsSqlPrimitiveType(typeof(TProperty)))
-				throw new Exception("Cannot project complex types, call Project<TView>() instead.");
+			throw new NotImplementedException();
+			//if (!SqlTypeHelper.IsSqlPrimitiveType(typeof(TProperty)))
+			//	throw new Exception("Cannot project complex types, call Project<TView>() instead.");
 
-			var projectionField = ResolveProjectionField(projection);
-			if (projectionField != null)
-			{
-				AddProjection(projectionField);
-				return new ValueResultMapper<TProperty>(1, projectionField.AliasName);
-			}
+			//var projectionField = ResolveProjectionField(projection);
+			//if (projectionField != null)
+			//{
+			//	AddProjection(projectionField);
+			//	return new ValueResultMapper<TProperty>(1, projectionField.AliasName);
+			//}
 
-			var expressionResult = ExpressionConverter.Convert(projection);
+			//var expressionResult = ExpressionConverter.Convert(projection);
 
-			var mapper = Project<TProperty>(expressionResult.QueryExpression);
-			AddJoins(expressionResult.RequiredJoins);
-			return mapper;
+			//var mapper = Project<TProperty>(expressionResult.QueryExpression);
+			//AddJoins(expressionResult.RequiredJoins);
+			//return mapper;
 		}
 
 		public ValueResultMapper<TValue> Project<TValue>(QueryExpression queryExpression)
 		{
-			if (!SqlTypeHelper.IsSqlPrimitiveType(typeof(TValue)))
-				throw new Exception("Cannot project complex types.");
+			throw new NotImplementedException();
 
-			var aliasExpression = queryExpression as AliasExpression;
-			if (aliasExpression == null)
-			{
-				aliasExpression = QueryExpression.Alias(queryExpression, $"__AutoAlias_{_projectionExpressions.Count}");
-			}
-			_projectionExpressions.Add(aliasExpression);
+			//if (!SqlTypeHelper.IsSqlPrimitiveType(typeof(TValue)))
+			//	throw new Exception("Cannot project complex types.");
 
-			return new ValueResultMapper<TValue>(1, aliasExpression.Identifier.Identifier);
+			//var aliasExpression = queryExpression as AliasExpression;
+			//if (aliasExpression == null)
+			//{
+			//	aliasExpression = QueryExpression.Alias(queryExpression, $"__AutoAlias_{_projectionExpressions.Count}");
+			//}
+			//_projectionExpressions.Add(aliasExpression);
+
+			//return new ValueResultMapper<TValue>(1, aliasExpression.Identifier.Identifier);
 		}
 
 		public ObjectResultMapper<TView> Project<TView>()
 			where TView : class
 		{
-			var projectionSchema = EntitySchema as EntitySchema;
-			if (typeof(TView) != typeof(T))
-			{
-				projectionSchema = EntitySchema.GetProjection<TView>();
-			}
+			throw new NotImplementedException();
 
-			foreach (var projectionField in projectionSchema.ProjectionFields)
-				AddProjection(projectionField);
+			//var projectionSchema = EntitySchema as EntitySchema;
+			//if (typeof(TView) != typeof(T))
+			//{
+			//	projectionSchema = EntitySchema.GetProjection<TView>();
+			//}
 
-			return new ObjectResultMapper<TView>(1, projectionSchema.Mapping);
+			//foreach (var projectionField in projectionSchema.ProjectionFields)
+			//	AddProjection(projectionField);
+
+			//return new ObjectResultMapper<TView>(1, projectionSchema.Mapping);
 		}
 
-		private ProjectionField ResolveProjectionField<TProperty>(Expression<Func<T, TProperty>> property)
+		private ISchemaField ResolveProjectionField<TProperty>(Expression<Func<T, TProperty>> property)
 		{
 			if (property.Body is MemberExpression memberExpression)
 			{
@@ -103,11 +108,12 @@ namespace Silk.Data.SQL.ORM.Queries
 			return null;
 		}
 
-		private ProjectionField GetProjectionField(IEnumerable<string> path)
+		private ISchemaField GetProjectionField(IEnumerable<string> path)
 		{
-			return EntitySchema.ProjectionFields.FirstOrDefault(
-				q => q.ModelPath.SequenceEqual(path)
-				);
+			throw new NotImplementedException();
+			//return EntitySchema.SchemaFields.FirstOrDefault(
+			//	q => q.ModelPath.SequenceEqual(path)
+			//	);
 		}
 
 		private void PopulatePath(Expression expression, List<string> path)
@@ -121,8 +127,9 @@ namespace Silk.Data.SQL.ORM.Queries
 			}
 		}
 
-		private void AddProjection(ProjectionField projectionField)
+		private void AddProjection(ISchemaField projectionField)
 		{
+			throw new NotImplementedException();
 			//var expression = projectionField.GetExpression("");
 			//if (_projectionExpressions.Any(q => q.Identifier.Identifier == expression.Identifier.Identifier))
 			//	return;
@@ -286,28 +293,30 @@ namespace Silk.Data.SQL.ORM.Queries
 			where TLeftView : class
 			where TRightView : class
 		{
-			var leftProjectionSchema = LeftSchema as EntitySchema;
-			if (typeof(TLeftView) != typeof(TLeft))
-			{
-				leftProjectionSchema = LeftSchema.GetProjection<TLeftView>();
-			}
+			throw new NotImplementedException();
 
-			var rightProjectionSchema = RightSchema as EntitySchema;
-			if (typeof(TRightView) != typeof(TRight))
-			{
-				rightProjectionSchema = RightSchema.GetProjection<TRightView>();
-			}
+			//var leftProjectionSchema = LeftSchema as EntitySchema;
+			//if (typeof(TLeftView) != typeof(TLeft))
+			//{
+			//	leftProjectionSchema = LeftSchema.GetProjection<TLeftView>();
+			//}
 
-			AddJoins(Relationship.LeftJoin);
-			AddJoins(Relationship.RightJoin);
+			//var rightProjectionSchema = RightSchema as EntitySchema;
+			//if (typeof(TRightView) != typeof(TRight))
+			//{
+			//	rightProjectionSchema = RightSchema.GetProjection<TRightView>();
+			//}
 
-			foreach (var projectionField in leftProjectionSchema.ProjectionFields)
-				AddProjection(projectionField, "__Left_");
+			//AddJoins(Relationship.LeftJoin);
+			//AddJoins(Relationship.RightJoin);
 
-			foreach (var projectionField in rightProjectionSchema.ProjectionFields)
-				AddProjection(projectionField, "__Right_");
+			//foreach (var projectionField in leftProjectionSchema.ProjectionFields)
+			//	AddProjection(projectionField, "__Left_");
 
-			return CreateResultMapper<TLeftView, TRightView>(1, leftProjectionSchema, rightProjectionSchema);
+			//foreach (var projectionField in rightProjectionSchema.ProjectionFields)
+			//	AddProjection(projectionField, "__Right_");
+
+			//return CreateResultMapper<TLeftView, TRightView>(1, leftProjectionSchema, rightProjectionSchema);
 		}
 
 		public ValueResultMapper<TProperty> Project<TProperty>(Expression<Func<TLeft, TRight, TProperty>> projection)
@@ -326,17 +335,19 @@ namespace Silk.Data.SQL.ORM.Queries
 		public ValueResultMapper<TValue> Project<TValue>(QueryExpression queryExpression)
 			where TValue : struct
 		{
-			if (!SqlTypeHelper.IsSqlPrimitiveType(typeof(TValue)))
-				throw new Exception("Cannot project complex types.");
+			throw new NotImplementedException();
 
-			var aliasExpression = queryExpression as AliasExpression;
-			if (aliasExpression == null)
-			{
-				aliasExpression = QueryExpression.Alias(queryExpression, $"__AutoAlias_{_projectionExpressions.Count}");
-			}
-			_projectionExpressions.Add(aliasExpression);
+			//if (!SqlTypeHelper.IsSqlPrimitiveType(typeof(TValue)))
+			//	throw new Exception("Cannot project complex types.");
 
-			return new ValueResultMapper<TValue>(1, aliasExpression.Identifier.Identifier);
+			//var aliasExpression = queryExpression as AliasExpression;
+			//if (aliasExpression == null)
+			//{
+			//	aliasExpression = QueryExpression.Alias(queryExpression, $"__AutoAlias_{_projectionExpressions.Count}");
+			//}
+			//_projectionExpressions.Add(aliasExpression);
+
+			//return new ValueResultMapper<TValue>(1, aliasExpression.Identifier.Identifier);
 		}
 
 		public void AndWhere(QueryExpression queryExpression)
@@ -477,7 +488,7 @@ namespace Silk.Data.SQL.ORM.Queries
 				CreateMappingBindings<TRightView>(rightProjectionSchema, "__Right_"));
 		}
 
-		private void AddProjection(ProjectionField projectionField, string aliasPrefix)
+		private void AddProjection(ISchemaField projectionField, string aliasPrefix)
 		{
 			//var expression = projectionField.GetExpression(aliasPrefix);
 			//if (_projectionExpressions.Any(q => q.Identifier.Identifier == expression.Identifier.Identifier))

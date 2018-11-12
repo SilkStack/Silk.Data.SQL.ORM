@@ -12,7 +12,7 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public abstract object ReadValue(IModelReadWriter writeToModelReadWriter, int offset);
 
-		public abstract ProjectionField BuildProjectionField(string sourceName, string fieldName, string aliasName, string[] modelPath);
+		//public abstract ProjectionField BuildProjectionField(string sourceName, string fieldName, string aliasName, string[] modelPath);
 	}
 
 	public class ForeignKey<TEntity, TValue> : ForeignKey
@@ -29,14 +29,15 @@ namespace Silk.Data.SQL.ORM.Schema
 			ModelPath = modelPath;
 		}
 
-		public override ProjectionField BuildProjectionField(string sourceName, string fieldName, string aliasName, string[] modelPath)
-		{
-			return new ProjectionField<TEntity, TValue>(sourceName, fieldName, aliasName, modelPath, null);
-		}
+		//public override ProjectionField BuildProjectionField(string sourceName, string fieldName, string aliasName, string[] modelPath)
+		//{
+		//	return new ProjectionField<TEntity, TValue>(sourceName, fieldName, aliasName, modelPath, null);
+		//}
 
 		public override object ReadValue(IModelReadWriter writeToModelReadWriter, int offset)
 		{
-			return writeToModelReadWriter.ReadField<TValue>(new Span<string>(ModelPath).Slice(offset));
+			throw new NotImplementedException();
+			//return writeToModelReadWriter.ReadField<TValue>(new Span<string>(ModelPath).Slice(offset));
 		}
 	}
 }

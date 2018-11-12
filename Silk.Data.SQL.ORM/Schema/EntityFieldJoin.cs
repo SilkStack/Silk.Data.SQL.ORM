@@ -10,19 +10,19 @@ namespace Silk.Data.SQL.ORM.Schema
 		public string SourceName { get; }
 		public string[] LeftColumns { get; }
 		public string[] RightColumns { get; }
-		public IEntityField EntityField { get; }
+		public ISchemaField SchemaField { get; }
 		public EntityFieldJoin[] DependencyJoins { get; }
 
 		public EntityFieldJoin(string tableName, string tableAlias,
 			string sourceName, string[] leftColumns, string[] rightColumns,
-			IEntityField entityField, EntityFieldJoin[] dependencyJoins = null)
+			ISchemaField schemaField, EntityFieldJoin[] dependencyJoins = null)
 		{
 			TableName = tableName;
 			TableAlias = tableAlias;
 			SourceName = sourceName;
 			LeftColumns = leftColumns;
 			RightColumns = rightColumns;
-			EntityField = entityField;
+			SchemaField = schemaField;
 			DependencyJoins = dependencyJoins ?? new EntityFieldJoin[0];
 		}
 

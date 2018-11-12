@@ -36,10 +36,11 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		private void AddEntityTable()
 		{
-			_fields.Add(EntitySchema.EntityTable.TableName,
-				EntitySchema.EntityFields);
-			_indexes.Add(EntitySchema.EntityTable.TableName,
-				EntitySchema.Indexes);
+			throw new NotImplementedException();
+			//_fields.Add(EntitySchema.EntityTable.TableName,
+			//	EntitySchema.EntityFields);
+			//_indexes.Add(EntitySchema.EntityTable.TableName,
+			//	EntitySchema.Indexes);
 		}
 
 		public QueryExpression BuildQuery()
@@ -111,10 +112,11 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		private void AddEntityTable()
 		{
-			_fields.Add(Relationship.JunctionTable.TableName, new ITableField[] {
-				Relationship.LeftRelationship,
-				Relationship.RightRelationship
-			});
+			throw new NotImplementedException();
+			//_fields.Add(Relationship.JunctionTable.TableName, new ITableField[] {
+			//	Relationship.LeftRelationship,
+			//	Relationship.RightRelationship
+			//});
 		}
 
 		public QueryExpression BuildQuery()

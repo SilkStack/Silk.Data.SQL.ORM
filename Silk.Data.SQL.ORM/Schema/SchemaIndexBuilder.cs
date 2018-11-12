@@ -21,11 +21,12 @@ namespace Silk.Data.SQL.ORM.Schema
 			IndexName = indexName;
 		}
 
-		public SchemaIndex Build(Table table, IEntityField[] entityFields)
+		public SchemaIndex Build(Table table, ISchemaField[] entityFields)
 		{
-			return new SchemaIndex(IndexName, HasUniqueConstraint, 
-				entityFields.Where(q => _indexFields.Any(q2 => q.FieldName == q2.FieldName)).ToArray(),
-				table);
+			throw new NotImplementedException();
+			//return new SchemaIndex(IndexName, HasUniqueConstraint, 
+			//	entityFields.Where(q => _indexFields.Any(q2 => q.FieldName == q2.FieldName)).ToArray(),
+			//	table);
 		}
 
 		public void AddFields(params Expression<Func<T, object>>[] indexFields)

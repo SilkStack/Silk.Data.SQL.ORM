@@ -30,10 +30,10 @@ namespace Silk.Data.SQL.ORM.Queries
 
 	public class FieldValueAssignment<T> : FieldAssignment
 	{
-		public IEntityFieldOfValue<T> Field { get; }
+		public ISchemaField Field { get; }
 		public IValueReader<T> ValueReader { get; }
 
-		public FieldValueAssignment(IEntityFieldOfValue<T> field, IValueReader<T> valueReader)
+		public FieldValueAssignment(ISchemaField field, IValueReader<T> valueReader)
 		{
 			Field = field;
 			ValueReader = valueReader;
@@ -41,34 +41,35 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public override IEnumerable<(ColumnExpression ColumnExpression, QueryExpression ValueExpression)> GetColumnExpressionPairs()
 		{
+			throw new System.NotImplementedException();
 			//  todo: these column expressions should probably have their sources resolved somehow
-			foreach (var column in Field.Columns)
-			{
-				if (!SqlTypeHelper.IsSqlPrimitiveType(Field.DataType))
-				{
-					if (Field.KeyType == KeyType.None)
-					{
-						if (ValueReader.Read() == null)
-							yield return (QueryExpression.Column(column.ColumnName), QueryExpression.Value(false));
-						else
-							yield return (QueryExpression.Column(column.ColumnName), QueryExpression.Value(true));
-					}
-					else
-					{
-						var foreignKey = Field.ForeignKeys.First(q => q.LocalColumn == column);
-						var obj = ValueReader.Read();
-						var objectReadWriter = new ObjectReadWriter(obj, Field.DataTypeModel, Field.DataType);
+			//foreach (var column in Field.Columns)
+			//{
+			//	if (!SqlTypeHelper.IsSqlPrimitiveType(Field.DataType))
+			//	{
+			//		if (Field.KeyType == KeyType.None)
+			//		{
+			//			if (ValueReader.Read() == null)
+			//				yield return (QueryExpression.Column(column.ColumnName), QueryExpression.Value(false));
+			//			else
+			//				yield return (QueryExpression.Column(column.ColumnName), QueryExpression.Value(true));
+			//		}
+			//		else
+			//		{
+			//			var foreignKey = Field.ForeignKeys.First(q => q.LocalColumn == column);
+			//			var obj = ValueReader.Read();
+			//			var objectReadWriter = new ObjectReadWriter(obj, Field.DataTypeModel, Field.DataType);
 
-						yield return (QueryExpression.Column(column.ColumnName), QueryExpression.Value(
-							foreignKey.ReadValue(objectReadWriter, Field.FieldReference.Length)
-							));
-					}
-				}
-				else
-				{
-					yield return (QueryExpression.Column(column.ColumnName), QueryExpression.Value(ValueReader.Read()));
-				}
-			}
+			//			yield return (QueryExpression.Column(column.ColumnName), QueryExpression.Value(
+			//				foreignKey.ReadValue(objectReadWriter, Field.FieldReference.Length)
+			//				));
+			//		}
+			//	}
+			//	else
+			//	{
+			//		yield return (QueryExpression.Column(column.ColumnName), QueryExpression.Value(ValueReader.Read()));
+			//	}
+			//}
 		}
 	}
 }

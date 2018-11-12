@@ -28,7 +28,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			_fieldAssignments.Last().Add(fieldValuePair);
 		}
 
-		public void Set<TValue>(EntityField<TValue, T> entityField, TValue value)
+		public void Set<TValue>(ISchemaField entityField, TValue value)
 		{
 			Set(new FieldValueAssignment<TValue>(entityField, new StaticValueReader<TValue>(value)));
 		}
