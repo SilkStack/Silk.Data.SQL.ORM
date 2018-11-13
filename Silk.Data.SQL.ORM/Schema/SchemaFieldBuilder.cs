@@ -26,8 +26,12 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public ISchemaFieldAssemblage CreateAssemblage(string[] modelPath)
 		{
+			var primaryKeyGenerator = PrimaryKeyGenerator.NotPrimaryKey;
+			if (_entityFieldDefinition.IsPrimaryKey)
+				primaryKeyGenerator = GetPrimaryKeyGenerator(_entityFieldDefinition.SqlDataType);
+
 			_assemblage = new SqlPrimitiveSchemaFieldAssemblage<TValue, TEntity>(
-				modelPath, this, _entityFieldDefinition
+				modelPath, this, _entityFieldDefinition, primaryKeyGenerator
 				);
 			return _assemblage;
 		}
@@ -35,7 +39,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		public ISchemaField Build()
 		{
 			return new SqlPrimitiveSchemaField<TValue, TEntity>(
-				_assemblage.Column
+				_assemblage.Column, _assemblage.PrimaryKeyGenerator
 				);
 		}
 

@@ -22,6 +22,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		}
 
 		public ColumnDefinitionExpression DefineColumn() =>
-			QueryExpression.DefineColumn(_field.Column.ColumnName, _field.Column.DataType, _field.Column.IsNullable);
+			QueryExpression.DefineColumn(_field.Column.ColumnName, _field.Column.DataType, _field.Column.IsNullable,
+				_field.PrimaryKeyGenerator == PrimaryKeyGenerator.ServerGenerated, _field.IsPrimaryKey);
 	}
 }

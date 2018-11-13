@@ -1,4 +1,6 @@
-﻿namespace Silk.Data.SQL.ORM.Schema
+﻿using System;
+
+namespace Silk.Data.SQL.ORM.Schema
 {
 	/// <summary>
 	/// Represents an entity field in the process of being assembled.
@@ -9,6 +11,7 @@
 		SchemaFieldDefinition FieldDefinition { get; }
 		string[] ModelPath { get; }
 		Column Column { get; }
+		PrimaryKeyGenerator PrimaryKeyGenerator { get; }
 	}
 
 	public class SqlPrimitiveSchemaFieldAssemblage<TValue, TEntity> : ISchemaFieldAssemblage
@@ -22,10 +25,13 @@
 
 		public Column Column { get; }
 
+		public PrimaryKeyGenerator PrimaryKeyGenerator { get; }
+
 		public SqlPrimitiveSchemaFieldAssemblage(
 			string[] modelPath,
 			SqlPrimitiveSchemaFieldBuilder<TValue, TEntity> builder,
-			SchemaFieldDefinition<TValue, TEntity> fieldDefinition
+			SchemaFieldDefinition<TValue, TEntity> fieldDefinition,
+			PrimaryKeyGenerator primaryKeyGenerator
 			)
 		{
 			ModelPath = modelPath;
@@ -36,6 +42,7 @@
 				fieldDefinition.SqlDataType,
 				fieldDefinition.IsNullable
 				);
+			PrimaryKeyGenerator = primaryKeyGenerator;
 		}
 	}
 
@@ -49,6 +56,8 @@
 		public string[] ModelPath { get; }
 
 		public Column Column => throw new System.NotImplementedException();
+
+		public PrimaryKeyGenerator PrimaryKeyGenerator => PrimaryKeyGenerator.NotPrimaryKey;
 
 		public ObjectSchemaFieldAssemblage(
 			string[] modelPath,
