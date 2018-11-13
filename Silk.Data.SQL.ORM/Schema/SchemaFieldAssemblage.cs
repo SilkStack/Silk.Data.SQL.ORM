@@ -8,6 +8,7 @@
 		ISchemaFieldBuilder Builder { get; }
 		SchemaFieldDefinition FieldDefinition { get; }
 		string[] ModelPath { get; }
+		Column Column { get; }
 	}
 
 	public class SqlPrimitiveSchemaFieldAssemblage<TValue, TEntity> : ISchemaFieldAssemblage
@@ -19,6 +20,8 @@
 
 		public string[] ModelPath { get; }
 
+		public Column Column { get; }
+
 		public SqlPrimitiveSchemaFieldAssemblage(
 			string[] modelPath,
 			SqlPrimitiveSchemaFieldBuilder<TValue, TEntity> builder,
@@ -28,6 +31,11 @@
 			ModelPath = modelPath;
 			Builder = builder;
 			FieldDefinition = fieldDefinition;
+			Column = new Column(
+				fieldDefinition.ColumnName,
+				fieldDefinition.SqlDataType,
+				fieldDefinition.IsNullable
+				);
 		}
 	}
 
@@ -39,6 +47,8 @@
 		public SchemaFieldDefinition FieldDefinition { get; }
 
 		public string[] ModelPath { get; }
+
+		public Column Column => throw new System.NotImplementedException();
 
 		public ObjectSchemaFieldAssemblage(
 			string[] modelPath,

@@ -67,8 +67,9 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public EntitySchema BuildSchema()
 		{
+			var fields = GetSchemaFields();
 			var table = new Table(_entitySchemaAssemblage.TableName,
-				_entitySchemaAssemblage.Columns.ToArray());
+				fields.Select(q => q.Column).ToArray());
 			var joins = new EntityFieldJoin[0];
 			var indexes = new SchemaIndex[0];
 			var mapping = default(Mapping);
@@ -81,37 +82,16 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		private ISchemaField[] GetSchemaFields()
 		{
-			throw new NotImplementedException();
+			var schemaFields = new List<ISchemaField>();
+			EntityTypeVisitor.Visit(_entityTypeModel, Callback);
+			return schemaFields.ToArray();
+
+			void Callback(IPropertyField propertyField, Span<string> path)
+			{
+				var fieldAssemblage = FindOrCreateField(propertyField, path);
+				schemaFields.Add(fieldAssemblage.Builder.Build());
+			}
 		}
-
-		//private IEntityFieldOfEntity<T>[] GetEntityFields()
-		//{
-		//	var entityFields = new List<IEntityFieldOfEntity<T>>();
-		//	EntityTypeVisitor.Visit(_entityTypeModel, Callback);
-		//	return entityFields.ToArray();
-
-		//	void Callback(IPropertyField propertyField, Span<string> path)
-		//	{
-		//		var fieldAssemblage = FindOrCreateField(propertyField, path);
-		//		if (fieldAssemblage.Builder.BuildEntityField() is IEntityFieldOfEntity<T> entityField)
-		//			entityFields.Add(entityField);
-		//	}
-		//}
-
-		//private ProjectionField[] GetProjectionFields()
-		//{
-		//	var projectionFields = new List<ProjectionField>();
-		//	EntityTypeVisitor.Visit(_entityTypeModel, Callback);
-		//	return projectionFields.ToArray();
-
-		//	void Callback(IPropertyField propertyField, Span<string> path)
-		//	{
-		//		var fieldAssemblage = FindOrCreateField(propertyField, path);
-		//		var projectionField = fieldAssemblage.Builder.BuildProjectionField();
-		//		if (projectionField != null)
-		//			projectionFields.Add(projectionField);
-		//	}
-		//}
 
 		private ISchemaFieldAssemblage FindOrCreateField(IPropertyField propertyField, Span<string> path)
 		{

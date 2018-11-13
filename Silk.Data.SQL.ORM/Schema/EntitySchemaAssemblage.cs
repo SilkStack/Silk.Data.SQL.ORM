@@ -14,7 +14,6 @@ namespace Silk.Data.SQL.ORM.Schema
 		IEntitySchemaDefinition Definition { get; }
 
 		string TableName { get; }
-		IReadOnlyCollection<Column> Columns { get; }
 
 		IReadOnlyCollection<ISchemaFieldAssemblage> Fields { get; }
 
@@ -30,8 +29,6 @@ namespace Silk.Data.SQL.ORM.Schema
 	{
 		private readonly List<ISchemaFieldAssemblage> _fields
 			= new List<ISchemaFieldAssemblage>();
-		private readonly List<Column> _columns
-			= new List<Column>();
 
 		public Type EntityType { get; } = typeof(T);
 		public string TableName { get; }
@@ -40,8 +37,6 @@ namespace Silk.Data.SQL.ORM.Schema
 		public IEntitySchemaBuilder Builder { get; }
 
 		public IEntitySchemaDefinition Definition { get; }
-
-		public IReadOnlyCollection<Column> Columns => _columns;
 
 		public EntitySchemaAssemblage(string tableName,
 			IEntitySchemaDefinition definition, IEntitySchemaBuilder builder)
@@ -54,16 +49,6 @@ namespace Silk.Data.SQL.ORM.Schema
 		public void AddField(ISchemaFieldAssemblage fieldAssemblage)
 		{
 			_fields.Add(fieldAssemblage);
-			AddColumns(fieldAssemblage);
-		}
-
-		private void AddColumns(ISchemaFieldAssemblage fieldAssemblage)
-		{
-			_columns.Add(new Column(
-				fieldAssemblage.FieldDefinition.ColumnName,
-				fieldAssemblage.FieldDefinition.SqlDataType,
-				fieldAssemblage.FieldDefinition.IsNullable
-				));
 		}
 	}
 }

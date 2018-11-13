@@ -34,7 +34,9 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public ISchemaField Build()
 		{
-			throw new System.NotImplementedException();
+			return new SqlPrimitiveSchemaField<TValue, TEntity>(
+				_assemblage.Column
+				);
 		}
 
 		//public ProjectionField BuildProjectionField()
