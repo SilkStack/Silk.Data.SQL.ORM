@@ -56,12 +56,16 @@ namespace Silk.Data.SQL.ORM.Tests
 				await InsertDefaultRow<Primitives>(provider, schema);
 				await TestDefaultRow<Primitives>(provider, schema);
 
+				var failed = false;
 				try
 				{
 					await InsertDefaultRow<Primitives>(provider, schema);
-					Assert.Fail("Inserted row that should violate unique index.");
+					failed = true;
 				}
 				catch { }
+
+				if (failed)
+					Assert.Fail("Inserted row that should violate unique index.");
 			}
 		}
 
