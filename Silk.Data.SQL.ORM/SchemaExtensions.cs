@@ -13,24 +13,24 @@ namespace Silk.Data.SQL.ORM
 	public static class SchemaExtensions
 	{
 		private static void SanityCheckArgs<T>(EntitySchema<T> schema, T[] entities, bool primaryKeyRequired = true)
-		{
-			throw new NotImplementedException();
-			//if (entities == null || entities.Length < 1)
-			//	throw new Exception("At least 1 entity must be provided.");
-
-			//if (primaryKeyRequired && !schema.EntityFields.Any(q => q.IsPrimaryKey))
-			//	throw new Exception("Entity type must have a primary key to generate update statements.");
-		}
-
-		public static QueryNoResult CreateInsert<T>(this EntitySchema<T> schema, Action<InsertBuilder<T>> queryCallback)
 			where T : class
 		{
-			var builder = new InsertBuilder<T>(schema);
+			if (entities == null || entities.Length < 1)
+				throw new Exception("At least 1 entity must be provided.");
+
+			if (primaryKeyRequired && !schema.SchemaFields.Any(q => q.IsPrimaryKey))
+				throw new Exception("Entity type must have a primary key to generate update statements.");
+		}
+
+		public static QueryNoResult CreateInsert<T>(this EntitySchema<T> schema, Action<EntityInsertBuilder<T>> queryCallback)
+			where T : class
+		{
+			var builder = new EntityInsertBuilder<T>(schema);
 			queryCallback?.Invoke(builder);
 			return new QueryNoResult(builder.BuildQuery());
 		}
 
-		public static QueryNoResult CreateInsert<T>(this Schema.Schema schema, Action<InsertBuilder<T>> queryCallback)
+		public static QueryNoResult CreateInsert<T>(this Schema.Schema schema, Action<EntityInsertBuilder<T>> queryCallback)
 			where T : class
 		{
 			var entitySchema = schema.GetEntitySchema<T>();
@@ -344,72 +344,79 @@ namespace Silk.Data.SQL.ORM
 		public static Query CreateInsert<T>(this EntitySchema<T> schema, params T[] entities)
 			where T : class
 		{
+			SanityCheckArgs(schema, entities, primaryKeyRequired: false);
+
+			var entityTypeModel = TypeModel.GetModelOf<T>();
+			var serverGeneratedPrimaryKeyField = schema.SchemaFields.FirstOrDefault(q => q.PrimaryKeyGenerator == PrimaryKeyGenerator.ServerGenerated);
+			var isBulkInsert = serverGeneratedPrimaryKeyField == null;
+
+			if (isBulkInsert)
+				return new QueryNoResult(
+					new CompositeQueryExpression(BuildExpressions())
+					);
+
 			throw new NotImplementedException();
-			//SanityCheckArgs(schema, entities, primaryKeyRequired: false);
-
-			//var entityTypeModel = TypeModel.GetModelOf<T>();
-			//var serverGeneratedPrimaryKeyField = schema.EntityFields.FirstOrDefault(q => q.PrimaryKeyGenerator == PrimaryKeyGenerator.ServerGenerated);
-			//var isBulkInsert = serverGeneratedPrimaryKeyField == null;
-
-			//if (isBulkInsert)
-			//	return new QueryNoResult(
-			//		new CompositeQueryExpression(BuildExpressions())
-			//		);
-
-			//return new QueryInjectResult<T> (
+			//return new QueryInjectResult<T>(
 			//	new CompositeQueryExpression(BuildExpressions()),
 			//	new ObjectResultMapper<T>(
 			//		entities.Length,
 			//		new Mapping(
 			//			null, null,
-			//			schema.EntityFields.Where(q => q.PrimaryKeyGenerator == PrimaryKeyGenerator.ServerGenerated).Select(q => q.GetValueBinding()).ToArray()
+			//			schema.SchemaFields.Where(q => q.PrimaryKeyGenerator == PrimaryKeyGenerator.ServerGenerated).Select(q => q.GetValueBinding()).ToArray()
 			//		)),
 			//	entities
 			//	);
 
-			//IEnumerable<QueryExpression> BuildExpressions()
-			//{
-			//	var queryBuilder = default(InsertBuilder<T>);
-			//	if (isBulkInsert)
-			//		queryBuilder = new InsertBuilder<T>(schema);
+			IEnumerable<QueryExpression> BuildExpressions()
+			{
+				var queryBuilder = default(EntityInsertBuilder<T>);
+				if (isBulkInsert)
+					queryBuilder = new EntityInsertBuilder<T>(schema);
 
-			//	foreach (var entity in entities)
-			//	{
-			//		if (!isBulkInsert)
-			//			queryBuilder = new InsertBuilder<T>(schema);
-			//		else
-			//			queryBuilder.NewRow();
+				var entityReadWriter = default(ObjectReadWriter);
+				var hasClientGeneratedKeys = schema.SchemaFields.Any(q => q.PrimaryKeyGenerator == PrimaryKeyGenerator.ClientGenerated);
+				if (hasClientGeneratedKeys)
+				{
+					entityReadWriter = new ObjectReadWriter(null, entityTypeModel, typeof(T));
+				}
 
-			//		foreach (var field in schema.EntityFields)
-			//		{
-			//			if (field.PrimaryKeyGenerator == PrimaryKeyGenerator.ServerGenerated)
-			//				continue;
+				foreach (var entity in entities)
+				{
+					if (!isBulkInsert)
+						queryBuilder = new EntityInsertBuilder<T>(schema);
+					else
+						queryBuilder.NewRow();
 
-			//			if (field.PrimaryKeyGenerator == PrimaryKeyGenerator.ClientGenerated)
-			//			{
-			//				var newId = Guid.NewGuid();
-			//				//  write generated ID to the object directly so that following queries can reference it
-			//				var readWriter = new ObjectReadWriter(entity, entityTypeModel, typeof(T));
-			//				readWriter.WriteField<Guid>(field.FieldReference, newId);
-			//			}
+					foreach (var field in schema.SchemaFields)
+					{
+						if (field.PrimaryKeyGenerator == PrimaryKeyGenerator.ServerGenerated)
+							continue;
 
-			//			queryBuilder.Set(field.GetFieldValuePair(entity));
-			//		}
+						if (field.PrimaryKeyGenerator == PrimaryKeyGenerator.ClientGenerated)
+						{
+							var newId = Guid.NewGuid();
+							//  write generated ID to the object directly so that following queries can reference it
+							entityReadWriter.WriteField(entityTypeModel.Root, entity);
+							entityReadWriter.WriteField<Guid>(field.FieldReference, newId);
+						}
 
-			//		if (!isBulkInsert)
-			//		{
-			//			yield return queryBuilder.BuildQuery();
-			//			//  todo: when the SelectBuilder API is refactored come back here and make it sensible!
-			//			var selectPKQueryBuilder = new SelectBuilder<T>(schema.Schema);
-			//			selectPKQueryBuilder.Project<int>(QueryExpression.Alias(
-			//				QueryExpression.LastInsertIdFunction(), "__PK_IDENTITY"));
-			//			yield return selectPKQueryBuilder.BuildQuery();
-			//		}
-			//	}
+						queryBuilder.Set(field, entity);
+					}
 
-			//	if (isBulkInsert)
-			//		yield return queryBuilder.BuildQuery();
-			//}
+					if (!isBulkInsert)
+					{
+						yield return queryBuilder.BuildQuery();
+						//  todo: when the SelectBuilder API is refactored come back here and make it sensible!
+						var selectPKQueryBuilder = new SelectBuilder<T>(schema.Schema);
+						selectPKQueryBuilder.Project<int>(QueryExpression.Alias(
+							QueryExpression.LastInsertIdFunction(), "__PK_IDENTITY"));
+						yield return selectPKQueryBuilder.BuildQuery();
+					}
+				}
+
+				if (isBulkInsert)
+					yield return queryBuilder.BuildQuery();
+			}
 		}
 
 		public static Query CreateInsert<T>(this Schema.Schema schema, params T[] entities)

@@ -1,10 +1,11 @@
-﻿using Silk.Data.SQL.Queries;
+﻿using Silk.Data.Modelling;
+using Silk.Data.SQL.Queries;
 
 namespace Silk.Data.SQL.ORM.Schema
 {
 	public delegate T QueryResultReader<T>(QueryResult queryResult, int ordinal);
 
-	public interface ISchemaFieldReference
+	public interface ISchemaFieldReference : IFieldReference
 	{
 		/// <summary>
 		/// Gets the alias the field has in the query result set.

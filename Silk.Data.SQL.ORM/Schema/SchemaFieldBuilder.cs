@@ -4,11 +4,16 @@ namespace Silk.Data.SQL.ORM.Schema
 {
 	public interface ISchemaFieldBuilder
 	{
-		ISchemaFieldAssemblage CreateAssemblage(string[] modelPath);
-		ISchemaField Build();
 	}
 
-	public class SqlPrimitiveSchemaFieldBuilder<TValue, TEntity> : ISchemaFieldBuilder
+	public interface ISchemaFieldBuilder<TEntity> : ISchemaFieldBuilder
+		where TEntity : class
+	{
+		ISchemaFieldAssemblage<TEntity> CreateAssemblage(string[] modelPath);
+		ISchemaField<TEntity> Build();
+	}
+
+	public class SqlPrimitiveSchemaFieldBuilder<TValue, TEntity> : ISchemaFieldBuilder<TEntity>
 		where TEntity : class
 	{
 		private readonly IEntitySchemaAssemblage _entitySchemaAssemblage;
@@ -24,7 +29,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			_entityFieldDefinition = entityFieldDefinition;
 		}
 
-		public ISchemaFieldAssemblage CreateAssemblage(string[] modelPath)
+		public ISchemaFieldAssemblage<TEntity> CreateAssemblage(string[] modelPath)
 		{
 			var primaryKeyGenerator = PrimaryKeyGenerator.NotPrimaryKey;
 			if (_entityFieldDefinition.IsPrimaryKey)
@@ -36,7 +41,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			return _assemblage;
 		}
 
-		public ISchemaField Build()
+		public ISchemaField<TEntity> Build()
 		{
 			return new SqlPrimitiveSchemaField<TValue, TEntity>(
 				_entityFieldDefinition.ModelField.FieldName, _assemblage.Column, _assemblage.PrimaryKeyGenerator
@@ -90,7 +95,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		}
 	}
 
-	public class ObjectEntityFieldBuilder<TValue, TEntity> : ISchemaFieldBuilder
+	public class ObjectEntityFieldBuilder<TValue, TEntity> : ISchemaFieldBuilder<TEntity>
 		where TEntity : class
 	{
 		private readonly IEntitySchemaAssemblage _entitySchemaAssemblage;
@@ -109,12 +114,12 @@ namespace Silk.Data.SQL.ORM.Schema
 			_entityFieldDefinition = entityFieldDefinition;
 		}
 
-		public ISchemaField Build()
+		public ISchemaField<TEntity> Build()
 		{
 			throw new System.NotImplementedException();
 		}
 
-		public ISchemaFieldAssemblage CreateAssemblage(string[] modelPath)
+		public ISchemaFieldAssemblage<TEntity> CreateAssemblage(string[] modelPath)
 		{
 			_assemblage = new ObjectSchemaFieldAssemblage<TValue, TEntity>(
 				modelPath, this, _entityFieldDefinition

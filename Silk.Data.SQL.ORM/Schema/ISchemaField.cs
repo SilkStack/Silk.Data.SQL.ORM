@@ -7,9 +7,15 @@
 		IFieldExpressionFactory ExpressionFactory { get; }
 		bool IsPrimaryKey { get; }
 		PrimaryKeyGenerator PrimaryKeyGenerator { get; }
+		ISchemaFieldReference FieldReference { get; }
 	}
 
-	public class SqlPrimitiveSchemaField<TValue, TEntity> : ISchemaField
+	public interface ISchemaField<TEntity> : ISchemaField
+		where TEntity : class
+	{
+	}
+
+	public class SqlPrimitiveSchemaField<TValue, TEntity> : ISchemaField<TEntity>
 		where TEntity : class
 	{
 		public Column Column { get; }
@@ -21,6 +27,8 @@
 		public PrimaryKeyGenerator PrimaryKeyGenerator { get; }
 
 		public string FieldName { get; }
+
+		public ISchemaFieldReference FieldReference => throw new System.NotImplementedException();
 
 		public SqlPrimitiveSchemaField(string fieldName, Column column, PrimaryKeyGenerator primaryKeyGenerator)
 		{

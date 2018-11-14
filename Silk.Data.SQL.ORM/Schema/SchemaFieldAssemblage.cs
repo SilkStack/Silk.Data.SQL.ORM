@@ -7,17 +7,22 @@ namespace Silk.Data.SQL.ORM.Schema
 	/// </summary>
 	public interface ISchemaFieldAssemblage
 	{
-		ISchemaFieldBuilder Builder { get; }
 		SchemaFieldDefinition FieldDefinition { get; }
 		string[] ModelPath { get; }
 		Column Column { get; }
 		PrimaryKeyGenerator PrimaryKeyGenerator { get; }
 	}
 
-	public class SqlPrimitiveSchemaFieldAssemblage<TValue, TEntity> : ISchemaFieldAssemblage
+	public interface ISchemaFieldAssemblage<TEntity> : ISchemaFieldAssemblage
 		where TEntity : class
 	{
-		public ISchemaFieldBuilder Builder { get; }
+		ISchemaFieldBuilder<TEntity> Builder { get; }
+	}
+
+	public class SqlPrimitiveSchemaFieldAssemblage<TValue, TEntity> : ISchemaFieldAssemblage<TEntity>
+		where TEntity : class
+	{
+		public ISchemaFieldBuilder<TEntity> Builder { get; }
 
 		public SchemaFieldDefinition FieldDefinition { get; }
 
@@ -46,10 +51,10 @@ namespace Silk.Data.SQL.ORM.Schema
 		}
 	}
 
-	public class ObjectSchemaFieldAssemblage<TValue, TEntity> : ISchemaFieldAssemblage
+	public class ObjectSchemaFieldAssemblage<TValue, TEntity> : ISchemaFieldAssemblage<TEntity>
 		where TEntity : class
 	{
-		public ISchemaFieldBuilder Builder { get; }
+		public ISchemaFieldBuilder<TEntity> Builder { get; }
 
 		public SchemaFieldDefinition FieldDefinition { get; }
 

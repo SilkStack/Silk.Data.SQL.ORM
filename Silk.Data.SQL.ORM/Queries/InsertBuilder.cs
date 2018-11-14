@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Queries
 {
-	public class InsertBuilder<T> : QueryBuilderBase<T>
+	public class EntityInsertBuilder<T> : QueryBuilderBase<T>
 		where T : class
 	{
 		private readonly List<List<FieldAssignment>> _fieldAssignments = new List<List<FieldAssignment>>()
@@ -13,9 +13,9 @@ namespace Silk.Data.SQL.ORM.Queries
 			new List<FieldAssignment>()
 		};
 
-		public InsertBuilder(Schema.Schema schema) : base(schema) { }
+		public EntityInsertBuilder(Schema.Schema schema) : base(schema) { }
 
-		public InsertBuilder(EntitySchema<T> schema) : base(schema) { }
+		public EntityInsertBuilder(EntitySchema<T> schema) : base(schema) { }
 
 		public void NewRow()
 		{
@@ -23,14 +23,19 @@ namespace Silk.Data.SQL.ORM.Queries
 				_fieldAssignments.Add(new List<FieldAssignment>());
 		}
 
-		public void Set(FieldAssignment fieldValuePair)
+		//public void Set(FieldAssignment fieldValuePair)
+		//{
+		//	_fieldAssignments.Last().Add(fieldValuePair);
+		//}
+
+		public void Set(ISchemaField<T> schemaField, T entity)
 		{
-			_fieldAssignments.Last().Add(fieldValuePair);
+
 		}
 
-		public void Set<TValue>(ISchemaField entityField, TValue value)
+		public void Set<TValue>(ISchemaField<T> entityField, TValue value)
 		{
-			Set(new FieldValueAssignment<TValue>(entityField, new StaticValueReader<TValue>(value)));
+			//Set(new FieldValueAssignment<TValue>(entityField, new StaticValueReader<TValue>(value)));
 		}
 
 		public override QueryExpression BuildQuery()

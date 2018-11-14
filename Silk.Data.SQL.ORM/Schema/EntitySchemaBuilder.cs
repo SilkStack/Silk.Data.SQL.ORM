@@ -90,9 +90,9 @@ namespace Silk.Data.SQL.ORM.Schema
 			return indexes.ToArray();
 		}
 
-		private ISchemaField[] GetSchemaFields()
+		private ISchemaField<T>[] GetSchemaFields()
 		{
-			var schemaFields = new List<ISchemaField>();
+			var schemaFields = new List<ISchemaField<T>>();
 			EntityTypeVisitor.Visit(_entityTypeModel, Callback);
 			return schemaFields.ToArray();
 
@@ -103,7 +103,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			}
 		}
 
-		private ISchemaFieldAssemblage FindOrCreateField(IPropertyField propertyField, Span<string> path)
+		private ISchemaFieldAssemblage<T> FindOrCreateField(IPropertyField propertyField, Span<string> path)
 		{
 			foreach (var field in _entitySchemaAssemblage.Fields)
 			{
@@ -117,7 +117,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			return newField;
 		}
 
-		private (SchemaFieldDefinition Definition, ISchemaFieldBuilder Builder) GetFieldDefinitionAndBuilder(IPropertyField propertyField, Span<string> path)
+		private (SchemaFieldDefinition Definition, ISchemaFieldBuilder<T> Builder) GetFieldDefinitionAndBuilder(IPropertyField propertyField, Span<string> path)
 		{
 			//  reflection justification:
 			//    building a schema is a rare occurance, using reflection here should make the use of generic types
@@ -126,13 +126,13 @@ namespace Silk.Data.SQL.ORM.Schema
 				.GetMethods(BindingFlags.Instance | BindingFlags.NonPublic)
 				.First(q => q.Name == nameof(GetFieldDefinitionAndBuilder) && q.IsGenericMethod)
 				.MakeGenericMethod(propertyField.FieldType);
-			return ((SchemaFieldDefinition, ISchemaFieldBuilder))methodInfo.Invoke(this, new object[] { propertyField, path.ToArray() });
+			return ((SchemaFieldDefinition, ISchemaFieldBuilder<T>))methodInfo.Invoke(this, new object[] { propertyField, path.ToArray() });
 		}
 
-		private (SchemaFieldDefinition Definition, ISchemaFieldBuilder Builder) GetFieldDefinitionAndBuilder<TProperty>(PropertyField<TProperty> propertyField, string[] path)
+		private (SchemaFieldDefinition Definition, ISchemaFieldBuilder<T> Builder) GetFieldDefinitionAndBuilder<TProperty>(PropertyField<TProperty> propertyField, string[] path)
 		{
 			var fieldDefinition = _entitySchemaDefinition.For(propertyField);
-			ISchemaFieldBuilder builder;
+			ISchemaFieldBuilder<T> builder;
 			if (SqlTypeHelper.IsSqlPrimitiveType(propertyField.FieldType))
 				builder = new SqlPrimitiveSchemaFieldBuilder<TProperty, T>(_entitySchemaAssemblage, fieldDefinition);
 			else

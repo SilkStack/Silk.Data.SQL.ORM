@@ -54,6 +54,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		}
 
 		public EntitySchema<T> GetEntitySchema<T>()
+			where T : class
 		{
 			return GetEntitySchema(typeof(T)) as EntitySchema<T>;
 		}

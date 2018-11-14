@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Schema
 {
@@ -14,25 +13,28 @@ namespace Silk.Data.SQL.ORM.Schema
 		IEntitySchemaDefinition Definition { get; }
 
 		string TableName { get; }
+	}
 
-		IReadOnlyCollection<ISchemaFieldAssemblage> Fields { get; }
-
-		void AddField(ISchemaFieldAssemblage fieldAssemblage);
+	public interface IEntitySchemaAssemblage<TEntity> : IEntitySchemaAssemblage
+		where TEntity : class
+	{
+		IReadOnlyCollection<ISchemaFieldAssemblage<TEntity>> Fields { get; }
+		void AddField(ISchemaFieldAssemblage<TEntity> fieldAssemblage);
 	}
 
 	/// <summary>
 	/// Represents an entity schema for type T in the process of being assembled.
 	/// </summary>
 	/// <typeparam name="T"></typeparam>
-	public class EntitySchemaAssemblage<T> : IEntitySchemaAssemblage
+	public class EntitySchemaAssemblage<T> : IEntitySchemaAssemblage<T>
 		where T : class
 	{
-		private readonly List<ISchemaFieldAssemblage> _fields
-			= new List<ISchemaFieldAssemblage>();
+		private readonly List<ISchemaFieldAssemblage<T>> _fields
+			= new List<ISchemaFieldAssemblage<T>>();
 
 		public Type EntityType { get; } = typeof(T);
 		public string TableName { get; }
-		public IReadOnlyCollection<ISchemaFieldAssemblage> Fields => _fields;
+		public IReadOnlyCollection<ISchemaFieldAssemblage<T>> Fields => _fields;
 
 		public IEntitySchemaBuilder Builder { get; }
 
@@ -46,7 +48,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			Definition = definition;
 		}
 
-		public void AddField(ISchemaFieldAssemblage fieldAssemblage)
+		public void AddField(ISchemaFieldAssemblage<T> fieldAssemblage)
 		{
 			_fields.Add(fieldAssemblage);
 		}

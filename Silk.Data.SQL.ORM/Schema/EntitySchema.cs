@@ -27,15 +27,20 @@ namespace Silk.Data.SQL.ORM.Schema
 		}
 	}
 
-	public class ProjectionSchema<T> : EntitySchema
+	public class ProjectionSchema<TProjection, TEntity> : EntitySchema
+		where TEntity : class
+		where TProjection : class
 	{
 		public override Table EntityTable { get; }
 		public override Type EntityType { get; }
 		public override SchemaIndex[] Indexes { get; }
 		public override EntityFieldJoin[] EntityJoins { get; }
+
+		public new ISchemaField<TEntity>[] SchemaFields { get; }
+
 		private Mapping _entityToViewTypeMapping { get; }
 
-		public ProjectionSchema(Table entityTable, ISchemaField[] schemaFields,
+		public ProjectionSchema(Table entityTable, ISchemaField<TEntity>[] schemaFields,
 			EntityFieldJoin[] manyToOneJoins, SchemaIndex[] indexes, Type entityType,
 			Mapping entityToViewTypeMapping) : base(schemaFields)
 		{
@@ -43,6 +48,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			EntityJoins = manyToOneJoins;
 			Indexes = indexes;
 			EntityType = entityType;
+			SchemaFields = schemaFields;
 			_entityToViewTypeMapping = entityToViewTypeMapping;
 		}
 	}
@@ -50,12 +56,13 @@ namespace Silk.Data.SQL.ORM.Schema
 	/// <summary>
 	/// Schema for storing and querying entities of type T.
 	/// </summary>
-	public class EntitySchema<T> : ProjectionSchema<T>
+	public class EntitySchema<T> : ProjectionSchema<T, T>
+		where T : class
 	{
 		private readonly Dictionary<Type, EntitySchema> _projectionCache
 			= new Dictionary<Type, EntitySchema>();
 
-		public EntitySchema(Table entityTable, ISchemaField[] schemaFields,
+		public EntitySchema(Table entityTable, ISchemaField<T>[] schemaFields,
 			EntityFieldJoin[] manyToOneJoins, SchemaIndex[] indexes, Mapping mapping) :
 			base(entityTable, schemaFields, manyToOneJoins, indexes, typeof(T), null)
 		{

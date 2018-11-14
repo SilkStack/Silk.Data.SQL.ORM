@@ -70,6 +70,7 @@ namespace Silk.Data.SQL.ORM.Tests
 		}
 
 		private static async Task InsertDefaultRow<T>(IDataProvider dataProvider, Schema.Schema schema)
+			where T : class
 		{
 			var entitySchema = schema.GetEntitySchema<T>();
 			var expression = QueryExpression.Insert(
@@ -81,6 +82,7 @@ namespace Silk.Data.SQL.ORM.Tests
 		}
 
 		private static async Task TestDefaultRow<T>(IDataProvider dataProvider, Schema.Schema schema)
+			where T : class
 		{
 			var entitySchema = schema.GetEntitySchema<T>();
 			using (var queryResult = await dataProvider.ExecuteReaderAsync(

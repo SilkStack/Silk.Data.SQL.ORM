@@ -16,74 +16,73 @@ namespace Silk.Data.SQL.ORM.Tests
 		[TestMethod]
 		public async Task InsertPrimitives()
 		{
-			throw new NotImplementedException();
-			//var schemaBuilder = new SchemaBuilder();
-			//schemaBuilder.DefineEntity<Primitives>();
-			//var schema = schemaBuilder.Build();
-			//var entitySchema = schema.GetEntitySchema<Primitives>();
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<Primitives>();
+			var schema = schemaBuilder.Build();
+			var entitySchema = schema.GetEntitySchema<Primitives>();
 
-			//using (var provider = TestHelper.CreateProvider())
-			//{
-			//	var obj = new Primitives
-			//	{
-			//		Bool = true,
-			//		Byte = 1,
-			//		Short = 1,
-			//		Int = 1,
-			//		Long = 1,
-			//		Float = 1.0f,
-			//		Double = 1.0d,
-			//		Decimal = 1.0m,
-			//		String = "Hello World",
-			//		DateTime = DateTime.Today,
-			//		Guid = Guid.NewGuid()
-			//	};
+			using (var provider = TestHelper.CreateProvider())
+			{
+				var obj = new Primitives
+				{
+					Bool = true,
+					Byte = 1,
+					Short = 1,
+					Int = 1,
+					Long = 1,
+					Float = 1.0f,
+					Double = 1.0d,
+					Decimal = 1.0m,
+					String = "Hello World",
+					DateTime = DateTime.Today,
+					Guid = Guid.NewGuid()
+				};
 
-			//	var query = schema.CreateInsert(obj);
-			//	await provider.ExecuteAsync(schema.CreateTable<Primitives>(), query);
+				var query = schema.CreateInsert(obj);
+				await provider.ExecuteAsync(schema.CreateTable<Primitives>(), query);
 
-			//	using (var queryResult = await provider.ExecuteReaderAsync(
-			//		QueryExpression.Select(QueryExpression.All(), QueryExpression.Table(entitySchema.EntityTable.TableName))
-			//		))
-			//	{
-			//		Assert.IsTrue(queryResult.HasRows);
-			//		Assert.IsTrue(await queryResult.ReadAsync());
+				using (var queryResult = await provider.ExecuteReaderAsync(
+					QueryExpression.Select(QueryExpression.All(), QueryExpression.Table(entitySchema.EntityTable.TableName))
+					))
+				{
+					Assert.IsTrue(queryResult.HasRows);
+					Assert.IsTrue(await queryResult.ReadAsync());
 
-			//		CheckValue(
-			//			obj.Bool, queryResult,
-			//			entitySchema.EntityFields.First(q => q.FieldName == nameof(obj.Bool)).Columns.First());
-			//		CheckValue(
-			//			obj.Byte, queryResult,
-			//			entitySchema.EntityFields.First(q => q.FieldName == nameof(obj.Byte)).Columns.First());
-			//		CheckValue(
-			//			obj.DateTime, queryResult,
-			//			entitySchema.EntityFields.First(q => q.FieldName == nameof(obj.DateTime)).Columns.First());
-			//		CheckValue(
-			//			obj.Decimal, queryResult,
-			//			entitySchema.EntityFields.First(q => q.FieldName == nameof(obj.Decimal)).Columns.First());
-			//		CheckValue(
-			//			obj.Double, queryResult,
-			//			entitySchema.EntityFields.First(q => q.FieldName == nameof(obj.Double)).Columns.First());
-			//		CheckValue(
-			//			obj.Float, queryResult,
-			//			entitySchema.EntityFields.First(q => q.FieldName == nameof(obj.Float)).Columns.First());
-			//		CheckValue(
-			//			obj.Guid, queryResult,
-			//			entitySchema.EntityFields.First(q => q.FieldName == nameof(obj.Guid)).Columns.First());
-			//		CheckValue(
-			//			obj.Int, queryResult,
-			//			entitySchema.EntityFields.First(q => q.FieldName == nameof(obj.Int)).Columns.First());
-			//		CheckValue(
-			//			obj.Long, queryResult,
-			//			entitySchema.EntityFields.First(q => q.FieldName == nameof(obj.Long)).Columns.First());
-			//		CheckValue(
-			//			obj.Short, queryResult,
-			//			entitySchema.EntityFields.First(q => q.FieldName == nameof(obj.Short)).Columns.First());
-			//		CheckValue(
-			//			obj.String, queryResult,
-			//			entitySchema.EntityFields.First(q => q.FieldName == nameof(obj.String)).Columns.First());
-			//	}
-			//}
+					CheckValue(
+						obj.Bool, queryResult,
+						entitySchema.SchemaFields.First(q => q.FieldName == nameof(obj.Bool)).Column);
+					CheckValue(
+						obj.Byte, queryResult,
+						entitySchema.SchemaFields.First(q => q.FieldName == nameof(obj.Byte)).Column);
+					CheckValue(
+						obj.DateTime, queryResult,
+						entitySchema.SchemaFields.First(q => q.FieldName == nameof(obj.DateTime)).Column);
+					CheckValue(
+						obj.Decimal, queryResult,
+						entitySchema.SchemaFields.First(q => q.FieldName == nameof(obj.Decimal)).Column);
+					CheckValue(
+						obj.Double, queryResult,
+						entitySchema.SchemaFields.First(q => q.FieldName == nameof(obj.Double)).Column);
+					CheckValue(
+						obj.Float, queryResult,
+						entitySchema.SchemaFields.First(q => q.FieldName == nameof(obj.Float)).Column);
+					CheckValue(
+						obj.Guid, queryResult,
+						entitySchema.SchemaFields.First(q => q.FieldName == nameof(obj.Guid)).Column);
+					CheckValue(
+						obj.Int, queryResult,
+						entitySchema.SchemaFields.First(q => q.FieldName == nameof(obj.Int)).Column);
+					CheckValue(
+						obj.Long, queryResult,
+						entitySchema.SchemaFields.First(q => q.FieldName == nameof(obj.Long)).Column);
+					CheckValue(
+						obj.Short, queryResult,
+						entitySchema.SchemaFields.First(q => q.FieldName == nameof(obj.Short)).Column);
+					CheckValue(
+						obj.String, queryResult,
+						entitySchema.SchemaFields.First(q => q.FieldName == nameof(obj.String)).Column);
+				}
+			}
 		}
 
 		[TestMethod]
