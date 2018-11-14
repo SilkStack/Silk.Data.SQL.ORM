@@ -71,13 +71,23 @@ namespace Silk.Data.SQL.ORM.Schema
 			var table = new Table(_entitySchemaAssemblage.TableName,
 				fields.Select(q => q.Column).ToArray());
 			var joins = new EntityFieldJoin[0];
-			var indexes = new SchemaIndex[0];
+			var indexes = GetSchemaIndexes(table, fields);
 			var mapping = default(Mapping);
 			var entitySchema = new EntitySchema<T>(
 				table, GetSchemaFields(),
 				joins, indexes, mapping
 				);
 			return entitySchema;
+		}
+
+		private SchemaIndex[] GetSchemaIndexes(Table table, ISchemaField[] fields)
+		{
+			var indexes = new List<SchemaIndex>();
+			foreach (var indexBuilder in _entitySchemaDefinition.GetIndexBuilders())
+			{
+				indexes.Add(indexBuilder.Build(table, fields));
+			}
+			return indexes.ToArray();
 		}
 
 		private ISchemaField[] GetSchemaFields()

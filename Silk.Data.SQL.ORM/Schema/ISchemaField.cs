@@ -2,6 +2,7 @@
 {
 	public interface ISchemaField
 	{
+		string FieldName { get; }
 		Column Column { get; }
 		IFieldExpressionFactory ExpressionFactory { get; }
 		bool IsPrimaryKey { get; }
@@ -19,8 +20,11 @@
 
 		public PrimaryKeyGenerator PrimaryKeyGenerator { get; }
 
-		public SqlPrimitiveSchemaField(Column column, PrimaryKeyGenerator primaryKeyGenerator)
+		public string FieldName { get; }
+
+		public SqlPrimitiveSchemaField(string fieldName, Column column, PrimaryKeyGenerator primaryKeyGenerator)
 		{
+			FieldName = fieldName;
 			Column = column;
 			PrimaryKeyGenerator = primaryKeyGenerator;
 			ExpressionFactory = new SqlPrimitiveFieldExpressionFactory<TValue, TEntity>(this);

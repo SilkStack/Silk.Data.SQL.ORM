@@ -37,19 +37,14 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		private IEnumerable<QueryExpression> GetCreateIndexExpressions()
 		{
-			yield break;
-			//foreach (var kvp in _indexes)
-			//{
-			//	foreach (var index in kvp.Value)
-			//	{
-			//		//  todo: support the custom index name specified
-			//		yield return QueryExpression.CreateIndex(
-			//			index.SourceName,
-			//			index.HasUniqueConstraint,
-			//			index.ColumnNames
-			//			);
-			//	}
-			//}
+			foreach (var index in EntitySchema.Indexes)
+			{
+				yield return QueryExpression.CreateIndex(
+					EntitySchema.EntityTable.TableName,
+					index.HasUniqueConstraint,
+					index.ColumnNames
+					);
+			}
 		}
 
 		private CreateTableExpression GetCreateTableExpressions()

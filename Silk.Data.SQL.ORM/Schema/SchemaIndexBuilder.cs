@@ -6,7 +6,12 @@ using System.Linq.Expressions;
 
 namespace Silk.Data.SQL.ORM.Schema
 {
-	public class SchemaIndexBuilder<T>
+	public interface ISchemaIndexBuilder
+	{
+		SchemaIndex Build(Table table, ISchemaField[] entityFields);
+	}
+
+	public class SchemaIndexBuilder<T> : ISchemaIndexBuilder
 		where T : class
 	{
 		private readonly TypeModel<T> _entityTypeModel = TypeModel.GetModelOf<T>();
@@ -23,10 +28,9 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public SchemaIndex Build(Table table, ISchemaField[] entityFields)
 		{
-			throw new NotImplementedException();
-			//return new SchemaIndex(IndexName, HasUniqueConstraint, 
-			//	entityFields.Where(q => _indexFields.Any(q2 => q.FieldName == q2.FieldName)).ToArray(),
-			//	table);
+			return new SchemaIndex(IndexName, HasUniqueConstraint,
+				entityFields.Where(q => _indexFields.Any(q2 => q.FieldName == q2.FieldName)).ToArray(),
+				table);
 		}
 
 		public void AddFields(params Expression<Func<T, object>>[] indexFields)

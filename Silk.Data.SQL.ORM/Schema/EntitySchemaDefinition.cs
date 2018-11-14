@@ -15,6 +15,8 @@ namespace Silk.Data.SQL.ORM.Schema
 		/// Gets or sets the table name to store entity instances in.
 		/// </summary>
 		string TableName { get; set; }
+
+		IEnumerable<ISchemaIndexBuilder> GetIndexBuilders();
 	}
 
 	/// <summary>
@@ -109,17 +111,8 @@ namespace Silk.Data.SQL.ORM.Schema
 			}
 		}
 
-		/// <summary>
-		/// Builds the entity schema.
-		/// </summary>
-		/// <returns></returns>
-		//public override PartialEntitySchema BuildPartialSchema(PartialEntitySchemaCollection partialEntities)
-		//{
-		//	return new PartialEntitySchema<T>(
-		//		BuildEntityFields(_entityTypeModel, getPrimitiveFields: true, entityPrimitiveFields: partialEntities).ToArray(),
-		//		TableName
-		//		);
-		//}
+		public IEnumerable<ISchemaIndexBuilder> GetIndexBuilders()
+			=> _indexBuilders.Values;
 
 		//public override bool DefineNewSchemaFields(PartialEntitySchemaCollection partialEntities)
 		//{
@@ -131,23 +124,6 @@ namespace Silk.Data.SQL.ORM.Schema
 		//		return true;
 		//	}
 		//	return false;
-		//}
-
-		//public override EntitySchema BuildSchema(PartialEntitySchemaCollection partialEntities)
-		//{
-		//	var fields = partialEntities[typeof(T)].EntityFields.OfType<IEntityFieldOfEntity<T>>().ToArray();
-		//	var columns = fields.SelectMany(q => q.Columns).ToArray();
-		//	var joins = BuildManyToOneJoins(_entityTypeModel, fields, partialEntities, TableName).ToArray();
-		//	var projectionFields = BuildProjectionFields(_entityTypeModel, fields, partialEntities, joins).ToArray();
-		//	var table = new Table(TableName, columns);
-		//	var mapping = new Mapping(_entityTypeModel, null,
-		//		BuildBindings(_entityTypeModel, fields, partialEntities, joins).ToArray()
-		//		);
-		//	return new EntitySchema<T>(
-		//		table, fields, projectionFields, joins,
-		//		_indexBuilders.Select(kvp => kvp.Value.Build(table, fields)).ToArray(),
-		//		mapping
-		//		);
 		//}
 
 		//private IEnumerable<EntityFieldJoin> BuildManyToOneJoins(

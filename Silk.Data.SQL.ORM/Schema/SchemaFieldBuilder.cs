@@ -39,7 +39,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		public ISchemaField Build()
 		{
 			return new SqlPrimitiveSchemaField<TValue, TEntity>(
-				_assemblage.Column, _assemblage.PrimaryKeyGenerator
+				_entityFieldDefinition.ModelField.FieldName, _assemblage.Column, _assemblage.PrimaryKeyGenerator
 				);
 		}
 
