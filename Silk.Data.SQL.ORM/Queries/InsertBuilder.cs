@@ -1,4 +1,5 @@
-﻿using Silk.Data.SQL.Expressions;
+﻿using Silk.Data.Modelling;
+using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Schema;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,9 +14,9 @@ namespace Silk.Data.SQL.ORM.Queries
 			new List<FieldAssignment>()
 		};
 
-		public EntityInsertBuilder(Schema.Schema schema) : base(schema) { }
+		public EntityInsertBuilder(Schema.Schema schema, ObjectReadWriter entityReadWriter = null) : base(schema, entityReadWriter) { }
 
-		public EntityInsertBuilder(EntitySchema<T> schema) : base(schema) { }
+		public EntityInsertBuilder(EntitySchema<T> schema, ObjectReadWriter entityReadWriter = null) : base(schema, entityReadWriter) { }
 
 		public void NewRow()
 		{
@@ -30,7 +31,7 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public void Set(ISchemaField<T> schemaField, T entity)
 		{
-
+			var valueExpression = schemaField.ExpressionFactory.Value(entity, EntityReadWriter);
 		}
 
 		public void Set<TValue>(ISchemaField<T> entityField, TValue value)

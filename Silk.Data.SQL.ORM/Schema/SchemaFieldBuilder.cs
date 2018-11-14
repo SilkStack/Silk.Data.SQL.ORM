@@ -1,4 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using Silk.Data.Modelling;
+using Silk.Data.Modelling.Mapping;
+using Silk.Data.Modelling.Mapping.Binding;
+using System;
+using System.Collections.Generic;
 
 namespace Silk.Data.SQL.ORM.Schema
 {
@@ -16,6 +20,8 @@ namespace Silk.Data.SQL.ORM.Schema
 	public class SqlPrimitiveSchemaFieldBuilder<TValue, TEntity> : ISchemaFieldBuilder<TEntity>
 		where TEntity : class
 	{
+		private readonly TypeModel<TEntity> _typeModel = TypeModel.GetModelOf<TEntity>();
+
 		private readonly IEntitySchemaAssemblage _entitySchemaAssemblage;
 		private readonly SchemaFieldDefinition<TValue, TEntity> _entityFieldDefinition;
 		private SqlPrimitiveSchemaFieldAssemblage<TValue, TEntity> _assemblage;
@@ -44,7 +50,8 @@ namespace Silk.Data.SQL.ORM.Schema
 		public ISchemaField<TEntity> Build()
 		{
 			return new SqlPrimitiveSchemaField<TValue, TEntity>(
-				_entityFieldDefinition.ModelField.FieldName, _assemblage.Column, _assemblage.PrimaryKeyGenerator
+				_entityFieldDefinition.ModelField.FieldName, _assemblage.Column, _assemblage.PrimaryKeyGenerator,
+				_typeModel.GetFieldReference(new PathOnlySourceField(_assemblage.ModelPath))
 				);
 		}
 
@@ -91,6 +98,49 @@ namespace Silk.Data.SQL.ORM.Schema
 					return PrimaryKeyGenerator.ServerGenerated;
 				default:
 					return PrimaryKeyGenerator.ClientGenerated;
+			}
+		}
+
+		private class PathOnlySourceField : ISourceField
+		{
+			public IModel RootModel => throw new NotImplementedException();
+
+			public string[] FieldPath { get; }
+
+			public ISourceField[] Fields => throw new NotImplementedException();
+
+			public string FieldName => throw new NotImplementedException();
+
+			public Type FieldType => throw new NotImplementedException();
+
+			public bool CanRead => throw new NotImplementedException();
+
+			public bool CanWrite => throw new NotImplementedException();
+
+			public bool IsEnumerable => throw new NotImplementedException();
+
+			public Type ElementType => throw new NotImplementedException();
+
+			public TypeModel FieldTypeModel => throw new NotImplementedException();
+
+			public PathOnlySourceField(string[] fieldPath)
+			{
+				FieldPath = fieldPath;
+			}
+
+			public MappingBinding CreateBinding<TTo>(IMappingBindingFactory bindingFactory, ITargetField toField)
+			{
+				throw new NotImplementedException();
+			}
+
+			public MappingBinding CreateBinding<TTo, TBindingOption>(IMappingBindingFactory<TBindingOption> bindingFactory, ITargetField toField, TBindingOption bindingOption)
+			{
+				throw new NotImplementedException();
+			}
+
+			public void Transform(IModelTransformer transformer)
+			{
+				throw new NotImplementedException();
 			}
 		}
 	}

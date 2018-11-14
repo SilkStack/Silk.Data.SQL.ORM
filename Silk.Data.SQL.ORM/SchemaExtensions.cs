@@ -369,21 +369,15 @@ namespace Silk.Data.SQL.ORM
 
 			IEnumerable<QueryExpression> BuildExpressions()
 			{
+				var entityReadWriter = new ObjectReadWriter(null, entityTypeModel, typeof(T));
 				var queryBuilder = default(EntityInsertBuilder<T>);
 				if (isBulkInsert)
-					queryBuilder = new EntityInsertBuilder<T>(schema);
-
-				var entityReadWriter = default(ObjectReadWriter);
-				var hasClientGeneratedKeys = schema.SchemaFields.Any(q => q.PrimaryKeyGenerator == PrimaryKeyGenerator.ClientGenerated);
-				if (hasClientGeneratedKeys)
-				{
-					entityReadWriter = new ObjectReadWriter(null, entityTypeModel, typeof(T));
-				}
+					queryBuilder = new EntityInsertBuilder<T>(schema, entityReadWriter);
 
 				foreach (var entity in entities)
 				{
 					if (!isBulkInsert)
-						queryBuilder = new EntityInsertBuilder<T>(schema);
+						queryBuilder = new EntityInsertBuilder<T>(schema, entityReadWriter);
 					else
 						queryBuilder.NewRow();
 
@@ -397,7 +391,9 @@ namespace Silk.Data.SQL.ORM
 							var newId = Guid.NewGuid();
 							//  write generated ID to the object directly so that following queries can reference it
 							entityReadWriter.WriteField(entityTypeModel.Root, entity);
-							entityReadWriter.WriteField<Guid>(field.FieldReference, newId);
+							throw new NotImplementedException();
+							//  this won't work because the FieldReference isn't a type the ObjectReadWriter will understand how to traverse
+							//entityReadWriter.WriteField<Guid>(field.FieldReference, newId);
 						}
 
 						queryBuilder.Set(field, entity);
