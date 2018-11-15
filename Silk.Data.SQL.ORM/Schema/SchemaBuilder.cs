@@ -116,9 +116,12 @@ namespace Silk.Data.SQL.ORM.Schema
 			}
 			var entitySchemas = _entitySchemaAssemblages.Select(q => q.Builder.BuildSchema())
 				.ToArray();
+			var fieldOperations = _entitySchemaAssemblages.SelectMany(q => q.Builder.BuildFieldOperations())
+				.ToDictionary(q => q.Key, q => q.Value);
 			return new Schema(
 				entitySchemas, _methodCallConverters,
-				new Relationship[0], ProjectionMappingOptions
+				new Relationship[0], ProjectionMappingOptions,
+				fieldOperations
 				);
 		}
 

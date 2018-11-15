@@ -6,7 +6,6 @@ namespace Silk.Data.SQL.ORM.Schema
 	{
 		string FieldName { get; }
 		Column Column { get; }
-		IFieldExpressionFactory ExpressionFactory { get; }
 		bool IsPrimaryKey { get; }
 		PrimaryKeyGenerator PrimaryKeyGenerator { get; }
 		ISchemaFieldReference FieldReference { get; }
@@ -15,7 +14,6 @@ namespace Silk.Data.SQL.ORM.Schema
 	public interface ISchemaField<TEntity> : ISchemaField
 		where TEntity : class
 	{
-		new IFieldExpressionFactory<TEntity> ExpressionFactory { get; }
 	}
 
 	public class SqlPrimitiveSchemaField<TValue, TEntity> : ISchemaField<TEntity>
@@ -31,9 +29,6 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public ISchemaFieldReference FieldReference => throw new System.NotImplementedException();
 
-		public IFieldExpressionFactory<TEntity> ExpressionFactory { get; }
-		IFieldExpressionFactory ISchemaField.ExpressionFactory => ExpressionFactory;
-
 		public IFieldReference EntityFieldReference { get; }
 
 		public SqlPrimitiveSchemaField(string fieldName, Column column, PrimaryKeyGenerator primaryKeyGenerator,
@@ -42,7 +37,6 @@ namespace Silk.Data.SQL.ORM.Schema
 			FieldName = fieldName;
 			Column = column;
 			PrimaryKeyGenerator = primaryKeyGenerator;
-			ExpressionFactory = new SqlPrimitiveFieldExpressionFactory<TValue, TEntity>(this);
 			EntityFieldReference = entityFieldReference;
 		}
 	}

@@ -23,6 +23,8 @@ namespace Silk.Data.SQL.ORM.Schema
 		/// </summary>
 		/// <returns></returns>
 		EntitySchema BuildSchema();
+
+		Dictionary<ISchemaField, FieldOperations> BuildFieldOperations();
 	}
 
 	/// <summary>
@@ -35,6 +37,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		private readonly EntitySchemaDefinition<T> _entitySchemaDefinition;
 		private readonly IReadOnlyCollection<IEntitySchemaAssemblage> _entitySchemaAssemblages;
 		private EntitySchemaAssemblage<T> _entitySchemaAssemblage;
+		private (ISchemaField<T> Field, ISchemaFieldAssemblage<T> Assemblage)[] _builtFields;
 
 		public EntitySchemaBuilder(
 			EntitySchemaDefinition<T> entitySchemaDefinition,
@@ -67,17 +70,29 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public EntitySchema BuildSchema()
 		{
-			var fields = GetSchemaFields();
+			_builtFields = BuildSchemaFields();
+			var fields = _builtFields.Select(q => q.Field).ToArray();
 			var table = new Table(_entitySchemaAssemblage.TableName,
 				fields.Select(q => q.Column).ToArray());
 			var joins = new EntityFieldJoin[0];
 			var indexes = GetSchemaIndexes(table, fields);
 			var mapping = default(Mapping);
 			var entitySchema = new EntitySchema<T>(
-				table, GetSchemaFields(),
+				table, fields,
 				joins, indexes, mapping
 				);
 			return entitySchema;
+		}
+
+		public Dictionary<ISchemaField, FieldOperations> BuildFieldOperations()
+		{
+			if (_builtFields == null)
+				throw new InvalidOperationException("Schema is not yet built, call BuildSchema() before calling BuildFieldOperations().");
+			return _builtFields.Select(q => new
+			{
+				Field = q.Field,
+				Operations = q.Assemblage.Builder.BuildFieldOperations()
+			}).ToDictionary(q => (ISchemaField)q.Field, q => (FieldOperations)q.Operations);
 		}
 
 		private SchemaIndex[] GetSchemaIndexes(Table table, ISchemaField[] fields)
@@ -90,16 +105,16 @@ namespace Silk.Data.SQL.ORM.Schema
 			return indexes.ToArray();
 		}
 
-		private ISchemaField<T>[] GetSchemaFields()
+		private (ISchemaField<T> Field, ISchemaFieldAssemblage<T> Assemblage)[] BuildSchemaFields()
 		{
-			var schemaFields = new List<ISchemaField<T>>();
+			var schemaFields = new List<(ISchemaField<T> Field, ISchemaFieldAssemblage<T> Assemblage)>();
 			EntityTypeVisitor.Visit(_entityTypeModel, Callback);
 			return schemaFields.ToArray();
 
 			void Callback(IPropertyField propertyField, Span<string> path)
 			{
 				var fieldAssemblage = FindOrCreateField(propertyField, path);
-				schemaFields.Add(fieldAssemblage.Builder.Build());
+				schemaFields.Add((fieldAssemblage.Builder.Build(), fieldAssemblage));
 			}
 		}
 

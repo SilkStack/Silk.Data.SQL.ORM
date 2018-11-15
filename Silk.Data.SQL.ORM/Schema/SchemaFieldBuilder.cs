@@ -15,6 +15,7 @@ namespace Silk.Data.SQL.ORM.Schema
 	{
 		ISchemaFieldAssemblage<TEntity> CreateAssemblage(string[] modelPath);
 		ISchemaField<TEntity> Build();
+		FieldOperations<TEntity> BuildFieldOperations();
 	}
 
 	public class SqlPrimitiveSchemaFieldBuilder<TValue, TEntity> : ISchemaFieldBuilder<TEntity>
@@ -25,6 +26,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		private readonly IEntitySchemaAssemblage _entitySchemaAssemblage;
 		private readonly SchemaFieldDefinition<TValue, TEntity> _entityFieldDefinition;
 		private SqlPrimitiveSchemaFieldAssemblage<TValue, TEntity> _assemblage;
+		private SqlPrimitiveSchemaField<TValue, TEntity> _builtField;
 
 		public SqlPrimitiveSchemaFieldBuilder(
 			IEntitySchemaAssemblage entitySchemaAssemblage,
@@ -49,9 +51,19 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public ISchemaField<TEntity> Build()
 		{
-			return new SqlPrimitiveSchemaField<TValue, TEntity>(
+			_builtField = new SqlPrimitiveSchemaField<TValue, TEntity>(
 				_entityFieldDefinition.ModelField.FieldName, _assemblage.Column, _assemblage.PrimaryKeyGenerator,
 				_typeModel.GetFieldReference(new PathOnlySourceField(_assemblage.ModelPath))
+				);
+			return _builtField;
+		}
+
+		public FieldOperations<TEntity> BuildFieldOperations()
+		{
+			if (_builtField == null)
+				throw new InvalidOperationException("Field not built, call Build() before BuildFieldOperations().");
+			return new FieldOperations<TEntity>(
+				new SqlPrimitiveFieldExpressionFactory<TValue, TEntity>(_builtField)
 				);
 		}
 
@@ -167,6 +179,11 @@ namespace Silk.Data.SQL.ORM.Schema
 		public ISchemaField<TEntity> Build()
 		{
 			throw new System.NotImplementedException();
+		}
+
+		public FieldOperations<TEntity> BuildFieldOperations()
+		{
+			throw new NotImplementedException();
 		}
 
 		public ISchemaFieldAssemblage<TEntity> CreateAssemblage(string[] modelPath)

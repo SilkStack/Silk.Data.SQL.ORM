@@ -52,7 +52,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			return QueryExpression.CreateTable(
 				EntitySchema.EntityTable.TableName,
 				EntitySchema.SchemaFields.Select(q =>
-					q.ExpressionFactory.DefineColumn()
+					Schema.GetFieldOperations(q).Expressions.DefineColumn()
 					).ToArray()
 				);
 		}

@@ -61,8 +61,9 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public void Set(ISchemaField<T> schemaField, T entity)
 		{
+			var fieldOperations = Schema.GetFieldOperations(schemaField);
 			AddColumnName(schemaField.Column);
-			var valueExpression = schemaField.ExpressionFactory.Value(entity, EntityReadWriter);
+			var valueExpression = fieldOperations.Expressions.Value(entity, EntityReadWriter);
 			_currentValueExpressions[schemaField.Column.ColumnName] = valueExpression;
 		}
 
