@@ -3,6 +3,7 @@ using Silk.Data.Modelling.Mapping;
 using Silk.Data.Modelling.Mapping.Binding;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Schema
 {
@@ -18,99 +19,12 @@ namespace Silk.Data.SQL.ORM.Schema
 		FieldOperations<TEntity> BuildFieldOperations();
 	}
 
-	public class SqlPrimitiveSchemaFieldBuilder<TValue, TEntity> : ISchemaFieldBuilder<TEntity>
-		where TEntity : class
+	public class SchemaFieldBuilderBase<TValue, TEntity>
 	{
-		private readonly TypeModel<TEntity> _typeModel = TypeModel.GetModelOf<TEntity>();
-
-		private readonly IEntitySchemaAssemblage _entitySchemaAssemblage;
-		private readonly SchemaFieldDefinition<TValue, TEntity> _entityFieldDefinition;
-		private SqlPrimitiveSchemaFieldAssemblage<TValue, TEntity> _assemblage;
-		private SqlPrimitiveSchemaField<TValue, TEntity> _builtField;
-
-		public SqlPrimitiveSchemaFieldBuilder(
-			IEntitySchemaAssemblage entitySchemaAssemblage,
-			SchemaFieldDefinition<TValue, TEntity> entityFieldDefinition
-			)
+		protected IFieldReference GetFieldReference(string[] path)
 		{
-			_entitySchemaAssemblage = entitySchemaAssemblage;
-			_entityFieldDefinition = entityFieldDefinition;
-		}
-
-		public ISchemaFieldAssemblage<TEntity> CreateAssemblage(string[] modelPath)
-		{
-			var primaryKeyGenerator = PrimaryKeyGenerator.NotPrimaryKey;
-			if (_entityFieldDefinition.IsPrimaryKey)
-				primaryKeyGenerator = GetPrimaryKeyGenerator(_entityFieldDefinition.SqlDataType);
-
-			_assemblage = new SqlPrimitiveSchemaFieldAssemblage<TValue, TEntity>(
-				modelPath, this, _entityFieldDefinition, primaryKeyGenerator
-				);
-			return _assemblage;
-		}
-
-		public ISchemaField<TEntity> Build()
-		{
-			_builtField = new SqlPrimitiveSchemaField<TValue, TEntity>(
-				_entityFieldDefinition.ModelField.FieldName, _assemblage.Column, _assemblage.PrimaryKeyGenerator,
-				_typeModel.GetFieldReference(new PathOnlySourceField(_assemblage.ModelPath))
-				);
-			return _builtField;
-		}
-
-		public FieldOperations<TEntity> BuildFieldOperations()
-		{
-			if (_builtField == null)
-				throw new InvalidOperationException("Field not built, call Build() before BuildFieldOperations().");
-			return new FieldOperations<TEntity>(
-				new SqlPrimitiveFieldExpressionFactory<TValue, TEntity>(_builtField)
-				);
-		}
-
-		//public ProjectionField BuildProjectionField()
-		//{
-		//	var sourceName = _entitySchemaAssemblage.TableName;  //  table name or join alias
-		//	var fieldName = _entityFieldDefinition.ColumnName;
-		//	var aliasName = string.Join("_", _assemblage.ModelPath);
-		//	var modelPath = _assemblage.ModelPath;
-		//	var join = default(EntityFieldJoin);
-
-		//	return new ProjectionField<TValue>(sourceName, fieldName, aliasName, modelPath, join);
-		//}
-
-		//public IEntityField BuildEntityField()
-		//{
-		//	if (_entityFieldDefinition.SqlDataType == null ||
-		//		!_entityFieldDefinition.ModelField.CanRead ||
-		//		_entityFieldDefinition.ModelField.IsEnumerable)
-		//		return null;
-
-		//	var primaryKeyGenerator = PrimaryKeyGenerator.NotPrimaryKey;
-		//	if (_entityFieldDefinition.IsPrimaryKey)
-		//		primaryKeyGenerator = GetPrimaryKeyGenerator(_entityFieldDefinition.SqlDataType);
-		//	var entityField = new EntityField<TValue, TEntity>(
-		//		new[] { new Column(
-		//			_entityFieldDefinition.ColumnName, _entityFieldDefinition.SqlDataType, _entityFieldDefinition.IsNullable
-		//			) },
-		//		_entityFieldDefinition.ModelField.FieldName,
-		//		primaryKeyGenerator,
-		//		_assemblage.ModelPath,
-		//		_entityFieldDefinition.ModelField);
-		//	return entityField;
-		//}
-
-		private static PrimaryKeyGenerator GetPrimaryKeyGenerator(SqlDataType sqlDataType)
-		{
-			switch (sqlDataType.BaseType)
-			{
-				case SqlBaseType.TinyInt:
-				case SqlBaseType.SmallInt:
-				case SqlBaseType.Int:
-				case SqlBaseType.BigInt:
-					return PrimaryKeyGenerator.ServerGenerated;
-				default:
-					return PrimaryKeyGenerator.ClientGenerated;
-			}
+			var sourceField = new PathOnlySourceField(path);
+			return TypeModel.GetModelOf<TEntity>().GetFieldReference(sourceField);
 		}
 
 		private class PathOnlySourceField : ISourceField
@@ -157,13 +71,78 @@ namespace Silk.Data.SQL.ORM.Schema
 		}
 	}
 
-	public class ObjectEntityFieldBuilder<TValue, TEntity> : ISchemaFieldBuilder<TEntity>
+	public class SqlPrimitiveSchemaFieldBuilder<TValue, TEntity> : SchemaFieldBuilderBase<TValue, TEntity>, ISchemaFieldBuilder<TEntity>
+		where TEntity : class
+	{
+		private readonly TypeModel<TEntity> _typeModel = TypeModel.GetModelOf<TEntity>();
+
+		private readonly IEntitySchemaAssemblage _entitySchemaAssemblage;
+		private readonly SchemaFieldDefinition<TValue, TEntity> _entityFieldDefinition;
+		private SqlPrimitiveSchemaFieldAssemblage<TValue, TEntity> _assemblage;
+		private SqlPrimitiveSchemaField<TValue, TEntity> _builtField;
+
+		public SqlPrimitiveSchemaFieldBuilder(
+			IEntitySchemaAssemblage entitySchemaAssemblage,
+			SchemaFieldDefinition<TValue, TEntity> entityFieldDefinition
+			)
+		{
+			_entitySchemaAssemblage = entitySchemaAssemblage;
+			_entityFieldDefinition = entityFieldDefinition;
+		}
+
+		public ISchemaFieldAssemblage<TEntity> CreateAssemblage(string[] modelPath)
+		{
+			var primaryKeyGenerator = PrimaryKeyGenerator.NotPrimaryKey;
+			if (_entityFieldDefinition.IsPrimaryKey)
+				primaryKeyGenerator = GetPrimaryKeyGenerator(_entityFieldDefinition.SqlDataType);
+
+			_assemblage = new SqlPrimitiveSchemaFieldAssemblage<TValue, TEntity>(
+				modelPath, this, _entityFieldDefinition, primaryKeyGenerator
+				);
+			return _assemblage;
+		}
+
+		public ISchemaField<TEntity> Build()
+		{
+			_builtField = new SqlPrimitiveSchemaField<TValue, TEntity>(
+				_entityFieldDefinition.ModelField.FieldName, _assemblage.Column, _assemblage.PrimaryKeyGenerator,
+				GetFieldReference(_assemblage.ModelPath)
+				);
+			return _builtField;
+		}
+
+		public FieldOperations<TEntity> BuildFieldOperations()
+		{
+			if (_builtField == null)
+				throw new InvalidOperationException("Field not built, call Build() before BuildFieldOperations().");
+			return new FieldOperations<TEntity>(
+				new SqlPrimitiveFieldExpressionFactory<TValue, TEntity>(_builtField)
+				);
+		}
+
+		private static PrimaryKeyGenerator GetPrimaryKeyGenerator(SqlDataType sqlDataType)
+		{
+			switch (sqlDataType.BaseType)
+			{
+				case SqlBaseType.TinyInt:
+				case SqlBaseType.SmallInt:
+				case SqlBaseType.Int:
+				case SqlBaseType.BigInt:
+					return PrimaryKeyGenerator.ServerGenerated;
+				default:
+					return PrimaryKeyGenerator.ClientGenerated;
+			}
+		}
+	}
+
+	public class ObjectEntityFieldBuilder<TValue, TEntity> : SchemaFieldBuilderBase<TValue, TEntity>, ISchemaFieldBuilder<TEntity>
 		where TEntity : class
 	{
 		private readonly IEntitySchemaAssemblage _entitySchemaAssemblage;
 		private readonly IReadOnlyCollection<IEntitySchemaAssemblage> _entitySchemaAssemblages;
 		private readonly SchemaFieldDefinition<TValue, TEntity> _entityFieldDefinition;
 		private ObjectSchemaFieldAssemblage<TValue, TEntity> _assemblage;
+		private FieldOperations<TEntity> _fieldOperations;
 
 		public ObjectEntityFieldBuilder(
 			IEntitySchemaAssemblage entitySchemaAssemblage,
@@ -178,12 +157,30 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public ISchemaField<TEntity> Build()
 		{
-			throw new System.NotImplementedException();
+			var isEmbeddedObject = !_entitySchemaAssemblages.Any(q => q.EntityType == typeof(TValue));
+			if (isEmbeddedObject)
+				return BuildAsEmbeddedObject();
+			throw new NotImplementedException();
+		}
+
+		private ISchemaField<TEntity> BuildAsEmbeddedObject()
+		{
+			var field = new EmbeddedObjectNullCheckSchemaField<TValue, TEntity>(
+				_entityFieldDefinition.ModelField.FieldName,
+				_entityFieldDefinition.ColumnName ?? string.Join("_", _assemblage.ModelPath),
+				GetFieldReference(_assemblage.ModelPath)
+				);
+			_fieldOperations = new FieldOperations<TEntity>(
+				new EmbeddedObjectNullCheckExpressionFactory<TValue, TEntity>(field)
+				);
+			return field;
 		}
 
 		public FieldOperations<TEntity> BuildFieldOperations()
 		{
-			throw new NotImplementedException();
+			if (_fieldOperations == null)
+				throw new InvalidOperationException("Field hasn't been built yet, call Build() before calling BuildFieldOperations().");
+			return _fieldOperations;
 		}
 
 		public ISchemaFieldAssemblage<TEntity> CreateAssemblage(string[] modelPath)
@@ -193,41 +190,5 @@ namespace Silk.Data.SQL.ORM.Schema
 				);
 			return _assemblage;
 		}
-
-		//public ProjectionField BuildProjectionField()
-		//{
-		//	var fieldTypeAssemblage = _entitySchemaAssemblages.FirstOrDefault(
-		//			q => q.EntityType == typeof(TValue)
-		//			);
-		//	if (fieldTypeAssemblage == null)
-		//	{
-		//		var sourceName = _entitySchemaAssemblage.TableName;
-		//		var columnName = string.Join("_", _assemblage.ModelPath);
-		//		var aliasName = $"__NULL_CHECK_{string.Join("_", _assemblage.ModelPath)}";
-		//		return new EmbeddedPocoNullCheckProjection(
-		//			sourceName, columnName, aliasName, _assemblage.ModelPath, null
-		//			);
-		//	}
-		//	else
-		//	{
-		//		return null;
-		//	}
-		//}
-
-		//public IEntityField BuildEntityField()
-		//{
-		//	var fieldTypeAssemblage = _entitySchemaAssemblages.FirstOrDefault(
-		//		q => q.EntityType == typeof(TValue)
-		//		);
-		//	if (fieldTypeAssemblage == null)
-		//	{
-		//		//  embedded poco null check
-		//		return new EmbeddedPocoField<TValue>(_entityFieldDefinition.ModelField, _assemblage.ModelPath);
-		//	}
-		//	else
-		//	{
-		//		return null;
-		//	}
-		//}
 	}
 }

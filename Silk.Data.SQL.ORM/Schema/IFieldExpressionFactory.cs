@@ -44,4 +44,29 @@ namespace Silk.Data.SQL.ORM.Schema
 			return QueryExpression.Value(value);
 		}
 	}
+
+	public class EmbeddedObjectNullCheckExpressionFactory<TValue, TEntity> : IFieldExpressionFactory<TEntity>
+		where TEntity : class
+	{
+		private readonly static TypeModel<TEntity> _entityTypeModel = TypeModel.GetModelOf<TEntity>();
+		private readonly EmbeddedObjectNullCheckSchemaField<TValue, TEntity> _field;
+
+		public EmbeddedObjectNullCheckExpressionFactory(EmbeddedObjectNullCheckSchemaField<TValue, TEntity> field)
+		{
+			_field = field;
+		}
+
+		public ColumnDefinitionExpression DefineColumn() =>
+			QueryExpression.DefineColumn(_field.Column.ColumnName, _field.Column.DataType, _field.Column.IsNullable);
+
+		public ValueExpression Value(TEntity entity, ObjectReadWriter entityReadWriter = null)
+		{
+			if (entityReadWriter == null)
+				entityReadWriter = new ObjectReadWriter(entity, _entityTypeModel, typeof(TEntity));
+
+			entityReadWriter.WriteField(_entityTypeModel.Root, entity);
+			var value = entityReadWriter.ReadField<TValue>(_field.EntityFieldReference);
+			return QueryExpression.Value(value != null);
+		}
+	}
 }

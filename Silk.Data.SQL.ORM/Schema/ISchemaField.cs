@@ -40,4 +40,27 @@ namespace Silk.Data.SQL.ORM.Schema
 			EntityFieldReference = entityFieldReference;
 		}
 	}
+
+	public class EmbeddedObjectNullCheckSchemaField<TValue, TEntity> : ISchemaField<TEntity>
+		where TEntity : class
+	{
+		public Column Column { get; }
+
+		public bool IsPrimaryKey => false;
+
+		public PrimaryKeyGenerator PrimaryKeyGenerator => PrimaryKeyGenerator.NotPrimaryKey;
+
+		public string FieldName { get; }
+
+		public ISchemaFieldReference FieldReference => throw new System.NotImplementedException();
+
+		public IFieldReference EntityFieldReference { get; }
+
+		public EmbeddedObjectNullCheckSchemaField(string fieldName, string columnName, IFieldReference entityFieldReference)
+		{
+			Column = new Column(columnName, SqlDataType.Bit(), false);
+			FieldName = fieldName;
+			EntityFieldReference = entityFieldReference;
+		}
+	}
 }

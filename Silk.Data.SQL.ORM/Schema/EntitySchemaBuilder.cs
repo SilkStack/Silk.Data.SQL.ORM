@@ -122,6 +122,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		{
 			foreach (var field in _entitySchemaAssemblage.Fields)
 			{
+
 				if (path.SequenceEqual(new ReadOnlySpan<string>(field.ModelPath)))
 					return field;
 			}

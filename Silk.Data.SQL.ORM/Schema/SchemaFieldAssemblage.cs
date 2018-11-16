@@ -43,7 +43,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			Builder = builder;
 			FieldDefinition = fieldDefinition;
 			Column = new Column(
-				fieldDefinition.ColumnName,
+				fieldDefinition.ColumnName ?? string.Join("_", modelPath),
 				fieldDefinition.SqlDataType,
 				fieldDefinition.IsNullable
 				);

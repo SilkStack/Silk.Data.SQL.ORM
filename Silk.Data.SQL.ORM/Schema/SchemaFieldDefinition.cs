@@ -37,12 +37,6 @@ namespace Silk.Data.SQL.ORM.Schema
 		/// Gets or sets the datatype to store the field as.
 		/// </summary>
 		public SqlDataType SqlDataType { get; set; }
-
-		///// <summary>
-		///// Builds the entity field.
-		///// </summary>
-		///// <returns>Null when the field shouldn't be stored in the schema being built.</returns>
-		//public abstract BuiltEntityField Build(string columnNamePrefix, string[] modelPath);
 	}
 
 	/// <summary>
@@ -59,7 +53,6 @@ namespace Silk.Data.SQL.ORM.Schema
 		public SchemaFieldDefinition(IPropertyField modelField)
 		{
 			ModelField = modelField;
-			ColumnName = modelField.FieldName;
 			if (SqlTypeHelper.IsSqlPrimitiveType(typeof(TValue)))
 			{
 				SqlDataType = SqlTypeHelper.GetDataType(typeof(TValue));
@@ -74,20 +67,6 @@ namespace Silk.Data.SQL.ORM.Schema
 			if (modelField.FieldName == "Id")
 				IsPrimaryKey = true;
 		}
-
-		//public override BuiltEntityField Build(string columnNamePrefix, string[] modelPath)
-		//{
-		//	if (SqlDataType == null || !ModelField.CanRead || ModelField.IsEnumerable)
-		//		return null;
-
-		//	var primaryKeyGenerator = PrimaryKeyGenerator.NotPrimaryKey;
-		//	if (IsPrimaryKey)
-		//		primaryKeyGenerator = GetPrimaryKeyGenerator(SqlDataType);
-		//	var entityField = new EntityField<TValue, TEntity>(
-		//		new[] { new Column($"{columnNamePrefix}{ColumnName}", SqlDataType, IsNullable) },
-		//		ModelField.FieldName, primaryKeyGenerator, modelPath, ModelField);
-		//	return new BuiltEntityField<TValue, TEntity>(entityField);
-		//}
 
 		private static PrimaryKeyGenerator GetPrimaryKeyGenerator(SqlDataType sqlDataType)
 		{
