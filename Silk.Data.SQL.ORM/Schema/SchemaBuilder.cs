@@ -16,8 +16,6 @@ namespace Silk.Data.SQL.ORM.Schema
 			= new Dictionary<Type, (IEntitySchemaDefinition Definition, IEntitySchemaBuilder Builder)>();
 		private readonly Dictionary<MethodInfo, IMethodCallConverter> _methodCallConverters
 			= new Dictionary<MethodInfo, IMethodCallConverter>();
-		private readonly List<RelationshipBuilder> _relationshipBuilders
-			= new List<RelationshipBuilder>();
 		private readonly List<IEntitySchemaAssemblage> _entitySchemaAssemblages
 			= new List<IEntitySchemaAssemblage>();
 
@@ -49,32 +47,6 @@ namespace Silk.Data.SQL.ORM.Schema
 		public void AddMethodConverter(MethodInfo methodInfo, IMethodCallConverter methodCallConverter)
 		{
 			_methodCallConverters.Add(methodInfo, methodCallConverter);
-		}
-
-		public RelationshipBuilder<TLeft, TRight> DefineRelationship<TLeft, TRight>(string name)
-			where TLeft : class
-			where TRight : class
-		{
-			var relationship = _relationshipBuilders.FirstOrDefault(q =>
-				q.Left == typeof(TLeft) && q.Right == typeof(TRight) && q.Name == name);
-			if (relationship == null)
-			{
-				relationship = new RelationshipBuilder<TLeft, TRight>
-				{
-					Name = name
-				};
-				_relationshipBuilders.Add(relationship);
-			}
-			return relationship as RelationshipBuilder<TLeft, TRight>;
-		}
-
-		public RelationshipBuilder<TLeft, TRight> DefineRelationship<TLeft, TRight>(string name, Action<RelationshipBuilder<TLeft, TRight>> callback)
-			where TLeft : class
-			where TRight : class
-		{
-			var relationship = DefineRelationship<TLeft, TRight>(name);
-			callback?.Invoke(relationship);
-			return relationship;
 		}
 
 		/// <summary>
@@ -120,7 +92,7 @@ namespace Silk.Data.SQL.ORM.Schema
 				.ToDictionary(q => q.Key, q => q.Value);
 			return new Schema(
 				entitySchemas, _methodCallConverters,
-				new Relationship[0], ProjectionMappingOptions,
+				ProjectionMappingOptions,
 				fieldOperations
 				);
 		}

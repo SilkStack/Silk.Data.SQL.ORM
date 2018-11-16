@@ -25,7 +25,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					SQLite3.SQLite3.Raw("INSERT INTO [FlatEntity] VALUES (1, 2)")
 					);
 
-				var queryBuilder = new SelectBuilder<FlatEntity>(schema);
+				var queryBuilder = new EntitySelectBuilder<FlatEntity>(schema);
 				queryBuilder.Project<FlatEntity>();
 				var selectQuery = queryBuilder.BuildQuery();
 
@@ -62,7 +62,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					SQLite3.SQLite3.Raw("INSERT INTO [RelationshipEntity] VALUES (1, 3)")
 					);
 
-				var queryBuilder = new SelectBuilder<RelationshipEntity>(schema);
+				var queryBuilder = new EntitySelectBuilder<RelationshipEntity>(schema);
 				queryBuilder.Project<RelationshipEntity>();
 				var selectQuery = queryBuilder.BuildQuery();
 
@@ -93,7 +93,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					SQLite3.SQLite3.Raw("INSERT INTO [RelationshipEntity] VALUES (3, 1, 1, 2)")
 					);
 
-				var queryBuilder = new SelectBuilder<RelationshipEntity>(schema);
+				var queryBuilder = new EntitySelectBuilder<RelationshipEntity>(schema);
 				queryBuilder.Project<RelationshipEntity>();
 				var selectQuery = queryBuilder.BuildQuery();
 
@@ -131,7 +131,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					SQLite3.SQLite3.Raw("INSERT INTO [DeepRelationshipEntity] VALUES (1, 3, 1)")
 					);
 
-				var queryBuilder = new SelectBuilder<DeepRelationshipEntity>(schema);
+				var queryBuilder = new EntitySelectBuilder<DeepRelationshipEntity>(schema);
 				queryBuilder.Project<DeepRelationshipEntity>();
 				var selectQuery = queryBuilder.BuildQuery();
 
@@ -169,7 +169,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					SQLite3.SQLite3.Raw("INSERT INTO [DeepRelationshipEntity] VALUES (1)")
 					);
 
-				var queryBuilder = new SelectBuilder<DeepRelationshipEntity>(schema);
+				var queryBuilder = new EntitySelectBuilder<DeepRelationshipEntity>(schema);
 				queryBuilder.Project<DeepRelationshipEntity>();
 				var selectQuery = queryBuilder.BuildQuery();
 
@@ -200,7 +200,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					SQLite3.SQLite3.Raw("INSERT INTO [FlatEntity] VALUES (1, 2)")
 					);
 
-				var queryBuilder = new SelectBuilder<FlatEntity>(schema);
+				var queryBuilder = new EntitySelectBuilder<FlatEntity>(schema);
 				queryBuilder.Project(q => Alias(Count(q.Id), "count"));
 				var selectQuery = queryBuilder.BuildQuery();
 
@@ -229,7 +229,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					SQLite3.SQLite3.Raw("INSERT INTO [FlatEntity] VALUES (1, 2)")
 					);
 
-				var queryBuilder = new SelectBuilder<FlatEntity>(schema);
+				var queryBuilder = new EntitySelectBuilder<FlatEntity>(schema);
 				queryBuilder.Project(q => q.Data);
 				var selectQuery = queryBuilder.BuildQuery();
 
@@ -265,7 +265,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					SQLite3.SQLite3.Raw("INSERT INTO [FlatEntity] VALUES (1, 2), (2, 3)")
 					);
 
-				var queryBuilder = new SelectBuilder<FlatEntity>(schema);
+				var queryBuilder = new EntitySelectBuilder<FlatEntity>(schema);
 				queryBuilder.Project<FlatEntity>();
 				var ids = new[] { 1, 2 };
 				queryBuilder.AndWhere(q => IsIn(q.Id, ids));

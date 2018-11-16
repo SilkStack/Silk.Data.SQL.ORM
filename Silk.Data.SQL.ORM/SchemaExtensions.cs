@@ -39,15 +39,15 @@ namespace Silk.Data.SQL.ORM
 			return entitySchema.CreateInsert<T>(queryCallback);
 		}
 
-		public static QueryNoResult CreateUpdate<T>(this EntitySchema<T> schema, Action<UpdateBuilder<T>> queryCallback)
+		public static QueryNoResult CreateUpdate<T>(this EntitySchema<T> schema, Action<EntityUpdateBuilder<T>> queryCallback)
 			where T : class
 		{
-			var builder = new UpdateBuilder<T>(schema);
+			var builder = new EntityUpdateBuilder<T>(schema);
 			queryCallback?.Invoke(builder);
 			return new QueryNoResult(builder.BuildQuery());
 		}
 
-		public static QueryNoResult CreateUpdate<T>(this Schema.Schema schema, Action<UpdateBuilder<T>> queryCallback)
+		public static QueryNoResult CreateUpdate<T>(this Schema.Schema schema, Action<EntityUpdateBuilder<T>> queryCallback)
 			where T : class
 		{
 			var entitySchema = schema.GetEntitySchema<T>();
@@ -56,42 +56,21 @@ namespace Silk.Data.SQL.ORM
 			return entitySchema.CreateUpdate<T>(queryCallback);
 		}
 
-		public static QueryNoResult CreateDelete<T>(this EntitySchema<T> schema, Action<DeleteBuilder<T>> queryCallback)
+		public static QueryNoResult CreateDelete<T>(this EntitySchema<T> schema, Action<EntityDeleteBuilder<T>> queryCallback)
 			where T : class
 		{
-			var builder = new DeleteBuilder<T>(schema);
+			var builder = new EntityDeleteBuilder<T>(schema);
 			queryCallback?.Invoke(builder);
 			return new QueryNoResult(builder.BuildQuery());
 		}
 
-		public static QueryNoResult CreateDelete<T>(this Schema.Schema schema, Action<DeleteBuilder<T>> queryCallback)
+		public static QueryNoResult CreateDelete<T>(this Schema.Schema schema, Action<EntityDeleteBuilder<T>> queryCallback)
 			where T : class
 		{
 			var entitySchema = schema.GetEntitySchema<T>();
 			if (entitySchema == null)
 				throw new Exception("Entity isn't configured in schema.");
 			return entitySchema.CreateDelete<T>(queryCallback);
-		}
-
-		public static QueryWithScalarResult<bool> CreateTableExists<TLeft, TRight>(this Relationship<TLeft, TRight> relationship)
-			where TLeft : class
-			where TRight : class
-		{
-			return new QueryWithScalarResult<bool>(
-				QueryExpression.TableExists(relationship.JunctionTable.TableName),
-				new ValueResultMapper<bool>(1, null)
-				);
-		}
-
-		public static QueryWithScalarResult<bool> CreateTableExists<TLeft, TRight>(this Schema.Schema schema, string relationshipName)
-			where TLeft : class
-			where TRight : class
-		{
-			var relationship = schema.GetRelationship<TLeft, TRight>(relationshipName);
-			if (relationship == null)
-				throw new Exception("Relationship isn't configured in schema.");
-
-			return relationship.CreateTableExists();
 		}
 
 		public static QueryWithScalarResult<bool> CreateTableExists<T>(this EntitySchema<T> schema)
@@ -113,29 +92,10 @@ namespace Silk.Data.SQL.ORM
 			return entitySchema.CreateTableExists();
 		}
 
-		public static QueryNoResult CreateTable<TLeft, TRight>(this Relationship<TLeft, TRight> relationship)
-			where TLeft : class
-			where TRight : class
-		{
-			var queryBuilder = new CreateTableBuilder<TLeft, TRight>(relationship);
-			return new QueryNoResult(queryBuilder.BuildQuery());
-		}
-
-		public static QueryNoResult CreateTable<TLeft, TRight>(this Schema.Schema schema, string relationshipName)
-			where TLeft : class
-			where TRight : class
-		{
-			var relationship = schema.GetRelationship<TLeft, TRight>(relationshipName);
-			if (relationship == null)
-				throw new Exception("Relationship isn't configured in schema.");
-
-			return relationship.CreateTable();
-		}
-
 		public static QueryNoResult CreateTable<T>(this EntitySchema<T> schema)
 			where T : class
 		{
-			var queryBuilder = new CreateTableBuilder<T>(schema);
+			var queryBuilder = new CreateEntityTableBuilder<T>(schema);
 			return new QueryNoResult(queryBuilder.BuildQuery());
 		}
 
@@ -149,16 +109,16 @@ namespace Silk.Data.SQL.ORM
 			return entitySchema.CreateTable();
 		}
 
-		public static QueryWithScalarResult<int> CreateCount<T>(this EntitySchema<T> schema, Action<SelectBuilder<T>> queryCallback = null)
+		public static QueryWithScalarResult<int> CreateCount<T>(this EntitySchema<T> schema, Action<EntitySelectBuilder<T>> queryCallback = null)
 			where T : class
 		{
-			var queryBuilder = new SelectBuilder<T>(schema);
+			var queryBuilder = new EntitySelectBuilder<T>(schema);
 			var mapping = queryBuilder.Project(q => DatabaseFunctions.Count(q));
 			queryCallback?.Invoke(queryBuilder);
 			return new QueryWithScalarResult<int>(queryBuilder.BuildQuery(), mapping);
 		}
 
-		public static QueryWithScalarResult<int> CreateCount<T>(this Schema.Schema schema, Action<SelectBuilder<T>> queryCallback = null)
+		public static QueryWithScalarResult<int> CreateCount<T>(this Schema.Schema schema, Action<EntitySelectBuilder<T>> queryCallback = null)
 			where T : class
 		{
 			var entitySchema = schema.GetEntitySchema<T>();
@@ -168,83 +128,16 @@ namespace Silk.Data.SQL.ORM
 			return entitySchema.CreateCount(queryCallback);
 		}
 
-		public static QueryWithScalarResult<int> CreateCount<TLeft, TRight>(this Relationship<TLeft, TRight> relationship, Action<SelectBuilder<TLeft, TRight>> queryCallback = null)
-			where TLeft : class
-			where TRight : class
-		{
-			var queryBuilder = new SelectBuilder<TLeft, TRight>(relationship);
-			var mapping = queryBuilder.Project((left, right) => DatabaseFunctions.Count(left));
-			queryCallback?.Invoke(queryBuilder);
-			return new QueryWithScalarResult<int>(queryBuilder.BuildQuery(), mapping);
-		}
-
-		public static QueryWithScalarResult<int> CreateCount<TLeft, TRight>(this Schema.Schema schema, string relationshipName, Action<SelectBuilder<TLeft, TRight>> queryCallback = null)
-			where TLeft : class
-			where TRight : class
-		{
-			var relationship = schema.GetRelationship<TLeft, TRight>(relationshipName);
-			if (relationship == null)
-				throw new Exception("Relationship isn't configured in schema.");
-
-			return relationship.CreateCount(queryCallback);
-		}
-
-		public static QueryWithTupleResult<TLeft, TRight> CreateSelect<TLeft, TRight>(this Relationship<TLeft, TRight> relationship, Action<SelectBuilder<TLeft, TRight>> queryCallback = null)
-			where TLeft : class
-			where TRight : class
-		{
-			var queryBuilder = new SelectBuilder<TLeft, TRight>(relationship);
-			var mapping = queryBuilder.Project<TLeft, TRight>();
-			queryCallback?.Invoke(queryBuilder);
-			return new QueryWithTupleResult<TLeft, TRight>(queryBuilder.BuildQuery(), mapping);
-		}
-
-		public static QueryWithTupleResult<TLeft, TRight> CreateSelect<TLeft, TRight>(this Schema.Schema schema, string relationshipName, Action<SelectBuilder<TLeft, TRight>> queryCallback = null)
-			where TLeft : class
-			where TRight : class
-		{
-			var relationship = schema.GetRelationship<TLeft, TRight>(relationshipName);
-			if (relationship == null)
-				throw new Exception("Relationship isn't configured in schema.");
-
-			return relationship.CreateSelect(queryCallback);
-		}
-
-		public static QueryWithTupleResult<TLeftView, TRightView> CreateSelect<TLeft, TRight, TLeftView, TRightView>(this Relationship<TLeft, TRight> relationship, Action<SelectBuilder<TLeft, TRight>> queryCallback = null)
-			where TLeft : class
-			where TRight : class
-			where TLeftView : class
-			where TRightView : class
-		{
-			var queryBuilder = new SelectBuilder<TLeft, TRight>(relationship);
-			var mapping = queryBuilder.Project<TLeftView, TRightView>();
-			queryCallback?.Invoke(queryBuilder);
-			return new QueryWithTupleResult<TLeftView, TRightView>(queryBuilder.BuildQuery(), mapping);
-		}
-
-		public static QueryWithTupleResult<TLeftView, TRightView> CreateSelect<TLeft, TRight, TLeftView, TRightView>(this Schema.Schema schema, string relationshipName, Action<SelectBuilder<TLeft, TRight>> queryCallback = null)
-			where TLeft : class
-			where TRight : class
-			where TLeftView : class
-			where TRightView : class
-		{
-			var relationship = schema.GetRelationship<TLeft, TRight>(relationshipName);
-			if (relationship == null)
-				throw new Exception("Relationship isn't configured in schema.");
-
-			return relationship.CreateSelect<TLeft, TRight, TLeftView, TRightView>(queryCallback);
-		}
-
-		public static QueryWithMappedResult<T> CreateSelect<T>(this EntitySchema<T> schema, Action<SelectBuilder<T>> queryCallback = null)
+		public static QueryWithMappedResult<T> CreateSelect<T>(this EntitySchema<T> schema, Action<EntitySelectBuilder<T>> queryCallback = null)
 			where T : class
 		{
-			var queryBuilder = new SelectBuilder<T>(schema);
+			var queryBuilder = new EntitySelectBuilder<T>(schema);
 			var mapping = queryBuilder.Project<T>();
 			queryCallback?.Invoke(queryBuilder);
 			return new QueryWithMappedResult<T>(queryBuilder.BuildQuery(), mapping);
 		}
 
-		public static QueryWithMappedResult<T> CreateSelect<T>(this Schema.Schema schema, Action<SelectBuilder<T>> queryCallback = null)
+		public static QueryWithMappedResult<T> CreateSelect<T>(this Schema.Schema schema, Action<EntitySelectBuilder<T>> queryCallback = null)
 			where T : class
 		{
 			var entitySchema = schema.GetEntitySchema<T>();
@@ -254,17 +147,17 @@ namespace Silk.Data.SQL.ORM
 			return entitySchema.CreateSelect(queryCallback);
 		}
 
-		public static QueryWithMappedResult<TView> CreateSelect<T, TView>(this EntitySchema<T> schema, Action<SelectBuilder<T>> queryCallback = null)
+		public static QueryWithMappedResult<TView> CreateSelect<T, TView>(this EntitySchema<T> schema, Action<EntitySelectBuilder<T>> queryCallback = null)
 			where T : class
 			where TView : class
 		{
-			var queryBuilder = new SelectBuilder<T>(schema);
+			var queryBuilder = new EntitySelectBuilder<T>(schema);
 			var mapping = queryBuilder.Project<TView>();
 			queryCallback?.Invoke(queryBuilder);
 			return new QueryWithMappedResult<TView>(queryBuilder.BuildQuery(), mapping);
 		}
 
-		public static QueryWithMappedResult<TView> CreateSelect<T, TView>(this Schema.Schema schema, Action<SelectBuilder<T>> queryCallback = null)
+		public static QueryWithMappedResult<TView> CreateSelect<T, TView>(this Schema.Schema schema, Action<EntitySelectBuilder<T>> queryCallback = null)
 			where T : class
 			where TView : class
 		{
@@ -273,72 +166,6 @@ namespace Silk.Data.SQL.ORM
 				throw new Exception("Entity isn't configured in schema.");
 
 			return entitySchema.CreateSelect<T, TView>(queryCallback);
-		}
-
-		public static QueryNoResult CreateInsert<TLeft, TRight>(this Relationship<TLeft, TRight> relationship, TLeft left, params TRight[] right)
-			where TLeft : class
-			where TRight : class
-		{
-			throw new NotImplementedException();
-			//if (left == null)
-			//	throw new ArgumentNullException(nameof(left));
-			//if (right == null || right.Length == 0)
-			//	throw new ArgumentException("At least one related entity must be provided.", nameof(right));
-
-			//var queryBuilder = new InsertBuilder<TLeft, TRight>(relationship);
-			//foreach (var entity in right)
-			//{
-			//	queryBuilder.NewRow();
-
-			//	queryBuilder.Set(relationship.LeftRelationship.GetFieldValuePair(left));
-			//	queryBuilder.Set(relationship.RightRelationship.GetFieldValuePair(entity));
-			//}
-
-			//return new QueryNoResult(queryBuilder.BuildQuery());
-		}
-
-		public static QueryNoResult CreateInsert<TLeft, TRight>(this Schema.Schema schema, string relationshipName, TLeft left, params TRight[] right)
-			where TLeft : class
-			where TRight : class
-		{
-			var relationship = schema.GetRelationship<TLeft, TRight>(relationshipName);
-			if (relationship == null)
-				throw new Exception("Relationship isn't configured in schema.");
-
-			return relationship.CreateInsert(left, right);
-		}
-
-		public static QueryNoResult CreateInsert<TLeft, TRight>(this Relationship<TLeft, TRight> relationship, TRight right, params TLeft[] left)
-			where TLeft : class
-			where TRight : class
-		{
-			throw new NotImplementedException();
-			//if (right == null)
-			//	throw new ArgumentNullException(nameof(right));
-			//if (left == null || left.Length == 0)
-			//	throw new ArgumentException("At least one related entity must be provided.", nameof(left));
-
-			//var queryBuilder = new InsertBuilder<TLeft, TRight>(relationship);
-			//foreach (var entity in left)
-			//{
-			//	queryBuilder.NewRow();
-
-			//	queryBuilder.Set(relationship.LeftRelationship.GetFieldValuePair(entity));
-			//	queryBuilder.Set(relationship.RightRelationship.GetFieldValuePair(right));
-			//}
-
-			//return new QueryNoResult(queryBuilder.BuildQuery());
-		}
-
-		public static QueryNoResult CreateInsert<TLeft, TRight>(this Schema.Schema schema, string relationshipName, TRight right, params TLeft[] left)
-			where TLeft : class
-			where TRight : class
-		{
-			var relationship = schema.GetRelationship<TLeft, TRight>(relationshipName);
-			if (relationship == null)
-				throw new Exception("Relationship isn't configured in schema.");
-
-			return relationship.CreateInsert(right, left);
 		}
 
 		public static Query CreateInsert<T>(this EntitySchema<T> schema, params T[] entities)
@@ -390,10 +217,7 @@ namespace Silk.Data.SQL.ORM
 						{
 							var newId = Guid.NewGuid();
 							//  write generated ID to the object directly so that following queries can reference it
-							entityReadWriter.WriteField(entityTypeModel.Root, entity);
 							throw new NotImplementedException();
-							//  this won't work because the FieldReference isn't a type the ObjectReadWriter will understand how to traverse
-							//entityReadWriter.WriteField<Guid>(field.FieldReference, newId);
 						}
 
 						queryBuilder.Set(field, entity);
@@ -403,7 +227,7 @@ namespace Silk.Data.SQL.ORM
 					{
 						yield return queryBuilder.BuildQuery();
 						//  todo: when the SelectBuilder API is refactored come back here and make it sensible!
-						var selectPKQueryBuilder = new SelectBuilder<T>(schema.Schema);
+						var selectPKQueryBuilder = new EntitySelectBuilder<T>(schema.Schema);
 						selectPKQueryBuilder.Project<int>(QueryExpression.Alias(
 							QueryExpression.LastInsertIdFunction(), "__PK_IDENTITY"));
 						yield return selectPKQueryBuilder.BuildQuery();
@@ -423,98 +247,6 @@ namespace Silk.Data.SQL.ORM
 				throw new Exception("Entity isn't configured in schema.");
 
 			return entitySchema.CreateInsert(entities);
-		}
-
-		public static QueryNoResult CreateDelete<TLeft, TRight>(this Relationship<TLeft, TRight> relationship, TLeft left, params TRight[] right)
-			where TLeft : class
-			where TRight : class
-		{
-			throw new NotImplementedException();
-			//if (left == null)
-			//	throw new ArgumentNullException(nameof(left));
-
-			//var queryBuilder = new DeleteBuilder<TLeft, TRight>(relationship);
-			//queryBuilder.AndWhere(relationship.LeftRelationship.GetFieldValuePair(left), ComparisonOperator.AreEqual);
-			//if (right != null && right.Length > 0)
-			//{
-			//	var rightExpression = default(QueryExpression);
-			//	foreach (var entity in right)
-			//	{
-			//		var entityExpression = default(QueryExpression);
-			//		foreach (var (columnExpression, valueExpression) in relationship.RightRelationship.GetFieldValuePair(entity).GetColumnExpressionPairs())
-			//		{
-			//			entityExpression = QueryExpression.CombineConditions(
-			//				entityExpression,
-			//				ConditionType.AndAlso,
-			//				QueryExpression.Compare(
-			//					columnExpression,
-			//					ComparisonOperator.AreEqual,
-			//					valueExpression
-			//				));
-			//		}
-			//		rightExpression = QueryExpression.CombineConditions(rightExpression, ConditionType.OrElse, entityExpression);
-			//	}
-			//	queryBuilder.AndWhere(rightExpression);
-			//}
-
-			//return new QueryNoResult(queryBuilder.BuildQuery());
-		}
-
-		public static QueryNoResult CreateDelete<TLeft, TRight>(this Schema.Schema schema, string relationshipName, TLeft left, params TRight[] right)
-			where TLeft : class
-			where TRight : class
-		{
-			var relationship = schema.GetRelationship<TLeft, TRight>(relationshipName);
-			if (relationship == null)
-				throw new Exception("Relationship isn't configured in schema.");
-
-			return relationship.CreateDelete(left, right);
-		}
-
-		public static QueryNoResult CreateDelete<TLeft, TRight>(this Relationship<TLeft, TRight> relationship, TRight right, params TLeft[] left)
-			where TLeft : class
-			where TRight : class
-		{
-			throw new NotImplementedException();
-			//if (right == null)
-			//	throw new ArgumentNullException(nameof(right));
-
-			//var queryBuilder = new DeleteBuilder<TLeft, TRight>(relationship);
-			//queryBuilder.AndWhere(relationship.RightRelationship.GetFieldValuePair(right), ComparisonOperator.AreEqual);
-			//if (left != null && left.Length > 0)
-			//{
-			//	var rightExpression = default(QueryExpression);
-			//	foreach (var entity in left)
-			//	{
-			//		var entityExpression = default(QueryExpression);
-			//		foreach (var (columnExpression, valueExpression) in relationship.LeftRelationship.GetFieldValuePair(entity).GetColumnExpressionPairs())
-			//		{
-			//			entityExpression = QueryExpression.CombineConditions(
-			//				entityExpression,
-			//				ConditionType.AndAlso,
-			//				QueryExpression.Compare(
-			//					columnExpression,
-			//					ComparisonOperator.AreEqual,
-			//					valueExpression
-			//				));
-			//		}
-			//		rightExpression = QueryExpression.CombineConditions(rightExpression, ConditionType.OrElse, entityExpression);
-			//	}
-			//	queryBuilder.AndWhere(rightExpression);
-			//}
-
-			//return new QueryNoResult(queryBuilder.BuildQuery());
-		}
-
-		public static QueryNoResult CreateDelete<TLeft, TRight>(this Schema.Schema schema, string relationshipName, TRight right, params TLeft[] left)
-			where TLeft : class
-			where TRight : class
-		{
-			var relationship = schema.GetRelationship<TLeft, TRight>(relationshipName);
-			if (relationship == null)
-				throw new Exception("Relationship isn't configured in schema.");
-
-			return relationship.CreateDelete(right, left);
 		}
 
 		public static QueryNoResult CreateDelete<T>(this EntitySchema<T> schema, params T[] entities)

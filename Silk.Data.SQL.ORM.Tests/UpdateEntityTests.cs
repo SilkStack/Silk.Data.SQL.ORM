@@ -53,7 +53,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					schema.CreateInsert(obj)
 					);
 
-				var queryBuilder = new UpdateBuilder<PrimitivePoco>(schema);
+				var queryBuilder = new EntityUpdateBuilder<PrimitivePoco>(schema);
 				queryBuilder.Set(q => q.Data, q => q.Data + 1);
 				await provider.ExecuteNonQueryAsync(queryBuilder.BuildQuery());
 

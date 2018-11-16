@@ -27,7 +27,7 @@ namespace Silk.Data.SQL.ORM.Tests
 
 				await Insert(schema, provider, inObj);
 
-				var selectBuilder = new SelectBuilder<FlatEntity>(schema);
+				var selectBuilder = new EntitySelectBuilder<FlatEntity>(schema);
 				var mapper = selectBuilder.Project<FlatEntity>();
 				var query = selectBuilder.BuildQuery();
 
@@ -63,7 +63,7 @@ namespace Silk.Data.SQL.ORM.Tests
 				await Insert(schema, provider, inFlat);
 				await Insert(schema, provider, inRelated);
 
-				var queryBuilder = new SelectBuilder<RelationshipEntity>(schema);
+				var queryBuilder = new EntitySelectBuilder<RelationshipEntity>(schema);
 				var mapper = queryBuilder.Project<RelationshipEntity>();
 
 				using (var queryResult = await provider.ExecuteReaderAsync(queryBuilder.BuildQuery()))
@@ -101,7 +101,7 @@ namespace Silk.Data.SQL.ORM.Tests
 
 				await Insert(schema, provider, inObj);
 
-				var queryBuilder = new SelectBuilder<RelationshipEntity>(schema);
+				var queryBuilder = new EntitySelectBuilder<RelationshipEntity>(schema);
 				var mapper = queryBuilder.Project<RelationshipEntity>();
 				var selectQuery = queryBuilder.BuildQuery();
 
@@ -146,7 +146,7 @@ namespace Silk.Data.SQL.ORM.Tests
 				await Insert(schema, provider, inObj.Child.Child);
 				await Insert(schema, provider, inObj);
 
-				var queryBuilder = new SelectBuilder<DeepRelationshipEntity>(schema);
+				var queryBuilder = new EntitySelectBuilder<DeepRelationshipEntity>(schema);
 				var mapper = queryBuilder.Project<DeepRelationshipEntity>();
 				var selectQuery = queryBuilder.BuildQuery();
 
@@ -192,7 +192,7 @@ namespace Silk.Data.SQL.ORM.Tests
 				await Insert(schema, provider, inObj.Child);
 				await Insert(schema, provider, inObj);
 
-				var queryBuilder = new SelectBuilder<DeepRelationshipEntity>(schema);
+				var queryBuilder = new EntitySelectBuilder<DeepRelationshipEntity>(schema);
 				var mapper = queryBuilder.Project<DeepRelationshipEntity>();
 				var selectQuery = queryBuilder.BuildQuery();
 
@@ -227,7 +227,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					SQLite3.SQLite3.Raw("INSERT INTO [FlatEntity] VALUES (1, 2)")
 					);
 
-				var queryBuilder = new SelectBuilder<FlatEntity>(schema);
+				var queryBuilder = new EntitySelectBuilder<FlatEntity>(schema);
 				var mapper = queryBuilder.Project(q => Alias(Count(q.Id), "count"));
 				Assert.IsNotNull(mapper);
 				var selectQuery = queryBuilder.BuildQuery();
@@ -258,7 +258,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					SQLite3.SQLite3.Raw("INSERT INTO [FlatEntity] VALUES (1, 2)")
 					);
 
-				var queryBuilder = new SelectBuilder<FlatEntity>(schema);
+				var queryBuilder = new EntitySelectBuilder<FlatEntity>(schema);
 				var mapper = queryBuilder.Project(q => q.Data);
 				Assert.IsNotNull(mapper);
 
@@ -271,158 +271,6 @@ namespace Silk.Data.SQL.ORM.Tests
 					var result = mapper.Read(queryResult);
 					Assert.AreEqual(2, result);
 				}
-			}
-		}
-
-		[TestMethod]
-		public async Task SelectRelationship()
-		{
-			var schemaBuilder = new SchemaBuilder();
-			schemaBuilder.DefineEntity<FlatEntity>();
-			schemaBuilder.DefineEntity<FlatEntityTwo>();
-			schemaBuilder.DefineRelationship<FlatEntity, FlatEntityTwo>("Relationship");
-			var schema = schemaBuilder.Build();
-
-			var relationship = schema.GetRelationship<FlatEntity, FlatEntityTwo>("Relationship");
-
-			var inFlatOnes = new[]
-			{
-				new FlatEntity { Data = 1 },
-				new FlatEntity { Data = 2 },
-				new FlatEntity { Data = 3 }
-			};
-			var inFlatTwos = new[]
-			{
-				new FlatEntityTwo { Data = 4 },
-				new FlatEntityTwo { Data = 5 },
-				new FlatEntityTwo { Data = 6 }
-			};
-
-			using (var provider = TestHelper.CreateProvider())
-			{
-				await provider.ExecuteAsync(
-					schema.CreateTable<FlatEntity>(),
-					schema.CreateTable<FlatEntityTwo>(),
-					relationship.CreateTable(),
-					schema.CreateInsert(inFlatOnes),
-					schema.CreateInsert(inFlatTwos),
-					relationship.CreateInsert(inFlatOnes[0], inFlatTwos[0]),
-					relationship.CreateInsert(inFlatOnes[1], inFlatTwos[0], inFlatTwos[1]),
-					relationship.CreateInsert(inFlatOnes[2], inFlatTwos[0], inFlatTwos[1], inFlatTwos[2])
-					);
-
-				var selectQuery = relationship.CreateSelect();
-				await provider.ExecuteAsync(selectQuery);
-
-				var resultSet = selectQuery.Result;
-
-				Assert.AreEqual(6, resultSet.Count);
-				Assert.IsTrue(resultSet.Any(q => q.Item1.Data == 1 && q.Item2.Data == 4));
-				Assert.IsTrue(resultSet.Any(q => q.Item1.Data == 2 && q.Item2.Data == 4));
-				Assert.IsTrue(resultSet.Any(q => q.Item1.Data == 2 && q.Item2.Data == 5));
-				Assert.IsTrue(resultSet.Any(q => q.Item1.Data == 3 && q.Item2.Data == 4));
-				Assert.IsTrue(resultSet.Any(q => q.Item1.Data == 3 && q.Item2.Data == 5));
-				Assert.IsTrue(resultSet.Any(q => q.Item1.Data == 3 && q.Item2.Data == 6));
-			}
-		}
-
-		[TestMethod]
-		public async Task SelectRelatedRelationship()
-		{
-			var schemaBuilder = new SchemaBuilder();
-			schemaBuilder.DefineEntity<FlatEntity>();
-			schemaBuilder.DefineEntity<FlatEntityTwo>();
-			schemaBuilder.DefineEntity<RelationshipEntityTwo>();
-			schemaBuilder.DefineRelationship<FlatEntityTwo, RelationshipEntityTwo>("Relationship");
-			var schema = schemaBuilder.Build();
-
-			var relationship = schema.GetRelationship<FlatEntityTwo, RelationshipEntityTwo>("Relationship");
-
-			using (var provider = TestHelper.CreateProvider())
-			{
-				var inObjTwos = new[]
-				{
-					new FlatEntityTwo { Data = 1 }
-				};
-				var inObjs = new[]
-				{
-					new FlatEntity { Data = 2 }
-				};
-				var inRelationships = new[]
-				{
-					new RelationshipEntityTwo { Data = 3, Child = inObjs[0] }
-				};
-
-				await provider.ExecuteAsync(
-					schema.CreateTable<FlatEntity>(),
-					schema.CreateTable<FlatEntityTwo>(),
-					schema.CreateTable<RelationshipEntityTwo>(),
-					relationship.CreateTable(),
-					schema.CreateInsert(inObjs),
-					schema.CreateInsert(inObjTwos),
-					schema.CreateInsert(inRelationships),
-					relationship.CreateInsert(inObjTwos[0], inRelationships[0])
-					);
-
-				var selectQuery = relationship.CreateSelect();
-				await provider.ExecuteAsync(selectQuery);
-
-				var result = selectQuery.Result;
-				Assert.AreEqual(1, result.Count);
-				var relatedData = result.First();
-				Assert.AreEqual(inObjTwos[0].Id, relatedData.Item1.Id);
-				Assert.AreEqual(inObjTwos[0].Data, relatedData.Item1.Data);
-				Assert.AreEqual(inRelationships[0].Id, relatedData.Item2.Id);
-				Assert.AreEqual(inRelationships[0].Data, relatedData.Item2.Data);
-				Assert.AreEqual(inRelationships[0].Child.Id, relatedData.Item2.Child.Id);
-				Assert.AreEqual(inRelationships[0].Child.Data, relatedData.Item2.Child.Data);
-			}
-		}
-
-		[TestMethod]
-		public async Task SelectRelationshipCount()
-		{
-			var schemaBuilder = new SchemaBuilder();
-			schemaBuilder.DefineEntity<FlatEntity>();
-			schemaBuilder.DefineEntity<FlatEntityTwo>();
-			schemaBuilder.DefineRelationship<FlatEntity, FlatEntityTwo>("Relationship");
-			var schema = schemaBuilder.Build();
-
-			var relationship = schema.GetRelationship<FlatEntity, FlatEntityTwo>("Relationship");
-
-			var inFlatOnes = new[]
-			{
-				new FlatEntity { Data = 1 },
-				new FlatEntity { Data = 2 },
-				new FlatEntity { Data = 3 }
-			};
-			var inFlatTwos = new[]
-			{
-				new FlatEntityTwo { Data = 4 },
-				new FlatEntityTwo { Data = 5 },
-				new FlatEntityTwo { Data = 6 }
-			};
-
-			using (var provider = TestHelper.CreateProvider())
-			{
-				await provider.ExecuteAsync(
-					schema.CreateTable<FlatEntity>(),
-					schema.CreateTable<FlatEntityTwo>(),
-					relationship.CreateTable(),
-					schema.CreateInsert(inFlatOnes),
-					schema.CreateInsert(inFlatTwos),
-					relationship.CreateInsert(inFlatOnes[0], inFlatTwos[0]),
-					relationship.CreateInsert(inFlatOnes[1], inFlatTwos[0], inFlatTwos[1]),
-					relationship.CreateInsert(inFlatOnes[2], inFlatTwos[0], inFlatTwos[1], inFlatTwos[2])
-					);
-
-				var selectQuery = relationship.CreateCount();
-				await provider.ExecuteAsync(selectQuery);
-
-				var resultSet = selectQuery.Result;
-
-				Assert.AreEqual(1, resultSet.Count);
-				Assert.AreEqual(6, resultSet.First());
 			}
 		}
 
@@ -461,7 +309,7 @@ namespace Silk.Data.SQL.ORM.Tests
 		private async Task CreateSchema<T>(Schema.Schema schema, IDataProvider dataProvider)
 			where T : class
 		{
-			var createSchema = new CreateTableBuilder<T>(schema);
+			var createSchema = new CreateEntityTableBuilder<T>(schema);
 			await dataProvider.ExecuteNonQueryAsync(createSchema.BuildQuery());
 		}
 

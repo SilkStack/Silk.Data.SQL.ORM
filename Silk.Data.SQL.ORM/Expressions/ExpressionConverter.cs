@@ -13,7 +13,6 @@ namespace Silk.Data.SQL.ORM.Expressions
 		public Schema.Schema Schema { get; }
 
 		protected Dictionary<ParameterExpression, EntitySchema> Parameters { get; set; }
-		protected Relationship Relationship { get; set; }
 
 		public ExpressionConverter(Schema.Schema schema)
 		{
@@ -22,7 +21,7 @@ namespace Silk.Data.SQL.ORM.Expressions
 
 		public ExpressionResult Convert(Expression expression)
 		{
-			var visitor = new Visitor(Schema, this, Parameters, Relationship);
+			var visitor = new Visitor(Schema, this, Parameters);
 			var result = visitor.ConvertToQueryExpression(expression);
 			return new ExpressionResult(result,
 				visitor.RequiredJoins.GroupBy(q => q).Select(q => q.First()).ToArray());
@@ -37,17 +36,14 @@ namespace Silk.Data.SQL.ORM.Expressions
 
 			private readonly ExpressionConverter _parent;
 			private Dictionary<ParameterExpression, EntitySchema> _expressionParameters;
-			private readonly Relationship _relationship;
 			private Stack<QueryExpression> _queryExpressionStack = new Stack<QueryExpression>();
 
 			public Visitor(Schema.Schema schema, ExpressionConverter parent,
-				Dictionary<ParameterExpression, EntitySchema> expressionParameters,
-				Relationship relationship)
+				Dictionary<ParameterExpression, EntitySchema> expressionParameters)
 			{
 				Schema = schema;
 				_parent = parent;
 				_expressionParameters = expressionParameters;
-				_relationship = relationship;
 			}
 
 			public QueryExpression ConvertToQueryExpression(Expression node)
@@ -435,35 +431,6 @@ namespace Silk.Data.SQL.ORM.Expressions
 			Parameters = new Dictionary<ParameterExpression, EntitySchema>
 			{
 				{ expression.Parameters[0], EntitySchema }
-			};
-			return Convert((Expression)expression);
-		}
-	}
-
-	public class ExpressionConverter<TLeft, TRight> : ExpressionConverter
-		where TLeft : class
-		where TRight : class
-	{
-		public EntitySchema<TLeft> LeftEntitySchema { get; }
-		public EntitySchema<TRight> RightEntitySchema { get; }
-
-		public ExpressionConverter(Schema.Schema schema, string relationshipName)
-			: base(schema)
-		{
-			Relationship = schema.GetRelationship<TLeft, TRight>(relationshipName);
-			if (Relationship == null)
-				throw new Exception("Relationship isn't configured in schema.");
-
-			LeftEntitySchema = schema.GetEntitySchema<TLeft>();
-			RightEntitySchema = schema.GetEntitySchema<TRight>();
-		}
-
-		public ExpressionResult Convert<TResult>(Expression<Func<TLeft, TRight, TResult>> expression)
-		{
-			Parameters = new Dictionary<ParameterExpression, EntitySchema>
-			{
-				{ expression.Parameters[0], LeftEntitySchema },
-				{ expression.Parameters[1], RightEntitySchema }
 			};
 			return Convert((Expression)expression);
 		}

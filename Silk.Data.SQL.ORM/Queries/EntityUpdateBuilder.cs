@@ -7,15 +7,15 @@ using Silk.Data.SQL.ORM.Schema;
 
 namespace Silk.Data.SQL.ORM.Queries
 {
-	public class UpdateBuilder<T> : QueryBuilderBase<T>
+	public class EntityUpdateBuilder<T> : QueryBuilderBase<T>
 		where T : class
 	{
 		private readonly List<FieldAssignment> _fieldAssignments = new List<FieldAssignment>();
 		private QueryExpression _where;
 
-		public UpdateBuilder(Schema.Schema schema) : base(schema) { }
+		public EntityUpdateBuilder(Schema.Schema schema) : base(schema) { }
 
-		public UpdateBuilder(EntitySchema<T> schema) : base(schema) { }
+		public EntityUpdateBuilder(EntitySchema<T> schema) : base(schema) { }
 
 		public void AndWhere(QueryExpression queryExpression)
 		{
