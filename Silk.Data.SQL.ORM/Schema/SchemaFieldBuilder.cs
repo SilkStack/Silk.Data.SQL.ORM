@@ -160,7 +160,13 @@ namespace Silk.Data.SQL.ORM.Schema
 			var isEmbeddedObject = !_entitySchemaAssemblages.Any(q => q.EntityType == typeof(TValue));
 			if (isEmbeddedObject)
 				return BuildAsEmbeddedObject();
-			throw new NotImplementedException();
+			return BuildAsJoinedObject();
+		}
+
+		private ISchemaField<TEntity> BuildAsJoinedObject()
+		{
+			var joinedSchemaAssemblage = _entitySchemaAssemblages.First(q => q.EntityType == typeof(TValue));
+			return null;
 		}
 
 		private ISchemaField<TEntity> BuildAsEmbeddedObject()

@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Silk.Data.SQL.ORM.Schema
+﻿namespace Silk.Data.SQL.ORM.Schema
 {
 	/// <summary>
 	/// Represents an entity field in the process of being assembled.

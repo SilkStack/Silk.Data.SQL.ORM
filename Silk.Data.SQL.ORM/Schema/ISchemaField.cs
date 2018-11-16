@@ -63,4 +63,18 @@ namespace Silk.Data.SQL.ORM.Schema
 			EntityFieldReference = entityFieldReference;
 		}
 	}
+
+	public class JoinedObjectSchemaField<TValue, TEntity> : ISchemaField<TEntity>
+		where TEntity : class
+	{
+		public string FieldName => throw new System.NotImplementedException();
+
+		public Column Column => throw new System.NotImplementedException();
+
+		public bool IsPrimaryKey => throw new System.NotImplementedException();
+
+		public PrimaryKeyGenerator PrimaryKeyGenerator => throw new System.NotImplementedException();
+
+		public ISchemaFieldReference FieldReference => throw new System.NotImplementedException();
+	}
 }
