@@ -1,4 +1,6 @@
-﻿namespace Silk.Data.SQL.ORM.Schema
+﻿using Silk.Data.Modelling;
+
+namespace Silk.Data.SQL.ORM.Schema
 {
 	/// <summary>
 	/// Represents an entity field in the process of being assembled.
@@ -15,6 +17,8 @@
 		where TEntity : class
 	{
 		ISchemaFieldBuilder<TEntity> Builder { get; }
+		(ISchemaField<T> schemaField, FieldOperations<T> operations) CreateJoinedSchemaFieldAndOperationsPair<T>(string fieldName, string columnName, IFieldReference entityFieldReference)
+			where T : class;
 	}
 
 	public class SqlPrimitiveSchemaFieldAssemblage<TValue, TEntity> : ISchemaFieldAssemblage<TEntity>
@@ -47,10 +51,20 @@
 				);
 			PrimaryKeyGenerator = primaryKeyGenerator;
 		}
+
+		public (ISchemaField<T> schemaField, FieldOperations<T> operations) CreateJoinedSchemaFieldAndOperationsPair<T>(string fieldName, string columnName, IFieldReference entityFieldReference) where T : class
+		{
+			var field = new JoinedObjectSchemaField<T, TEntity, TValue>(fieldName, columnName, entityFieldReference);
+			var operations = new FieldOperations<T>(
+				new JoinedObjectExpressionFactory<T, TEntity, TValue>(field)
+				);
+			return (field, operations);
+		}
 	}
 
 	public class ObjectSchemaFieldAssemblage<TValue, TEntity> : ISchemaFieldAssemblage<TEntity>
 		where TEntity : class
+		where TValue : class
 	{
 		public ISchemaFieldBuilder<TEntity> Builder { get; }
 
@@ -71,6 +85,15 @@
 			ModelPath = modelPath;
 			Builder = builder;
 			FieldDefinition = fieldDefinition;
+		}
+
+		public (ISchemaField<T> schemaField, FieldOperations<T> operations) CreateJoinedSchemaFieldAndOperationsPair<T>(string fieldName, string columnName, IFieldReference entityFieldReference) where T : class
+		{
+			var field = new JoinedObjectSchemaField<T, TEntity, TValue>(fieldName, columnName, entityFieldReference);
+			var operations = new FieldOperations<T>(
+				new JoinedObjectExpressionFactory<T, TEntity, TValue>(field)
+				);
+			return (field, operations);
 		}
 	}
 }

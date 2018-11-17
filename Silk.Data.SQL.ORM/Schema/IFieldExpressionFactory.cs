@@ -69,4 +69,31 @@ namespace Silk.Data.SQL.ORM.Schema
 			return QueryExpression.Value(value != null);
 		}
 	}
+
+	public class JoinedObjectExpressionFactory<TValue, TEntity, TPrimaryKey> : IFieldExpressionFactory<TValue>
+		where TEntity : class
+		where TValue : class
+	{
+		private readonly static TypeModel<TEntity> _entityTypeModel = TypeModel.GetModelOf<TEntity>();
+		private readonly JoinedObjectSchemaField<TValue, TEntity, TPrimaryKey> _field;
+
+		public JoinedObjectExpressionFactory(JoinedObjectSchemaField<TValue, TEntity, TPrimaryKey> field)
+		{
+			_field = field;
+		}
+
+		public ColumnDefinitionExpression DefineColumn() =>
+			QueryExpression.DefineColumn(_field.Column.ColumnName, _field.Column.DataType, _field.Column.IsNullable);
+
+		public ValueExpression Value(TValue entity, ObjectReadWriter entityReadWriter = null)
+		{
+			if (entityReadWriter == null)
+				entityReadWriter = new ObjectReadWriter(entity, _entityTypeModel, typeof(TEntity));
+
+			entityReadWriter.WriteField(_entityTypeModel.Root, entity);
+			throw new System.NotImplementedException();
+			//var value = entityReadWriter.ReadField<TValue>(_field.EntityFieldReference);
+			//return QueryExpression.Value(value != null);
+		}
+	}
 }

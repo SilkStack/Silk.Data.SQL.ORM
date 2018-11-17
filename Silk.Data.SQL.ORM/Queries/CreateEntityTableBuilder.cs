@@ -51,7 +51,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		{
 			return QueryExpression.CreateTable(
 				EntitySchema.EntityTable.TableName,
-				EntitySchema.SchemaFields.Select(q =>
+				EntitySchema.SchemaFields.Where(q => q.FieldType != FieldType.JoinedField).Select(q =>
 					Schema.GetFieldOperations(q).Expressions.DefineColumn()
 					).ToArray()
 				);
