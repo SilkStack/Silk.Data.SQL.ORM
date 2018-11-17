@@ -10,6 +10,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		PrimaryKeyGenerator PrimaryKeyGenerator { get; }
 		ISchemaFieldReference FieldReference { get; }
 		FieldType FieldType { get; }
+		IFieldReference EntityFieldReference { get; }
 	}
 
 	public interface ISchemaField<TEntity> : ISchemaField
@@ -79,7 +80,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		}
 	}
 
-	public class JoinedObjectSchemaField<TValue, TEntity, TPrimaryKey> : ISchemaField<TValue>
+	public class JoinedObjectSchemaField<TValue, TEntity, TPrimaryKey> : ISchemaField<TEntity>
 		where TEntity : class
 		where TValue : class
 	{

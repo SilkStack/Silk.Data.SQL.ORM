@@ -222,7 +222,7 @@ namespace Silk.Data.SQL.ORM.Tests
 
 					Assert.AreEqual(obj.Id, queryResult.GetGuid(queryResult.GetOrdinal("Id")));
 					Assert.AreEqual(obj.Data, queryResult.GetString(queryResult.GetOrdinal("Data")));
-					Assert.AreEqual(obj.Sub.Id, queryResult.GetGuid(queryResult.GetOrdinal("FK_Sub_Id")));
+					Assert.AreEqual(obj.Sub.Id, queryResult.GetGuid(queryResult.GetOrdinal("Sub_Id")));
 				}
 			}
 		}

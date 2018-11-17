@@ -208,7 +208,7 @@ namespace Silk.Data.SQL.ORM
 					else
 						queryBuilder.NewRow();
 
-					foreach (var field in schema.SchemaFields)
+					foreach (var field in schema.SchemaFields.Where(q => q.FieldType != FieldType.JoinedField))
 					{
 						if (field.PrimaryKeyGenerator == PrimaryKeyGenerator.ServerGenerated)
 							continue;
@@ -217,7 +217,8 @@ namespace Silk.Data.SQL.ORM
 						{
 							var newId = Guid.NewGuid();
 							//  write generated ID to the object directly so that following queries can reference it
-							throw new NotImplementedException();
+							entityReadWriter.WriteField(entityTypeModel.Root, entity);
+							entityReadWriter.WriteField(field.EntityFieldReference, newId);
 						}
 
 						queryBuilder.Set(field, entity);

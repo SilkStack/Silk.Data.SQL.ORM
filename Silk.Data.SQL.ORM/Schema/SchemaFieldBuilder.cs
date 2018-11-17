@@ -1,6 +1,4 @@
 ﻿using Silk.Data.Modelling;
-using Silk.Data.Modelling.Mapping;
-using Silk.Data.Modelling.Mapping.Binding;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,49 +23,6 @@ namespace Silk.Data.SQL.ORM.Schema
 		{
 			var sourceField = new PathOnlySourceField(path);
 			return TypeModel.GetModelOf<TEntity>().GetFieldReference(sourceField);
-		}
-
-		private class PathOnlySourceField : ISourceField
-		{
-			public IModel RootModel => throw new NotImplementedException();
-
-			public string[] FieldPath { get; }
-
-			public ISourceField[] Fields => throw new NotImplementedException();
-
-			public string FieldName => throw new NotImplementedException();
-
-			public Type FieldType => throw new NotImplementedException();
-
-			public bool CanRead => throw new NotImplementedException();
-
-			public bool CanWrite => throw new NotImplementedException();
-
-			public bool IsEnumerable => throw new NotImplementedException();
-
-			public Type ElementType => throw new NotImplementedException();
-
-			public TypeModel FieldTypeModel => throw new NotImplementedException();
-
-			public PathOnlySourceField(string[] fieldPath)
-			{
-				FieldPath = fieldPath;
-			}
-
-			public MappingBinding CreateBinding<TTo>(IMappingBindingFactory bindingFactory, ITargetField toField)
-			{
-				throw new NotImplementedException();
-			}
-
-			public MappingBinding CreateBinding<TTo, TBindingOption>(IMappingBindingFactory<TBindingOption> bindingFactory, ITargetField toField, TBindingOption bindingOption)
-			{
-				throw new NotImplementedException();
-			}
-
-			public void Transform(IModelTransformer transformer)
-			{
-				throw new NotImplementedException();
-			}
 		}
 	}
 
@@ -182,7 +137,8 @@ namespace Silk.Data.SQL.ORM.Schema
 				var (field, fieldOperations) = primaryKeyFieldAssemblage.CreateJoinedSchemaFieldAndOperationsPair<TEntity>(
 					_entityFieldDefinition.ModelField.FieldName,
 					columnName,
-					GetFieldReference(_assemblage.ModelPath)
+					GetFieldReference(_assemblage.ModelPath),
+					_assemblage.ModelPath
 					);
 				_fieldOperations = fieldOperations;
 				return field;

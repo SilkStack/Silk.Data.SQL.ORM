@@ -1,4 +1,5 @@
 ﻿using Silk.Data.Modelling;
+using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Schema
 {
@@ -17,7 +18,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		where TEntity : class
 	{
 		ISchemaFieldBuilder<TEntity> Builder { get; }
-		(ISchemaField<T> schemaField, FieldOperations<T> operations) CreateJoinedSchemaFieldAndOperationsPair<T>(string fieldName, string columnName, IFieldReference entityFieldReference)
+		(ISchemaField<T> schemaField, FieldOperations<T> operations) CreateJoinedSchemaFieldAndOperationsPair<T>(string fieldName, string columnName, IFieldReference entityFieldReference, string[] modelPath)
 			where T : class;
 	}
 
@@ -52,11 +53,15 @@ namespace Silk.Data.SQL.ORM.Schema
 			PrimaryKeyGenerator = primaryKeyGenerator;
 		}
 
-		public (ISchemaField<T> schemaField, FieldOperations<T> operations) CreateJoinedSchemaFieldAndOperationsPair<T>(string fieldName, string columnName, IFieldReference entityFieldReference) where T : class
+		public (ISchemaField<T> schemaField, FieldOperations<T> operations) CreateJoinedSchemaFieldAndOperationsPair<T>(string fieldName, string columnName, IFieldReference entityFieldReference, string[] modelPath) where T : class
 		{
-			var field = new JoinedObjectSchemaField<T, TEntity, TValue>(fieldName, columnName, entityFieldReference);
+			var typeModel = TypeModel.GetModelOf<T>();
+			var pkReference = typeModel.GetFieldReference(new PathOnlySourceField(
+				modelPath.Concat(ModelPath).ToArray()
+				));
+			var field = new JoinedObjectSchemaField<TEntity, T, TValue>(fieldName, columnName, entityFieldReference);
 			var operations = new FieldOperations<T>(
-				new JoinedObjectExpressionFactory<T, TEntity, TValue>(field)
+				new JoinedObjectExpressionFactory<TEntity, T, TValue>(field, pkReference)
 				);
 			return (field, operations);
 		}
@@ -87,11 +92,15 @@ namespace Silk.Data.SQL.ORM.Schema
 			FieldDefinition = fieldDefinition;
 		}
 
-		public (ISchemaField<T> schemaField, FieldOperations<T> operations) CreateJoinedSchemaFieldAndOperationsPair<T>(string fieldName, string columnName, IFieldReference entityFieldReference) where T : class
+		public (ISchemaField<T> schemaField, FieldOperations<T> operations) CreateJoinedSchemaFieldAndOperationsPair<T>(string fieldName, string columnName, IFieldReference entityFieldReference, string[] modelPath) where T : class
 		{
-			var field = new JoinedObjectSchemaField<T, TEntity, TValue>(fieldName, columnName, entityFieldReference);
+			var typeModel = TypeModel.GetModelOf<T>();
+			var pkReference = typeModel.GetFieldReference(new PathOnlySourceField(
+				modelPath.Concat(ModelPath).ToArray()
+				));
+			var field = new JoinedObjectSchemaField<TEntity, T, TValue>(fieldName, columnName, entityFieldReference);
 			var operations = new FieldOperations<T>(
-				new JoinedObjectExpressionFactory<T, TEntity, TValue>(field)
+				new JoinedObjectExpressionFactory<TEntity, T, TValue>(field, pkReference)
 				);
 			return (field, operations);
 		}
