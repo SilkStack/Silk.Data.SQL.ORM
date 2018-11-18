@@ -1,6 +1,5 @@
 ﻿using Silk.Data.Modelling;
 using Silk.Data.Modelling.Mapping;
-using Silk.Data.Modelling.Mapping.Binding;
 using System;
 using System.Collections.Generic;
 

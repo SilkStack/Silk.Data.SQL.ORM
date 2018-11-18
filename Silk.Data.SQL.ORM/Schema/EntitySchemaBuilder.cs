@@ -64,7 +64,7 @@ namespace Silk.Data.SQL.ORM.Schema
 				if (path.Length != 1 || !SqlTypeHelper.IsSqlPrimitiveType(propertyField.FieldType))
 					return;
 
-				FindOrCreateField(propertyField, path);
+				FindOrCreateField(propertyField, path, null);
 			}
 		}
 
@@ -108,22 +108,44 @@ namespace Silk.Data.SQL.ORM.Schema
 		private (ISchemaField<T> Field, ISchemaFieldAssemblage<T> Assemblage)[] BuildSchemaFields()
 		{
 			var fieldStack = new Stack<ISchemaField<T>>();
+			var joinStack = new Stack<EntityFieldJoin>();
+
 			var schemaFields = new List<(ISchemaField<T> Field, ISchemaFieldAssemblage<T> Assemblage)>();
 			EntityTypeVisitor.Visit(_entityTypeModel, Callback);
 			return schemaFields.ToArray();
 
 			void Callback(IPropertyField propertyField, Span<string> path)
 			{
-				var fieldAssemblage = FindOrCreateField(propertyField, path);
+				var fieldAssemblage = FindOrCreateField(propertyField, path, joinStack.LastOrDefault());
 				while (fieldStack.Count >= path.Length)
+				{
 					fieldStack.Pop();
+					joinStack.Pop();
+				}
 				var builtField = fieldAssemblage.Builder.Build(fieldStack);
 				fieldStack.Push(builtField);
+
+				if (_entitySchemaAssemblages.Any(q => q.EntityType == propertyField.FieldType))
+				{
+					EntityFieldJoin[] dependencyJoins;
+					if (fieldAssemblage.Join == null)
+						dependencyJoins = new EntityFieldJoin[0];
+					else
+						dependencyJoins = new[] { fieldAssemblage.Join };
+					var join = new EntityFieldJoin("", "", "", new string[0], new string[0], null, dependencyJoins);
+
+					joinStack.Push(join);
+				}
+				else
+				{
+					joinStack.Push(joinStack.LastOrDefault());
+				}
+
 				schemaFields.Add((builtField, fieldAssemblage));
 			}
 		}
 
-		private ISchemaFieldAssemblage<T> FindOrCreateField(IPropertyField propertyField, Span<string> path)
+		private ISchemaFieldAssemblage<T> FindOrCreateField(IPropertyField propertyField, Span<string> path, EntityFieldJoin join)
 		{
 			foreach (var field in _entitySchemaAssemblage.Fields)
 			{
@@ -133,7 +155,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			}
 
 			var (fieldDefinition, fieldBuilder) = GetFieldDefinitionAndBuilder(propertyField, path);
-			var newField = fieldBuilder.CreateAssemblage(path.ToArray());
+			var newField = fieldBuilder.CreateAssemblage(path.ToArray(), join);
 			_entitySchemaAssemblage.AddField(newField);
 			return newField;
 		}

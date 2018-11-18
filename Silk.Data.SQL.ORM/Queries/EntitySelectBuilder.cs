@@ -12,8 +12,8 @@ namespace Silk.Data.SQL.ORM.Queries
 	public class EntitySelectBuilder<T> : QueryBuilderBase<T>
 		where T : class
 	{
-		private List<AliasExpression> _projectionExpressions
-			= new List<AliasExpression>();
+		private Dictionary<string, AliasExpression> _projectionExpressions
+			= new Dictionary<string, AliasExpression>();
 		private List<ITableJoin> _tableJoins
 			= new List<ITableJoin>();
 		private QueryExpression _where;
@@ -30,7 +30,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		public override QueryExpression BuildQuery()
 		{
 			return QueryExpression.Select(
-				projection: _projectionExpressions.ToArray(),
+				projection: _projectionExpressions.Values.ToArray(),
 				from: Source,
 				joins: _tableJoins.Select(q => q.GetJoinExpression()).ToArray(),
 				where: _where,
@@ -82,18 +82,17 @@ namespace Silk.Data.SQL.ORM.Queries
 		public ObjectResultMapper<TView> Project<TView>()
 			where TView : class
 		{
-			throw new NotImplementedException();
+			var projectionSchema = EntitySchema as ProjectionSchema<TView, T>;
+			if (typeof(TView) != typeof(T))
+			{
+				throw new NotImplementedException();
+				//projectionSchema = EntitySchema.GetProjection<TView>();
+			}
 
-			//var projectionSchema = EntitySchema as EntitySchema;
-			//if (typeof(TView) != typeof(T))
-			//{
-			//	projectionSchema = EntitySchema.GetProjection<TView>();
-			//}
+			foreach (var schemaField in projectionSchema.SchemaFields)
+				AddProjection(schemaField);
 
-			//foreach (var projectionField in projectionSchema.ProjectionFields)
-			//	AddProjection(projectionField);
-
-			//return new ObjectResultMapper<TView>(1, projectionSchema.Mapping);
+			return new ObjectResultMapper<TView>(1, projectionSchema.Mapping);
 		}
 
 		private ISchemaField ResolveProjectionField<TProperty>(Expression<Func<T, TProperty>> property)
@@ -127,14 +126,17 @@ namespace Silk.Data.SQL.ORM.Queries
 			}
 		}
 
-		private void AddProjection(ISchemaField projectionField)
+		private void AddProjection<TProjection>(ISchemaField<TProjection> schemaField)
+			where TProjection : class
 		{
-			throw new NotImplementedException();
-			//var expression = projectionField.GetExpression("");
-			//if (_projectionExpressions.Any(q => q.Identifier.Identifier == expression.Identifier.Identifier))
-			//	return;
-			//_projectionExpressions.Add(expression);
-			//AddJoins(projectionField.Join);
+			if (_projectionExpressions.ContainsKey(schemaField.AliasName))
+				return;
+
+			var aliasExpression = QueryExpression.Alias(
+				QueryExpression.Column(schemaField.Column.ColumnName, new AliasIdentifierExpression(schemaField.Column.SourceName)),
+				schemaField.AliasName);
+			_projectionExpressions.Add(schemaField.AliasName, aliasExpression);
+			AddJoins(schemaField.Join);
 		}
 
 		private void AddJoins(EntityFieldJoin[] joins)

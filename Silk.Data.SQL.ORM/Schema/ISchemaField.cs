@@ -4,6 +4,7 @@ namespace Silk.Data.SQL.ORM.Schema
 {
 	public interface ISchemaField
 	{
+		string AliasName { get; }
 		string FieldName { get; }
 		Column Column { get; }
 		bool IsPrimaryKey { get; }
@@ -11,6 +12,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		ISchemaFieldReference FieldReference { get; }
 		FieldType FieldType { get; }
 		IFieldReference EntityFieldReference { get; }
+		EntityFieldJoin Join { get; }
 	}
 
 	public interface ISchemaField<TEntity> : ISchemaField
@@ -35,15 +37,19 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public FieldType FieldType { get; }
 
+		public string AliasName => throw new System.NotImplementedException();
+
+		public EntityFieldJoin Join { get; }
+
 		public SqlPrimitiveSchemaField(string fieldName, Column column, PrimaryKeyGenerator primaryKeyGenerator,
-			IFieldReference entityFieldReference)
+			IFieldReference entityFieldReference, EntityFieldJoin join)
 		{
 			FieldName = fieldName;
 			Column = column;
 			PrimaryKeyGenerator = primaryKeyGenerator;
 			EntityFieldReference = entityFieldReference;
-
-			FieldType = column == null ? FieldType.JoinedField : FieldType.StoredField;
+			FieldType = join != null ? FieldType.JoinedField : FieldType.StoredField;
+			Join = join;
 		}
 	}
 
@@ -64,15 +70,23 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public FieldType FieldType { get; }
 
-		public EmbeddedObjectNullCheckSchemaField(string fieldName, string columnName, IFieldReference entityFieldReference)
+		public string AliasName => throw new System.NotImplementedException();
+
+		public EntityFieldJoin Join { get; }
+
+		public EmbeddedObjectNullCheckSchemaField(string fieldName, string columnName,
+			IFieldReference entityFieldReference, EntityFieldJoin join,
+			IEntitySchemaAssemblage<TEntity> entitySchemaAssemblage)
 		{
-			if (columnName == null)
+			if (join != null)
 			{
+				Join = join;
 				FieldType = FieldType.JoinedField;
+				Column = new Column(columnName, SqlDataType.Bit(), false, join.TableAlias);
 			}
 			else
 			{
-				Column = new Column(columnName, SqlDataType.Bit(), false);
+				Column = new Column(columnName, SqlDataType.Bit(), false, entitySchemaAssemblage.TableName);
 				FieldType = FieldType.StoredField;
 			}
 			FieldName = fieldName;
@@ -98,17 +112,25 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public FieldType FieldType { get; }
 
-		public JoinedObjectSchemaField(string fieldName, string columnName, IFieldReference entityFieldReference)
+		public string AliasName => throw new System.NotImplementedException();
+
+		public EntityFieldJoin Join { get; }
+
+		public JoinedObjectSchemaField(string fieldName, string columnName,
+			IFieldReference entityFieldReference, EntityFieldJoin join,
+			IEntitySchemaAssemblage<TEntity> entitySchemaAssemblage)
 		{
-			if (columnName != null)
+			if (join == null)
 			{
-				Column = new Column(columnName, SqlTypeHelper.GetDataType(typeof(TPrimaryKey)), true);
+				Column = new Column(columnName, SqlTypeHelper.GetDataType(typeof(TPrimaryKey)), true, entitySchemaAssemblage.TableName);
 				FieldType = FieldType.ReferenceField;
 			}
 			else
 			{
+				Column = new Column(columnName, SqlTypeHelper.GetDataType(typeof(TPrimaryKey)), true, join.TableAlias);
 				FieldType = FieldType.JoinedField;
 			}
+			Join = join;
 			FieldName = fieldName;
 			EntityFieldReference = entityFieldReference;
 		}
