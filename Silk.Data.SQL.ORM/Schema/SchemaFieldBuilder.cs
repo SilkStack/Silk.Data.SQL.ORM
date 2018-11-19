@@ -13,8 +13,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		where TEntity : class
 	{
 		ISchemaFieldAssemblage<TEntity> CreateAssemblage(string[] modelPath, EntityFieldJoin join);
-		ISchemaField<TEntity> Build(IEnumerable<ISchemaField<TEntity>> parentFields);
-		FieldOperations<TEntity> BuildFieldOperations();
+		IEnumerable<(ISchemaField<TEntity> Field, FieldOperations<TEntity> Operations)> Build(IEnumerable<ISchemaField<TEntity>> parentFields);
 	}
 
 	public class SchemaFieldBuilderBase<TValue, TEntity>
@@ -34,7 +33,6 @@ namespace Silk.Data.SQL.ORM.Schema
 		private readonly IEntitySchemaAssemblage<TEntity> _entitySchemaAssemblage;
 		private readonly SchemaFieldDefinition<TValue, TEntity> _entityFieldDefinition;
 		private SqlPrimitiveSchemaFieldAssemblage<TValue, TEntity> _assemblage;
-		private SqlPrimitiveSchemaField<TValue, TEntity> _builtField;
 
 		public SqlPrimitiveSchemaFieldBuilder(
 			IEntitySchemaAssemblage<TEntity> entitySchemaAssemblage,
@@ -58,23 +56,20 @@ namespace Silk.Data.SQL.ORM.Schema
 			return _assemblage;
 		}
 
-		public ISchemaField<TEntity> Build(IEnumerable<ISchemaField<TEntity>> parentFields)
+		public IEnumerable<(ISchemaField<TEntity> Field, FieldOperations<TEntity> Operations)> Build(IEnumerable<ISchemaField<TEntity>> parentFields)
 		{
-			_builtField = new SqlPrimitiveSchemaField<TValue, TEntity>(
+			var field = new SqlPrimitiveSchemaField<TValue, TEntity>(
 				_entityFieldDefinition.ModelField.FieldName, _assemblage.Column,
 				_assemblage.PrimaryKeyGenerator, GetFieldReference(_assemblage.ModelPath),
 				_assemblage.Join
 				);
-			return _builtField;
-		}
-
-		public FieldOperations<TEntity> BuildFieldOperations()
-		{
-			if (_builtField == null)
-				throw new InvalidOperationException("Field not built, call Build() before BuildFieldOperations().");
-			return new FieldOperations<TEntity>(
-				new SqlPrimitiveFieldExpressionFactory<TValue, TEntity>(_builtField)
+			var operations = new FieldOperations<TEntity>(
+				new SqlPrimitiveFieldExpressionFactory<TValue, TEntity>(field)
 				);
+			return new (ISchemaField<TEntity>, FieldOperations<TEntity>)[]
+			{
+				(field, operations)
+			};
 		}
 
 		private static PrimaryKeyGenerator GetPrimaryKeyGenerator(SqlDataType sqlDataType)
@@ -100,7 +95,6 @@ namespace Silk.Data.SQL.ORM.Schema
 		private readonly IReadOnlyCollection<IEntitySchemaAssemblage> _entitySchemaAssemblages;
 		private readonly SchemaFieldDefinition<TValue, TEntity> _entityFieldDefinition;
 		private ObjectSchemaFieldAssemblage<TValue, TEntity> _assemblage;
-		private FieldOperations<TEntity> _fieldOperations;
 
 		public ObjectEntityFieldBuilder(
 			IEntitySchemaAssemblage<TEntity> entitySchemaAssemblage,
@@ -113,7 +107,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			_entityFieldDefinition = entityFieldDefinition;
 		}
 
-		public ISchemaField<TEntity> Build(IEnumerable<ISchemaField<TEntity>> parentFields)
+		public IEnumerable<(ISchemaField<TEntity> Field, FieldOperations<TEntity> Operations)> Build(IEnumerable<ISchemaField<TEntity>> parentFields)
 		{
 			var isEmbeddedObject = !_entitySchemaAssemblages.Any(q => q.EntityType == typeof(TValue));
 			if (isEmbeddedObject)
@@ -121,16 +115,20 @@ namespace Silk.Data.SQL.ORM.Schema
 			return BuildAsJoinedObject(parentFields);
 		}
 
-		private ISchemaField<TEntity> BuildAsJoinedObject(IEnumerable<ISchemaField<TEntity>> parentFields)
+		private IEnumerable<(ISchemaField<TEntity> Field, FieldOperations<TEntity> Operations)> BuildAsJoinedObject(IEnumerable<ISchemaField<TEntity>> parentFields)
 		{
 			var joinedSchemaAssemblage = _entitySchemaAssemblages.OfType<IEntitySchemaAssemblage<TValue>>().First();
-			var primaryKeyFieldAssemblages = joinedSchemaAssemblage.Fields.Where(q => q.PrimaryKeyGenerator != PrimaryKeyGenerator.NotPrimaryKey);
+			var primaryKeyFieldAssemblages = joinedSchemaAssemblage.Fields.Where(q => q.PrimaryKeyGenerator != PrimaryKeyGenerator.NotPrimaryKey).ToArray();
+
+			if (primaryKeyFieldAssemblages.Length == 0)
+				throw new InvalidOperationException("Related objects need to have at least 1 primary key.");
+
 			foreach (var primaryKeyFieldAssemblage in primaryKeyFieldAssemblages)
 			{
 				var columnName = _entityFieldDefinition.ColumnName ??
 						string.Join("_", _assemblage.ModelPath.Concat(primaryKeyFieldAssemblage.ModelPath));
 
-				var (field, fieldOperations) = primaryKeyFieldAssemblage.CreateJoinedSchemaFieldAndOperationsPair<TEntity>(
+				yield return primaryKeyFieldAssemblage.CreateJoinedSchemaFieldAndOperationsPair<TEntity>(
 					_entityFieldDefinition.ModelField.FieldName,
 					columnName,
 					GetFieldReference(_assemblage.ModelPath),
@@ -138,13 +136,10 @@ namespace Silk.Data.SQL.ORM.Schema
 					_assemblage.Join,
 					_entitySchemaAssemblage
 					);
-				_fieldOperations = fieldOperations;
-				return field;
 			}
-			throw new InvalidOperationException("Related objects need to have at least 1 primary key.");
 		}
 
-		private ISchemaField<TEntity> BuildAsEmbeddedObject(IEnumerable<ISchemaField<TEntity>> parentFields)
+		private IEnumerable<(ISchemaField<TEntity> Field, FieldOperations<TEntity> Operations)> BuildAsEmbeddedObject(IEnumerable<ISchemaField<TEntity>> parentFields)
 		{
 			var columnName = _entityFieldDefinition.ColumnName ?? string.Join("_", _assemblage.ModelPath);
 
@@ -155,17 +150,14 @@ namespace Silk.Data.SQL.ORM.Schema
 				_assemblage.Join,
 				_entitySchemaAssemblage
 				);
-			_fieldOperations = new FieldOperations<TEntity>(
+			var operations = new FieldOperations<TEntity>(
 				new EmbeddedObjectNullCheckExpressionFactory<TValue, TEntity>(field)
 				);
-			return field;
-		}
 
-		public FieldOperations<TEntity> BuildFieldOperations()
-		{
-			if (_fieldOperations == null)
-				throw new InvalidOperationException("Field hasn't been built yet, call Build() before calling BuildFieldOperations().");
-			return _fieldOperations;
+			return new (ISchemaField<TEntity> Field, FieldOperations<TEntity> Operations)[]
+			{
+				(field, operations)
+			};
 		}
 
 		public ISchemaFieldAssemblage<TEntity> CreateAssemblage(string[] modelPath, EntityFieldJoin join)

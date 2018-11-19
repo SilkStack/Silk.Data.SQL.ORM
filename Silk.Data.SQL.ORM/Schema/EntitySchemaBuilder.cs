@@ -37,8 +37,10 @@ namespace Silk.Data.SQL.ORM.Schema
 		private readonly EntitySchemaDefinition<T> _entitySchemaDefinition;
 		private readonly IReadOnlyCollection<IEntitySchemaAssemblage> _entitySchemaAssemblages;
 		private EntitySchemaAssemblage<T> _entitySchemaAssemblage;
-		private (ISchemaField<T> Field, ISchemaFieldAssemblage<T> Assemblage)[] _builtFields;
+		private (ISchemaField<T> Field, ISchemaFieldAssemblage<T> Assemblage, FieldOperations<T> Operations)[] _builtFields;
 		private int _joinCount;
+		private readonly List<(ISchemaField<T>, FieldOperations<T>)> _fieldOperationsPairs
+			= new List<(ISchemaField<T>, FieldOperations<T>)>();
 
 		public EntitySchemaBuilder(
 			EntitySchemaDefinition<T> entitySchemaDefinition,
@@ -92,7 +94,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			return _builtFields.Select(q => new
 			{
 				Field = q.Field,
-				Operations = q.Assemblage.Builder.BuildFieldOperations()
+				Operations = q.Operations
 			}).ToDictionary(q => (ISchemaField)q.Field, q => (FieldOperations)q.Operations);
 		}
 
@@ -106,12 +108,12 @@ namespace Silk.Data.SQL.ORM.Schema
 			return indexes.ToArray();
 		}
 
-		private (ISchemaField<T> Field, ISchemaFieldAssemblage<T> Assemblage)[] BuildSchemaFields()
+		private (ISchemaField<T> Field, ISchemaFieldAssemblage<T> Assemblage, FieldOperations<T> Operations)[] BuildSchemaFields()
 		{
 			var fieldStack = new Stack<ISchemaField<T>>();
 			var joinStack = new Stack<EntityFieldJoin>();
 
-			var schemaFields = new List<(ISchemaField<T> Field, ISchemaFieldAssemblage<T> Assemblage)>();
+			var schemaFields = new List<(ISchemaField<T> Field, ISchemaFieldAssemblage<T> Assemblage, FieldOperations<T> Operations)>();
 			EntityTypeVisitor.Visit(_entityTypeModel, Callback);
 			return schemaFields.ToArray();
 
@@ -123,19 +125,27 @@ namespace Silk.Data.SQL.ORM.Schema
 					fieldStack.Pop();
 					joinStack.Pop();
 				}
-				var builtField = fieldAssemblage.Builder.Build(fieldStack);
-				fieldStack.Push(builtField);
+				var builtFields = fieldAssemblage.Builder.Build(fieldStack)
+					.ToArray();
 
-				if (_entitySchemaAssemblages.Any(q => q.EntityType == propertyField.FieldType))
-				{
-					joinStack.Push(CreateJoin(fieldAssemblage));
-				}
-				else
-				{
-					joinStack.Push(joinStack.LastOrDefault());
-				}
+				_fieldOperationsPairs.AddRange(builtFields);
 
-				schemaFields.Add((builtField, fieldAssemblage));
+				foreach (var builtFieldPair in builtFields)
+				{
+					var builtField = builtFieldPair.Field;
+					fieldStack.Push(builtField);
+
+					if (_entitySchemaAssemblages.Any(q => q.EntityType == propertyField.FieldType))
+					{
+						joinStack.Push(CreateJoin(fieldAssemblage));
+					}
+					else
+					{
+						joinStack.Push(joinStack.LastOrDefault());
+					}
+
+					schemaFields.Add((builtField, fieldAssemblage, builtFieldPair.Operations));
+				}
 			}
 		}
 
