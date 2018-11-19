@@ -38,6 +38,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		private readonly IReadOnlyCollection<IEntitySchemaAssemblage> _entitySchemaAssemblages;
 		private EntitySchemaAssemblage<T> _entitySchemaAssemblage;
 		private (ISchemaField<T> Field, ISchemaFieldAssemblage<T> Assemblage)[] _builtFields;
+		private int _joinCount;
 
 		public EntitySchemaBuilder(
 			EntitySchemaDefinition<T> entitySchemaDefinition,
@@ -127,14 +128,7 @@ namespace Silk.Data.SQL.ORM.Schema
 
 				if (_entitySchemaAssemblages.Any(q => q.EntityType == propertyField.FieldType))
 				{
-					EntityFieldJoin[] dependencyJoins;
-					if (fieldAssemblage.Join == null)
-						dependencyJoins = new EntityFieldJoin[0];
-					else
-						dependencyJoins = new[] { fieldAssemblage.Join };
-					var join = new EntityFieldJoin("", "", "", new string[0], new string[0], null, dependencyJoins);
-
-					joinStack.Push(join);
+					joinStack.Push(CreateJoin(fieldAssemblage));
 				}
 				else
 				{
@@ -143,6 +137,31 @@ namespace Silk.Data.SQL.ORM.Schema
 
 				schemaFields.Add((builtField, fieldAssemblage));
 			}
+		}
+
+		private EntityFieldJoin CreateJoin(ISchemaFieldAssemblage localFieldAssemblage)
+		{
+			EntityFieldJoin[] dependencyJoins;
+			if (localFieldAssemblage.Join == null)
+				dependencyJoins = new EntityFieldJoin[0];
+			else
+				dependencyJoins = new[] { localFieldAssemblage.Join };
+
+			var foreignSchemaAssemblage = _entitySchemaAssemblages.First(q =>
+				q.EntityType == localFieldAssemblage.FieldDefinition.ModelField.FieldType
+				);
+
+			return new EntityFieldJoin(
+				foreignSchemaAssemblage.TableName,
+				$"__join_table_{++_joinCount}",
+				localFieldAssemblage.Join?.TableName ?? _entitySchemaAssemblage.TableName,
+				new string[0],
+				foreignSchemaAssemblage.Fields
+					.Where(q => q.FieldDefinition.IsPrimaryKey)
+					.Select(q => q.Column.ColumnName)
+					.ToArray(),
+				null,
+				dependencyJoins);
 		}
 
 		private ISchemaFieldAssemblage<T> FindOrCreateField(IPropertyField propertyField, Span<string> path, EntityFieldJoin join)

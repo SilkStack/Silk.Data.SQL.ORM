@@ -11,6 +11,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		Type EntityType { get; }
 		IEntitySchemaBuilder Builder { get; }
 		IEntitySchemaDefinition Definition { get; }
+		IReadOnlyCollection<ISchemaFieldAssemblage> Fields { get; }
 
 		string TableName { get; }
 	}
@@ -18,7 +19,7 @@ namespace Silk.Data.SQL.ORM.Schema
 	public interface IEntitySchemaAssemblage<TEntity> : IEntitySchemaAssemblage
 		where TEntity : class
 	{
-		IReadOnlyCollection<ISchemaFieldAssemblage<TEntity>> Fields { get; }
+		new IReadOnlyCollection<ISchemaFieldAssemblage<TEntity>> Fields { get; }
 		void AddField(ISchemaFieldAssemblage<TEntity> fieldAssemblage);
 	}
 
@@ -39,6 +40,8 @@ namespace Silk.Data.SQL.ORM.Schema
 		public IEntitySchemaBuilder Builder { get; }
 
 		public IEntitySchemaDefinition Definition { get; }
+
+		IReadOnlyCollection<ISchemaFieldAssemblage> IEntitySchemaAssemblage.Fields => _fields;
 
 		public EntitySchemaAssemblage(string tableName,
 			IEntitySchemaDefinition definition, IEntitySchemaBuilder builder)
