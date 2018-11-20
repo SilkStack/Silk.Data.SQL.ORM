@@ -12,7 +12,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		string[] ModelPath { get; }
 		Column Column { get; }
 		PrimaryKeyGenerator PrimaryKeyGenerator { get; }
-		EntityFieldJoin Join { get; }
+		EntityJoinBuilder Join { get; }
 	}
 
 	public interface ISchemaFieldAssemblage<TEntity> : ISchemaFieldAssemblage
@@ -39,7 +39,7 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public PrimaryKeyGenerator PrimaryKeyGenerator { get; }
 
-		public EntityFieldJoin Join { get; }
+		public EntityJoinBuilder Join { get; }
 
 		public SqlPrimitiveSchemaFieldAssemblage(
 			string[] modelPath,
@@ -47,7 +47,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			SchemaFieldDefinition<TValue, TEntity> fieldDefinition,
 			PrimaryKeyGenerator primaryKeyGenerator,
 			IEntitySchemaAssemblage<TEntity> entitySchemaAssemblage,
-			EntityFieldJoin join
+			EntityJoinBuilder join
 			)
 		{
 			ModelPath = modelPath;
@@ -94,13 +94,13 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public PrimaryKeyGenerator PrimaryKeyGenerator => PrimaryKeyGenerator.NotPrimaryKey;
 
-		public EntityFieldJoin Join { get; }
+		public EntityJoinBuilder Join { get; }
 
 		public ObjectSchemaFieldAssemblage(
 			string[] modelPath,
 			ObjectEntityFieldBuilder<TValue, TEntity> builder,
 			SchemaFieldDefinition<TValue, TEntity> fieldDefinition,
-			EntityFieldJoin join
+			EntityJoinBuilder join
 			)
 		{
 			ModelPath = modelPath;

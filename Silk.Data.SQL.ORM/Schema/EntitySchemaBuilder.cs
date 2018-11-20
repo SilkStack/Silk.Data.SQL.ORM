@@ -73,6 +73,7 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public EntitySchema BuildSchema()
 		{
+			CreateJoins();
 			_builtFields = BuildSchemaFields();
 			var fields = _builtFields.Select(q => q.Field).ToArray();
 			var table = new Table(_entitySchemaAssemblage.TableName,
@@ -98,6 +99,24 @@ namespace Silk.Data.SQL.ORM.Schema
 			}).ToDictionary(q => (ISchemaField)q.Field, q => (FieldOperations)q.Operations);
 		}
 
+		private void CreateJoins()
+		{
+			var joinStack = new Stack<EntityJoinBuilder>();
+			EntityTypeVisitor.Visit(_entityTypeModel, Callback);
+
+			void Callback(IPropertyField propertyField, Span<string> path)
+			{
+				var fieldAssemblage = FindOrCreateField(propertyField, path, joinStack.LastOrDefault());
+				while (joinStack.Count >= path.Length)
+					joinStack.Pop();
+
+				if (_entitySchemaAssemblages.Any(q => q.EntityType == propertyField.FieldType))
+					joinStack.Push(fieldAssemblage.Builder.CreateJoin(++_joinCount));
+				else
+					joinStack.Push(null);
+			}
+		}
+
 		private SchemaIndex[] GetSchemaIndexes(Table table, ISchemaField[] fields)
 		{
 			var indexes = new List<SchemaIndex>();
@@ -111,7 +130,6 @@ namespace Silk.Data.SQL.ORM.Schema
 		private (ISchemaField<T> Field, ISchemaFieldAssemblage<T> Assemblage, FieldOperations<T> Operations)[] BuildSchemaFields()
 		{
 			var fieldStack = new Stack<ISchemaField<T>>();
-			var joinStack = new Stack<EntityFieldJoin>();
 
 			var schemaFields = new List<(ISchemaField<T> Field, ISchemaFieldAssemblage<T> Assemblage, FieldOperations<T> Operations)>();
 			EntityTypeVisitor.Visit(_entityTypeModel, Callback);
@@ -119,11 +137,10 @@ namespace Silk.Data.SQL.ORM.Schema
 
 			void Callback(IPropertyField propertyField, Span<string> path)
 			{
-				var fieldAssemblage = FindOrCreateField(propertyField, path, joinStack.LastOrDefault());
+				var fieldAssemblage = FindOrCreateField(propertyField, path, null);
 				while (fieldStack.Count >= path.Length)
 				{
 					fieldStack.Pop();
-					joinStack.Pop();
 				}
 				var builtFields = fieldAssemblage.Builder.Build(fieldStack)
 					.ToArray();
@@ -135,46 +152,35 @@ namespace Silk.Data.SQL.ORM.Schema
 					var builtField = builtFieldPair.Field;
 					fieldStack.Push(builtField);
 
-					if (_entitySchemaAssemblages.Any(q => q.EntityType == propertyField.FieldType))
-					{
-						joinStack.Push(CreateJoin(fieldAssemblage));
-					}
-					else
-					{
-						joinStack.Push(joinStack.LastOrDefault());
-					}
-
 					schemaFields.Add((builtField, fieldAssemblage, builtFieldPair.Operations));
 				}
 			}
 		}
 
-		private EntityFieldJoin CreateJoin(ISchemaFieldAssemblage localFieldAssemblage)
+		private EntityJoinBuilder CreateJoin(ISchemaFieldAssemblage localFieldAssemblage, ISchemaFieldBuilder builder)
 		{
-			EntityFieldJoin[] dependencyJoins;
-			if (localFieldAssemblage.Join == null)
-				dependencyJoins = new EntityFieldJoin[0];
-			else
-				dependencyJoins = new[] { localFieldAssemblage.Join };
+			//EntityFieldJoin[] dependencyJoins;
+			//if (localFieldAssemblage.Join == null)
+			//	dependencyJoins = new EntityFieldJoin[0];
+			//else
+			//	dependencyJoins = new[] { localFieldAssemblage.Join };
 
-			var foreignSchemaAssemblage = _entitySchemaAssemblages.First(q =>
-				q.EntityType == localFieldAssemblage.FieldDefinition.ModelField.FieldType
-				);
+			return builder.CreateJoin(++_joinCount);
 
-			return new EntityFieldJoin(
-				foreignSchemaAssemblage.TableName,
-				$"__join_table_{++_joinCount}",
-				localFieldAssemblage.Join?.TableName ?? _entitySchemaAssemblage.TableName,
-				new string[0],
-				foreignSchemaAssemblage.Fields
-					.Where(q => q.FieldDefinition.IsPrimaryKey)
-					.Select(q => q.Column.ColumnName)
-					.ToArray(),
-				null,
-				dependencyJoins);
+			//return new EntityFieldJoin(
+			//	foreignSchemaAssemblage.TableName,
+			//	$"__join_table_{++_joinCount}",
+			//	localFieldAssemblage.Join?.TableName ?? _entitySchemaAssemblage.TableName,
+			//	new string[0],
+			//	foreignSchemaAssemblage.Fields
+			//		.Where(q => q.FieldDefinition.IsPrimaryKey)
+			//		.Select(q => q.Column.ColumnName)
+			//		.ToArray(),
+			//	null,
+			//	dependencyJoins);
 		}
 
-		private ISchemaFieldAssemblage<T> FindOrCreateField(IPropertyField propertyField, Span<string> path, EntityFieldJoin join)
+		private ISchemaFieldAssemblage<T> FindOrCreateField(IPropertyField propertyField, Span<string> path, EntityJoinBuilder join)
 		{
 			foreach (var field in _entitySchemaAssemblage.Fields)
 			{

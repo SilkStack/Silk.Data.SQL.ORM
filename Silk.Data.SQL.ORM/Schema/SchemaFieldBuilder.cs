@@ -7,12 +7,13 @@ namespace Silk.Data.SQL.ORM.Schema
 {
 	public interface ISchemaFieldBuilder
 	{
+		EntityJoinBuilder CreateJoin(int joinCount);
 	}
 
 	public interface ISchemaFieldBuilder<TEntity> : ISchemaFieldBuilder
 		where TEntity : class
 	{
-		ISchemaFieldAssemblage<TEntity> CreateAssemblage(string[] modelPath, EntityFieldJoin join);
+		ISchemaFieldAssemblage<TEntity> CreateAssemblage(string[] modelPath, EntityJoinBuilder join);
 		IEnumerable<(ISchemaField<TEntity> Field, FieldOperations<TEntity> Operations)> Build(IEnumerable<ISchemaField<TEntity>> parentFields);
 	}
 
@@ -43,7 +44,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			_entityFieldDefinition = entityFieldDefinition;
 		}
 
-		public ISchemaFieldAssemblage<TEntity> CreateAssemblage(string[] modelPath, EntityFieldJoin join)
+		public ISchemaFieldAssemblage<TEntity> CreateAssemblage(string[] modelPath, EntityJoinBuilder join)
 		{
 			var primaryKeyGenerator = PrimaryKeyGenerator.NotPrimaryKey;
 			if (_entityFieldDefinition.IsPrimaryKey)
@@ -61,7 +62,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			var field = new SqlPrimitiveSchemaField<TValue, TEntity>(
 				_entityFieldDefinition.ModelField.FieldName, _assemblage.Column,
 				_assemblage.PrimaryKeyGenerator, GetFieldReference(_assemblage.ModelPath),
-				_assemblage.Join
+				_assemblage.Join?.Build()
 				);
 			var operations = new FieldOperations<TEntity>(
 				new SqlPrimitiveFieldExpressionFactory<TValue, TEntity>(field)
@@ -85,12 +86,19 @@ namespace Silk.Data.SQL.ORM.Schema
 					return PrimaryKeyGenerator.ClientGenerated;
 			}
 		}
+
+		public EntityJoinBuilder CreateJoin(int joinCount)
+		{
+			throw new NotImplementedException();
+		}
 	}
 
 	public class ObjectEntityFieldBuilder<TValue, TEntity> : SchemaFieldBuilderBase<TValue, TEntity>, ISchemaFieldBuilder<TEntity>
 		where TEntity : class
 		where TValue : class
 	{
+		private bool IsEmbeddedObject => !_entitySchemaAssemblages.Any(q => q.EntityType == typeof(TValue));
+
 		private readonly IEntitySchemaAssemblage<TEntity> _entitySchemaAssemblage;
 		private readonly IReadOnlyCollection<IEntitySchemaAssemblage> _entitySchemaAssemblages;
 		private readonly SchemaFieldDefinition<TValue, TEntity> _entityFieldDefinition;
@@ -109,8 +117,7 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public IEnumerable<(ISchemaField<TEntity> Field, FieldOperations<TEntity> Operations)> Build(IEnumerable<ISchemaField<TEntity>> parentFields)
 		{
-			var isEmbeddedObject = !_entitySchemaAssemblages.Any(q => q.EntityType == typeof(TValue));
-			if (isEmbeddedObject)
+			if (IsEmbeddedObject)
 				return BuildAsEmbeddedObject(parentFields);
 			return BuildAsJoinedObject(parentFields);
 		}
@@ -133,7 +140,7 @@ namespace Silk.Data.SQL.ORM.Schema
 					columnName,
 					GetFieldReference(_assemblage.ModelPath),
 					_assemblage.ModelPath,
-					_assemblage.Join,
+					_assemblage.Join?.Build(),
 					_entitySchemaAssemblage
 					);
 			}
@@ -147,7 +154,7 @@ namespace Silk.Data.SQL.ORM.Schema
 				_entityFieldDefinition.ModelField.FieldName,
 				columnName,
 				GetFieldReference(_assemblage.ModelPath),
-				_assemblage.Join,
+				_assemblage.Join?.Build(),
 				_entitySchemaAssemblage
 				);
 			var operations = new FieldOperations<TEntity>(
@@ -160,12 +167,50 @@ namespace Silk.Data.SQL.ORM.Schema
 			};
 		}
 
-		public ISchemaFieldAssemblage<TEntity> CreateAssemblage(string[] modelPath, EntityFieldJoin join)
+		public ISchemaFieldAssemblage<TEntity> CreateAssemblage(string[] modelPath, EntityJoinBuilder join)
 		{
 			_assemblage = new ObjectSchemaFieldAssemblage<TValue, TEntity>(
 				modelPath, this, _entityFieldDefinition, join
 				);
 			return _assemblage;
+		}
+
+		public EntityJoinBuilder CreateJoin(int joinCount)
+		{
+			if (IsEmbeddedObject)
+				throw new InvalidOperationException("Can only create joins for joined entities.");
+
+			var joinedSchemaAssemblage = _entitySchemaAssemblages.OfType<IEntitySchemaAssemblage<TValue>>().First();
+			var primaryKeyFieldAssemblages = joinedSchemaAssemblage.Fields.Where(q => q.PrimaryKeyGenerator != PrimaryKeyGenerator.NotPrimaryKey).ToArray();
+
+			if (primaryKeyFieldAssemblages.Length == 0)
+				throw new InvalidOperationException("Related objects need to have at least 1 primary key.");
+
+			var localColumnNames = new List<string>();
+			var foreignColumnNames = new List<string>();
+			foreach (var primaryKeyFieldAssemblage in primaryKeyFieldAssemblages)
+			{
+				var localColumnName = _entityFieldDefinition.ColumnName ??
+						string.Join("_", _assemblage.ModelPath.Concat(primaryKeyFieldAssemblage.ModelPath));
+
+				localColumnNames.Add(localColumnName);
+				foreignColumnNames.Add(primaryKeyFieldAssemblage.Column.ColumnName);
+			}
+
+			EntityJoinBuilder[] dependencyJoins;
+			if (_assemblage == null)
+				dependencyJoins = new EntityJoinBuilder[0];
+			else
+				dependencyJoins = new[] { _assemblage.Join };
+
+			return new EntityJoinBuilder(
+				joinedSchemaAssemblage.TableName,
+				$"__join_table_{joinCount}",
+				_assemblage.Join?.TableName ?? _entitySchemaAssemblage.TableName,
+				localColumnNames,
+				foreignColumnNames,
+				dependencyJoins
+				);
 		}
 	}
 }
