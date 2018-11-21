@@ -21,6 +21,9 @@ namespace Silk.Data.SQL.ORM.Schema
 				var path = new Span<string>(pathArray, 0, pathLength);
 				foreach (var entityPropertyField in currentTypeModel.Fields)
 				{
+					if (entityPropertyField.IsEnumerable)
+						continue;
+
 					pathArray[pathLength] = entityPropertyField.FieldName;
 					var pathWithFieldName = new Span<string>(pathArray, 0, pathLength + 1);
 					visitNodeCallback(entityPropertyField, pathWithFieldName);
