@@ -13,6 +13,8 @@ namespace Silk.Data.SQL.ORM.Schema
 		FieldType FieldType { get; }
 		IFieldReference EntityFieldReference { get; }
 		EntityFieldJoin Join { get; }
+		System.Type DataType { get; }
+		string[] ModelPath { get; }
 	}
 
 	public interface ISchemaField<TEntity> : ISchemaField
@@ -41,8 +43,12 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public EntityFieldJoin Join { get; }
 
+		public System.Type DataType => typeof(TValue);
+
+		public string[] ModelPath { get; }
+
 		public SqlPrimitiveSchemaField(string fieldName, Column column, PrimaryKeyGenerator primaryKeyGenerator,
-			IFieldReference entityFieldReference, EntityFieldJoin join)
+			IFieldReference entityFieldReference, EntityFieldJoin join, string[] modelPath)
 		{
 			FieldName = fieldName;
 			Column = column;
@@ -50,6 +56,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			EntityFieldReference = entityFieldReference;
 			FieldType = join != null ? FieldType.JoinedField : FieldType.StoredField;
 			Join = join;
+			ModelPath = modelPath;
 		}
 	}
 
@@ -74,9 +81,14 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public EntityFieldJoin Join { get; }
 
+		public System.Type DataType => typeof(TValue);
+
+		public string[] ModelPath { get; }
+
 		public EmbeddedObjectNullCheckSchemaField(string fieldName, string columnName,
 			IFieldReference entityFieldReference, EntityFieldJoin join,
-			IEntitySchemaAssemblage<TEntity> entitySchemaAssemblage)
+			IEntitySchemaAssemblage<TEntity> entitySchemaAssemblage,
+			string[] modelPath)
 		{
 			if (join != null)
 			{
@@ -91,6 +103,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			}
 			FieldName = fieldName;
 			EntityFieldReference = entityFieldReference;
+			ModelPath = modelPath;
 		}
 	}
 
@@ -116,9 +129,14 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public EntityFieldJoin Join { get; }
 
+		public System.Type DataType => typeof(TValue);
+
+		public string[] ModelPath { get; }
+
 		public JoinedObjectSchemaField(string fieldName, string columnName,
 			IFieldReference entityFieldReference, EntityFieldJoin join,
-			IEntitySchemaAssemblage<TEntity> entitySchemaAssemblage)
+			IEntitySchemaAssemblage<TEntity> entitySchemaAssemblage,
+			string[] modelPath)
 		{
 			if (join == null)
 			{
@@ -133,6 +151,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			Join = join;
 			FieldName = fieldName;
 			EntityFieldReference = entityFieldReference;
+			ModelPath = modelPath;
 		}
 	}
 }

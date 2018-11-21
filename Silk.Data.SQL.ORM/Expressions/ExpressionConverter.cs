@@ -115,163 +115,120 @@ namespace Silk.Data.SQL.ORM.Expressions
 
 			private (ForeignKey, string) ResolveForeignKey(Column column, List<EntityFieldJoin> joinChain = null)
 			{
-				throw new NotImplementedException();
-				//if (_relationship == null && joinChain == null)
-				//	return (null, null);
+				if (joinChain != null && joinChain.Count > 0)
+				{
+					throw new NotImplementedException();
+					//var testJoin = joinChain.Last();
+					//var fk = testJoin.SchemaField.ForeignKeys.FirstOrDefault(q => q.ForeignColumn == column);
+					//if (fk != null)
+					//{
+					//	return (fk, testJoin.SourceName);
+					//}
+				}
 
-				//if (joinChain != null && joinChain.Count > 0)
-				//{
-				//	var testJoin = joinChain.Last();
-				//	var fk = testJoin.SchemaField.ForeignKeys.FirstOrDefault(q => q.ForeignColumn == column);
-				//	if (fk != null)
-				//	{
-				//		return (fk, testJoin.SourceName);
-				//	}
-				//}
-
-				//if (_relationship != null)
-				//{
-				//	var fk = _relationship.LeftRelationship.ForeignKeys
-				//		.FirstOrDefault(q => q.ForeignColumn == column);
-				//	if (fk != null)
-				//		return (fk, _relationship.JunctionTable.TableName);
-
-				//	fk = _relationship.RightRelationship.ForeignKeys
-				//		.FirstOrDefault(q => q.ForeignColumn == column);
-				//	return (fk, _relationship.JunctionTable.TableName);
-				//}
-
-				//return (null, null);
+				return (null, null);
 			}
 
 			protected override Expression VisitMember(MemberExpression node)
 			{
-				throw new NotImplementedException();
-				//var (allExpressions, expressionPath) = FlattenExpressionTree(node);
-				//var entitySchema = default(EntitySchema);
-				//if (allExpressions[0] is ParameterExpression topParameterExpression)
-				//{
-				//	_expressionParameters.TryGetValue(topParameterExpression, out entitySchema);
-				//}
-				//if (entitySchema != null)
-				//{
-				//	//  visiting a member of expression parameter, ie. a field on the entity table
-				//	var reflectionMemberInfo = node.Member;
-				//	var sourceExpression = ConvertToQueryExpression(allExpressions[0]);
-				//	var entityField = entitySchema.SchemaFields
-				//		.FirstOrDefault(q => q.FieldReference.SequenceEqual(expressionPath.Skip(1))) as IEntityField;
-				//	if (entityField != null && SqlTypeHelper.IsSqlPrimitiveType(entityField.DataType))
-				//	{
-				//		var (foreignKey, foreignKeyTable) = ResolveForeignKey(entityField.Columns[0]);
-				//		if (foreignKey != null)
-				//		{
-				//			SetConversionResult(
-				//				QueryExpression.Column(foreignKey.LocalColumn.ColumnName, QueryExpression.Table(foreignKeyTable))
-				//				);
-				//		}
-				//		else
-				//		{
-				//			if (_relationship != null)
-				//			{
-				//				RequiredJoins.Add(
-				//					entitySchema.EntityType == _relationship.LeftType ?
-				//						_relationship.LeftJoin : _relationship.RightJoin
-				//					);
-				//				sourceExpression = new TableExpression(
-				//					entitySchema.EntityType == _relationship.LeftType ?
-				//						_relationship.LeftJoin.TableAlias : _relationship.RightJoin.TableAlias
-				//					);
-				//			}
-				//			SetConversionResult(
-				//				QueryExpression.Column(entityField.Columns[0].ColumnName, sourceExpression)
-				//			);
-				//		}
-				//		return node;
-				//	}
+				var (allExpressions, expressionPath) = FlattenExpressionTree(node);
+				var entitySchema = default(EntitySchema);
+				if (allExpressions[0] is ParameterExpression topParameterExpression)
+				{
+					_expressionParameters.TryGetValue(topParameterExpression, out entitySchema);
+				}
+				if (entitySchema != null)
+				{
+					//  visiting a member of expression parameter, ie. a field on the entity table
+					var reflectionMemberInfo = node.Member;
+					var sourceExpression = ConvertToQueryExpression(allExpressions[0]);
+					var entityField = entitySchema.SchemaFields
+						.FirstOrDefault(q => q.ModelPath.SequenceEqual(expressionPath.Skip(1)));
+					if (entityField != null && SqlTypeHelper.IsSqlPrimitiveType(entityField.DataType))
+					{
+						var (foreignKey, foreignKeyTable) = ResolveForeignKey(entityField.Column);
+						if (foreignKey != null)
+						{
+							SetConversionResult(
+								QueryExpression.Column(foreignKey.LocalColumn.ColumnName, QueryExpression.Table(foreignKeyTable))
+								);
+						}
+						else
+						{
+							SetConversionResult(
+								QueryExpression.Column(entityField.Column.ColumnName, sourceExpression)
+							);
+						}
+						return node;
+					}
 
-				//	if (entityField == null)
-				//	{
-				//		//  entity field not found on model, search for the entity field through a JOIN tree
-				//		var currentSchema = entitySchema;
-				//		var joinChain = new List<EntityFieldJoin>();
+					if (entityField == null)
+					{
+						//  entity field not found on model, search for the entity field through a JOIN tree
+						var currentSchema = entitySchema;
+						var joinChain = new List<EntityFieldJoin>();
 
-				//		if (_relationship != null)
-				//		{
-				//			joinChain.Add(
-				//				entitySchema.EntityType == _relationship.LeftType ?
-				//					_relationship.LeftJoin : _relationship.RightJoin
-				//				);
-				//		}
+						foreach (var pathSegment in expressionPath.Skip(1))
+						{
+							entityField = currentSchema.SchemaFields.FirstOrDefault(q => q.FieldName == pathSegment);
+							if (entityField == null)
+								throw new Exception("Couldn't resolve entity field on related object.");
 
-				//		foreach (var pathSegment in expressionPath.Skip(1))
-				//		{
-				//			entityField = currentSchema.SchemaFields.FirstOrDefault(q => q.FieldName == pathSegment);
-				//			if (entityField == null)
-				//				throw new Exception("Couldn't resolve entity field on related object.");
+							//  todo: use HasFlag ?
+							if (entityField.FieldType == FieldType.ReferenceField)
+							{
+								var join = currentSchema.EntityJoins.FirstOrDefault(
+									q => q.SchemaField == entityField
+									);
+								if (join == null)
+									throw new Exception("Couldn't resolve JOIN for related field.");
 
-				//			if (entityField.KeyType == KeyType.ManyToOne)
-				//			{
-				//				var join = currentSchema.EntityJoins.FirstOrDefault(
-				//					q => q.SchemaField == entityField
-				//					);
-				//				if (join == null)
-				//					throw new Exception("Couldn't resolve JOIN for related field.");
+								joinChain.Add(join);
+								currentSchema = Schema.GetEntitySchema(entityField.DataType);
+							}
+						}
 
-				//				if (_relationship != null && joinChain.Count == 1)
-				//				{
-				//					//  make a modified join that will work with the many-to-many join
-				//					join = new EntityFieldJoin(
-				//						join.TableName, join.TableAlias, joinChain[0].TableAlias, join.LeftColumns,
-				//						join.RightColumns, join.SchemaField, join.DependencyJoins
-				//						);
-				//				}
+						if (entityField != null && SqlTypeHelper.IsSqlPrimitiveType(entityField.DataType))
+						{
+							var (foreignKey, foreignKeyTable) = ResolveForeignKey(entityField.Column,
+								joinChain);
 
-				//				joinChain.Add(join);
-				//				currentSchema = Schema.GetEntitySchema(entityField.DataType);
-				//			}
-				//		}
+							if (foreignKey != null)
+							{
+								SetConversionResult(
+									QueryExpression.Column(foreignKey.LocalColumn.ColumnName, new AliasIdentifierExpression(foreignKeyTable))
+									);
+								RequiredJoins.AddRange(joinChain.Take(joinChain.Count - 1));
+							}
+							else
+							{
+								sourceExpression = new AliasIdentifierExpression(
+									joinChain.Last().TableAlias
+									);
+								SetConversionResult(
+									QueryExpression.Column(entityField.Column.ColumnName, sourceExpression)
+									);
+								RequiredJoins.AddRange(joinChain);
+							}
+							return node;
+						}
+					}
+				}
+				else
+				{
+					//  simple field access (ie, acessing a variable)
+					//  todo: investigate if the need for a Compile() can be removed, at least for simple cases
+					var memberAccessExp = Expression.MakeMemberAccess(node.Expression, node.Member);
+					var @delegate = Expression.Lambda<Func<object>>(
+						Expression.Convert(memberAccessExp, typeof(object))
+						);
+					var value = @delegate.Compile()();
+					SetConversionResult(
+						GetValueExpression(value)
+						);
+				}
 
-				//		if (entityField != null && SqlTypeHelper.IsSqlPrimitiveType(entityField.DataType))
-				//		{
-				//			var (foreignKey, foreignKeyTable) = ResolveForeignKey(entityField.Columns[0],
-				//				joinChain);
-
-				//			if (foreignKey != null)
-				//			{
-				//				SetConversionResult(
-				//					QueryExpression.Column(foreignKey.LocalColumn.ColumnName, new AliasIdentifierExpression(foreignKeyTable))
-				//					);
-				//				RequiredJoins.AddRange(joinChain.Take(joinChain.Count - 1));
-				//			}
-				//			else
-				//			{
-				//				sourceExpression = new AliasIdentifierExpression(
-				//					joinChain.Last().TableAlias
-				//					);
-				//				SetConversionResult(
-				//					QueryExpression.Column(entityField.Columns[0].ColumnName, sourceExpression)
-				//					);
-				//				RequiredJoins.AddRange(joinChain);
-				//			}
-				//			return node;
-				//		}
-				//	}
-				//}
-				//else
-				//{
-				//	//  simple field access (ie, acessing a variable)
-				//	//  todo: investigate if the need for a Compile() can be removed, at least for simple cases
-				//	var memberAccessExp = Expression.MakeMemberAccess(node.Expression, node.Member);
-				//	var @delegate = Expression.Lambda<Func<object>>(
-				//		Expression.Convert(memberAccessExp, typeof(object))
-				//		);
-				//	var value = @delegate.Compile()();
-				//	SetConversionResult(
-				//		GetValueExpression(value)
-				//		);
-				//}
-
-				//return node;
+				return node;
 
 				(Expression[] Expressions, string[] Path) FlattenExpressionTree(
 					Expression expression, Expression[] expressions = null,
@@ -413,12 +370,12 @@ namespace Silk.Data.SQL.ORM.Expressions
 		}
 	}
 
-	public class ExpressionConverter<T> : ExpressionConverter
+	public class EntityExpressionConverter<T> : ExpressionConverter
 		where T : class
 	{
 		public EntitySchema<T> EntitySchema { get; }
 
-		public ExpressionConverter(Schema.Schema schema)
+		public EntityExpressionConverter(Schema.Schema schema)
 			: base(schema)
 		{
 			EntitySchema = schema.GetEntitySchema<T>();

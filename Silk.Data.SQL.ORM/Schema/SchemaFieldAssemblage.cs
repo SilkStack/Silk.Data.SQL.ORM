@@ -72,7 +72,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			var pkReference = typeModel.GetFieldReference(new PathOnlySourceField(
 				modelPath.Concat(ModelPath).ToArray()
 				));
-			var field = new JoinedObjectSchemaField<TEntity, T, TValue>(fieldName, columnName, entityFieldReference, join, entitySchemaAssemblage);
+			var field = new JoinedObjectSchemaField<TEntity, T, TValue>(fieldName, columnName, entityFieldReference, join, entitySchemaAssemblage, modelPath);
 			var operations = new FieldOperations<T>(
 				new JoinedObjectExpressionFactory<TEntity, T, TValue>(field, pkReference)
 				);
@@ -118,7 +118,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			var pkReference = typeModel.GetFieldReference(new PathOnlySourceField(
 				modelPath.Concat(ModelPath).ToArray()
 				));
-			var field = new JoinedObjectSchemaField<TEntity, T, TValue>(fieldName, columnName, entityFieldReference, join, entitySchemaAssemblage);
+			var field = new JoinedObjectSchemaField<TEntity, T, TValue>(fieldName, columnName, entityFieldReference, join, entitySchemaAssemblage, modelPath);
 			var operations = new FieldOperations<T>(
 				new JoinedObjectExpressionFactory<TEntity, T, TValue>(field, pkReference)
 				);

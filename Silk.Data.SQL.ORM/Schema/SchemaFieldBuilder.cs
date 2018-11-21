@@ -62,7 +62,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			var field = new SqlPrimitiveSchemaField<TValue, TEntity>(
 				_entityFieldDefinition.ModelField.FieldName, _assemblage.Column,
 				_assemblage.PrimaryKeyGenerator, GetFieldReference(_assemblage.ModelPath),
-				_assemblage.Join?.Build()
+				_assemblage.Join?.Build(), _assemblage.ModelPath
 				);
 			var operations = new FieldOperations<TEntity>(
 				new SqlPrimitiveFieldExpressionFactory<TValue, TEntity>(field)
@@ -155,7 +155,8 @@ namespace Silk.Data.SQL.ORM.Schema
 				columnName,
 				GetFieldReference(_assemblage.ModelPath),
 				_assemblage.Join?.Build(),
-				_entitySchemaAssemblage
+				_entitySchemaAssemblage,
+				_assemblage.ModelPath
 				);
 			var operations = new FieldOperations<TEntity>(
 				new EmbeddedObjectNullCheckExpressionFactory<TValue, TEntity>(field)
@@ -198,7 +199,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			}
 
 			EntityJoinBuilder[] dependencyJoins;
-			if (_assemblage == null)
+			if (_assemblage.Join == null)
 				dependencyJoins = new EntityJoinBuilder[0];
 			else
 				dependencyJoins = new[] { _assemblage.Join };

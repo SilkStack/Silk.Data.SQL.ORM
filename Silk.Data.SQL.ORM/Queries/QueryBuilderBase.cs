@@ -9,13 +9,13 @@ namespace Silk.Data.SQL.ORM.Queries
 	public abstract class QueryBuilderBase<T> : IQueryBuilder
 		where T : class
 	{
-		private ExpressionConverter<T> _expressionConverter;
-		public ExpressionConverter<T> ExpressionConverter
+		private EntityExpressionConverter<T> _expressionConverter;
+		public EntityExpressionConverter<T> ExpressionConverter
 		{
 			get
 			{
 				if (_expressionConverter == null)
-					_expressionConverter = new ExpressionConverter<T>(Schema);
+					_expressionConverter = new EntityExpressionConverter<T>(Schema);
 				return _expressionConverter;
 			}
 		}

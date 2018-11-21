@@ -379,22 +379,22 @@ namespace Silk.Data.SQL.ORM.Tests
 			Assert.AreEqual(0, condition.RequiredJoins.Length);
 		}
 
-		private ExpressionConverter<TestTuple<T1,T2>> CreateConverter<T1, T2>()
+		private EntityExpressionConverter<TestTuple<T1,T2>> CreateConverter<T1, T2>()
 		{
 			var schemaBuilder = new SchemaBuilder();
 			schemaBuilder.DefineEntity<TestTuple<T1, T2>>().TableName = "TestTable";
 			var schema = schemaBuilder.Build();
-			return new ExpressionConverter<TestTuple<T1, T2>>(schema);
+			return new EntityExpressionConverter<TestTuple<T1, T2>>(schema);
 		}
 
-		private ExpressionConverter<TupleParent<T1, T2>> CreateParentConverter<T1, T2>(bool defineChildEntity)
+		private EntityExpressionConverter<TupleParent<T1, T2>> CreateParentConverter<T1, T2>(bool defineChildEntity)
 		{
 			var schemaBuilder = new SchemaBuilder();
 			if (defineChildEntity)
 				schemaBuilder.DefineEntity<TestTuple<T1, T2>>().TableName = "TestTable";
 			schemaBuilder.DefineEntity<TupleParent<T1, T2>>().TableName = "ParentTable";
 			var schema = schemaBuilder.Build();
-			return new ExpressionConverter<TupleParent<T1, T2>>(schema);
+			return new EntityExpressionConverter<TupleParent<T1, T2>>(schema);
 		}
 
 		private class TestTuple<T1, T2>

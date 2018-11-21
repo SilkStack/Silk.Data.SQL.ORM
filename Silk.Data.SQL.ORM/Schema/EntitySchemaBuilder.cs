@@ -157,29 +157,6 @@ namespace Silk.Data.SQL.ORM.Schema
 			}
 		}
 
-		private EntityJoinBuilder CreateJoin(ISchemaFieldAssemblage localFieldAssemblage, ISchemaFieldBuilder builder)
-		{
-			//EntityFieldJoin[] dependencyJoins;
-			//if (localFieldAssemblage.Join == null)
-			//	dependencyJoins = new EntityFieldJoin[0];
-			//else
-			//	dependencyJoins = new[] { localFieldAssemblage.Join };
-
-			return builder.CreateJoin(++_joinCount);
-
-			//return new EntityFieldJoin(
-			//	foreignSchemaAssemblage.TableName,
-			//	$"__join_table_{++_joinCount}",
-			//	localFieldAssemblage.Join?.TableName ?? _entitySchemaAssemblage.TableName,
-			//	new string[0],
-			//	foreignSchemaAssemblage.Fields
-			//		.Where(q => q.FieldDefinition.IsPrimaryKey)
-			//		.Select(q => q.Column.ColumnName)
-			//		.ToArray(),
-			//	null,
-			//	dependencyJoins);
-		}
-
 		private ISchemaFieldAssemblage<T> FindOrCreateField(IPropertyField propertyField, Span<string> path, EntityJoinBuilder join)
 		{
 			foreach (var field in _entitySchemaAssemblage.Fields)
