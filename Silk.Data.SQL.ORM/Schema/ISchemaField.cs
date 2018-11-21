@@ -39,7 +39,7 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public FieldType FieldType { get; }
 
-		public string AliasName => throw new System.NotImplementedException();
+		public string AliasName { get; }
 
 		public EntityFieldJoin Join { get; }
 
@@ -48,7 +48,8 @@ namespace Silk.Data.SQL.ORM.Schema
 		public string[] ModelPath { get; }
 
 		public SqlPrimitiveSchemaField(string fieldName, Column column, PrimaryKeyGenerator primaryKeyGenerator,
-			IFieldReference entityFieldReference, EntityFieldJoin join, string[] modelPath)
+			IFieldReference entityFieldReference, EntityFieldJoin join, string[] modelPath,
+			string aliasName)
 		{
 			FieldName = fieldName;
 			Column = column;
@@ -57,6 +58,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			FieldType = join != null ? FieldType.JoinedField : FieldType.StoredField;
 			Join = join;
 			ModelPath = modelPath;
+			AliasName = aliasName;
 		}
 	}
 
@@ -77,7 +79,7 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public FieldType FieldType { get; }
 
-		public string AliasName => throw new System.NotImplementedException();
+		public string AliasName { get; }
 
 		public EntityFieldJoin Join { get; }
 
@@ -88,7 +90,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		public EmbeddedObjectNullCheckSchemaField(string fieldName, string columnName,
 			IFieldReference entityFieldReference, EntityFieldJoin join,
 			IEntitySchemaAssemblage<TEntity> entitySchemaAssemblage,
-			string[] modelPath)
+			string[] modelPath, string aliasName)
 		{
 			if (join != null)
 			{
@@ -104,6 +106,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			FieldName = fieldName;
 			EntityFieldReference = entityFieldReference;
 			ModelPath = modelPath;
+			AliasName = aliasName;
 		}
 	}
 
@@ -125,7 +128,7 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public FieldType FieldType { get; }
 
-		public string AliasName => throw new System.NotImplementedException();
+		public string AliasName { get; }
 
 		public EntityFieldJoin Join { get; }
 
@@ -136,7 +139,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		public JoinedObjectSchemaField(string fieldName, string columnName,
 			IFieldReference entityFieldReference, EntityFieldJoin join,
 			IEntitySchemaAssemblage<TEntity> entitySchemaAssemblage,
-			string[] modelPath)
+			string[] modelPath, string aliasName)
 		{
 			if (join == null)
 			{
@@ -152,6 +155,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			FieldName = fieldName;
 			EntityFieldReference = entityFieldReference;
 			ModelPath = modelPath;
+			AliasName = aliasName;
 		}
 	}
 }

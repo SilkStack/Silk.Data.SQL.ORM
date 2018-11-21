@@ -133,8 +133,7 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		private (ISchemaField<T> Field, ISchemaFieldAssemblage<T> Assemblage, FieldOperations<T> Operations)[] BuildSchemaFields()
 		{
-			var fieldStack = new Stack<ISchemaField<T>>();
-
+			var builtFieldCount = 0;
 			var schemaFields = new List<(ISchemaField<T> Field, ISchemaFieldAssemblage<T> Assemblage, FieldOperations<T> Operations)>();
 			EntityTypeVisitor.Visit(_entityTypeModel, _entitySchemaDefinition, Callback);
 			return schemaFields.ToArray();
@@ -142,11 +141,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			void Callback(IPropertyField propertyField, Span<string> path)
 			{
 				var fieldAssemblage = FindOrCreateField(propertyField, path, null);
-				while (fieldStack.Count >= path.Length)
-				{
-					fieldStack.Pop();
-				}
-				var builtFields = fieldAssemblage.Builder.Build(fieldStack)
+				var builtFields = fieldAssemblage.Builder.Build(++builtFieldCount)
 					.ToArray();
 
 				_fieldOperationsPairs.AddRange(builtFields);
@@ -154,8 +149,6 @@ namespace Silk.Data.SQL.ORM.Schema
 				foreach (var builtFieldPair in builtFields)
 				{
 					var builtField = builtFieldPair.Field;
-					fieldStack.Push(builtField);
-
 					schemaFields.Add((builtField, fieldAssemblage, builtFieldPair.Operations));
 				}
 			}
