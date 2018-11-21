@@ -253,26 +253,27 @@ namespace Silk.Data.SQL.ORM
 		public static QueryNoResult CreateDelete<T>(this EntitySchema<T> schema, params T[] entities)
 			where T : class
 		{
-			throw new NotImplementedException();
-			//SanityCheckArgs(schema, entities);
+			SanityCheckArgs(schema, entities);
 
-			//return new QueryNoResult(
-			//	new CompositeQueryExpression(BuildExpressions())
-			//	);
+			var entityReadWriter = new ObjectReadWriter(null, TypeModel.GetModelOf<T>(), typeof(T));
 
-			//IEnumerable<QueryExpression> BuildExpressions()
-			//{
-			//	foreach (var entity in entities)
-			//	{
-			//		var queryBuilder = new DeleteBuilder<T>(schema);
-			//		foreach (var field in schema.EntityFields)
-			//		{
-			//			if (field.IsPrimaryKey)
-			//				queryBuilder.AndWhere(field.GetFieldValuePair(entity), ComparisonOperator.AreEqual);
-			//		}
-			//		yield return queryBuilder.BuildQuery();
-			//	}
-			//}
+			return new QueryNoResult(
+				new CompositeQueryExpression(BuildExpressions())
+				);
+
+			IEnumerable<QueryExpression> BuildExpressions()
+			{
+				foreach (var entity in entities)
+				{
+					var queryBuilder = new EntityDeleteBuilder<T>(schema, entityReadWriter);
+					foreach (var field in schema.SchemaFields)
+					{
+						if (field.IsPrimaryKey)
+							queryBuilder.AndWhere(field, ComparisonOperator.AreEqual, entity);
+					}
+					yield return queryBuilder.BuildQuery();
+				}
+			}
 		}
 
 		public static QueryNoResult CreateDelete<T>(this Schema.Schema schema, params T[] entities)
