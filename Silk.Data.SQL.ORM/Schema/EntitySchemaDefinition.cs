@@ -54,6 +54,13 @@ namespace Silk.Data.SQL.ORM.Schema
 			return indexBuilder;
 		}
 
+		public bool IsModelled(IPropertyField propertyField)
+		{
+			if (_entityFieldBuilders.TryGetValue(propertyField, out var builder))
+				return builder.IsModelled;
+			return true;
+		}
+
 		public SchemaFieldDefinition<TProperty, T> For<TProperty>(PropertyField<TProperty> propertyField)
 		{
 			if (_entityFieldBuilders.TryGetValue(propertyField, out var builder))

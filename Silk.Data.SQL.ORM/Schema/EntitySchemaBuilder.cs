@@ -59,7 +59,7 @@ namespace Silk.Data.SQL.ORM.Schema
 					typeof(T).Name,
 				_entitySchemaDefinition, this
 				);
-			EntityTypeVisitor.Visit(_entityTypeModel, VisitCallback);
+			EntityTypeVisitor.Visit(_entityTypeModel, _entitySchemaDefinition, VisitCallback);
 			return _entitySchemaAssemblage;
 
 			void VisitCallback(IPropertyField propertyField, Span<string> path)
@@ -102,7 +102,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		private void CreateJoins()
 		{
 			var joinStack = new Stack<EntityJoinBuilder>();
-			EntityTypeVisitor.Visit(_entityTypeModel, Callback);
+			EntityTypeVisitor.Visit(_entityTypeModel, _entitySchemaDefinition, Callback);
 
 			void Callback(IPropertyField propertyField, Span<string> path)
 			{
@@ -136,7 +136,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			var fieldStack = new Stack<ISchemaField<T>>();
 
 			var schemaFields = new List<(ISchemaField<T> Field, ISchemaFieldAssemblage<T> Assemblage, FieldOperations<T> Operations)>();
-			EntityTypeVisitor.Visit(_entityTypeModel, Callback);
+			EntityTypeVisitor.Visit(_entityTypeModel, _entitySchemaDefinition, Callback);
 			return schemaFields.ToArray();
 
 			void Callback(IPropertyField propertyField, Span<string> path)
@@ -165,7 +165,6 @@ namespace Silk.Data.SQL.ORM.Schema
 		{
 			foreach (var field in _entitySchemaAssemblage.Fields)
 			{
-
 				if (path.SequenceEqual(new ReadOnlySpan<string>(field.ModelPath)))
 					return field;
 			}
@@ -203,8 +202,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		private (SchemaFieldDefinition Definition, ISchemaFieldBuilder<T> Builder) GetValueFieldDefinitionAndBuilder<TProperty>(PropertyField<TProperty> propertyField, string[] path)
 		{
 			var fieldDefinition = _entitySchemaDefinition.For(propertyField);
-			ISchemaFieldBuilder<T> builder;
-			builder = new SqlPrimitiveSchemaFieldBuilder<TProperty, T>(_entitySchemaAssemblage, fieldDefinition);
+			var builder = new SqlPrimitiveSchemaFieldBuilder<TProperty, T>(_entitySchemaAssemblage, fieldDefinition);
 			return (fieldDefinition, builder);
 		}
 
@@ -212,8 +210,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			where TProperty : class
 		{
 			var fieldDefinition = _entitySchemaDefinition.For(propertyField);
-			ISchemaFieldBuilder<T> builder;
-			builder = new ObjectEntityFieldBuilder<TProperty, T>(_entitySchemaAssemblage, _entitySchemaAssemblages, fieldDefinition);
+			var builder = new ObjectEntityFieldBuilder<TProperty, T>(_entitySchemaAssemblage, _entitySchemaAssemblages, fieldDefinition);
 			return (fieldDefinition, builder);
 		}
 	}

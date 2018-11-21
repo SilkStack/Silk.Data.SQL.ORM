@@ -10,7 +10,8 @@ namespace Silk.Data.SQL.ORM.Schema
 	{
 		public delegate void VisitNode(IPropertyField entityPropertyField, Span<string> path);
 
-		public static void Visit(TypeModel entityTypeModel, VisitNode visitNodeCallback)
+		public static void Visit<T>(TypeModel entityTypeModel, EntitySchemaDefinition<T> entitySchemaDefinition, VisitNode visitNodeCallback)
+			where T : class
 		{
 			var pathArray = new string[255];
 			DoVisit(entityTypeModel, 0);
@@ -21,7 +22,7 @@ namespace Silk.Data.SQL.ORM.Schema
 				var path = new Span<string>(pathArray, 0, pathLength);
 				foreach (var entityPropertyField in currentTypeModel.Fields)
 				{
-					if (entityPropertyField.IsEnumerable)
+					if (entityPropertyField.IsEnumerable || !entitySchemaDefinition.IsModelled(entityPropertyField))
 						continue;
 
 					pathArray[pathLength] = entityPropertyField.FieldName;
