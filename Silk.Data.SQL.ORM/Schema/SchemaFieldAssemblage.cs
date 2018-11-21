@@ -68,11 +68,12 @@ namespace Silk.Data.SQL.ORM.Schema
 			string[] modelPath, EntityFieldJoin join, IEntitySchemaAssemblage<T> entitySchemaAssemblage
 			) where T : class
 		{
+			var fullModelPath = modelPath.Concat(ModelPath).ToArray();
 			var typeModel = TypeModel.GetModelOf<T>();
 			var pkReference = typeModel.GetFieldReference(new PathOnlySourceField(
-				modelPath.Concat(ModelPath).ToArray()
+				fullModelPath
 				));
-			var field = new JoinedObjectSchemaField<TEntity, T, TValue>(fieldName, columnName, entityFieldReference, join, entitySchemaAssemblage, modelPath);
+			var field = new JoinedObjectSchemaField<TEntity, T, TValue>(fieldName, columnName, entityFieldReference, join, entitySchemaAssemblage, fullModelPath);
 			var operations = new FieldOperations<T>(
 				new JoinedObjectExpressionFactory<TEntity, T, TValue>(field, pkReference)
 				);

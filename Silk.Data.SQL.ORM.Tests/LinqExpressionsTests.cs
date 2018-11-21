@@ -92,19 +92,19 @@ namespace Silk.Data.SQL.ORM.Tests
 
 			var checkExpression = condition.QueryExpression as ColumnExpression;
 			Assert.IsNotNull(checkExpression);
-			Assert.AreEqual("A", checkExpression.ColumnName);
+			Assert.AreEqual("Child1_A", checkExpression.ColumnName);
 			Assert.IsNotNull(condition.RequiredJoins);
 			Assert.AreEqual(1, condition.RequiredJoins.Length);
-			Assert.AreEqual("__joinAlias_Child1", condition.RequiredJoins[0].TableAlias);
+			Assert.AreEqual("__join_table_1", condition.RequiredJoins[0].TableAlias);
 
 			condition = expressionConverter.Convert(q => q.Child2.A);
 
 			checkExpression = condition.QueryExpression as ColumnExpression;
 			Assert.IsNotNull(checkExpression);
-			Assert.AreEqual("A", checkExpression.ColumnName);
+			Assert.AreEqual("Child2_A", checkExpression.ColumnName);
 			Assert.IsNotNull(condition.RequiredJoins);
 			Assert.AreEqual(1, condition.RequiredJoins.Length);
-			Assert.AreEqual("__joinAlias_Child2", condition.RequiredJoins[0].TableAlias);
+			Assert.AreEqual("__join_table_2", condition.RequiredJoins[0].TableAlias);
 		}
 
 		[TestMethod]
@@ -135,7 +135,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			Assert.IsInstanceOfType(checkExpression.Left, typeof(BitwiseOperationQueryExpression));
 			Assert.IsNotNull(condition.RequiredJoins);
 			Assert.AreEqual(1, condition.RequiredJoins.Length);
-			Assert.AreEqual("__joinAlias_Child1", condition.RequiredJoins[0].TableAlias);
+			Assert.AreEqual("__join_table_1", condition.RequiredJoins[0].TableAlias);
 		}
 
 		[TestMethod]
@@ -368,14 +368,14 @@ namespace Silk.Data.SQL.ORM.Tests
 
 			var checkExpression = condition.QueryExpression as ColumnExpression;
 			Assert.IsNotNull(checkExpression);
-			Assert.AreEqual("FK_Child1_Id", checkExpression.ColumnName);
+			Assert.AreEqual("Child1_Id", checkExpression.ColumnName);
 			Assert.AreEqual(0, condition.RequiredJoins.Length);
 
 			condition = expressionConverter.Convert(q => q.Child2.Id);
 
 			checkExpression = condition.QueryExpression as ColumnExpression;
 			Assert.IsNotNull(checkExpression);
-			Assert.AreEqual("FK_Child2_Id", checkExpression.ColumnName);
+			Assert.AreEqual("Child2_Id", checkExpression.ColumnName);
 			Assert.AreEqual(0, condition.RequiredJoins.Length);
 		}
 

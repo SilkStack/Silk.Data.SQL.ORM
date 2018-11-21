@@ -129,7 +129,7 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public EntityFieldJoin Join { get; }
 
-		public System.Type DataType => typeof(TValue);
+		public System.Type DataType => typeof(TPrimaryKey);
 
 		public string[] ModelPath { get; }
 

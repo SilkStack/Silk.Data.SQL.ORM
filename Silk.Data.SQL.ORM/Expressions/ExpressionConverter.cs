@@ -113,22 +113,6 @@ namespace Silk.Data.SQL.ORM.Expressions
 				return node;
 			}
 
-			private (ForeignKey, string) ResolveForeignKey(Column column, List<EntityFieldJoin> joinChain = null)
-			{
-				if (joinChain != null && joinChain.Count > 0)
-				{
-					throw new NotImplementedException();
-					//var testJoin = joinChain.Last();
-					//var fk = testJoin.SchemaField.ForeignKeys.FirstOrDefault(q => q.ForeignColumn == column);
-					//if (fk != null)
-					//{
-					//	return (fk, testJoin.SourceName);
-					//}
-				}
-
-				return (null, null);
-			}
-
 			protected override Expression VisitMember(MemberExpression node)
 			{
 				var (allExpressions, expressionPath) = FlattenExpressionTree(node);
@@ -146,72 +130,16 @@ namespace Silk.Data.SQL.ORM.Expressions
 						.FirstOrDefault(q => q.ModelPath.SequenceEqual(expressionPath.Skip(1)));
 					if (entityField != null && SqlTypeHelper.IsSqlPrimitiveType(entityField.DataType))
 					{
-						var (foreignKey, foreignKeyTable) = ResolveForeignKey(entityField.Column);
-						if (foreignKey != null)
+						if (entityField.Join != null)
 						{
-							SetConversionResult(
-								QueryExpression.Column(foreignKey.LocalColumn.ColumnName, QueryExpression.Table(foreignKeyTable))
-								);
+							sourceExpression = new AliasIdentifierExpression(entityField.Join.SourceName);
+							if (!RequiredJoins.Contains(entityField.Join))
+								RequiredJoins.Add(entityField.Join);
 						}
-						else
-						{
-							SetConversionResult(
-								QueryExpression.Column(entityField.Column.ColumnName, sourceExpression)
-							);
-						}
+						SetConversionResult(
+							QueryExpression.Column(entityField.Column.ColumnName, sourceExpression)
+						);
 						return node;
-					}
-
-					if (entityField == null)
-					{
-						//  entity field not found on model, search for the entity field through a JOIN tree
-						var currentSchema = entitySchema;
-						var joinChain = new List<EntityFieldJoin>();
-
-						foreach (var pathSegment in expressionPath.Skip(1))
-						{
-							entityField = currentSchema.SchemaFields.FirstOrDefault(q => q.FieldName == pathSegment);
-							if (entityField == null)
-								throw new Exception("Couldn't resolve entity field on related object.");
-
-							//  todo: use HasFlag ?
-							if (entityField.FieldType == FieldType.ReferenceField)
-							{
-								var join = currentSchema.EntityJoins.FirstOrDefault(
-									q => q.SchemaField == entityField
-									);
-								if (join == null)
-									throw new Exception("Couldn't resolve JOIN for related field.");
-
-								joinChain.Add(join);
-								currentSchema = Schema.GetEntitySchema(entityField.DataType);
-							}
-						}
-
-						if (entityField != null && SqlTypeHelper.IsSqlPrimitiveType(entityField.DataType))
-						{
-							var (foreignKey, foreignKeyTable) = ResolveForeignKey(entityField.Column,
-								joinChain);
-
-							if (foreignKey != null)
-							{
-								SetConversionResult(
-									QueryExpression.Column(foreignKey.LocalColumn.ColumnName, new AliasIdentifierExpression(foreignKeyTable))
-									);
-								RequiredJoins.AddRange(joinChain.Take(joinChain.Count - 1));
-							}
-							else
-							{
-								sourceExpression = new AliasIdentifierExpression(
-									joinChain.Last().TableAlias
-									);
-								SetConversionResult(
-									QueryExpression.Column(entityField.Column.ColumnName, sourceExpression)
-									);
-								RequiredJoins.AddRange(joinChain);
-							}
-							return node;
-						}
 					}
 				}
 				else

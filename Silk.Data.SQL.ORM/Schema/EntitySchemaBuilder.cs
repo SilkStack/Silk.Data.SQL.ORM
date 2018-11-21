@@ -106,14 +106,18 @@ namespace Silk.Data.SQL.ORM.Schema
 
 			void Callback(IPropertyField propertyField, Span<string> path)
 			{
-				var fieldAssemblage = FindOrCreateField(propertyField, path, joinStack.LastOrDefault());
 				while (joinStack.Count >= path.Length)
 					joinStack.Pop();
 
-				if (_entitySchemaAssemblages.Any(q => q.EntityType == propertyField.FieldType))
-					joinStack.Push(fieldAssemblage.Builder.CreateJoin(++_joinCount));
-				else
-					joinStack.Push(null);
+				var fieldAssemblage = FindOrCreateField(propertyField, path, joinStack.LastOrDefault());
+
+				if (!SqlTypeHelper.IsSqlPrimitiveType(propertyField.FieldType))
+				{
+					if (_entitySchemaAssemblages.Any(q => q.EntityType == propertyField.FieldType))
+						joinStack.Push(fieldAssemblage.Builder.CreateJoin(++_joinCount));
+					else
+						joinStack.Push(null);
+				}
 			}
 		}
 
