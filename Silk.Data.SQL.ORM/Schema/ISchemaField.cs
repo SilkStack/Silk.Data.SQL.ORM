@@ -1,5 +1,6 @@
 ﻿using Silk.Data.Modelling;
 using Silk.Data.Modelling.Mapping.Binding;
+using Silk.Data.SQL.ORM.Schema.Binding;
 
 namespace Silk.Data.SQL.ORM.Schema
 {
@@ -119,7 +120,14 @@ namespace Silk.Data.SQL.ORM.Schema
 			EntityFieldReference = entityFieldReference;
 			ModelPath = modelPath;
 			AliasName = aliasName;
-			Bindings = new Modelling.Mapping.Binding.Binding[0];
+			Bindings = new Modelling.Mapping.Binding.Binding[]
+			{
+				new CreateInstanceWithNullCheck<TValue, bool>(
+					SqlTypeHelper.GetConstructor(typeof(TValue)),
+					SchemaFieldReference<bool>.Create(aliasName),
+					entityFieldReference
+					)
+			};
 		}
 	}
 
@@ -135,7 +143,7 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public PrimaryKeyGenerator PrimaryKeyGenerator => PrimaryKeyGenerator.NotPrimaryKey;
 
-		public ISchemaFieldReference SchemaFieldReference => throw new System.NotImplementedException();
+		public ISchemaFieldReference SchemaFieldReference { get; }
 
 		public IFieldReference EntityFieldReference { get; }
 
@@ -154,7 +162,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		public JoinedObjectSchemaField(string fieldName, string columnName,
 			IFieldReference entityFieldReference, EntityFieldJoin join,
 			IEntitySchemaAssemblage<TEntity> entitySchemaAssemblage,
-			string[] modelPath, string aliasName)
+			string[] modelPath, string aliasName, IFieldReference pkFieldReference)
 		{
 			if (join == null)
 			{
@@ -171,7 +179,16 @@ namespace Silk.Data.SQL.ORM.Schema
 			EntityFieldReference = entityFieldReference;
 			ModelPath = modelPath;
 			AliasName = aliasName;
-			Bindings = new Modelling.Mapping.Binding.Binding[0];
+			SchemaFieldReference = SchemaFieldReference<TPrimaryKey>.Create(aliasName);
+			Bindings = new Modelling.Mapping.Binding.Binding[]
+			{
+				new CreateInstanceWithNullCheck<TValue, TPrimaryKey>(
+					SqlTypeHelper.GetConstructor(typeof(TValue)),
+					SchemaFieldReference,
+					entityFieldReference
+					),
+				new CopyBinding<TPrimaryKey>(SchemaFieldReference, pkFieldReference)
+			};
 		}
 	}
 }
