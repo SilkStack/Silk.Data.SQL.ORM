@@ -1,7 +1,9 @@
 ﻿using Silk.Data.Modelling;
 using Silk.Data.Modelling.Mapping;
+using Silk.Data.Modelling.Mapping.Binding;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Schema
 {
@@ -40,15 +42,14 @@ namespace Silk.Data.SQL.ORM.Schema
 		private Mapping _entityToViewTypeMapping { get; }
 
 		public ProjectionSchema(Table entityTable, ISchemaField<TEntity>[] schemaFields,
-			EntityFieldJoin[] manyToOneJoins, SchemaIndex[] indexes, Type entityType,
-			Mapping entityToViewTypeMapping) : base(schemaFields)
+			EntityFieldJoin[] manyToOneJoins, SchemaIndex[] indexes, Type entityType)
+			: base(schemaFields)
 		{
 			EntityTable = entityTable;
 			EntityJoins = manyToOneJoins;
 			Indexes = indexes;
 			EntityType = entityType;
 			SchemaFields = schemaFields;
-			_entityToViewTypeMapping = entityToViewTypeMapping;
 		}
 	}
 
@@ -62,10 +63,18 @@ namespace Silk.Data.SQL.ORM.Schema
 			= new Dictionary<Type, EntitySchema>();
 
 		public EntitySchema(Table entityTable, ISchemaField<T>[] schemaFields,
-			EntityFieldJoin[] manyToOneJoins, SchemaIndex[] indexes, Mapping mapping) :
-			base(entityTable, schemaFields, manyToOneJoins, indexes, typeof(T), null)
+			EntityFieldJoin[] manyToOneJoins, SchemaIndex[] indexes) :
+			base(entityTable, schemaFields, manyToOneJoins, indexes, typeof(T))
 		{
-			Mapping = mapping;
+			Mapping = new Mapping(
+				TypeModel.GetModelOf<T>(),
+				null,
+				new Modelling.Mapping.Binding.Binding[]
+				{
+					new CreateInstanceIfNull<T>(
+						SqlTypeHelper.GetConstructor(typeof(T)), TypeModel.GetModelOf<T>().Root
+						)
+				}.Concat(schemaFields.SelectMany(q => q.Bindings)).ToArray());
 		}
 
 		//public ProjectionSchema<TProjection> GetProjection<TProjection>()

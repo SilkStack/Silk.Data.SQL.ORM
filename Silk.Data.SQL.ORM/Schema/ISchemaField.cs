@@ -1,4 +1,5 @@
 ﻿using Silk.Data.Modelling;
+using Silk.Data.Modelling.Mapping.Binding;
 
 namespace Silk.Data.SQL.ORM.Schema
 {
@@ -9,12 +10,13 @@ namespace Silk.Data.SQL.ORM.Schema
 		Column Column { get; }
 		bool IsPrimaryKey { get; }
 		PrimaryKeyGenerator PrimaryKeyGenerator { get; }
-		ISchemaFieldReference FieldReference { get; }
+		ISchemaFieldReference SchemaFieldReference { get; }
 		FieldType FieldType { get; }
 		IFieldReference EntityFieldReference { get; }
 		EntityFieldJoin Join { get; }
 		System.Type DataType { get; }
 		string[] ModelPath { get; }
+		Modelling.Mapping.Binding.Binding[] Bindings { get; }
 	}
 
 	public interface ISchemaField<TEntity> : ISchemaField
@@ -33,7 +35,7 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public string FieldName { get; }
 
-		public ISchemaFieldReference FieldReference => throw new System.NotImplementedException();
+		public ISchemaFieldReference SchemaFieldReference { get; }
 
 		public IFieldReference EntityFieldReference { get; }
 
@@ -47,6 +49,8 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public string[] ModelPath { get; }
 
+		public Modelling.Mapping.Binding.Binding[] Bindings { get; }
+
 		public SqlPrimitiveSchemaField(string fieldName, Column column, PrimaryKeyGenerator primaryKeyGenerator,
 			IFieldReference entityFieldReference, EntityFieldJoin join, string[] modelPath,
 			string aliasName)
@@ -59,6 +63,12 @@ namespace Silk.Data.SQL.ORM.Schema
 			Join = join;
 			ModelPath = modelPath;
 			AliasName = aliasName;
+			SchemaFieldReference = SchemaFieldReference<TValue>.Create(this);
+
+			Bindings = new[]
+			{
+				new CopyBinding<TValue>(SchemaFieldReference, entityFieldReference)
+			};
 		}
 	}
 
@@ -73,7 +83,7 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public string FieldName { get; }
 
-		public ISchemaFieldReference FieldReference => throw new System.NotImplementedException();
+		public ISchemaFieldReference SchemaFieldReference => throw new System.NotImplementedException();
 
 		public IFieldReference EntityFieldReference { get; }
 
@@ -86,6 +96,8 @@ namespace Silk.Data.SQL.ORM.Schema
 		public System.Type DataType => typeof(TValue);
 
 		public string[] ModelPath { get; }
+
+		public Modelling.Mapping.Binding.Binding[] Bindings { get; }
 
 		public EmbeddedObjectNullCheckSchemaField(string fieldName, string columnName,
 			IFieldReference entityFieldReference, EntityFieldJoin join,
@@ -107,6 +119,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			EntityFieldReference = entityFieldReference;
 			ModelPath = modelPath;
 			AliasName = aliasName;
+			Bindings = new Modelling.Mapping.Binding.Binding[0];
 		}
 	}
 
@@ -122,7 +135,7 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public PrimaryKeyGenerator PrimaryKeyGenerator => PrimaryKeyGenerator.NotPrimaryKey;
 
-		public ISchemaFieldReference FieldReference => throw new System.NotImplementedException();
+		public ISchemaFieldReference SchemaFieldReference => throw new System.NotImplementedException();
 
 		public IFieldReference EntityFieldReference { get; }
 
@@ -135,6 +148,8 @@ namespace Silk.Data.SQL.ORM.Schema
 		public System.Type DataType => typeof(TPrimaryKey);
 
 		public string[] ModelPath { get; }
+
+		public Modelling.Mapping.Binding.Binding[] Bindings { get; }
 
 		public JoinedObjectSchemaField(string fieldName, string columnName,
 			IFieldReference entityFieldReference, EntityFieldJoin join,
@@ -156,6 +171,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			EntityFieldReference = entityFieldReference;
 			ModelPath = modelPath;
 			AliasName = aliasName;
+			Bindings = new Modelling.Mapping.Binding.Binding[0];
 		}
 	}
 }
