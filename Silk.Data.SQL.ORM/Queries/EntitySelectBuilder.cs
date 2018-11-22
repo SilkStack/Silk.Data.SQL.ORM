@@ -44,22 +44,21 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public ValueResultMapper<TProperty> Project<TProperty>(Expression<Func<T, TProperty>> projection)
 		{
-			throw new NotImplementedException();
-			//if (!SqlTypeHelper.IsSqlPrimitiveType(typeof(TProperty)))
-			//	throw new Exception("Cannot project complex types, call Project<TView>() instead.");
+			if (!SqlTypeHelper.IsSqlPrimitiveType(typeof(TProperty)))
+				throw new Exception("Cannot project complex types, call Project<TView>() instead.");
 
-			//var projectionField = ResolveProjectionField(projection);
-			//if (projectionField != null)
-			//{
-			//	AddProjection(projectionField);
-			//	return new ValueResultMapper<TProperty>(1, projectionField.AliasName);
-			//}
+			var projectionField = ResolveProjectionField(projection);
+			if (projectionField != null)
+			{
+				AddProjection(projectionField);
+				return new ValueResultMapper<TProperty>(1, SchemaFieldReference<TProperty>.Create(projectionField.AliasName));
+			}
 
-			//var expressionResult = ExpressionConverter.Convert(projection);
+			var expressionResult = ExpressionConverter.Convert(projection);
 
-			//var mapper = Project<TProperty>(expressionResult.QueryExpression);
-			//AddJoins(expressionResult.RequiredJoins);
-			//return mapper;
+			var mapper = Project<TProperty>(expressionResult.QueryExpression);
+			AddJoins(expressionResult.RequiredJoins);
+			return mapper;
 		}
 
 		public ValueResultMapper<TValue> Project<TValue>(QueryExpression queryExpression)
@@ -95,7 +94,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			return new ObjectResultMapper<TView>(1, projectionSchema.Mapping);
 		}
 
-		private ISchemaField ResolveProjectionField<TProperty>(Expression<Func<T, TProperty>> property)
+		private ISchemaField<T> ResolveProjectionField<TProperty>(Expression<Func<T, TProperty>> property)
 		{
 			if (property.Body is MemberExpression memberExpression)
 			{
@@ -107,12 +106,11 @@ namespace Silk.Data.SQL.ORM.Queries
 			return null;
 		}
 
-		private ISchemaField GetProjectionField(IEnumerable<string> path)
+		private ISchemaField<T> GetProjectionField(IEnumerable<string> path)
 		{
-			throw new NotImplementedException();
-			//return EntitySchema.SchemaFields.FirstOrDefault(
-			//	q => q.ModelPath.SequenceEqual(path)
-			//	);
+			return EntitySchema.SchemaFields.FirstOrDefault(
+				q => q.ModelPath.SequenceEqual(path)
+				);
 		}
 
 		private void PopulatePath(Expression expression, List<string> path)
