@@ -132,8 +132,12 @@ namespace Silk.Data.SQL.ORM.Schema
 
 			foreach (var primaryKeyFieldAssemblage in primaryKeyFieldAssemblages)
 			{
+				IEnumerable<string> defaultColumnNameSource = _assemblage.ModelPath;
+				if (_assemblage.Join != null)
+					defaultColumnNameSource = _assemblage.ModelPath.Skip(_assemblage.Join.ModelPath.Length);
+
 				var columnName = _entityFieldDefinition.ColumnName ??
-						string.Join("_", _assemblage.ModelPath.Concat(primaryKeyFieldAssemblage.ModelPath));
+						string.Join("_", defaultColumnNameSource.Concat(primaryKeyFieldAssemblage.ModelPath));
 
 				yield return primaryKeyFieldAssemblage.CreateJoinedSchemaFieldAndOperationsPair<TEntity>(
 					_entityFieldDefinition.ModelField.FieldName,
@@ -149,7 +153,11 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		private IEnumerable<(ISchemaField<TEntity> Field, FieldOperations<TEntity> Operations)> BuildAsEmbeddedObject(int currentFieldCount)
 		{
-			var columnName = _entityFieldDefinition.ColumnName ?? string.Join("_", _assemblage.ModelPath);
+			IEnumerable<string> defaultColumnNameSource = _assemblage.ModelPath;
+			if (_assemblage.Join != null)
+				defaultColumnNameSource = _assemblage.ModelPath.Skip(_assemblage.Join.ModelPath.Length);
+
+			var columnName = _entityFieldDefinition.ColumnName ?? string.Join("_", defaultColumnNameSource);
 
 			var field = new EmbeddedObjectNullCheckSchemaField<TValue, TEntity>(
 				_entityFieldDefinition.ModelField.FieldName,

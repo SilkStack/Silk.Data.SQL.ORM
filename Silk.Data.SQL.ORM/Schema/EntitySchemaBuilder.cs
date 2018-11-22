@@ -18,6 +18,8 @@ namespace Silk.Data.SQL.ORM.Schema
 		/// <returns></returns>
 		IEntitySchemaAssemblage CreateAssemblage();
 
+		void DefineAllStoredFields();
+
 		/// <summary>
 		/// Builds the completed entity schema.
 		/// </summary>
@@ -73,7 +75,7 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public EntitySchema BuildSchema()
 		{
-			CreateJoins();
+			DefinedJoinedFields();
 			_builtFields = BuildSchemaFields();
 			var fields = _builtFields.Select(q => q.Field).ToArray();
 			var table = new Table(_entitySchemaAssemblage.TableName,
@@ -98,7 +100,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			}).ToDictionary(q => (ISchemaField)q.Field, q => (FieldOperations)q.Operations);
 		}
 
-		private void CreateJoins()
+		private void DefinedJoinedFields()
 		{
 			var joinStack = new Stack<EntityJoinBuilder>();
 			EntityTypeVisitor.Visit(_entityTypeModel, _entitySchemaDefinition, Callback);
@@ -108,14 +110,15 @@ namespace Silk.Data.SQL.ORM.Schema
 				while (joinStack.Count >= path.Length)
 					joinStack.Pop();
 
-				var fieldAssemblage = FindOrCreateField(propertyField, path, joinStack.FirstOrDefault());
+				var currentlyScopedJoin = joinStack.FirstOrDefault();
+				var fieldAssemblage = FindOrCreateField(propertyField, path, currentlyScopedJoin);
 
 				if (!SqlTypeHelper.IsSqlPrimitiveType(propertyField.FieldType))
 				{
 					if (_entitySchemaAssemblages.Any(q => q.EntityType == propertyField.FieldType))
 						joinStack.Push(fieldAssemblage.Builder.CreateJoin(++_joinCount));
 					else
-						joinStack.Push(null);
+						joinStack.Push(currentlyScopedJoin);
 				}
 			}
 		}
@@ -128,6 +131,22 @@ namespace Silk.Data.SQL.ORM.Schema
 				indexes.Add(indexBuilder.Build(table, fields));
 			}
 			return indexes.ToArray();
+		}
+
+		public void DefineAllStoredFields()
+		{
+			EntityTypeVisitor.Visit(_entityTypeModel, _entitySchemaDefinition, VisitCallback, ShouldContinue);
+
+			void VisitCallback(IPropertyField propertyField, Span<string> path)
+			{
+				FindOrCreateField(propertyField, path, null);
+			}
+
+			bool ShouldContinue(IPropertyField propertyField, Span<string> path)
+			{
+				return SqlTypeHelper.IsSqlPrimitiveType(propertyField.FieldType) ||
+					!_entitySchemaAssemblages.Any(q => q.EntityType == propertyField.FieldType);
+			}
 		}
 
 		private (ISchemaField<T> Field, ISchemaFieldAssemblage<T> Assemblage, FieldOperations<T> Operations)[] BuildSchemaFields()

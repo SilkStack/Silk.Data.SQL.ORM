@@ -84,7 +84,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			_entitySchemaAssemblages.AddRange(CreateEntitySchemaAssemblages());
 			foreach (var assemblage in _entitySchemaAssemblages)
 			{
-
+				assemblage.Builder.DefineAllStoredFields();
 			}
 			var entitySchemas = _entitySchemaAssemblages.Select(q => q.Builder.BuildSchema())
 				.ToArray();

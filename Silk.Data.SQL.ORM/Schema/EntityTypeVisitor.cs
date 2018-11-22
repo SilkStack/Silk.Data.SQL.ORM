@@ -9,8 +9,10 @@ namespace Silk.Data.SQL.ORM.Schema
 	internal static class EntityTypeVisitor
 	{
 		public delegate void VisitNode(IPropertyField entityPropertyField, Span<string> path);
+		public delegate bool ContinueIntoNode(IPropertyField entityPropertyField, Span<string> path);
 
-		public static void Visit<T>(TypeModel entityTypeModel, EntitySchemaDefinition<T> entitySchemaDefinition, VisitNode visitNodeCallback)
+		public static void Visit<T>(TypeModel entityTypeModel, EntitySchemaDefinition<T> entitySchemaDefinition, VisitNode visitNodeCallback,
+			ContinueIntoNode continueIntoNodeCallback = null)
 			where T : class
 		{
 			var pathArray = new string[255];
@@ -27,6 +29,13 @@ namespace Silk.Data.SQL.ORM.Schema
 
 					pathArray[pathLength] = entityPropertyField.FieldName;
 					var pathWithFieldName = new Span<string>(pathArray, 0, pathLength + 1);
+
+					if (continueIntoNodeCallback != null)
+					{
+						if (!continueIntoNodeCallback(entityPropertyField, pathWithFieldName))
+							continue;
+					}
+
 					visitNodeCallback(entityPropertyField, pathWithFieldName);
 
 					if (!SqlTypeHelper.IsSqlPrimitiveType(entityPropertyField.FieldType))
