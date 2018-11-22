@@ -23,7 +23,12 @@ namespace Silk.Data.SQL.ORM.Queries
 			if (!(field is ISchemaFieldReference<T> schemaFieldReference))
 				throw new ArgumentException($"Unsupported field type '{field.GetType().FullName}'.", nameof(field));
 
-			var ord = QueryResult.GetOrdinal(schemaFieldReference.FieldAlias);
+			int ord;
+			if (field is OrdinalFieldReference<T> ordinalFieldReference)
+				ord = ordinalFieldReference.Ordinal;
+			else
+				ord = QueryResult.GetOrdinal(schemaFieldReference.FieldAlias);
+
 			if (QueryResult.IsDBNull(ord))
 				return default(T);
 

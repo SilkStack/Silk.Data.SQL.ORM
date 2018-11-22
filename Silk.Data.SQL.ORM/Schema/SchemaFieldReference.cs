@@ -23,22 +23,8 @@ namespace Silk.Data.SQL.ORM.Schema
 		QueryResultReader<T> ReaderFunction { get; }
 	}
 
-	public class SchemaFieldReference<T> : ISchemaFieldReference<T>
+	public abstract class FieldReferenceBase<T>
 	{
-		public QueryResultReader<T> ReaderFunction { get; }
-
-		public string FieldAlias { get; }
-
-		public IField Field => throw new System.NotSupportedException();
-
-		public IModel Model => throw new System.NotSupportedException();
-
-		public SchemaFieldReference(string alias, QueryResultReader<T> readerFunction)
-		{
-			FieldAlias = alias;
-			ReaderFunction = readerFunction;
-		}
-
 		private static readonly Dictionary<Type, Delegate> _typeReaders =
 			new Dictionary<Type, Delegate>()
 			{
@@ -66,7 +52,7 @@ namespace Silk.Data.SQL.ORM.Schema
 				{ typeof(DateTime?), new QueryResultReader<DateTime?>((q,o) => q.GetDateTime(o)) }
 			};
 
-		public static SchemaFieldReference<T> Create(string aliasName)
+		protected static QueryResultReader<T> GetReaderFunc()
 		{
 			Delegate readerDelegate;
 			if (typeof(T).IsEnum)
@@ -78,13 +64,59 @@ namespace Silk.Data.SQL.ORM.Schema
 				if (!_typeReaders.TryGetValue(typeof(T), out readerDelegate))
 					throw new InvalidOperationException("Data type not supported.");
 			}
-			return new SchemaFieldReference<T>(aliasName, readerDelegate as QueryResultReader<T>);
+			return readerDelegate as QueryResultReader<T>;
 		}
 
 		private static QueryResultReader<T> GetEnumReader()
 		{
 			var @delegate = _typeReaders[typeof(int)] as QueryResultReader<int>;
-			return new QueryResultReader<T>((q,o) => (T)(object)@delegate(q,o));
+			return new QueryResultReader<T>((q, o) => (T)(object)@delegate(q, o));
+		}
+	}
+
+	public class SchemaFieldReference<T> : FieldReferenceBase<T>, ISchemaFieldReference<T>
+	{
+		public QueryResultReader<T> ReaderFunction { get; }
+
+		public string FieldAlias { get; }
+
+		public IField Field => throw new System.NotSupportedException();
+
+		public IModel Model => throw new System.NotSupportedException();
+
+		public SchemaFieldReference(string alias, QueryResultReader<T> readerFunction)
+		{
+			FieldAlias = alias;
+			ReaderFunction = readerFunction;
+		}
+
+		public static SchemaFieldReference<T> Create(string aliasName)
+		{
+			return new SchemaFieldReference<T>(aliasName, GetReaderFunc());
+		}
+	}
+
+	public class OrdinalFieldReference<T> : FieldReferenceBase<T>, ISchemaFieldReference<T>
+	{
+		public QueryResultReader<T> ReaderFunction { get; }
+
+		public int Ordinal { get; }
+
+		public string FieldAlias { get; }
+
+		public IField Field => throw new System.NotSupportedException();
+
+		public IModel Model => throw new System.NotSupportedException();
+
+		public OrdinalFieldReference(int ordinal, QueryResultReader<T> readerFunction)
+		{
+			ReaderFunction = readerFunction;
+			Ordinal = ordinal;
+		}
+
+		public static OrdinalFieldReference<T> Create(int ordinal)
+		{
+			return new OrdinalFieldReference<T>(ordinal, GetReaderFunc());
 		}
 	}
 }
