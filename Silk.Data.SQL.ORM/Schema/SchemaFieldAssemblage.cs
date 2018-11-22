@@ -1,4 +1,5 @@
 ﻿using Silk.Data.Modelling;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Schema
@@ -54,8 +55,11 @@ namespace Silk.Data.SQL.ORM.Schema
 			ModelPath = modelPath;
 			Builder = builder;
 			FieldDefinition = fieldDefinition;
+			IEnumerable<string> defaultColumnPath = modelPath;
+			if (join != null)
+				defaultColumnPath = modelPath.Skip(join.ModelPath.Length);
 			Column = new Column(
-				fieldDefinition.ColumnName ?? string.Join("_", modelPath),
+				fieldDefinition.ColumnName ?? string.Join("_", defaultColumnPath),
 				fieldDefinition.SqlDataType,
 				fieldDefinition.IsNullable,
 				join?.TableAlias ?? entitySchemaAssemblage.TableName

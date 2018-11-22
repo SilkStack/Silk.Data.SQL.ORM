@@ -212,7 +212,8 @@ namespace Silk.Data.SQL.ORM.Schema
 				_assemblage.Join?.TableName ?? _entitySchemaAssemblage.TableName,
 				localColumnNames,
 				foreignColumnNames,
-				dependencyJoins
+				dependencyJoins,
+				_assemblage.ModelPath
 				);
 		}
 	}

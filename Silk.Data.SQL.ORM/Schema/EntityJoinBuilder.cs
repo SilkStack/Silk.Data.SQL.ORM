@@ -15,10 +15,11 @@ namespace Silk.Data.SQL.ORM.Schema
 		public string[] LeftColumns { get; }
 		public string[] RightColumns { get; }
 		public EntityJoinBuilder[] DependencyJoins { get; }
+		public string[] ModelPath { get; }
 
 		public EntityJoinBuilder(string tableName, string tableAlias,
 			string sourceName, IEnumerable<string> leftColumns, IEnumerable<string> rightColumns,
-			EntityJoinBuilder[] dependencyJoins)
+			EntityJoinBuilder[] dependencyJoins, string[] modelPath)
 		{
 			TableName = tableName;
 			TableAlias = tableAlias;
@@ -26,6 +27,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			LeftColumns = leftColumns.ToArray();
 			RightColumns = rightColumns.ToArray();
 			DependencyJoins = dependencyJoins;
+			ModelPath = modelPath;
 		}
 
 		public EntityFieldJoin Build()
