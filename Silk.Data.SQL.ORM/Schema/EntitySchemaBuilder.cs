@@ -77,7 +77,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			_builtFields = BuildSchemaFields();
 			var fields = _builtFields.Select(q => q.Field).ToArray();
 			var table = new Table(_entitySchemaAssemblage.TableName,
-				fields.Select(q => q.Column).ToArray());
+				fields.Where(q => q.FieldType != FieldType.JoinedField).Select(q => q.Column).ToArray());
 			var joins = new EntityFieldJoin[0];
 			var indexes = GetSchemaIndexes(table, fields);
 			var entitySchema = new EntitySchema<T>(
