@@ -92,7 +92,7 @@ namespace Silk.Data.SQL.ORM.Tests
 
 			var checkExpression = condition.QueryExpression as ColumnExpression;
 			Assert.IsNotNull(checkExpression);
-			Assert.AreEqual("Child1_A", checkExpression.ColumnName);
+			Assert.AreEqual("A", checkExpression.ColumnName);
 			Assert.IsNotNull(condition.RequiredJoins);
 			Assert.AreEqual(1, condition.RequiredJoins.Length);
 			Assert.AreEqual("__join_table_1", condition.RequiredJoins[0].TableAlias);
@@ -101,7 +101,7 @@ namespace Silk.Data.SQL.ORM.Tests
 
 			checkExpression = condition.QueryExpression as ColumnExpression;
 			Assert.IsNotNull(checkExpression);
-			Assert.AreEqual("Child2_A", checkExpression.ColumnName);
+			Assert.AreEqual("A", checkExpression.ColumnName);
 			Assert.IsNotNull(condition.RequiredJoins);
 			Assert.AreEqual(1, condition.RequiredJoins.Length);
 			Assert.AreEqual("__join_table_2", condition.RequiredJoins[0].TableAlias);
