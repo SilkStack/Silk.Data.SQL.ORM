@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using Silk.Data.Modelling;
 using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Schema;
 
@@ -13,9 +14,9 @@ namespace Silk.Data.SQL.ORM.Queries
 		private readonly List<FieldAssignment> _fieldAssignments = new List<FieldAssignment>();
 		private QueryExpression _where;
 
-		public EntityUpdateBuilder(Schema.Schema schema) : base(schema) { }
+		public EntityUpdateBuilder(Schema.Schema schema, ObjectReadWriter entityReadWriter = null) : base(schema, entityReadWriter) { }
 
-		public EntityUpdateBuilder(EntitySchema<T> schema) : base(schema) { }
+		public EntityUpdateBuilder(EntitySchema<T> schema, ObjectReadWriter entityReadWriter = null) : base(schema, entityReadWriter) { }
 
 		public void AndWhere(QueryExpression queryExpression)
 		{
@@ -27,16 +28,44 @@ namespace Silk.Data.SQL.ORM.Queries
 			_where = QueryExpression.CombineConditions(_where, ConditionType.OrElse, queryExpression);
 		}
 
-		public void AndWhere(FieldAssignment field, ComparisonOperator comparisonOperator)
+		public void AndWhere(ISchemaField<T> schemaField, ComparisonOperator @operator, T entity)
 		{
-			foreach (var (column, valueExpression) in field.GetColumnExpressionPairs())
-			{
-				AndWhere(QueryExpression.Compare(
-					column,
-					comparisonOperator,
-					valueExpression
-					));
-			}
+			var fieldOperations = Schema.GetFieldOperations(schemaField);
+			var valueExpression = fieldOperations.Expressions.Value(entity, EntityReadWriter);
+			AndWhere(QueryExpression.Compare(
+				QueryExpression.Column(schemaField.Column.ColumnName),
+				@operator,
+				valueExpression
+				));
+		}
+
+		public void AndWhere<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, TValue value)
+		{
+			var valueExpression = QueryExpression.Value(value);
+			AndWhere(QueryExpression.Compare(
+				QueryExpression.Column(schemaField.Column.ColumnName),
+				@operator,
+				valueExpression
+				));
+		}
+
+		public void AndWhere(ISchemaField<T> schemaField, ComparisonOperator @operator, Expression<Func<T, bool>> valueExpression)
+		{
+			var valueExpressionResult = ExpressionConverter.Convert(valueExpression);
+			AndWhere(QueryExpression.Compare(
+				QueryExpression.Column(schemaField.Column.ColumnName),
+				@operator,
+				valueExpressionResult.QueryExpression
+				));
+		}
+
+		public void AndWhere<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
+		{
+			AndWhere(QueryExpression.Compare(
+				QueryExpression.Column(schemaField.Column.ColumnName),
+				@operator,
+				subQuery.BuildQuery()
+				));
 		}
 
 		public void AndWhere(Expression<Func<T, bool>> expression)
@@ -47,16 +76,44 @@ namespace Silk.Data.SQL.ORM.Queries
 			AndWhere(condition.QueryExpression);
 		}
 
-		public void OrWhere(FieldAssignment field, ComparisonOperator comparisonOperator)
+		public void OrWhere(ISchemaField<T> schemaField, ComparisonOperator @operator, T entity)
 		{
-			foreach (var (column, valueExpression) in field.GetColumnExpressionPairs())
-			{
-				OrWhere(QueryExpression.Compare(
-					column,
-					comparisonOperator,
-					valueExpression
-					));
-			}
+			var fieldOperations = Schema.GetFieldOperations(schemaField);
+			var valueExpression = fieldOperations.Expressions.Value(entity, EntityReadWriter);
+			OrWhere(QueryExpression.Compare(
+				QueryExpression.Column(schemaField.Column.ColumnName),
+				@operator,
+				valueExpression
+				));
+		}
+
+		public void OrWhere<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, TValue value)
+		{
+			var valueExpression = QueryExpression.Value(value);
+			OrWhere(QueryExpression.Compare(
+				QueryExpression.Column(schemaField.Column.ColumnName),
+				@operator,
+				valueExpression
+				));
+		}
+
+		public void OrWhere(ISchemaField<T> schemaField, ComparisonOperator @operator, Expression<Func<T, bool>> valueExpression)
+		{
+			var valueExpressionResult = ExpressionConverter.Convert(valueExpression);
+			OrWhere(QueryExpression.Compare(
+				QueryExpression.Column(schemaField.Column.ColumnName),
+				@operator,
+				valueExpressionResult.QueryExpression
+				));
+		}
+
+		public void OrWhere<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
+		{
+			OrWhere(QueryExpression.Compare(
+				QueryExpression.Column(schemaField.Column.ColumnName),
+				@operator,
+				subQuery.BuildQuery()
+				));
 		}
 
 		public void OrWhere(Expression<Func<T, bool>> expression)
@@ -67,9 +124,47 @@ namespace Silk.Data.SQL.ORM.Queries
 			OrWhere(condition.QueryExpression);
 		}
 
-		public void Set(FieldAssignment fieldValuePair)
+		private void AddFieldAssignment(ColumnExpression columnExpression, QueryExpression valueExpression)
 		{
-			_fieldAssignments.Add(fieldValuePair);
+			_fieldAssignments.Add(new FieldAssignment(
+					columnExpression, valueExpression
+					));
+		}
+
+		public void Set(ISchemaField<T> schemaField, T entity)
+		{
+			var fieldOperations = Schema.GetFieldOperations(schemaField);
+			var valueExpression = fieldOperations.Expressions.Value(entity, EntityReadWriter);
+			AddFieldAssignment(
+				QueryExpression.Column(schemaField.Column.ColumnName),
+				valueExpression
+				);
+		}
+
+		public void Set<TValue>(ISchemaField<T> schemaField, TValue value)
+		{
+			var valueExpression = QueryExpression.Value(value);
+			AddFieldAssignment(
+				QueryExpression.Column(schemaField.Column.ColumnName),
+				valueExpression
+				);
+		}
+
+		public void Set<TValue>(ISchemaField<T> schemaField, Expression<Func<T, TValue>> valueExpression)
+		{
+			var valueExpressionResult = ExpressionConverter.Convert(valueExpression);
+			AddFieldAssignment(
+				QueryExpression.Column(schemaField.Column.ColumnName),
+				valueExpressionResult.QueryExpression
+				);
+		}
+
+		public void Set<TValue>(ISchemaField<T> schemaField, IQueryBuilder subQuery)
+		{
+			AddFieldAssignment(
+				QueryExpression.Column(schemaField.Column.ColumnName),
+				subQuery.BuildQuery()
+				);
 		}
 
 		public void Set<TProperty>(Expression<Func<T, TProperty>> fieldSelector, TProperty value)
@@ -84,9 +179,9 @@ namespace Silk.Data.SQL.ORM.Queries
 
 			if (selectorExpressionResult.QueryExpression is ColumnExpression columnExpression)
 			{
-				_fieldAssignments.Add(new FieldExpressionAssignment<TProperty>(
+				AddFieldAssignment(
 					columnExpression, valueExpressionResult.QueryExpression
-					));
+				);
 				return;
 			}
 			throw new ArgumentException("Field selector doesn't specify a valid column.", nameof(fieldSelector));
@@ -99,9 +194,9 @@ namespace Silk.Data.SQL.ORM.Queries
 
 			if (selectorExpressionResult.QueryExpression is ColumnExpression columnExpression)
 			{
-				_fieldAssignments.Add(new FieldExpressionAssignment<TProperty>(
+				AddFieldAssignment(
 					columnExpression, valueExpressionResult.QueryExpression
-					));
+				);
 				return;
 			}
 			throw new ArgumentException("Field selector doesn't specify a valid column.", nameof(fieldSelector));
@@ -118,9 +213,9 @@ namespace Silk.Data.SQL.ORM.Queries
 
 			if (selectorExpressionResult.QueryExpression is ColumnExpression columnExpression)
 			{
-				_fieldAssignments.Add(new FieldExpressionAssignment<TProperty>(
+				AddFieldAssignment(
 					columnExpression, queryExpression
-					));
+				);
 				return;
 			}
 			throw new ArgumentException("Field selector doesn't specify a valid column.", nameof(fieldSelector));
@@ -139,10 +234,19 @@ namespace Silk.Data.SQL.ORM.Queries
 		{
 			foreach (var fieldAssignment in _fieldAssignments)
 			{
-				foreach (var (column, valueExpression) in fieldAssignment.GetColumnExpressionPairs())
-				{
-					yield return QueryExpression.Assign(column.ColumnName, valueExpression);
-				}
+				yield return QueryExpression.Assign(fieldAssignment.Column.ColumnName, fieldAssignment.ValueExpression);
+			}
+		}
+
+		private class FieldAssignment
+		{
+			public ColumnExpression Column { get; }
+			public QueryExpression ValueExpression { get; }
+
+			public FieldAssignment(ColumnExpression column, QueryExpression valueExpression)
+			{
+				Column = column;
+				ValueExpression = valueExpression;
 			}
 		}
 	}
