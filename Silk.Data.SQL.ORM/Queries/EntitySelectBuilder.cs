@@ -1,5 +1,4 @@
-﻿using Silk.Data.Modelling.Mapping.Binding;
-using Silk.Data.SQL.Expressions;
+﻿using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Expressions;
 using Silk.Data.SQL.ORM.Schema;
 using System;

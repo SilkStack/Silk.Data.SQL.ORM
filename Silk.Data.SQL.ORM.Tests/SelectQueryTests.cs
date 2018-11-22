@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Silk.Data.SQL.ORM.Queries;
 using Silk.Data.SQL.ORM.Schema;
+using System.Linq;
 using System.Threading.Tasks;
 using static Silk.Data.SQL.ORM.DatabaseFunctions;
 
@@ -33,8 +34,12 @@ namespace Silk.Data.SQL.ORM.Tests
 				{
 					Assert.IsTrue(queryResult.HasRows);
 					Assert.IsTrue(await queryResult.ReadAsync());
-					Assert.AreEqual(1, queryResult.GetInt32(queryResult.GetOrdinal(nameof(FlatEntity.Id))));
-					Assert.AreEqual(2, queryResult.GetInt32(queryResult.GetOrdinal(nameof(FlatEntity.Data))));
+					Assert.AreEqual(1, queryResult.GetInt32(queryResult.GetOrdinal(
+						queryBuilder.EntitySchema.SchemaFields.First(q => q.ModelPath.SequenceEqual(new[] { "Id" })).AliasName
+						)));
+					Assert.AreEqual(2, queryResult.GetInt32(queryResult.GetOrdinal(
+						queryBuilder.EntitySchema.SchemaFields.First(q => q.ModelPath.SequenceEqual(new[] { "Data" })).AliasName
+						)));
 				}
 			}
 		}
@@ -53,7 +58,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					SQLite3.SQLite3.Raw("CREATE TABLE [FlatEntity] ([Id] INT, [Data] INT)")
 					);
 				await provider.ExecuteNonQueryAsync(
-					SQLite3.SQLite3.Raw("CREATE TABLE [RelationshipEntity] ([FK_Child_Id] INT, [Data] INT)")
+					SQLite3.SQLite3.Raw("CREATE TABLE [RelationshipEntity] ([Child_Id] INT, [Data] INT)")
 					);
 				await provider.ExecuteNonQueryAsync(
 					SQLite3.SQLite3.Raw("INSERT INTO [FlatEntity] VALUES (1, 2)")
@@ -70,9 +75,15 @@ namespace Silk.Data.SQL.ORM.Tests
 				{
 					Assert.IsTrue(queryResult.HasRows);
 					Assert.IsTrue(await queryResult.ReadAsync());
-					Assert.AreEqual(1, queryResult.GetInt32(queryResult.GetOrdinal("Child_Id")));
-					Assert.AreEqual(2, queryResult.GetInt32(queryResult.GetOrdinal("Child_Data")));
-					Assert.AreEqual(3, queryResult.GetInt32(queryResult.GetOrdinal("Data")));
+					Assert.AreEqual(1, queryResult.GetInt32(queryResult.GetOrdinal(
+						queryBuilder.EntitySchema.SchemaFields.First(q => q.ModelPath.SequenceEqual(new[] { "Child", "Id" })).AliasName
+						)));
+					Assert.AreEqual(2, queryResult.GetInt32(queryResult.GetOrdinal(
+						queryBuilder.EntitySchema.SchemaFields.First(q => q.ModelPath.SequenceEqual(new[] { "Child", "Data" })).AliasName
+						)));
+					Assert.AreEqual(3, queryResult.GetInt32(queryResult.GetOrdinal(
+						queryBuilder.EntitySchema.SchemaFields.First(q => q.ModelPath.SequenceEqual(new[] { "Data" })).AliasName
+						)));
 				}
 			}
 		}
@@ -101,9 +112,15 @@ namespace Silk.Data.SQL.ORM.Tests
 				{
 					Assert.IsTrue(queryResult.HasRows);
 					Assert.IsTrue(await queryResult.ReadAsync());
-					Assert.AreEqual(1, queryResult.GetInt32(queryResult.GetOrdinal("Child_Id")));
-					Assert.AreEqual(2, queryResult.GetInt32(queryResult.GetOrdinal("Child_Data")));
-					Assert.AreEqual(3, queryResult.GetInt32(queryResult.GetOrdinal("Data")));
+					Assert.AreEqual(1, queryResult.GetInt32(queryResult.GetOrdinal(
+						queryBuilder.EntitySchema.SchemaFields.First(q => q.ModelPath.SequenceEqual(new[] { "Child", "Id" })).AliasName
+						)));
+					Assert.AreEqual(2, queryResult.GetInt32(queryResult.GetOrdinal(
+						queryBuilder.EntitySchema.SchemaFields.First(q => q.ModelPath.SequenceEqual(new[] { "Child", "Data" })).AliasName
+						)));
+					Assert.AreEqual(3, queryResult.GetInt32(queryResult.GetOrdinal(
+						queryBuilder.EntitySchema.SchemaFields.First(q => q.ModelPath.SequenceEqual(new[] { "Data" })).AliasName
+						)));
 				}
 			}
 		}
@@ -119,7 +136,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			using (var provider = TestHelper.CreateProvider())
 			{
 				await provider.ExecuteNonQueryAsync(
-					SQLite3.SQLite3.Raw("CREATE TABLE [DeepRelationshipEntity] ([Child] INT, [Child_Data] INT, [FK_Child_Id] INT)")
+					SQLite3.SQLite3.Raw("CREATE TABLE [DeepRelationshipEntity] ([Child] INT, [Child_Data] INT, [Child_Child_Id] INT)")
 					);
 				await provider.ExecuteNonQueryAsync(
 					SQLite3.SQLite3.Raw("CREATE TABLE [FlatEntity] ([Id] INT, [Data] INT)")
@@ -139,9 +156,15 @@ namespace Silk.Data.SQL.ORM.Tests
 				{
 					Assert.IsTrue(queryResult.HasRows);
 					Assert.IsTrue(await queryResult.ReadAsync());
-					Assert.AreEqual(1, queryResult.GetInt32(queryResult.GetOrdinal("Child_Child_Id")));
-					Assert.AreEqual(2, queryResult.GetInt32(queryResult.GetOrdinal("Child_Child_Data")));
-					Assert.AreEqual(3, queryResult.GetInt32(queryResult.GetOrdinal("Child_Data")));
+					Assert.AreEqual(1, queryResult.GetInt32(queryResult.GetOrdinal(
+						queryBuilder.EntitySchema.SchemaFields.First(q => q.ModelPath.SequenceEqual(new[] { "Child", "Child", "Id" })).AliasName
+						)));
+					Assert.AreEqual(2, queryResult.GetInt32(queryResult.GetOrdinal(
+						queryBuilder.EntitySchema.SchemaFields.First(q => q.ModelPath.SequenceEqual(new[] { "Child", "Child", "Data" })).AliasName
+						)));
+					Assert.AreEqual(3, queryResult.GetInt32(queryResult.GetOrdinal(
+						queryBuilder.EntitySchema.SchemaFields.First(q => q.ModelPath.SequenceEqual(new[] { "Child", "Data" })).AliasName
+						)));
 				}
 			}
 		}
@@ -157,7 +180,7 @@ namespace Silk.Data.SQL.ORM.Tests
 			using (var provider = TestHelper.CreateProvider())
 			{
 				await provider.ExecuteNonQueryAsync(
-					SQLite3.SQLite3.Raw("CREATE TABLE [DeepRelationshipEntity] ([FK_Child_Child_Id] INT)")
+					SQLite3.SQLite3.Raw("CREATE TABLE [DeepRelationshipEntity] ([Child_Child_Id] INT)")
 					);
 				await provider.ExecuteNonQueryAsync(
 					SQLite3.SQLite3.Raw("CREATE TABLE [RelationshipEntity] ([Data] INT, [Child] INT, [Child_Id] INT, [Child_Data] INT)")
@@ -177,9 +200,15 @@ namespace Silk.Data.SQL.ORM.Tests
 				{
 					Assert.IsTrue(queryResult.HasRows);
 					Assert.IsTrue(await queryResult.ReadAsync());
-					Assert.AreEqual(1, queryResult.GetInt32(queryResult.GetOrdinal("Child_Child_Id")));
-					Assert.AreEqual(2, queryResult.GetInt32(queryResult.GetOrdinal("Child_Child_Data")));
-					Assert.AreEqual(3, queryResult.GetInt32(queryResult.GetOrdinal("Child_Data")));
+					Assert.AreEqual(1, queryResult.GetInt32(queryResult.GetOrdinal(
+						queryBuilder.EntitySchema.SchemaFields.First(q => q.ModelPath.SequenceEqual(new[] { "Child", "Child", "Id" })).AliasName
+						)));
+					Assert.AreEqual(2, queryResult.GetInt32(queryResult.GetOrdinal(
+						queryBuilder.EntitySchema.SchemaFields.First(q => q.ModelPath.SequenceEqual(new[] { "Child", "Child", "Data" })).AliasName
+						)));
+					Assert.AreEqual(3, queryResult.GetInt32(queryResult.GetOrdinal(
+						queryBuilder.EntitySchema.SchemaFields.First(q => q.ModelPath.SequenceEqual(new[] { "Child", "Data" })).AliasName
+						)));
 				}
 			}
 		}
@@ -237,11 +266,15 @@ namespace Silk.Data.SQL.ORM.Tests
 				{
 					Assert.IsTrue(queryResult.HasRows);
 					Assert.IsTrue(await queryResult.ReadAsync());
-					Assert.AreEqual(2, queryResult.GetInt32(queryResult.GetOrdinal(nameof(FlatEntity.Data))));
+					Assert.AreEqual(2, queryResult.GetInt32(queryResult.GetOrdinal(
+						queryBuilder.EntitySchema.SchemaFields.First(q => q.ModelPath.SequenceEqual(new[] { "Data" })).AliasName
+						)));
 
 					try
 					{
-						queryResult.GetOrdinal(nameof(FlatEntity.Id));
+						queryResult.GetOrdinal(
+							queryBuilder.EntitySchema.SchemaFields.First(q => q.ModelPath.SequenceEqual(new[] { "Id" })).AliasName
+							);
 						Assert.Fail("Id field was included in projection.");
 					}
 					catch { }
