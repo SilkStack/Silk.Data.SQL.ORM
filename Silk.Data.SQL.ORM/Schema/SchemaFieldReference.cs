@@ -2,6 +2,7 @@
 using Silk.Data.SQL.Queries;
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace Silk.Data.SQL.ORM.Schema
 {
@@ -70,7 +71,11 @@ namespace Silk.Data.SQL.ORM.Schema
 		private static QueryResultReader<T> GetEnumReader()
 		{
 			var @delegate = _typeReaders[typeof(int)] as QueryResultReader<int>;
-			return new QueryResultReader<T>((q, o) => (T)(object)@delegate(q, o));
+			return new QueryResultReader<T>((q, o) =>
+			{
+				var intValue = @delegate(q, o);
+				return Unsafe.As<int, T>(ref intValue);
+			});
 		}
 	}
 
