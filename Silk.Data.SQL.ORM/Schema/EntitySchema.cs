@@ -17,7 +17,6 @@ namespace Silk.Data.SQL.ORM.Schema
 		public abstract Type EntityType { get; }
 		public abstract Table EntityTable { get; }
 		public abstract SchemaIndex[] Indexes { get; }
-		public abstract EntityFieldJoin[] EntityJoins { get; }
 		public Mapping Mapping { get; protected set; }
 
 		public ISchemaField[] SchemaFields { get; }
@@ -33,22 +32,18 @@ namespace Silk.Data.SQL.ORM.Schema
 		where TProjection : class
 	{
 		public override Table EntityTable { get; }
-		public override Type EntityType { get; }
+		public override Type EntityType => typeof(TEntity);
 		public override SchemaIndex[] Indexes { get; }
-		public override EntityFieldJoin[] EntityJoins { get; }
 
 		public new ISchemaField<TEntity>[] SchemaFields { get; }
 
 		private Mapping _entityToViewTypeMapping { get; }
 
-		public ProjectionSchema(Table entityTable, ISchemaField<TEntity>[] schemaFields,
-			EntityFieldJoin[] manyToOneJoins, SchemaIndex[] indexes, Type entityType)
+		public ProjectionSchema(Table entityTable, ISchemaField<TEntity>[] schemaFields, SchemaIndex[] indexes)
 			: base(schemaFields)
 		{
 			EntityTable = entityTable;
-			EntityJoins = manyToOneJoins;
 			Indexes = indexes;
-			EntityType = entityType;
 			SchemaFields = schemaFields;
 		}
 	}
@@ -62,9 +57,8 @@ namespace Silk.Data.SQL.ORM.Schema
 		private readonly Dictionary<Type, EntitySchema> _projectionCache
 			= new Dictionary<Type, EntitySchema>();
 
-		public EntitySchema(Table entityTable, ISchemaField<T>[] schemaFields,
-			EntityFieldJoin[] manyToOneJoins, SchemaIndex[] indexes) :
-			base(entityTable, schemaFields, manyToOneJoins, indexes, typeof(T))
+		public EntitySchema(Table entityTable, ISchemaField<T>[] schemaFields, SchemaIndex[] indexes) :
+			base(entityTable, schemaFields, indexes)
 		{
 			Mapping = new Mapping(
 				TypeModel.GetModelOf<T>(),
@@ -77,71 +71,83 @@ namespace Silk.Data.SQL.ORM.Schema
 				}.Concat(schemaFields.SelectMany(q => q.Bindings)).ToArray());
 		}
 
-		//public ProjectionSchema<TProjection> GetProjection<TProjection>()
-		//	where TProjection : class
-		//{
-		//	if (_projectionCache.TryGetValue(typeof(TProjection), out var projection))
-		//		return projection as ProjectionSchema<TProjection>;
+		public ProjectionSchema<TProjection, T> GetProjection<TProjection>()
+			where TProjection : class
+		{
+			if (_projectionCache.TryGetValue(typeof(TProjection), out var projection))
+				return projection as ProjectionSchema<TProjection, T>;
 
-		//	var projections = default(List<ProjectionField>);
-		//	lock (_projectionCache)
-		//	{
-		//		var mapping = GetMapping(EntityType, typeof(TProjection), Schema.ProjectionMappingOptions);
-		//		projections = new List<ProjectionField>();
+			lock (_projectionCache)
+			{
+				var mapping = GetMapping(EntityType, typeof(TProjection), Schema.ProjectionMappingOptions);
 
-		//		GetProjections(mapping.Bindings);
+				projection = new ProjectionSchema<TProjection, T>(
+					EntityTable, SchemaFields, null
+					);
+			}
 
-		//		projection = new ProjectionSchema<TProjection>(
-		//			EntityTable, EntityFields, projections.ToArray(),
-		//			EntityJoins, Indexes, EntityType, mapping
-		//			);
-		//		_projectionCache.Add(typeof(TProjection), projection);
-		//		return projection as ProjectionSchema<TProjection>;
-		//	}
+			return null;
+
+			//var projections = default(List<ProjectionField>);
+			//lock (_projectionCache)
+			//{
+			//	var mapping = GetMapping(EntityType, typeof(TProjection), Schema.ProjectionMappingOptions);
+			//	projections = new List<ProjectionField>();
+
+			//	GetProjections(mapping.Bindings);
+
+			//	projection = new ProjectionSchema<TProjection>(
+			//		EntityTable, EntityFields, projections.ToArray(),
+			//		EntityJoins, Indexes, EntityType, mapping
+			//		);
+			//	_projectionCache.Add(typeof(TProjection), projection);
+			//	return projection as ProjectionSchema<TProjection>;
+			//}
+		}
 
 		//	void GetProjections(Modelling.Mapping.Binding.Binding[] bindings, string[] toPath = null,
 		//		string[] fromPath = null)
 		//	{
 		//		throw new NotImplementedException();
 
-		//		//if (toPath == null)
-		//		//	toPath = new string[0];
-		//		//if (fromPath == null)
-		//		//	fromPath = new string[0];
+			//		//if (toPath == null)
+			//		//	toPath = new string[0];
+			//		//if (fromPath == null)
+			//		//	fromPath = new string[0];
 
-		//		//foreach (var binding in bindings)
-		//		//{
-		//		//	if (binding is SubmappingBindingBase submappingBinding)
-		//		//	{
-		//		//		GetProjections(
-		//		//			submappingBinding.Mapping.Bindings,
-		//		//			toPath.Concat(submappingBinding.ToPath).ToArray(),
-		//		//			fromPath.Concat(submappingBinding.FromPath).ToArray()
-		//		//			);
-		//		//	}
-		//		//	else if (binding is MappingBinding mappingBinding)
-		//		//	{
-		//		//		var mappingFromPath = fromPath.Concat(mappingBinding.FromPath);
-		//		//		var mappingToPath = toPath.Concat(mappingBinding.ToPath).ToArray();
+			//		//foreach (var binding in bindings)
+			//		//{
+			//		//	if (binding is SubmappingBindingBase submappingBinding)
+			//		//	{
+			//		//		GetProjections(
+			//		//			submappingBinding.Mapping.Bindings,
+			//		//			toPath.Concat(submappingBinding.ToPath).ToArray(),
+			//		//			fromPath.Concat(submappingBinding.FromPath).ToArray()
+			//		//			);
+			//		//	}
+			//		//	else if (binding is MappingBinding mappingBinding)
+			//		//	{
+			//		//		var mappingFromPath = fromPath.Concat(mappingBinding.FromPath);
+			//		//		var mappingToPath = toPath.Concat(mappingBinding.ToPath).ToArray();
 
-		//		//		var sourceProjection = ProjectionFields.FirstOrDefault(q => q.ModelPath.SequenceEqual(mappingFromPath));
-		//		//		if (sourceProjection == null)
-		//		//			continue;
+			//		//		var sourceProjection = ProjectionFields.FirstOrDefault(q => q.ModelPath.SequenceEqual(mappingFromPath));
+			//		//		if (sourceProjection == null)
+			//		//			continue;
 
-		//		//		projections.Add(new MappedProjectionField(
-		//		//			sourceProjection.SourceName, sourceProjection.FieldName, sourceProjection.AliasName,
-		//		//			mappingToPath, sourceProjection.Join, sourceProjection.IsNullCheck, sourceProjection,
-		//		//			mappingBinding
-		//		//			));
-		//		//	}
-		//		//}
-		//	}
-		//}
+			//		//		projections.Add(new MappedProjectionField(
+			//		//			sourceProjection.SourceName, sourceProjection.FieldName, sourceProjection.AliasName,
+			//		//			mappingToPath, sourceProjection.Join, sourceProjection.IsNullCheck, sourceProjection,
+			//		//			mappingBinding
+			//		//			));
+			//		//	}
+			//		//}
+			//	}
+			//}
 
 		private readonly static object _syncObject = new object();
 		private readonly static MappingStore _mappingStore = new MappingStore();
 
-		private static Silk.Data.Modelling.Mapping.Mapping GetMapping(Type fromType, Type toType,
+		private static Mapping GetMapping(Type fromType, Type toType,
 			MappingOptions options)
 		{
 			var fromModel = TypeModel.GetModelOf(fromType);

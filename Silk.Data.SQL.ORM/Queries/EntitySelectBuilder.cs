@@ -83,8 +83,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			var projectionSchema = EntitySchema as ProjectionSchema<TView, T>;
 			if (typeof(TView) != typeof(T))
 			{
-				throw new NotImplementedException();
-				//projectionSchema = EntitySchema.GetProjection<TView>();
+				projectionSchema = EntitySchema.GetProjection<TView>();
 			}
 
 			foreach (var schemaField in projectionSchema.SchemaFields)

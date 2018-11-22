@@ -80,12 +80,8 @@ namespace Silk.Data.SQL.ORM.Schema
 			var fields = _builtFields.Select(q => q.Field).ToArray();
 			var table = new Table(_entitySchemaAssemblage.TableName,
 				fields.Where(q => q.FieldType != FieldType.JoinedField).Select(q => q.Column).ToArray());
-			var joins = new EntityFieldJoin[0];
 			var indexes = GetSchemaIndexes(table, fields);
-			var entitySchema = new EntitySchema<T>(
-				table, fields,
-				joins, indexes
-				);
+			var entitySchema = new EntitySchema<T>(table, fields, indexes);
 			return entitySchema;
 		}
 
