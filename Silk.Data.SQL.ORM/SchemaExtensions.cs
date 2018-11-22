@@ -182,17 +182,17 @@ namespace Silk.Data.SQL.ORM
 					new CompositeQueryExpression(BuildExpressions())
 					);
 
-			throw new NotImplementedException();
-			//return new QueryInjectResult<T>(
-			//	new CompositeQueryExpression(BuildExpressions()),
-			//	new ObjectResultMapper<T>(
-			//		entities.Length,
-			//		new Mapping(
-			//			null, null,
-			//			schema.SchemaFields.Where(q => q.PrimaryKeyGenerator == PrimaryKeyGenerator.ServerGenerated).Select(q => q.GetValueBinding()).ToArray()
-			//		)),
-			//	entities
-			//	);
+			return new QueryInjectResult<T>(
+				new CompositeQueryExpression(BuildExpressions()),
+				new ObjectResultMapper<T>(
+					entities.Length,
+					new Mapping(
+						null, null,
+						schema.SchemaFields.Where(q => q.PrimaryKeyGenerator == PrimaryKeyGenerator.ServerGenerated)
+							.SelectMany(q => q.Bindings).ToArray()
+					)),
+				entities
+				);
 
 			IEnumerable<QueryExpression> BuildExpressions()
 			{
@@ -227,10 +227,12 @@ namespace Silk.Data.SQL.ORM
 					if (!isBulkInsert)
 					{
 						yield return queryBuilder.BuildQuery();
-						//  todo: when the SelectBuilder API is refactored come back here and make it sensible!
+						//  todo: support composite primary keys?
 						var selectPKQueryBuilder = new EntitySelectBuilder<T>(schema.Schema);
 						selectPKQueryBuilder.Project<int>(QueryExpression.Alias(
-							QueryExpression.LastInsertIdFunction(), "__PK_IDENTITY"));
+							QueryExpression.LastInsertIdFunction(),
+							schema.SchemaFields.First(q => q.PrimaryKeyGenerator == PrimaryKeyGenerator.ServerGenerated).AliasName
+							));
 						yield return selectPKQueryBuilder.BuildQuery();
 					}
 				}

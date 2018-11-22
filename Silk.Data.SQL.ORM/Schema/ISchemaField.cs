@@ -63,7 +63,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			Join = join;
 			ModelPath = modelPath;
 			AliasName = aliasName;
-			SchemaFieldReference = SchemaFieldReference<TValue>.Create(this);
+			SchemaFieldReference = SchemaFieldReference<TValue>.Create(aliasName);
 
 			Bindings = new[]
 			{

@@ -64,19 +64,19 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public ValueResultMapper<TValue> Project<TValue>(QueryExpression queryExpression)
 		{
-			throw new NotImplementedException();
+			if (!SqlTypeHelper.IsSqlPrimitiveType(typeof(TValue)))
+				throw new Exception("Cannot project complex types.");
 
-			//if (!SqlTypeHelper.IsSqlPrimitiveType(typeof(TValue)))
-			//	throw new Exception("Cannot project complex types.");
+			var aliasExpression = queryExpression as AliasExpression;
+			if (aliasExpression == null)
+			{
+				aliasExpression = QueryExpression.Alias(queryExpression, $"__AutoAlias_{_projectionExpressions.Count}");
+			}
+			_projectionExpressions.Add(aliasExpression.Identifier.Identifier, aliasExpression);
 
-			//var aliasExpression = queryExpression as AliasExpression;
-			//if (aliasExpression == null)
-			//{
-			//	aliasExpression = QueryExpression.Alias(queryExpression, $"__AutoAlias_{_projectionExpressions.Count}");
-			//}
-			//_projectionExpressions.Add(aliasExpression);
-
-			//return new ValueResultMapper<TValue>(1, aliasExpression.Identifier.Identifier);
+			return new ValueResultMapper<TValue>(1, SchemaFieldReference<TValue>.Create(
+				aliasExpression.Identifier.Identifier
+				));
 		}
 
 		public ObjectResultMapper<TView> Project<TView>()

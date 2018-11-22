@@ -66,7 +66,7 @@ namespace Silk.Data.SQL.ORM.Schema
 				{ typeof(DateTime?), new QueryResultReader<DateTime?>((q,o) => q.GetDateTime(o)) }
 			};
 
-		public static SchemaFieldReference<T> Create(ISchemaField schemaField)
+		public static SchemaFieldReference<T> Create(string aliasName)
 		{
 			Delegate readerDelegate;
 			if (typeof(T).IsEnum)
@@ -78,7 +78,7 @@ namespace Silk.Data.SQL.ORM.Schema
 				if (!_typeReaders.TryGetValue(typeof(T), out readerDelegate))
 					throw new InvalidOperationException("Data type not supported.");
 			}
-			return new SchemaFieldReference<T>(schemaField.AliasName, readerDelegate as QueryResultReader<T>);
+			return new SchemaFieldReference<T>(aliasName, readerDelegate as QueryResultReader<T>);
 		}
 
 		private static QueryResultReader<T> GetEnumReader()
