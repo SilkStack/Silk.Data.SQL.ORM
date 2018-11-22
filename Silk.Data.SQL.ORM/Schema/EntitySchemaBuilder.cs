@@ -108,7 +108,7 @@ namespace Silk.Data.SQL.ORM.Schema
 				while (joinStack.Count >= path.Length)
 					joinStack.Pop();
 
-				var fieldAssemblage = FindOrCreateField(propertyField, path, joinStack.LastOrDefault());
+				var fieldAssemblage = FindOrCreateField(propertyField, path, joinStack.FirstOrDefault());
 
 				if (!SqlTypeHelper.IsSqlPrimitiveType(propertyField.FieldType))
 				{
