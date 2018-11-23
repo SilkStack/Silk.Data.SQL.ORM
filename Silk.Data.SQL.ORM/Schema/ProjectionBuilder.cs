@@ -7,7 +7,69 @@ using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Schema
 {
-	class ProjectionBuilder<TEntity, TProjection>
+	public static class ProjectionBuilder
+	{
+		public static IEnumerable<(ISourceField sourceField, ITargetField targetField)> GetBindCandidatePairs(SourceModel fromModel, TargetModel toModel, MappingBuilder builder)
+		{
+			//  find fields with matching names that aren't already bound
+			foreach (var fromField in fromModel.Fields.Where(q => q.CanRead && !builder.IsBound(q)))
+			{
+				var toField = toModel.Fields.FirstOrDefault(q => q.CanWrite && q.FieldName == fromField.FieldName);
+				if (toField == null)
+					continue;
+
+				yield return (fromField, toField);
+			}
+
+			//  flattening candidates from the target model
+			foreach (var toField in toModel.Fields.Where(q => q.CanWrite && !builder.IsBound(q)))
+			{
+				var potentialPaths = ConventionUtilities.GetPaths(toField.FieldName).ToArray();
+				if (potentialPaths.Length == 1)
+					continue;
+
+				ISourceField fromField = null;
+				foreach (var sourcePath in potentialPaths)
+				{
+					var testField = fromModel.GetField(sourcePath);
+					if (testField == null || !testField.CanRead)
+						continue;
+					fromField = testField;
+					break;
+				}
+				if (fromField == null)
+					continue;
+
+				yield return (fromField, toField);
+			}
+
+			//  inflation candidates from the source model
+			foreach (var fromField in fromModel.Fields.Where(q => q.CanRead))
+			{
+				var potentialPaths = ConventionUtilities.GetPaths(fromField.FieldName).ToArray();
+				if (potentialPaths.Length == 1)
+					continue;
+
+				ITargetField toField = null;
+
+				foreach (var targetPath in potentialPaths)
+				{
+					var testField = toModel.GetField(targetPath);
+					if (testField == null || !testField.CanWrite || testField.FieldType != fromField.FieldType ||
+						builder.IsBound(testField))
+						continue;
+					toField = testField;
+					break;
+				}
+				if (toField == null)
+					continue;
+
+				yield return (fromField, toField);
+			}
+		}
+	}
+
+	public class ProjectionBuilder<TEntity, TProjection>
 		where TEntity : class
 		where TProjection : class
 	{

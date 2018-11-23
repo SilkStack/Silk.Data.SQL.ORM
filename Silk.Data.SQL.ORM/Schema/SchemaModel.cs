@@ -9,18 +9,6 @@ namespace Silk.Data.SQL.ORM.Schema
 {
 	public class SchemaModel : SourceModel
 	{
-		public override ISourceField[] Fields
-		{
-			get
-			{
-				//  todo: remove the need for this
-				//  hack to make mapping of complex pocos projections work
-				return base.Fields.Concat(
-					base.Fields.SelectMany(q => q.Fields)
-					).ToArray();
-			}
-		}
-
 		public SchemaModel(IModel fromModel, ISourceField[] fields, string[] selfPath, IModel rootModel = null)
 			: base(fromModel, fields, selfPath, rootModel)
 		{
@@ -96,11 +84,7 @@ namespace Silk.Data.SQL.ORM.Schema
 				}
 				else
 				{
-					//  todo: remove the need for this
-					//  hack to make complex poco mapping work
-					var fieldName = string.Join("", _rootPath.Concat(new[] { field.FieldName }));
-
-					_fields.Add(new SchemaField<T1, T>(fieldName, field.CanRead, field.CanWrite, field.IsEnumerable,
+					_fields.Add(new SchemaField<T1, T>(field.FieldName, field.CanRead, field.CanWrite, field.IsEnumerable,
 						field.ElementType, _rootPath.Concat(new[] { field.FieldName }).ToArray(), _rootModel ?? _fromModel,
 						schemaFieldReference, _entitySchema));
 				}
@@ -145,10 +129,6 @@ namespace Silk.Data.SQL.ORM.Schema
 					FieldTypeModel.Transform(transformer);
 					var fieldTypeSourceModel = transformer.BuildSchemaModel();
 					_fields = fieldTypeSourceModel.Fields;
-					//  todo: remove the need for this
-					//  hack for complex poco mapping
-					_fields = _fields.Concat(fieldTypeSourceModel.Fields.SelectMany(q => q.Fields))
-						.ToArray();
 				}
 				return _fields;
 			}

@@ -21,7 +21,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			= new List<IEntitySchemaAssemblage>();
 
 		public MappingOptions ProjectionMappingOptions { get; set; }
-		 = CreateObjectMappingOptions();
+		 = CreateDefaultMappingOptions();
 
 		public SchemaBuilder()
 		{
@@ -106,9 +106,13 @@ namespace Silk.Data.SQL.ORM.Schema
 			}
 		}
 
-		private static MappingOptions CreateObjectMappingOptions()
+		public static MappingOptions CreateDefaultMappingOptions()
 		{
-			var ret = new MappingOptions();
+			var ret = new MappingOptions
+			{
+				BindingCandidatesDelegate = ProjectionBuilder.GetBindCandidatePairs
+			};
+
 			ret.Conventions.Add(new UseObjectMappingOverrides());
 			ret.Conventions.Add(CreateInstanceAsNeeded.Instance);
 			ret.Conventions.Add(MapOverriddenTypes.Instance);
