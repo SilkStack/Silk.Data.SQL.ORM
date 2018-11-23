@@ -72,6 +72,17 @@ namespace Silk.Data.SQL.ORM.Schema
 						)
 				}.Concat(schemaFields.SelectMany(q => q.Bindings)).ToArray());
 			SchemaModel = SchemaModel.Create(this);
+			AssignFieldAndModelPropertiesOnSchemaFieldReferences();
+		}
+
+		private void AssignFieldAndModelPropertiesOnSchemaFieldReferences()
+		{
+			foreach (var schemaField in SchemaFields)
+			{
+				var schemaFieldReference = schemaField.SchemaFieldReference as FieldReferenceBase;
+				schemaFieldReference.Model = SchemaModel;
+				schemaFieldReference.Field = SchemaModel.GetField(schemaField.ModelPath);
+			}
 		}
 
 		public ProjectionSchema<TProjection, T> GetProjection<TProjection>()

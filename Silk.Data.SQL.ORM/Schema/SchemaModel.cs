@@ -14,11 +14,21 @@ namespace Silk.Data.SQL.ORM.Schema
 		{
 		}
 
+		public override IFieldResolver CreateFieldResolver()
+		{
+			return base.CreateFieldResolver();
+		}
+
 		public static SchemaModel Create<T>(EntitySchema<T> entitySchema)
 			where T : class
-			=> new Transformer<T>(null, TypeModel.GetModelOf<T>(), entitySchema).BuildSchemaModel();
+		{
+			var typeModel = TypeModel.GetModelOf<T>();
+			var transformer = new Transformer<T>(null, typeModel, entitySchema);
+			typeModel.Transform(transformer);
+			return transformer.BuildSchemaModel();
+		}
 
-		private class Transformer<T> : IModelTransformer
+		public class Transformer<T> : IModelTransformer
 			where T : class
 		{
 			private IModel _fromModel;
@@ -42,16 +52,17 @@ namespace Silk.Data.SQL.ORM.Schema
 			public void VisitField<T1>(IField<T1> field)
 			{
 				var schemaFieldReference = FindSchemaFieldReference(field);
-				if (schemaFieldReference == null)
+				if (schemaFieldReference == null && SqlTypeHelper.IsSqlPrimitiveType(field.FieldType))
 					return;
 
 				if (_rootPath == null || _rootPath.Length == 0)
-					_fields.Add(new SchemaField<T1>(field.FieldName, field.CanRead, field.CanWrite, field.IsEnumerable,
-						field.ElementType, new[] { field.FieldName }, _rootModel ?? _fromModel, schemaFieldReference));
+					_fields.Add(new SchemaField<T1, T>(field.FieldName, field.CanRead, field.CanWrite, field.IsEnumerable,
+						field.ElementType, new[] { field.FieldName }, _rootModel ?? _fromModel,
+						schemaFieldReference, _entitySchema));
 				else
-					_fields.Add(new SchemaField<T1>(field.FieldName, field.CanRead, field.CanWrite, field.IsEnumerable,
+					_fields.Add(new SchemaField<T1, T>(field.FieldName, field.CanRead, field.CanWrite, field.IsEnumerable,
 						field.ElementType, _rootPath.Concat(new[] { field.FieldName }).ToArray(), _rootModel ?? _fromModel,
-						schemaFieldReference));
+						schemaFieldReference, _entitySchema));
 			}
 
 			private ISchemaFieldReference FindSchemaFieldReference<T1>(IField<T1> field)
@@ -63,7 +74,6 @@ namespace Silk.Data.SQL.ORM.Schema
 
 			public SchemaModel BuildSchemaModel()
 			{
-				_rootModel.Transform(this);
 				string[] selfPath;
 				if (_rootPath == null || _rootPath.Length == 0)
 					selfPath = new[] { "." };
@@ -74,36 +84,56 @@ namespace Silk.Data.SQL.ORM.Schema
 		}
 	}
 
-	public class SchemaField<T> : FieldBase<T>, ISourceField, IField<T>
+	public class SchemaField<TValue, TEntity> : FieldBase<TValue>, ISourceField, IField<TValue>
+		where TEntity : class
 	{
 		public IModel RootModel { get; }
 
 		public string[] FieldPath { get; }
 
-		public ISourceField[] Fields { get; } = new ISourceField[0];
+		private ISourceField[] _fields;
+		public ISourceField[] Fields
+		{
+			get
+			{
+				if (_fields == null)
+				{
+					var transformer = new SchemaModel.Transformer<TEntity>(
+						FieldPath, RootModel, _entitySchema
+						);
+					FieldTypeModel.Transform(transformer);
+					var fieldTypeSourceModel = transformer.BuildSchemaModel();
+					_fields = fieldTypeSourceModel.Fields;
+				}
+				return _fields;
+			}
+		}
 
 		public ISchemaFieldReference SchemaFieldReference { get; }
 
+		private readonly EntitySchema<TEntity> _entitySchema;
+
 		public SchemaField(string fieldName, bool canRead, bool canWrite,
 			bool isEnumerable, Type elementType, string[] fieldPath, IModel rootModel,
-			ISchemaFieldReference schemaFieldReference) :
+			ISchemaFieldReference schemaFieldReference, EntitySchema<TEntity> entitySchema) :
 			base(fieldName, canRead, canWrite, isEnumerable, elementType)
 		{
 			FieldPath = fieldPath;
 			RootModel = rootModel;
 			SchemaFieldReference = schemaFieldReference;
+			_entitySchema = entitySchema;
 		}
 
 		public MappingBinding CreateBinding<TTo>(IMappingBindingFactory bindingFactory, ITargetField toField)
 		{
-			return bindingFactory.CreateBinding<T, TTo>(
+			return bindingFactory.CreateBinding<TValue, TTo>(
 				SchemaFieldReference,
 				toField.RootModel.GetFieldReference(toField));
 		}
 
 		public MappingBinding CreateBinding<TTo, TBindingOption>(IMappingBindingFactory<TBindingOption> bindingFactory, ITargetField toField, TBindingOption bindingOption)
 		{
-			return bindingFactory.CreateBinding<T, TTo>(
+			return bindingFactory.CreateBinding<TValue, TTo>(
 				SchemaFieldReference,
 				toField.RootModel.GetFieldReference(toField),
 				bindingOption);

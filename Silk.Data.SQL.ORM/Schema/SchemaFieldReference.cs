@@ -24,7 +24,13 @@ namespace Silk.Data.SQL.ORM.Schema
 		QueryResultReader<T> ReaderFunction { get; }
 	}
 
-	public abstract class FieldReferenceBase<T>
+	public abstract class FieldReferenceBase
+	{
+		public IField Field { get; internal set; }
+		public IModel Model { get; internal set; }
+	}
+
+	public abstract class FieldReferenceBase<T> : FieldReferenceBase
 	{
 		private static readonly Dictionary<Type, Delegate> _typeReaders =
 			new Dictionary<Type, Delegate>()
@@ -85,10 +91,6 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public string FieldAlias { get; }
 
-		public IField Field => throw new System.NotSupportedException();
-
-		public IModel Model => throw new System.NotSupportedException();
-
 		public SchemaFieldReference(string alias, QueryResultReader<T> readerFunction)
 		{
 			FieldAlias = alias;
@@ -108,10 +110,6 @@ namespace Silk.Data.SQL.ORM.Schema
 		public int Ordinal { get; }
 
 		public string FieldAlias { get; }
-
-		public IField Field => throw new System.NotSupportedException();
-
-		public IModel Model => throw new System.NotSupportedException();
 
 		public OrdinalFieldReference(int ordinal, QueryResultReader<T> readerFunction)
 		{
