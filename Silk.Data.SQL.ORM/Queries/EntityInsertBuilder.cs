@@ -109,6 +109,17 @@ namespace Silk.Data.SQL.ORM.Queries
 			_currentValueExpressions[columnExpression.ColumnName] = valueExpressionResult.QueryExpression;
 		}
 
+		public void Set<TProperty>(Expression<Func<T, TProperty>> fieldSelector, Expression valueExpression)
+		{
+			var columnExpression = ExpressionConverter.Convert(fieldSelector)
+				.QueryExpression as ColumnExpression;
+			if (columnExpression == null)
+				throw new InvalidOperationException("Invalid property selector expression.");
+			AddColumnName(columnExpression);
+			var valueExpressionResult = ExpressionConverter.Convert(valueExpression);
+			_currentValueExpressions[columnExpression.ColumnName] = valueExpressionResult.QueryExpression;
+		}
+
 		public void Set<TProperty>(Expression<Func<T, TProperty>> fieldSelector, IQueryBuilder subQuery)
 		{
 			var columnExpression = ExpressionConverter.Convert(fieldSelector)
@@ -117,6 +128,16 @@ namespace Silk.Data.SQL.ORM.Queries
 				throw new InvalidOperationException("Invalid property selector expression.");
 			AddColumnName(columnExpression);
 			_currentValueExpressions[columnExpression.ColumnName] = subQuery.BuildQuery();
+		}
+
+		public void Set<TProperty>(Expression<Func<T, TProperty>> fieldSelector, QueryExpression queryExpression)
+		{
+			var columnExpression = ExpressionConverter.Convert(fieldSelector)
+				.QueryExpression as ColumnExpression;
+			if (columnExpression == null)
+				throw new InvalidOperationException("Invalid property selector expression.");
+			AddColumnName(columnExpression);
+			_currentValueExpressions[columnExpression.ColumnName] = queryExpression;
 		}
 
 		public override QueryExpression BuildQuery()
