@@ -9,12 +9,33 @@ namespace Silk.Data.SQL.ORM.Schema
 {
 	public static class ProjectionBuilder
 	{
+		private static IEnumerable<ISourceField> AllFields(SourceModel fromModel)
+		{
+			foreach (var field in fromModel.Fields)
+			{
+				yield return field;
+				foreach (var subField in field.Fields.SelectMany(q => AllFields(q)))
+				{
+					yield return subField;
+				}
+			}
+		}
+
+		private static IEnumerable<ISourceField> AllFields(ISourceField sourceField)
+		{
+			yield return sourceField;
+			foreach (var field in sourceField.Fields.SelectMany(q => AllFields(q)))
+			{
+				yield return field;
+			}
+		}
+
 		public static IEnumerable<(ISourceField sourceField, ITargetField targetField)> GetBindCandidatePairs(SourceModel fromModel, TargetModel toModel, MappingBuilder builder)
 		{
 			//  find fields with matching names that aren't already bound
-			foreach (var fromField in fromModel.Fields.Where(q => q.CanRead && !builder.IsBound(q)))
+			foreach (var fromField in AllFields(fromModel).Where(q => q.CanRead && !builder.IsBound(q)))
 			{
-				var toField = toModel.Fields.FirstOrDefault(q => q.CanWrite && q.FieldName == fromField.FieldName);
+				var toField = toModel.Fields.FirstOrDefault(q => q.CanWrite && string.Join("", q.FieldPath) == fromField.FieldName);
 				if (toField == null)
 					continue;
 
@@ -44,9 +65,11 @@ namespace Silk.Data.SQL.ORM.Schema
 			}
 
 			//  inflation candidates from the source model
-			foreach (var fromField in fromModel.Fields.Where(q => q.CanRead))
+			foreach (var fromField in AllFields(fromModel).Where(q => q.CanRead))
 			{
-				var potentialPaths = ConventionUtilities.GetPaths(fromField.FieldName).ToArray();
+				var potentialPaths = ConventionUtilities.GetPaths(fromField.FieldName)
+					.Concat(ConventionUtilities.GetPaths(string.Join("", fromField.FieldPath)))
+					.ToArray();
 				if (potentialPaths.Length == 1)
 					continue;
 
