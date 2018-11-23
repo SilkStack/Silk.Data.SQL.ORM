@@ -9,6 +9,18 @@ namespace Silk.Data.SQL.ORM.Schema
 {
 	public class SchemaModel : SourceModel
 	{
+		public override ISourceField[] Fields
+		{
+			get
+			{
+				//  todo: remove the need for this
+				//  hack to make mapping of complex pocos projections work
+				return base.Fields.Concat(
+					base.Fields.SelectMany(q => q.Fields)
+					).ToArray();
+			}
+		}
+
 		public SchemaModel(IModel fromModel, ISourceField[] fields, string[] selfPath, IModel rootModel = null)
 			: base(fromModel, fields, selfPath, rootModel)
 		{
@@ -16,7 +28,7 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public override IFieldResolver CreateFieldResolver()
 		{
-			return base.CreateFieldResolver();
+			return new FieldResolver();
 		}
 
 		public static SchemaModel Create<T>(EntitySchema<T> entitySchema)
@@ -26,6 +38,27 @@ namespace Silk.Data.SQL.ORM.Schema
 			var transformer = new Transformer<T>(null, typeModel, entitySchema);
 			typeModel.Transform(transformer);
 			return transformer.BuildSchemaModel();
+		}
+
+		private class FieldResolver : IFieldResolver
+		{
+			public void AddMutator(IFieldReferenceMutator mutator)
+			{
+			}
+
+			public void RemoveMutator(IFieldReferenceMutator mutator)
+			{
+			}
+
+			public ModelNode ResolveNode(IFieldReference fieldReference)
+			{
+				if (!(fieldReference is ISchemaFieldReference schemaFieldReference))
+					throw new InvalidOperationException($"Unsupported field reference type: {fieldReference.GetType().FullName}");
+				return new ModelNode(
+					schemaFieldReference.Field,
+					new ModelPathNode[] { new FieldPathNode(schemaFieldReference.FieldAlias, schemaFieldReference.Field) }
+					);
+			}
 		}
 
 		public class Transformer<T> : IModelTransformer
@@ -56,13 +89,21 @@ namespace Silk.Data.SQL.ORM.Schema
 					return;
 
 				if (_rootPath == null || _rootPath.Length == 0)
+				{
 					_fields.Add(new SchemaField<T1, T>(field.FieldName, field.CanRead, field.CanWrite, field.IsEnumerable,
 						field.ElementType, new[] { field.FieldName }, _rootModel ?? _fromModel,
 						schemaFieldReference, _entitySchema));
+				}
 				else
-					_fields.Add(new SchemaField<T1, T>(field.FieldName, field.CanRead, field.CanWrite, field.IsEnumerable,
+				{
+					//  todo: remove the need for this
+					//  hack to make complex poco mapping work
+					var fieldName = string.Join("", _rootPath.Concat(new[] { field.FieldName }));
+
+					_fields.Add(new SchemaField<T1, T>(fieldName, field.CanRead, field.CanWrite, field.IsEnumerable,
 						field.ElementType, _rootPath.Concat(new[] { field.FieldName }).ToArray(), _rootModel ?? _fromModel,
 						schemaFieldReference, _entitySchema));
+				}
 			}
 
 			private ISchemaFieldReference FindSchemaFieldReference<T1>(IField<T1> field)
@@ -104,12 +145,18 @@ namespace Silk.Data.SQL.ORM.Schema
 					FieldTypeModel.Transform(transformer);
 					var fieldTypeSourceModel = transformer.BuildSchemaModel();
 					_fields = fieldTypeSourceModel.Fields;
+					//  todo: remove the need for this
+					//  hack for complex poco mapping
+					_fields = _fields.Concat(fieldTypeSourceModel.Fields.SelectMany(q => q.Fields))
+						.ToArray();
 				}
 				return _fields;
 			}
 		}
 
 		public ISchemaFieldReference SchemaFieldReference { get; }
+
+		public override IModel FieldModel => _entitySchema.SchemaModel;
 
 		private readonly EntitySchema<TEntity> _entitySchema;
 

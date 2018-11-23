@@ -27,6 +27,8 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public TypeModel FieldTypeModel => throw new NotImplementedException();
 
+		public IModel FieldModel => throw new NotImplementedException();
+
 		public PathOnlySourceField(string[] fieldPath)
 		{
 			FieldPath = fieldPath;

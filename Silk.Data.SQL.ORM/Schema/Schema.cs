@@ -26,7 +26,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			Dictionary<ISchemaField, FieldOperations> fieldOperations)
 		{
 			if (projectionMappingOptions == null)
-				projectionMappingOptions = MappingOptions.DefaultObjectMappingOptions;
+				throw new ArgumentNullException(nameof(projectionMappingOptions));
 			ProjectionMappingOptions = projectionMappingOptions;
 
 			_entitySchemas = entitySchemas.ToDictionary(q => q.EntityType);

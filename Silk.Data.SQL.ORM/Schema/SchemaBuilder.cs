@@ -1,4 +1,5 @@
 ﻿using Silk.Data.Modelling;
+using Silk.Data.Modelling.Mapping;
 using Silk.Data.SQL.ORM.Expressions;
 using System;
 using System.Collections.Generic;
@@ -20,7 +21,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			= new List<IEntitySchemaAssemblage>();
 
 		public MappingOptions ProjectionMappingOptions { get; set; }
-			= MappingOptions.CreateObjectMappingOptions();
+		 = CreateObjectMappingOptions();
 
 		public SchemaBuilder()
 		{
@@ -103,6 +104,30 @@ namespace Silk.Data.SQL.ORM.Schema
 			{
 				yield return kvp.Value.Builder.CreateAssemblage();
 			}
+		}
+
+		private static MappingOptions CreateObjectMappingOptions()
+		{
+			var ret = new MappingOptions();
+			ret.Conventions.Add(new UseObjectMappingOverrides());
+			ret.Conventions.Add(CreateInstanceAsNeeded.Instance);
+			ret.Conventions.Add(MapOverriddenTypes.Instance);
+
+			//  object type conversions
+			ret.Conventions.Add(CopyExplicitCast.Instance);
+			ret.Conventions.Add(CreateInstancesOfPropertiesAsNeeded.Instance);
+
+			//  straight up copies
+			ret.Conventions.Add(CopySameTypes.Instance);
+
+			//  framework types casting
+			ret.Conventions.Add(CastNumericTypes.Instance);
+
+			//  string conversions
+			ret.Conventions.Add(ConvertToStringWithToString.Instance);
+			ret.Conventions.Add(CopyTryParse.Instance);
+
+			return ret;
 		}
 	}
 }
