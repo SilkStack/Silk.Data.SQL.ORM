@@ -73,6 +73,52 @@ namespace Silk.Data.SQL.ORM.Schema
 		}
 	}
 
+	public class ProjectedPrimitiveSchemaField<TEntity> : ISchemaField<TEntity>
+		where TEntity : class
+	{
+		public Column Column { get; }
+
+		public bool IsPrimaryKey => PrimaryKeyGenerator != PrimaryKeyGenerator.NotPrimaryKey;
+
+		public PrimaryKeyGenerator PrimaryKeyGenerator { get; }
+
+		public string FieldName { get; }
+
+		public ISchemaFieldReference SchemaFieldReference { get; }
+
+		public IFieldReference EntityFieldReference { get; }
+
+		public FieldType FieldType { get; }
+
+		public string AliasName { get; }
+
+		public EntityFieldJoin Join { get; }
+
+		public System.Type DataType { get; }
+
+		public string[] ModelPath { get; }
+
+		public Modelling.Mapping.Binding.Binding[] Bindings { get; }
+
+		public ProjectedPrimitiveSchemaField(string fieldName, Column column, PrimaryKeyGenerator primaryKeyGenerator,
+			IFieldReference entityFieldReference, EntityFieldJoin join, string[] modelPath,
+			string aliasName, System.Type dataType, ISchemaFieldReference schemaFieldReference,
+			Modelling.Mapping.Binding.Binding[] bindings)
+		{
+			FieldName = fieldName;
+			Column = column;
+			PrimaryKeyGenerator = primaryKeyGenerator;
+			EntityFieldReference = entityFieldReference;
+			FieldType = join != null ? FieldType.JoinedField : FieldType.StoredField;
+			Join = join;
+			ModelPath = modelPath;
+			AliasName = aliasName;
+			DataType = dataType;
+			SchemaFieldReference = schemaFieldReference;
+			Bindings = bindings;
+		}
+	}
+
 	public class EmbeddedObjectNullCheckSchemaField<TValue, TEntity> : ISchemaField<TEntity>
 		where TEntity : class
 	{
@@ -84,7 +130,7 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public string FieldName { get; }
 
-		public ISchemaFieldReference SchemaFieldReference => throw new System.NotImplementedException();
+		public ISchemaFieldReference SchemaFieldReference { get; }
 
 		public IFieldReference EntityFieldReference { get; }
 
@@ -120,6 +166,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			EntityFieldReference = entityFieldReference;
 			ModelPath = modelPath;
 			AliasName = aliasName;
+			SchemaFieldReference = SchemaFieldReference<bool>.Create(aliasName);
 			Bindings = new Modelling.Mapping.Binding.Binding[]
 			{
 				new CreateInstanceWithNullCheck<TValue, bool>(
