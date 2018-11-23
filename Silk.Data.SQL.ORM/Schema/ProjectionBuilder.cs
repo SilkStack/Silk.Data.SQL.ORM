@@ -47,11 +47,7 @@ namespace Silk.Data.SQL.ORM.Schema
 				if (_mappingStore.TryGetMapping(fromModel, toModel, out mapping))
 					return mapping;
 
-				var mappingBuilder = new MappingBuilder(fromModel, toModel, _mappingStore);
-				foreach (var convention in options.Conventions)
-				{
-					mappingBuilder.AddConvention(convention);
-				}
+				var mappingBuilder = new MappingBuilder(fromModel, toModel, options, _mappingStore);
 				return mappingBuilder.BuildMapping();
 			}
 		}
