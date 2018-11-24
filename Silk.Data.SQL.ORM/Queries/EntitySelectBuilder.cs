@@ -158,6 +158,46 @@ namespace Silk.Data.SQL.ORM.Queries
 			_where = QueryExpression.CombineConditions(_where, ConditionType.AndAlso, queryExpression);
 		}
 
+		public void AndWhere(ISchemaField<T> schemaField, ComparisonOperator @operator, T entity)
+		{
+			var fieldOperations = Schema.GetFieldOperations(schemaField);
+			var valueExpression = fieldOperations.Expressions.Value(entity, EntityReadWriter);
+			AndWhere(QueryExpression.Compare(
+				QueryExpression.Column(schemaField.Column.ColumnName),
+				@operator,
+				valueExpression
+				));
+		}
+
+		public void AndWhere<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, TValue value)
+		{
+			var valueExpression = QueryExpression.Value(value);
+			AndWhere(QueryExpression.Compare(
+				QueryExpression.Column(schemaField.Column.ColumnName),
+				@operator,
+				valueExpression
+				));
+		}
+
+		public void AndWhere(ISchemaField<T> schemaField, ComparisonOperator @operator, Expression<Func<T, bool>> valueExpression)
+		{
+			var valueExpressionResult = ExpressionConverter.Convert(valueExpression);
+			AndWhere(QueryExpression.Compare(
+				QueryExpression.Column(schemaField.Column.ColumnName),
+				@operator,
+				valueExpressionResult.QueryExpression
+				));
+		}
+
+		public void AndWhere<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
+		{
+			AndWhere(QueryExpression.Compare(
+				QueryExpression.Column(schemaField.Column.ColumnName),
+				@operator,
+				subQuery.BuildQuery()
+				));
+		}
+
 		public void AndWhere(Expression<Func<T, bool>> expression)
 		{
 			AndWhere(ExpressionConverter.Convert(expression));
@@ -172,6 +212,46 @@ namespace Silk.Data.SQL.ORM.Queries
 		public void OrWhere(QueryExpression queryExpression)
 		{
 			_where = QueryExpression.CombineConditions(_where, ConditionType.OrElse, queryExpression);
+		}
+
+		public void OrWhere(ISchemaField<T> schemaField, ComparisonOperator @operator, T entity)
+		{
+			var fieldOperations = Schema.GetFieldOperations(schemaField);
+			var valueExpression = fieldOperations.Expressions.Value(entity, EntityReadWriter);
+			OrWhere(QueryExpression.Compare(
+				QueryExpression.Column(schemaField.Column.ColumnName),
+				@operator,
+				valueExpression
+				));
+		}
+
+		public void OrWhere<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, TValue value)
+		{
+			var valueExpression = QueryExpression.Value(value);
+			OrWhere(QueryExpression.Compare(
+				QueryExpression.Column(schemaField.Column.ColumnName),
+				@operator,
+				valueExpression
+				));
+		}
+
+		public void OrWhere(ISchemaField<T> schemaField, ComparisonOperator @operator, Expression<Func<T, bool>> valueExpression)
+		{
+			var valueExpressionResult = ExpressionConverter.Convert(valueExpression);
+			OrWhere(QueryExpression.Compare(
+				QueryExpression.Column(schemaField.Column.ColumnName),
+				@operator,
+				valueExpressionResult.QueryExpression
+				));
+		}
+
+		public void OrWhere<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
+		{
+			OrWhere(QueryExpression.Compare(
+				QueryExpression.Column(schemaField.Column.ColumnName),
+				@operator,
+				subQuery.BuildQuery()
+				));
 		}
 
 		public void OrWhere(Expression<Func<T, bool>> expression)
