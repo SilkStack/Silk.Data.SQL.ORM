@@ -13,8 +13,8 @@ namespace Silk.Data.SQL.ORM.Schema
 	/// </summary>
 	public class SchemaBuilder
 	{
-		private readonly Dictionary<Type, (IEntitySchemaDefinition Definition, IEntitySchemaBuilder Builder)> _entitySchemaBuilders
-			= new Dictionary<Type, (IEntitySchemaDefinition Definition, IEntitySchemaBuilder Builder)>();
+		private readonly List<(IEntitySchemaDefinition Definition, IEntitySchemaBuilder Builder)> _entitySchemaBuilders
+			= new List<(IEntitySchemaDefinition Definition, IEntitySchemaBuilder Builder)>();
 		private readonly Dictionary<MethodInfo, IMethodCallConverter> _methodCallConverters
 			= new Dictionary<MethodInfo, IMethodCallConverter>();
 		private readonly List<IEntitySchemaAssemblage> _entitySchemaAssemblages
@@ -50,6 +50,14 @@ namespace Silk.Data.SQL.ORM.Schema
 			_methodCallConverters.Add(methodInfo, methodCallConverter);
 		}
 
+		public void AddDefinition<T>(EntitySchemaDefinition<T> definition)
+			where T : class
+		{
+			var builder = new EntitySchemaBuilder<T>(definition, _entitySchemaAssemblages);
+			var definitionBuilderPair = (definition, builder);
+			_entitySchemaBuilders.Add(definitionBuilderPair);
+		}
+
 		/// <summary>
 		/// Add an entity type to the schema and return the EntitySchemaBuilder for customizing how the entity is stored.
 		/// </summary>
@@ -59,12 +67,14 @@ namespace Silk.Data.SQL.ORM.Schema
 			where T : class
 		{
 			var entityType = typeof(T);
-			if (_entitySchemaBuilders.TryGetValue(entityType, out var definitionBuilderPair))
+			var definitionBuilderPair = _entitySchemaBuilders.FirstOrDefault(q => q.Definition.EntityType == entityType);
+			if (_entitySchemaBuilders.Any(q => q.Definition.EntityType == entityType))
 				return definitionBuilderPair.Definition as EntitySchemaDefinition<T>;
+
 			var definition = new EntitySchemaDefinition<T>();
 			var builder = new EntitySchemaBuilder<T>(definition, _entitySchemaAssemblages);
 			definitionBuilderPair = (definition, builder);
-			_entitySchemaBuilders.Add(entityType, definitionBuilderPair);
+			_entitySchemaBuilders.Add(definitionBuilderPair);
 			return definition;
 		}
 
@@ -87,8 +97,8 @@ namespace Silk.Data.SQL.ORM.Schema
 			{
 				assemblage.Builder.DefineAllStoredFields();
 			}
-			var entitySchemas = _entitySchemaAssemblages.Select(q => q.Builder.BuildSchema())
-				.ToArray();
+			var entitySchemas = _entitySchemaAssemblages.Select(q => new { Id = q.Definition.DefinitionId, Schema = q.Builder.BuildSchema() })
+				.ToDictionary(q => q.Id, q => q.Schema);
 			var fieldOperations = _entitySchemaAssemblages.SelectMany(q => q.Builder.BuildFieldOperations())
 				.ToDictionary(q => q.Key, q => q.Value);
 			return new Schema(
@@ -100,9 +110,9 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		private IEnumerable<IEntitySchemaAssemblage> CreateEntitySchemaAssemblages()
 		{
-			foreach (var kvp in _entitySchemaBuilders)
+			foreach (var pair in _entitySchemaBuilders)
 			{
-				yield return kvp.Value.Builder.CreateAssemblage();
+				yield return pair.Builder.CreateAssemblage();
 			}
 		}
 

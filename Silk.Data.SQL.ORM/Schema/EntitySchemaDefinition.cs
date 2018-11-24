@@ -11,6 +11,10 @@ namespace Silk.Data.SQL.ORM.Schema
 	/// </summary>
 	public interface IEntitySchemaDefinition
 	{
+		Guid DefinitionId { get; }
+
+		Type EntityType { get; }
+
 		/// <summary>
 		/// Gets or sets the table name to store entity instances in.
 		/// </summary>
@@ -31,7 +35,11 @@ namespace Silk.Data.SQL.ORM.Schema
 		private readonly Dictionary<string, SchemaIndexBuilder<T>> _indexBuilders
 			= new Dictionary<string, SchemaIndexBuilder<T>>();
 
+		public Type EntityType => typeof(T);
+
 		public string TableName { get; set; }
+
+		public Guid DefinitionId { get; } = Guid.NewGuid();
 
 		public EntitySchemaDefinition()
 		{

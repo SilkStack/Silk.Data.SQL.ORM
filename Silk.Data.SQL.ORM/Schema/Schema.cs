@@ -13,14 +13,15 @@ namespace Silk.Data.SQL.ORM.Schema
 	/// </summary>
 	public class Schema
 	{
-		private readonly Dictionary<Type, EntitySchema> _entitySchemas;
+		private readonly List<EntitySchema> _entitySchemas = new List<EntitySchema>();
 		private readonly Dictionary<MethodInfo, IMethodCallConverter> _methodCallConverters;
 		private readonly ConditionalWeakTable<ISchemaField, FieldOperations> _fieldOperations
 			= new ConditionalWeakTable<ISchemaField, FieldOperations>();
+		private readonly Dictionary<Guid, EntitySchema> _idIndexedSchemas;
 
 		public MappingOptions ProjectionMappingOptions { get; }
 
-		public Schema(IEnumerable<EntitySchema> entitySchemas,
+		public Schema(Dictionary<Guid, EntitySchema> entitySchemas,
 			Dictionary<MethodInfo, IMethodCallConverter> methodCallConverters,
 			MappingOptions projectionMappingOptions,
 			Dictionary<ISchemaField, FieldOperations> fieldOperations)
@@ -29,8 +30,9 @@ namespace Silk.Data.SQL.ORM.Schema
 				throw new ArgumentNullException(nameof(projectionMappingOptions));
 			ProjectionMappingOptions = projectionMappingOptions;
 
-			_entitySchemas = entitySchemas.ToDictionary(q => q.EntityType);
-			foreach(var schema in _entitySchemas.Values)
+			_entitySchemas.AddRange(entitySchemas.Values);
+			_idIndexedSchemas = entitySchemas;
+			foreach(var schema in _entitySchemas)
 			{
 				schema.Schema = this;
 			}
@@ -50,10 +52,17 @@ namespace Silk.Data.SQL.ORM.Schema
 			return converter;
 		}
 
+		public EntitySchema<T> GetEntitySchema<T>(EntitySchemaDefinition<T> definition)
+			where T : class
+		{
+			if (_idIndexedSchemas.TryGetValue(definition.DefinitionId, out var entitySchema))
+				return entitySchema as EntitySchema<T>;
+			return null;
+		}
+
 		public EntitySchema GetEntitySchema(Type entityType)
 		{
-			_entitySchemas.TryGetValue(entityType, out var schema);
-			return schema;
+			return _entitySchemas.FirstOrDefault(q => q.EntityType == entityType);
 		}
 
 		public EntitySchema<T> GetEntitySchema<T>()
