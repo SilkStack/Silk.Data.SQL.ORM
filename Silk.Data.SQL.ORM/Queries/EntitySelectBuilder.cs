@@ -270,6 +270,51 @@ namespace Silk.Data.SQL.ORM.Queries
 			_having = QueryExpression.CombineConditions(_having, ConditionType.AndAlso, queryExpression);
 		}
 
+		public void AndHaving(ISchemaField<T> schemaField, ComparisonOperator @operator, T entity)
+		{
+			var fieldOperations = Schema.GetFieldOperations(schemaField);
+			var valueExpression = fieldOperations.Expressions.Value(entity, EntityReadWriter);
+			AddJoins(schemaField.Join);
+			AndHaving(QueryExpression.Compare(
+				QueryExpression.Column(schemaField.Column.ColumnName),
+				@operator,
+				valueExpression
+				));
+		}
+
+		public void AndHaving<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, TValue value)
+		{
+			var valueExpression = QueryExpression.Value(value);
+			AddJoins(schemaField.Join);
+			AndHaving(QueryExpression.Compare(
+				QueryExpression.Column(schemaField.Column.ColumnName),
+				@operator,
+				valueExpression
+				));
+		}
+
+		public void AndHaving(ISchemaField<T> schemaField, ComparisonOperator @operator, Expression<Func<T, bool>> valueExpression)
+		{
+			var valueExpressionResult = ExpressionConverter.Convert(valueExpression);
+			AddJoins(schemaField.Join);
+			AddJoins(valueExpressionResult.RequiredJoins);
+			AndHaving(QueryExpression.Compare(
+				QueryExpression.Column(schemaField.Column.ColumnName),
+				@operator,
+				valueExpressionResult.QueryExpression
+				));
+		}
+
+		public void AndHaving<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
+		{
+			AddJoins(schemaField.Join);
+			AndHaving(QueryExpression.Compare(
+				QueryExpression.Column(schemaField.Column.ColumnName),
+				@operator,
+				subQuery.BuildQuery()
+				));
+		}
+
 		public void AndHaving(Expression<Func<T, bool>> expression)
 		{
 			AndHaving(ExpressionConverter.Convert(expression));
@@ -284,6 +329,51 @@ namespace Silk.Data.SQL.ORM.Queries
 		public void OrHaving(QueryExpression queryExpression)
 		{
 			_having = QueryExpression.CombineConditions(_having, ConditionType.OrElse, queryExpression);
+		}
+
+		public void OrHaving(ISchemaField<T> schemaField, ComparisonOperator @operator, T entity)
+		{
+			var fieldOperations = Schema.GetFieldOperations(schemaField);
+			var valueExpression = fieldOperations.Expressions.Value(entity, EntityReadWriter);
+			AddJoins(schemaField.Join);
+			OrHaving(QueryExpression.Compare(
+				QueryExpression.Column(schemaField.Column.ColumnName),
+				@operator,
+				valueExpression
+				));
+		}
+
+		public void OrHaving<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, TValue value)
+		{
+			var valueExpression = QueryExpression.Value(value);
+			AddJoins(schemaField.Join);
+			OrHaving(QueryExpression.Compare(
+				QueryExpression.Column(schemaField.Column.ColumnName),
+				@operator,
+				valueExpression
+				));
+		}
+
+		public void OrHaving(ISchemaField<T> schemaField, ComparisonOperator @operator, Expression<Func<T, bool>> valueExpression)
+		{
+			var valueExpressionResult = ExpressionConverter.Convert(valueExpression);
+			AddJoins(schemaField.Join);
+			AddJoins(valueExpressionResult.RequiredJoins);
+			OrHaving(QueryExpression.Compare(
+				QueryExpression.Column(schemaField.Column.ColumnName),
+				@operator,
+				valueExpressionResult.QueryExpression
+				));
+		}
+
+		public void OrHaving<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
+		{
+			AddJoins(schemaField.Join);
+			OrHaving(QueryExpression.Compare(
+				QueryExpression.Column(schemaField.Column.ColumnName),
+				@operator,
+				subQuery.BuildQuery()
+				));
 		}
 
 		public void OrHaving(Expression<Func<T, bool>> expression)
