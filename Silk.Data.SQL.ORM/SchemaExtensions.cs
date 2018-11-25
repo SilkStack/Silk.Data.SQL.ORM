@@ -303,7 +303,7 @@ namespace Silk.Data.SQL.ORM
 				foreach (var entity in entities)
 				{
 					var queryBuilder = new EntityUpdateBuilder<T>(schema);
-					foreach (var field in schema.SchemaFields)
+					foreach (var field in schema.SchemaFields.Where(q => q.FieldType != FieldType.JoinedField))
 					{
 						if (field.IsPrimaryKey)
 							queryBuilder.AndWhere(field, ComparisonOperator.AreEqual, entity);
