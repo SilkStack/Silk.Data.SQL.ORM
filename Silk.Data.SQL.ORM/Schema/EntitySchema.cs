@@ -62,6 +62,8 @@ namespace Silk.Data.SQL.ORM.Schema
 		public EntitySchema(Table entityTable, ISchemaField<T>[] schemaFields, SchemaIndex[] indexes) :
 			base(entityTable, schemaFields, indexes, null)
 		{
+			SchemaModel = SchemaModel.Create(this);
+			AssignFieldAndModelPropertiesOnSchemaFieldReferences();
 			Mapping = new Mapping(
 				TypeModel.GetModelOf<T>(),
 				null,
@@ -70,9 +72,9 @@ namespace Silk.Data.SQL.ORM.Schema
 					new CreateInstanceIfNull<T>(
 						SqlTypeHelper.GetConstructor(typeof(T)), TypeModel.GetModelOf<T>().Root
 						)
-				}.Concat(schemaFields.SelectMany(q => q.Bindings)).ToArray());
-			SchemaModel = SchemaModel.Create(this);
-			AssignFieldAndModelPropertiesOnSchemaFieldReferences();
+				}.Concat(schemaFields
+					.Where(q => q.SchemaFieldReference.Field.CanWrite)
+					.SelectMany(q => q.Bindings)).ToArray());
 		}
 
 		private void AssignFieldAndModelPropertiesOnSchemaFieldReferences()
