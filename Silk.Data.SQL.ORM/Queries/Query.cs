@@ -48,8 +48,8 @@ namespace Silk.Data.SQL.ORM.Queries
 		{
 			foreach (var entity in _entities)
 			{
-				queryResult.Read();
-				_resultMapper.Inject(entity, queryResult);
+				if (queryResult.Read())
+					_resultMapper.Inject(entity, queryResult);
 				queryResult.NextResult();
 			}
 		}
@@ -58,8 +58,8 @@ namespace Silk.Data.SQL.ORM.Queries
 		{
 			foreach (var entity in _entities)
 			{
-				await queryResult.ReadAsync();
-				_resultMapper.Inject(entity, queryResult);
+				if (await queryResult.ReadAsync())
+					_resultMapper.Inject(entity, queryResult);
 				await queryResult.NextResultAsync();
 			}
 		}
