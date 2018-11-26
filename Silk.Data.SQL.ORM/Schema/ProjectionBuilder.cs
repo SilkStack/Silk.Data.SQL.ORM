@@ -39,7 +39,8 @@ namespace Silk.Data.SQL.ORM.Schema
 				if (toField == null)
 					continue;
 
-				yield return (fromField, toField);
+				if (!builder.IsBound(fromField) && !builder.IsBound(toField))
+					yield return (fromField, toField);
 			}
 
 			//  flattening candidates from the target model
@@ -61,7 +62,8 @@ namespace Silk.Data.SQL.ORM.Schema
 				if (fromField == null)
 					continue;
 
-				yield return (fromField, toField);
+				if (!builder.IsBound(fromField) && !builder.IsBound(toField))
+					yield return (fromField, toField);
 			}
 
 			//  inflation candidates from the source model
@@ -87,7 +89,8 @@ namespace Silk.Data.SQL.ORM.Schema
 				if (toField == null)
 					continue;
 
-				yield return (fromField, toField);
+				if (!builder.IsBound(fromField) && !builder.IsBound(toField))
+					yield return (fromField, toField);
 			}
 		}
 	}

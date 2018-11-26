@@ -102,6 +102,35 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 		}
 
+		[TestMethod]
+		public async Task IdRebindFix()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<IdRebindTop>();
+			var schema = schemaBuilder.Build();
+
+			using (var provider = TestHelper.CreateProvider())
+			{
+				var inObj = new IdRebindTop
+				{
+					Id = Guid.NewGuid(),
+					Bottom = new IdRebindBottom
+					{
+						Id = Guid.NewGuid()
+					}
+				};
+				await provider.ExecuteAsync(
+					schema.CreateTable<IdRebindTop>(),
+					schema.CreateInsert(inObj)
+					);
+
+				var selectQuery = schema.CreateSelect<IdRebindTop, IdRebindView>();
+				await provider.ExecuteAsync(selectQuery);
+
+				Assert.AreEqual(inObj.Id, selectQuery.Result.First().Id);
+			}
+		}
+
 		private class SimplePocoModel
 		{
 			public Guid Id { get; private set; }
@@ -135,6 +164,22 @@ namespace Silk.Data.SQL.ORM.Tests
 		{
 			public Guid Id { get; private set; }
 			public SimplePocoView Poco { get; set; }
+		}
+
+		private class IdRebindTop
+		{
+			public Guid Id { get; set; }
+			public IdRebindBottom Bottom { get; set; }
+		}
+
+		private class IdRebindBottom
+		{
+			public Guid Id { get; set; }
+		}
+
+		private class IdRebindView
+		{
+			public Guid Id { get; private set; }
 		}
 	}
 }
