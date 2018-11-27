@@ -300,6 +300,49 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 		}
 
+		[TestMethod]
+		public async Task SelectDeepParent()
+		{
+			var schemaBuilder = new SchemaBuilder();
+			schemaBuilder.DefineEntity<Child>();
+			schemaBuilder.DefineEntity<Parent>();
+			schemaBuilder.DefineEntity<DeepParent>();
+			var schema = schemaBuilder.Build();
+
+			var inObj = new DeepParent
+			{
+				Child = new Parent
+				{
+					Child = new Child
+					{
+						Data = "Hello"
+					}
+				}
+			};
+
+			using (var provider = TestHelper.CreateProvider())
+			{
+				await provider.ExecuteAsync(
+					schema.CreateTable<Child>(),
+					schema.CreateTable<Parent>(),
+					schema.CreateTable<DeepParent>(),
+					schema.CreateInsert(inObj.Child.Child),
+					schema.CreateInsert(inObj.Child),
+					schema.CreateInsert(inObj)
+					);
+
+				var select = schema.CreateSelect<DeepParent>();
+				await provider.ExecuteAsync(select);
+
+				Assert.AreEqual(1, select.Result.Count);
+				var outObj = select.Result.First();
+				Assert.AreEqual(inObj.Id, outObj.Id);
+				Assert.AreEqual(inObj.Child.Id, outObj.Child.Id);
+				Assert.AreEqual(inObj.Child.Child.Id, outObj.Child.Child.Id);
+				Assert.AreEqual(inObj.Child.Child.Data, outObj.Child.Child.Data);
+			}
+		}
+
 		private Task Insert<T>(Schema.Schema schema, IDataProvider provider, T obj)
 			where T : class
 		{
@@ -341,6 +384,24 @@ namespace Silk.Data.SQL.ORM.Tests
 		private class DeepRelationshipEntity
 		{
 			public RelationshipEntity Child { get; set; }
+		}
+
+		private class Parent
+		{
+			public Guid Id { get; private set; }
+			public Child Child { get; set; }
+		}
+
+		private class Child
+		{
+			public Guid Id { get; private set; }
+			public string Data { get; set; }
+		}
+
+		private class DeepParent
+		{
+			public Guid Id { get; private set; }
+			public Parent Child { get; set; }
 		}
 
 		private class FlatEntityWithEnum

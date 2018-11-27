@@ -125,7 +125,10 @@ namespace Silk.Data.SQL.ORM.Schema
 		private IEnumerable<(ISchemaField<TEntity> Field, FieldOperations<TEntity> Operations)> BuildAsJoinedObject(int currentFieldCount)
 		{
 			var joinedSchemaAssemblage = _entitySchemaAssemblages.OfType<IEntitySchemaAssemblage<TValue>>().First();
-			var primaryKeyFieldAssemblages = joinedSchemaAssemblage.Fields.Where(q => q.PrimaryKeyGenerator != PrimaryKeyGenerator.NotPrimaryKey).ToArray();
+			var primaryKeyFieldAssemblages = joinedSchemaAssemblage.Fields.Where(q =>
+				q.PrimaryKeyGenerator != PrimaryKeyGenerator.NotPrimaryKey &&
+				q.Join == null
+				).ToArray();
 
 			if (primaryKeyFieldAssemblages.Length == 0)
 				throw new InvalidOperationException("Related objects need to have at least 1 primary key.");
@@ -192,7 +195,10 @@ namespace Silk.Data.SQL.ORM.Schema
 				throw new InvalidOperationException("Can only create joins for joined entities.");
 
 			var joinedSchemaAssemblage = _entitySchemaAssemblages.OfType<IEntitySchemaAssemblage<TValue>>().First();
-			var primaryKeyFieldAssemblages = joinedSchemaAssemblage.Fields.Where(q => q.PrimaryKeyGenerator != PrimaryKeyGenerator.NotPrimaryKey).ToArray();
+			var primaryKeyFieldAssemblages = joinedSchemaAssemblage.Fields.Where(q =>
+				q.PrimaryKeyGenerator != PrimaryKeyGenerator.NotPrimaryKey &&
+				q.Join == null
+				).ToArray();
 
 			if (primaryKeyFieldAssemblages.Length == 0)
 				throw new InvalidOperationException("Related objects need to have at least 1 primary key.");
@@ -201,8 +207,12 @@ namespace Silk.Data.SQL.ORM.Schema
 			var foreignColumnNames = new List<string>();
 			foreach (var primaryKeyFieldAssemblage in primaryKeyFieldAssemblages)
 			{
+				IEnumerable<string> defaultColumnNameSource = _assemblage.ModelPath;
+				if (_assemblage.Join != null)
+					defaultColumnNameSource = _assemblage.ModelPath.Skip(_assemblage.Join.ModelPath.Length);
+
 				var localColumnName = _entityFieldDefinition.ColumnName ??
-						string.Join("_", _assemblage.ModelPath.Concat(primaryKeyFieldAssemblage.ModelPath));
+						string.Join("_", defaultColumnNameSource.Concat(primaryKeyFieldAssemblage.ModelPath));
 
 				localColumnNames.Add(localColumnName);
 				foreignColumnNames.Add(primaryKeyFieldAssemblage.Column.ColumnName);
@@ -217,7 +227,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			return new EntityJoinBuilder(
 				joinedSchemaAssemblage.TableName,
 				$"__join_table_{joinCount}",
-				_assemblage.Join?.TableName ?? _entitySchemaAssemblage.TableName,
+				_assemblage.Join?.TableAlias ?? _entitySchemaAssemblage.TableName,
 				localColumnNames,
 				foreignColumnNames,
 				dependencyJoins,
