@@ -16,7 +16,7 @@ namespace Silk.Data.SQL.ORM.Schema
 	{
 		private readonly TypeModel<T> _entityTypeModel = TypeModel.GetModelOf<T>();
 
-		private readonly List<IPropertyField> _indexFields = new List<IPropertyField>();
+		private readonly List<string[]> _indexFields = new List<string[]>();
 
 		public string IndexName { get; }
 		public bool HasUniqueConstraint { get; set; }
@@ -29,7 +29,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		public SchemaIndex Build(Table table, ISchemaField[] entityFields)
 		{
 			return new SchemaIndex(IndexName, HasUniqueConstraint,
-				entityFields.Where(q => _indexFields.Any(q2 => q.FieldName == q2.FieldName)).ToArray(),
+				entityFields.Where(q => _indexFields.Any(q2 => q2.SequenceEqual(q.ModelPath))).ToArray(),
 				table);
 		}
 
@@ -63,8 +63,8 @@ namespace Silk.Data.SQL.ORM.Schema
 				if (field == null)
 					throw new ArgumentException("Field selector expression doesn't specify a valid member.", nameof(indexField));
 
-				if (!_indexFields.Contains(field))
-					_indexFields.Add(field);
+				if (!_indexFields.Any(q => q.SequenceEqual(path)))
+					_indexFields.Add(path.ToArray());
 			}
 		}
 
