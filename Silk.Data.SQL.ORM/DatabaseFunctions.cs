@@ -7,5 +7,7 @@
 		public static T Alias<T>(T expr, string alias) => default(T);
 		public static int Random() => 0;
 		public static bool IsIn(object checkFor, object searchExpr) => false;
+		public static object Min(object expr) => null;
+		public static object Max(object expr) => null;
 	}
 }

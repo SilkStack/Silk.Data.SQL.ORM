@@ -43,6 +43,12 @@ namespace Silk.Data.SQL.ORM.Schema
 			AddMethodConverter(
 				typeof(DatabaseFunctions).GetMethod(nameof(DatabaseFunctions.IsIn)), new IsInCallConverter()
 				);
+			AddMethodConverter(
+				typeof(DatabaseFunctions).GetMethod(nameof(DatabaseFunctions.Min)), new MinCallConverter()
+				);
+			AddMethodConverter(
+				typeof(DatabaseFunctions).GetMethod(nameof(DatabaseFunctions.Max)), new MaxCallConverter()
+				);
 		}
 
 		public void AddMethodConverter(MethodInfo methodInfo, IMethodCallConverter methodCallConverter)
