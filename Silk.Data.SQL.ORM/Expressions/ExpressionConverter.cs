@@ -132,7 +132,7 @@ namespace Silk.Data.SQL.ORM.Expressions
 					{
 						if (entityField.Join != null)
 						{
-							sourceExpression = new AliasIdentifierExpression(entityField.Join.SourceName);
+							sourceExpression = new AliasIdentifierExpression(entityField.Join.TableAlias);
 							if (!RequiredJoins.Contains(entityField.Join))
 								RequiredJoins.Add(entityField.Join);
 						}
