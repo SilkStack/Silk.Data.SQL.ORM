@@ -215,10 +215,13 @@ namespace Silk.Data.SQL.ORM
 
 						if (field.PrimaryKeyGenerator == PrimaryKeyGenerator.ClientGenerated)
 						{
-							var newId = Guid.NewGuid();
-							//  write generated ID to the object directly so that following queries can reference it
 							entityReadWriter.WriteField(entityTypeModel.Root, entity);
-							entityReadWriter.WriteField(field.EntityFieldReference, newId);
+							if (entityReadWriter.ReadField<Guid>(field.EntityFieldReference) == Guid.Empty)
+							{
+								var newId = Guid.NewGuid();
+								//  write generated ID to the object directly so that following queries can reference it
+								entityReadWriter.WriteField(field.EntityFieldReference, newId);
+							}
 						}
 
 						queryBuilder.Set(field, entity);
