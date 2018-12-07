@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using Silk.Data.Modelling;
 using Silk.Data.SQL.Expressions;
+using Silk.Data.SQL.ORM.Queries.Expressions;
 using Silk.Data.SQL.ORM.Schema;
 
 namespace Silk.Data.SQL.ORM.Queries
@@ -41,7 +42,7 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public void AndWhere<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, TValue value)
 		{
-			var valueExpression = QueryExpression.Value(value);
+			var valueExpression = ORMQueryExpressions.Value(value);
 			AndWhere(QueryExpression.Compare(
 				QueryExpression.Column(schemaField.Column.ColumnName),
 				@operator,
@@ -89,7 +90,7 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public void OrWhere<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, TValue value)
 		{
-			var valueExpression = QueryExpression.Value(value);
+			var valueExpression = ORMQueryExpressions.Value(value);
 			OrWhere(QueryExpression.Compare(
 				QueryExpression.Column(schemaField.Column.ColumnName),
 				@operator,
@@ -143,7 +144,7 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public void Set<TValue>(ISchemaField<T> schemaField, TValue value)
 		{
-			var valueExpression = QueryExpression.Value(value);
+			var valueExpression = ORMQueryExpressions.Value(value);
 			AddFieldAssignment(
 				QueryExpression.Column(schemaField.Column.ColumnName),
 				valueExpression
@@ -169,7 +170,7 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public void Set<TProperty>(Expression<Func<T, TProperty>> fieldSelector, TProperty value)
 		{
-			Set(fieldSelector, QueryExpression.Value(value));
+			Set(fieldSelector, ORMQueryExpressions.Value(value));
 		}
 
 		public void Set<TProperty>(Expression<Func<T, TProperty>> fieldSelector, Expression<Func<T, TProperty>> valueExpression)

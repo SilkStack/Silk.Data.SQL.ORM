@@ -1,5 +1,6 @@
 ﻿using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Queries;
+using Silk.Data.SQL.ORM.Queries.Expressions;
 using Silk.Data.SQL.ORM.Schema;
 using System;
 using System.Collections.Generic;
@@ -74,11 +75,7 @@ namespace Silk.Data.SQL.ORM.Expressions
 				if (value is IQueryBuilder queryBuilder)
 					return queryBuilder.BuildQuery();
 
-				if (value is Enum)
-				{
-					value = (int)value;
-				}
-				return QueryExpression.Value(value);
+				return ORMQueryExpressions.Value(value);
 			}
 
 			protected override Expression VisitConstant(ConstantExpression node)

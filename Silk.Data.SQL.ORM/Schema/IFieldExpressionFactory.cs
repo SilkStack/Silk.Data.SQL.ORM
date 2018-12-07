@@ -1,5 +1,6 @@
 ﻿using Silk.Data.Modelling;
 using Silk.Data.SQL.Expressions;
+using Silk.Data.SQL.ORM.Queries.Expressions;
 
 namespace Silk.Data.SQL.ORM.Schema
 {
@@ -41,7 +42,7 @@ namespace Silk.Data.SQL.ORM.Schema
 
 			entityReadWriter.WriteField(_entityTypeModel.Root, entity);
 			var value = entityReadWriter.ReadField<TValue>(_field.EntityFieldReference);
-			return QueryExpression.Value(value);
+			return ORMQueryExpressions.Value(value);
 		}
 	}
 
@@ -66,7 +67,7 @@ namespace Silk.Data.SQL.ORM.Schema
 
 			entityReadWriter.WriteField(_entityTypeModel.Root, entity);
 			var value = entityReadWriter.ReadField<TValue>(_field.EntityFieldReference);
-			return QueryExpression.Value(value != null);
+			return ORMQueryExpressions.Value(value != null);
 		}
 	}
 
@@ -97,9 +98,9 @@ namespace Silk.Data.SQL.ORM.Schema
 
 			var relatedEntity = entityReadWriter.ReadField<TValue>(_field.EntityFieldReference);
 			if (relatedEntity == null)
-				return QueryExpression.Value(null);
+				return ORMQueryExpressions.Value(null);
 			var value = entityReadWriter.ReadField<TPrimaryKey>(_pkFieldReference);
-			return QueryExpression.Value(value);
+			return ORMQueryExpressions.Value(value);
 		}
 	}
 }

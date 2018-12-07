@@ -1,5 +1,6 @@
 ﻿using Silk.Data.Modelling;
 using Silk.Data.SQL.Expressions;
+using Silk.Data.SQL.ORM.Queries.Expressions;
 using Silk.Data.SQL.ORM.Schema;
 using System;
 using System.Collections.Generic;
@@ -70,7 +71,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		public void Set<TValue>(ISchemaField<T> schemaField, TValue value)
 		{
 			AddColumnName(schemaField.Column);
-			var valueExpression = QueryExpression.Value(value);
+			var valueExpression = ORMQueryExpressions.Value(value);
 			_currentValueExpressions[schemaField.Column.ColumnName] = valueExpression;
 		}
 
@@ -94,7 +95,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			if (columnExpression == null)
 				throw new InvalidOperationException("Invalid property selector expression.");
 			AddColumnName(columnExpression);
-			var valueExpression = QueryExpression.Value(value);
+			var valueExpression = ORMQueryExpressions.Value(value);
 			_currentValueExpressions[columnExpression.ColumnName] = valueExpression;
 		}
 

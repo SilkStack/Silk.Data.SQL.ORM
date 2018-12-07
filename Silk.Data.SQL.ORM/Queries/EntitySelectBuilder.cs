@@ -1,5 +1,6 @@
 ﻿using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Expressions;
+using Silk.Data.SQL.ORM.Queries.Expressions;
 using Silk.Data.SQL.ORM.Schema;
 using System;
 using System.Collections.Generic;
@@ -171,7 +172,7 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public void AndWhere<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, TValue value)
 		{
-			var valueExpression = QueryExpression.Value(value);
+			var valueExpression = ORMQueryExpressions.Value(value);
 			AndWhere(QueryExpression.Compare(
 				QueryExpression.Column(schemaField.Column.ColumnName),
 				@operator,
@@ -227,7 +228,7 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public void OrWhere<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, TValue value)
 		{
-			var valueExpression = QueryExpression.Value(value);
+			var valueExpression = ORMQueryExpressions.Value(value);
 			OrWhere(QueryExpression.Compare(
 				QueryExpression.Column(schemaField.Column.ColumnName),
 				@operator,
@@ -284,7 +285,7 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public void AndHaving<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, TValue value)
 		{
-			var valueExpression = QueryExpression.Value(value);
+			var valueExpression = ORMQueryExpressions.Value(value);
 			AddJoins(schemaField.Join);
 			AndHaving(QueryExpression.Compare(
 				QueryExpression.Column(schemaField.Column.ColumnName),
@@ -345,7 +346,7 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public void OrHaving<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, TValue value)
 		{
-			var valueExpression = QueryExpression.Value(value);
+			var valueExpression = ORMQueryExpressions.Value(value);
 			AddJoins(schemaField.Join);
 			OrHaving(QueryExpression.Compare(
 				QueryExpression.Column(schemaField.Column.ColumnName),
@@ -415,7 +416,7 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public void Offset(int offset)
 		{
-			Offset(QueryExpression.Value(offset));
+			Offset(ORMQueryExpressions.Value(offset));
 		}
 
 		public void Offset(QueryExpression offset)
@@ -425,7 +426,7 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public void Limit(int limit)
 		{
-			_limit = QueryExpression.Value(limit);
+			_limit = ORMQueryExpressions.Value(limit);
 		}
 
 		public void Limit(QueryExpression queryExpression)

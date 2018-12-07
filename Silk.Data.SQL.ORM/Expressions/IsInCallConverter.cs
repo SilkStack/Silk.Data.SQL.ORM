@@ -1,4 +1,5 @@
 ﻿using Silk.Data.SQL.Expressions;
+using Silk.Data.SQL.ORM.Queries.Expressions;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,7 +22,7 @@ namespace Silk.Data.SQL.ORM.Expressions
 				var valueExpressions = new List<QueryExpression>();
 				foreach (var value in valueEnumerable)
 				{
-					valueExpressions.Add(QueryExpression.Value(value));
+					valueExpressions.Add(ORMQueryExpressions.Value(value));
 				}
 
 				return new ExpressionResult(

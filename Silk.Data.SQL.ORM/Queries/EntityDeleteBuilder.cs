@@ -1,6 +1,7 @@
 ﻿using Silk.Data.Modelling;
 using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Expressions;
+using Silk.Data.SQL.ORM.Queries.Expressions;
 using Silk.Data.SQL.ORM.Schema;
 using System;
 using System.Linq.Expressions;
@@ -34,7 +35,7 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public void AndWhere<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, TValue value)
 		{
-			var valueExpression = QueryExpression.Value(value);
+			var valueExpression = ORMQueryExpressions.Value(value);
 			AndWhere(QueryExpression.Compare(
 				QueryExpression.Column(schemaField.Column.ColumnName),
 				@operator,
@@ -87,7 +88,7 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public void OrWhere<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, TValue value)
 		{
-			var valueExpression = QueryExpression.Value(value);
+			var valueExpression = ORMQueryExpressions.Value(value);
 			OrWhere(QueryExpression.Compare(
 				QueryExpression.Column(schemaField.Column.ColumnName),
 				@operator,
