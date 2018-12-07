@@ -2,6 +2,7 @@
 using Silk.Data.Modelling.Mapping;
 using Silk.Data.Modelling.Mapping.Binding;
 using Silk.Data.SQL.Queries;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -31,10 +32,15 @@ namespace Silk.Data.SQL.ORM.Queries
 			_fieldReference = fieldReference;
 		}
 
+		protected virtual TSource ReadField<TSource>(QueryResultReader queryResultReader)
+		{
+			return queryResultReader.ReadField<TSource>(_fieldReference);
+		}
+
 		public T Read(QueryResult queryResult)
 		{
 			var queryReader = new QueryResultReader(queryResult);
-			return queryReader.ReadField<T>(_fieldReference);
+			return ReadField<T>(queryReader);
 		}
 
 		public ICollection<T> ReadResultSet(QueryResult queryResult)
@@ -43,7 +49,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			var queryReader = new QueryResultReader(queryResult);
 			while (queryResult.Read())
 			{
-				result.Add(queryReader.ReadField<T>(_fieldReference));
+				result.Add(ReadField<T>(queryReader));
 			}
 			return result;
 		}
@@ -54,7 +60,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			var queryReader = new QueryResultReader(queryResult);
 			while (await queryResult.ReadAsync())
 			{
-				result.Add(queryReader.ReadField<T>(_fieldReference));
+				result.Add(ReadField<T>(queryReader));
 			}
 			return result;
 		}
@@ -67,7 +73,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			{
 				while (queryResult.Read())
 				{
-					result.Add(queryReader.ReadField<T>(_fieldReference));
+					result.Add(ReadField<T>(queryReader));
 				}
 
 				if (!queryResult.NextResult())
@@ -84,13 +90,32 @@ namespace Silk.Data.SQL.ORM.Queries
 			{
 				while (await queryResult.ReadAsync())
 				{
-					result.Add(queryReader.ReadField<T>(_fieldReference));
+					result.Add(ReadField<T>(queryReader));
 				}
 
 				if (!await queryResult.NextResultAsync())
 					break;
 			}
 			return result;
+		}
+	}
+
+	public class TransformedValueResultMapper<TResult, TSource> : ValueResultMapper<TResult>
+	{
+		private readonly Func<TSource, TResult> _transform;
+
+		public TransformedValueResultMapper(int resultSetCount, IFieldReference fieldReference,
+			Func<TSource, TResult> transform)
+			: base(resultSetCount, fieldReference)
+		{
+			_transform = transform;
+		}
+
+		protected override T ReadField<T>(QueryResultReader queryResultReader)
+		{
+			var value = base.ReadField<TSource>(queryResultReader);
+			var transform = _transform as Func<TSource, T>;
+			return transform(value);
 		}
 	}
 

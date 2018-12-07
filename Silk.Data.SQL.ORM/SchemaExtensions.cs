@@ -78,7 +78,8 @@ namespace Silk.Data.SQL.ORM
 		{
 			return new QueryWithScalarResult<bool>(
 				QueryExpression.TableExists(schema.EntityTable.TableName),
-				new ValueResultMapper<bool>(1, OrdinalFieldReference<bool>.Create(0))
+				new TransformedValueResultMapper<bool, int>(1, OrdinalFieldReference<int>.Create(0),
+					value => value > 0)
 				);
 		}
 
