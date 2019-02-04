@@ -1,7 +1,6 @@
 ﻿using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Schema;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Queries
@@ -111,21 +110,15 @@ namespace Silk.Data.SQL.ORM.Queries
 			var orderByExpressions = orderBy.Select(q => q.QueryExpression).ToArray();
 			var orderByJoins = orderBy.Where(q => q.RequiredJoins != null).SelectMany(q => q.RequiredJoins).ToArray();
 
-			var joins = new List<ITableJoin>();
-			if (projection?.RequiredJoins != null && projection.RequiredJoins.Length > 0)
-				joins.AddRange(projection.RequiredJoins.Where(join => !joins.Contains(join)));
-			if (where?.RequiredJoins != null && where.RequiredJoins.Length > 0)
-				joins.AddRange(where.RequiredJoins.Where(join => !joins.Contains(join)));
-			if (having?.RequiredJoins != null && having.RequiredJoins.Length > 0)
-				joins.AddRange(having.RequiredJoins.Where(join => !joins.Contains(join)));
-			if (limit?.RequiredJoins != null && limit.RequiredJoins.Length > 0)
-				joins.AddRange(limit.RequiredJoins.Where(join => !joins.Contains(join)));
-			if (offset?.RequiredJoins != null && offset.RequiredJoins.Length > 0)
-				joins.AddRange(offset.RequiredJoins.Where(join => !joins.Contains(join)));
-			if (groupByJoins != null && groupByJoins.Length > 0)
-				joins.AddRange(groupByJoins.Where(join => !joins.Contains(join)));
-			if (orderByJoins != null && orderByJoins.Length > 0)
-				joins.AddRange(orderByJoins.Where(join => !joins.Contains(join)));
+			var joins = ConcatUniqueJoins(
+				projection?.RequiredJoins,
+				where?.RequiredJoins,
+				having?.RequiredJoins,
+				limit?.RequiredJoins,
+				offset?.RequiredJoins,
+				groupByJoins,
+				orderByJoins
+				);
 
 			return QueryExpression.Select(
 				projection: projection.ProjectionExpressions,

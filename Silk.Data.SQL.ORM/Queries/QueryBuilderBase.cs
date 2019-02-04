@@ -3,6 +3,8 @@ using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Expressions;
 using Silk.Data.SQL.ORM.Schema;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Queries
 {
@@ -53,6 +55,21 @@ namespace Silk.Data.SQL.ORM.Queries
 			Schema = schema.Schema;
 			Source = QueryExpression.Table(EntitySchema.EntityTable.TableName);
 			_entityReadWriter = entityReadWriter;
+		}
+
+		protected ITableJoin[] ConcatUniqueJoins(params EntityFieldJoin[][] joins)
+		{
+			IEnumerable<ITableJoin> result = new ITableJoin[0];
+			foreach (var joinArray in joins)
+			{
+				if (joinArray == null || joinArray.Length < 1)
+					continue;
+				result.Concat(joinArray);
+			}
+			return result
+				.GroupBy(join => join)
+				.Select(joinGroup => joinGroup.First())
+				.ToArray();
 		}
 
 		public abstract QueryExpression BuildQuery();
