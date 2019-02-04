@@ -275,7 +275,7 @@ namespace Silk.Data.SQL.ORM
 					foreach (var field in schema.SchemaFields)
 					{
 						if (field.IsPrimaryKey)
-							queryBuilder.AndWhere(field, ComparisonOperator.AreEqual, entity);
+							queryBuilder.Where.AndAlso(field, ComparisonOperator.AreEqual, entity);
 					}
 					yield return queryBuilder.BuildQuery();
 				}

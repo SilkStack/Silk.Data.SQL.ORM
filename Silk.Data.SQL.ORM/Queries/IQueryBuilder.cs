@@ -9,6 +9,16 @@ namespace Silk.Data.SQL.ORM.Queries
 
 	public interface IEntitySelectQueryBuilder<T> : ISelectQueryBuilder, IWhereQueryBuilder<T>, IHavingQueryBuilder<T>,
 		IGroupByQueryBuilder<T>, IOrderByQueryBuilder<T>, IRangeQueryBuilder<T>
+		where T : class
+	{
+	}
+
+	public interface IDeleteQueryBuilder : IWhereQueryBuilder
+	{
+	}
+
+	public interface IEntityDeleteQueryBuilder<T> : IDeleteQueryBuilder, IWhereQueryBuilder<T>
+		where T : class
 	{
 	}
 
@@ -23,6 +33,7 @@ namespace Silk.Data.SQL.ORM.Queries
 	}
 
 	public interface IWhereQueryBuilder<T> : IWhereQueryBuilder
+		where T : class
 	{
 		new IEntityConditionBuilder<T> Where { get; set; }
 	}
@@ -33,6 +44,7 @@ namespace Silk.Data.SQL.ORM.Queries
 	}
 
 	public interface IHavingQueryBuilder<T> : IHavingQueryBuilder
+		where T : class
 	{
 		new IEntityConditionBuilder<T> Having { get; set; }
 	}
