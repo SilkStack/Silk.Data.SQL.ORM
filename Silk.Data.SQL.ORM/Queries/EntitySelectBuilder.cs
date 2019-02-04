@@ -104,11 +104,11 @@ namespace Silk.Data.SQL.ORM.Queries
 			var groupBy = _groupBy?.Build();
 			var orderBy = _orderBy?.Build();
 
-			var groupByExpressions = groupBy.Select(q => q.QueryExpression).ToArray();
-			var groupByJoins = groupBy.Where(q => q.RequiredJoins != null).SelectMany(q => q.RequiredJoins).ToArray();
+			var groupByExpressions = groupBy?.Select(q => q.QueryExpression).ToArray();
+			var groupByJoins = groupBy?.Where(q => q.RequiredJoins != null).SelectMany(q => q.RequiredJoins).ToArray();
 
-			var orderByExpressions = orderBy.Select(q => q.QueryExpression).ToArray();
-			var orderByJoins = orderBy.Where(q => q.RequiredJoins != null).SelectMany(q => q.RequiredJoins).ToArray();
+			var orderByExpressions = orderBy?.Select(q => q.QueryExpression).ToArray();
+			var orderByJoins = orderBy?.Where(q => q.RequiredJoins != null).SelectMany(q => q.RequiredJoins).ToArray();
 
 			var joins = ConcatUniqueJoins(
 				projection?.RequiredJoins,
