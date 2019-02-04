@@ -114,7 +114,7 @@ namespace Silk.Data.SQL.ORM
 			where T : class
 		{
 			var queryBuilder = new EntitySelectBuilder<T>(schema);
-			var mapping = queryBuilder.Project(q => DatabaseFunctions.Count(q));
+			var mapping = queryBuilder.Projection.AddField(q => DatabaseFunctions.Count(q));
 			queryCallback?.Invoke(queryBuilder);
 			return new QueryWithScalarResult<int>(queryBuilder.BuildQuery(), mapping);
 		}
@@ -133,7 +133,7 @@ namespace Silk.Data.SQL.ORM
 			where T : class
 		{
 			var queryBuilder = new EntitySelectBuilder<T>(schema);
-			var mapping = queryBuilder.Project<T>();
+			var mapping = queryBuilder.Projection.AddClass<T>();
 			queryCallback?.Invoke(queryBuilder);
 			return new QueryWithMappedResult<T>(queryBuilder.BuildQuery(), mapping);
 		}
@@ -153,7 +153,7 @@ namespace Silk.Data.SQL.ORM
 			where TView : class
 		{
 			var queryBuilder = new EntitySelectBuilder<T>(schema);
-			var mapping = queryBuilder.Project<TView>();
+			var mapping = queryBuilder.Projection.AddClass<TView>();
 			queryCallback?.Invoke(queryBuilder);
 			return new QueryWithMappedResult<TView>(queryBuilder.BuildQuery(), mapping);
 		}
@@ -233,7 +233,7 @@ namespace Silk.Data.SQL.ORM
 						yield return queryBuilder.BuildQuery();
 						//  todo: support composite primary keys?
 						var selectPKQueryBuilder = new EntitySelectBuilder<T>(schema.Schema);
-						selectPKQueryBuilder.Project<int>(QueryExpression.Alias(
+						selectPKQueryBuilder.Projection.AddField<int>(QueryExpression.Alias(
 							QueryExpression.LastInsertIdFunction(),
 							schema.SchemaFields.First(q => q.PrimaryKeyGenerator == PrimaryKeyGenerator.ServerGenerated).AliasName
 							));
