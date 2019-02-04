@@ -1,6 +1,4 @@
 ﻿using Silk.Data.SQL.Expressions;
-using Silk.Data.SQL.ORM.Expressions;
-using Silk.Data.SQL.ORM.Queries.Expressions;
 using Silk.Data.SQL.ORM.Schema;
 using System;
 using System.Collections.Generic;
@@ -16,29 +14,70 @@ namespace Silk.Data.SQL.ORM.Queries
 			= new Dictionary<string, AliasExpression>();
 		private List<ITableJoin> _tableJoins
 			= new List<ITableJoin>();
-		private QueryExpression _where;
-		private QueryExpression _having;
-		private QueryExpression _limit;
-		private QueryExpression _offset;
-		private List<QueryExpression> _orderBy = new List<QueryExpression>();
-		private List<QueryExpression> _groupBy = new List<QueryExpression>();
 
-		public EntitySelectBuilder(Schema.Schema schema) : base(schema) { }
+		public IEntityConditionBuilder<T> Where { get; set; }
+		public IEntityConditionBuilder<T> Having { get; set; }
+		public IEntityRangeBuilder<T> Range { get; set; }
+		public IEntityGroupByBuilder<T> GroupBy { get; set; }
+		public IEntityOrderByBuilder<T> OrderBy { get; set; }
 
-		public EntitySelectBuilder(EntitySchema<T> schema) : base(schema) { }
+		public EntitySelectBuilder(Schema.Schema schema) : base(schema)
+		{
+		}
+
+		public EntitySelectBuilder(EntitySchema<T> schema) : base(schema)
+		{
+		}
+
+		private void ConfigureBuilder()
+		{
+			Where = new DefaultEntityConditionBuilder<T>(EntitySchema, ExpressionConverter);
+			Having = new DefaultEntityConditionBuilder<T>(EntitySchema, ExpressionConverter);
+			Range = new DefaultEntityRangeBuilder<T>(EntitySchema, ExpressionConverter);
+			GroupBy = new DefaultEntityGroupByBuilder<T>(EntitySchema, ExpressionConverter);
+			OrderBy = new DefaultEntityOrderByBuilder<T>(EntitySchema, ExpressionConverter);
+		}
 
 		public override QueryExpression BuildQuery()
 		{
+			var where = Where?.Build();
+			var having = Having?.Build();
+			var limit = Range?.BuildLimit();
+			var offset = Range?.BuildOffset();
+			var groupBy = GroupBy?.Build();
+			var orderBy = OrderBy?.Build();
+
+			var groupByExpressions = groupBy.Select(q => q.QueryExpression).ToArray();
+			var groupByJoins = groupBy.Where(q => q.RequiredJoins != null).SelectMany(q => q.RequiredJoins).ToArray();
+
+			var orderByExpressions = orderBy.Select(q => q.QueryExpression).ToArray();
+			var orderByJoins = orderBy.Where(q => q.RequiredJoins != null).SelectMany(q => q.RequiredJoins).ToArray();
+
+			var joins = new List<ITableJoin>();
+			joins.AddRange(_tableJoins); //  remove me
+			if (where?.RequiredJoins != null && where.RequiredJoins.Length > 0)
+				joins.AddRange(where.RequiredJoins.Where(join => !joins.Contains(join)));
+			if (having?.RequiredJoins != null && having.RequiredJoins.Length > 0)
+				joins.AddRange(having.RequiredJoins.Where(join => !joins.Contains(join)));
+			if (limit?.RequiredJoins != null && limit.RequiredJoins.Length > 0)
+				joins.AddRange(limit.RequiredJoins.Where(join => !joins.Contains(join)));
+			if (offset?.RequiredJoins != null && offset.RequiredJoins.Length > 0)
+				joins.AddRange(offset.RequiredJoins.Where(join => !joins.Contains(join)));
+			if (groupByJoins != null && groupByJoins.Length > 0)
+				joins.AddRange(groupByJoins.Where(join => !joins.Contains(join)));
+			if (orderByJoins != null && orderByJoins.Length > 0)
+				joins.AddRange(orderByJoins.Where(join => !joins.Contains(join)));
+
 			return QueryExpression.Select(
 				projection: _projectionExpressions.Values.ToArray(),
 				from: Source,
-				joins: _tableJoins.Select(q => q.GetJoinExpression()).ToArray(),
-				where: _where,
-				having: _having,
-				limit: _limit,
-				offset: _offset,
-				orderBy: _orderBy.ToArray(),
-				groupBy: _groupBy.ToArray()
+				joins: joins.Select(q => q.GetJoinExpression()).ToArray(),
+				where: where?.QueryExpression,
+				having: having?.QueryExpression,
+				limit: limit?.QueryExpression,
+				offset: offset?.QueryExpression,
+				orderBy: orderByExpressions,
+				groupBy: groupByExpressions
 				);
 		}
 
@@ -152,286 +191,6 @@ namespace Silk.Data.SQL.ORM.Queries
 				return;
 			_tableJoins.Add(join);
 			AddJoins(join.DependencyJoins);
-		}
-
-		public void AndWhere(QueryExpression queryExpression)
-		{
-			_where = QueryExpression.CombineConditions(_where, ConditionType.AndAlso, queryExpression);
-		}
-
-		public void AndWhere(ISchemaField<T> schemaField, ComparisonOperator @operator, T entity)
-		{
-			var fieldOperations = Schema.GetFieldOperations(schemaField);
-			var valueExpression = fieldOperations.Expressions.Value(entity, EntityReadWriter);
-			AndWhere(QueryExpression.Compare(
-				QueryExpression.Column(schemaField.Column.ColumnName),
-				@operator,
-				valueExpression
-				));
-		}
-
-		public void AndWhere<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, TValue value)
-		{
-			var valueExpression = ORMQueryExpressions.Value(value);
-			AndWhere(QueryExpression.Compare(
-				QueryExpression.Column(schemaField.Column.ColumnName),
-				@operator,
-				valueExpression
-				));
-		}
-
-		public void AndWhere(ISchemaField<T> schemaField, ComparisonOperator @operator, Expression<Func<T, bool>> valueExpression)
-		{
-			var valueExpressionResult = ExpressionConverter.Convert(valueExpression);
-			AndWhere(QueryExpression.Compare(
-				QueryExpression.Column(schemaField.Column.ColumnName),
-				@operator,
-				valueExpressionResult.QueryExpression
-				));
-		}
-
-		public void AndWhere<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
-		{
-			AndWhere(QueryExpression.Compare(
-				QueryExpression.Column(schemaField.Column.ColumnName),
-				@operator,
-				subQuery.BuildQuery()
-				));
-		}
-
-		public void AndWhere(Expression<Func<T, bool>> expression)
-		{
-			AndWhere(ExpressionConverter.Convert(expression));
-		}
-
-		public void AndWhere(ExpressionResult condition)
-		{
-			AndWhere(condition.QueryExpression);
-			AddJoins(condition.RequiredJoins);
-		}
-
-		public void OrWhere(QueryExpression queryExpression)
-		{
-			_where = QueryExpression.CombineConditions(_where, ConditionType.OrElse, queryExpression);
-		}
-
-		public void OrWhere(ISchemaField<T> schemaField, ComparisonOperator @operator, T entity)
-		{
-			var fieldOperations = Schema.GetFieldOperations(schemaField);
-			var valueExpression = fieldOperations.Expressions.Value(entity, EntityReadWriter);
-			OrWhere(QueryExpression.Compare(
-				QueryExpression.Column(schemaField.Column.ColumnName),
-				@operator,
-				valueExpression
-				));
-		}
-
-		public void OrWhere<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, TValue value)
-		{
-			var valueExpression = ORMQueryExpressions.Value(value);
-			OrWhere(QueryExpression.Compare(
-				QueryExpression.Column(schemaField.Column.ColumnName),
-				@operator,
-				valueExpression
-				));
-		}
-
-		public void OrWhere(ISchemaField<T> schemaField, ComparisonOperator @operator, Expression<Func<T, bool>> valueExpression)
-		{
-			var valueExpressionResult = ExpressionConverter.Convert(valueExpression);
-			OrWhere(QueryExpression.Compare(
-				QueryExpression.Column(schemaField.Column.ColumnName),
-				@operator,
-				valueExpressionResult.QueryExpression
-				));
-		}
-
-		public void OrWhere<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
-		{
-			OrWhere(QueryExpression.Compare(
-				QueryExpression.Column(schemaField.Column.ColumnName),
-				@operator,
-				subQuery.BuildQuery()
-				));
-		}
-
-		public void OrWhere(Expression<Func<T, bool>> expression)
-		{
-			OrWhere(ExpressionConverter.Convert(expression));
-		}
-
-		public void OrWhere(ExpressionResult condition)
-		{
-			OrWhere(condition.QueryExpression);
-			AddJoins(condition.RequiredJoins);
-		}
-
-		public void AndHaving(QueryExpression queryExpression)
-		{
-			_having = QueryExpression.CombineConditions(_having, ConditionType.AndAlso, queryExpression);
-		}
-
-		public void AndHaving(ISchemaField<T> schemaField, ComparisonOperator @operator, T entity)
-		{
-			var fieldOperations = Schema.GetFieldOperations(schemaField);
-			var valueExpression = fieldOperations.Expressions.Value(entity, EntityReadWriter);
-			AddJoins(schemaField.Join);
-			AndHaving(QueryExpression.Compare(
-				QueryExpression.Column(schemaField.Column.ColumnName),
-				@operator,
-				valueExpression
-				));
-		}
-
-		public void AndHaving<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, TValue value)
-		{
-			var valueExpression = ORMQueryExpressions.Value(value);
-			AddJoins(schemaField.Join);
-			AndHaving(QueryExpression.Compare(
-				QueryExpression.Column(schemaField.Column.ColumnName),
-				@operator,
-				valueExpression
-				));
-		}
-
-		public void AndHaving(ISchemaField<T> schemaField, ComparisonOperator @operator, Expression<Func<T, bool>> valueExpression)
-		{
-			var valueExpressionResult = ExpressionConverter.Convert(valueExpression);
-			AddJoins(schemaField.Join);
-			AddJoins(valueExpressionResult.RequiredJoins);
-			AndHaving(QueryExpression.Compare(
-				QueryExpression.Column(schemaField.Column.ColumnName),
-				@operator,
-				valueExpressionResult.QueryExpression
-				));
-		}
-
-		public void AndHaving<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
-		{
-			AddJoins(schemaField.Join);
-			AndHaving(QueryExpression.Compare(
-				QueryExpression.Column(schemaField.Column.ColumnName),
-				@operator,
-				subQuery.BuildQuery()
-				));
-		}
-
-		public void AndHaving(Expression<Func<T, bool>> expression)
-		{
-			AndHaving(ExpressionConverter.Convert(expression));
-		}
-
-		public void AndHaving(ExpressionResult condition)
-		{
-			AndHaving(condition.QueryExpression);
-			AddJoins(condition.RequiredJoins);
-		}
-
-		public void OrHaving(QueryExpression queryExpression)
-		{
-			_having = QueryExpression.CombineConditions(_having, ConditionType.OrElse, queryExpression);
-		}
-
-		public void OrHaving(ISchemaField<T> schemaField, ComparisonOperator @operator, T entity)
-		{
-			var fieldOperations = Schema.GetFieldOperations(schemaField);
-			var valueExpression = fieldOperations.Expressions.Value(entity, EntityReadWriter);
-			AddJoins(schemaField.Join);
-			OrHaving(QueryExpression.Compare(
-				QueryExpression.Column(schemaField.Column.ColumnName),
-				@operator,
-				valueExpression
-				));
-		}
-
-		public void OrHaving<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, TValue value)
-		{
-			var valueExpression = ORMQueryExpressions.Value(value);
-			AddJoins(schemaField.Join);
-			OrHaving(QueryExpression.Compare(
-				QueryExpression.Column(schemaField.Column.ColumnName),
-				@operator,
-				valueExpression
-				));
-		}
-
-		public void OrHaving(ISchemaField<T> schemaField, ComparisonOperator @operator, Expression<Func<T, bool>> valueExpression)
-		{
-			var valueExpressionResult = ExpressionConverter.Convert(valueExpression);
-			AddJoins(schemaField.Join);
-			AddJoins(valueExpressionResult.RequiredJoins);
-			OrHaving(QueryExpression.Compare(
-				QueryExpression.Column(schemaField.Column.ColumnName),
-				@operator,
-				valueExpressionResult.QueryExpression
-				));
-		}
-
-		public void OrHaving<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
-		{
-			AddJoins(schemaField.Join);
-			OrHaving(QueryExpression.Compare(
-				QueryExpression.Column(schemaField.Column.ColumnName),
-				@operator,
-				subQuery.BuildQuery()
-				));
-		}
-
-		public void OrHaving(Expression<Func<T, bool>> expression)
-		{
-			OrHaving(ExpressionConverter.Convert(expression));
-		}
-
-		public void OrHaving(ExpressionResult condition)
-		{
-			OrHaving(condition.QueryExpression);
-			AddJoins(condition.RequiredJoins);
-		}
-
-		public void OrderBy(QueryExpression queryExpression, OrderDirection orderDirection = OrderDirection.Ascending)
-		{
-			if (orderDirection == OrderDirection.Descending)
-				queryExpression = QueryExpression.Descending(queryExpression);
-			_orderBy.Add(queryExpression);
-		}
-
-		public void OrderBy<TProperty>(Expression<Func<T, TProperty>> propertyExpression, OrderDirection orderDirection = OrderDirection.Ascending)
-		{
-			var expressionResult = ExpressionConverter.Convert(propertyExpression);
-			OrderBy(expressionResult.QueryExpression, orderDirection);
-			AddJoins(expressionResult.RequiredJoins);
-		}
-
-		public void GroupBy(QueryExpression queryExpression)
-		{
-			_groupBy.Add(queryExpression);
-		}
-
-		public void GroupBy<TProperty>(Expression<Func<T, TProperty>> propertyExpression)
-		{
-			var expressionResult = ExpressionConverter.Convert(propertyExpression);
-			GroupBy(expressionResult.QueryExpression);
-			AddJoins(expressionResult.RequiredJoins);
-		}
-
-		public void Offset(int offset)
-		{
-			Offset(ORMQueryExpressions.Value(offset));
-		}
-
-		public void Offset(QueryExpression offset)
-		{
-			_offset = offset;
-		}
-
-		public void Limit(int limit)
-		{
-			_limit = ORMQueryExpressions.Value(limit);
-		}
-
-		public void Limit(QueryExpression queryExpression)
-		{
-			_limit = queryExpression;
 		}
 	}
 }
