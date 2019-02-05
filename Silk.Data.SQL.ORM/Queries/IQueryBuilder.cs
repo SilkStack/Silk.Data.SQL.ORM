@@ -22,6 +22,15 @@ namespace Silk.Data.SQL.ORM.Queries
 	{
 	}
 
+	public interface IUpdateQueryBuilder : IWhereQueryBuilder, IFieldAssignmentQueryBuilder
+	{
+	}
+
+	public interface IUpdateQueryBuilder<T> : IUpdateQueryBuilder, IWhereQueryBuilder<T>, IFieldAssignmentQueryBuilder<T>
+		where T : class
+	{
+	}
+
 	public interface IQueryBuilder
 	{
 		QueryExpression BuildQuery();
@@ -74,7 +83,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		IProjectionBuilder Projection { get; set; }
 	}
 
-	public interface IProjectionBuilder<T> : IProjectionQueryBuilder
+	public interface IProjectionQueryBuilder<T> : IProjectionQueryBuilder
 	{
 		new IEntityProjectionBuilder<T> Projection { get; set; }
 	}
@@ -87,5 +96,16 @@ namespace Silk.Data.SQL.ORM.Queries
 	public interface IRangeQueryBuilder<T> : IRangeQueryBuilder
 	{
 		new IEntityRangeBuilder<T> Range { get; set; }
+	}
+
+	public interface IFieldAssignmentQueryBuilder : IQueryBuilder
+	{
+		IFieldAssignmentBuilder Assignments { get; set; }
+	}
+
+	public interface IFieldAssignmentQueryBuilder<T> : IFieldAssignmentQueryBuilder
+		where T : class
+	{
+		new IEntityFieldAssignmentBuilder<T> Assignments { get; set; }
 	}
 }

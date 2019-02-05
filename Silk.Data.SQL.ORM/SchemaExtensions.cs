@@ -310,9 +310,9 @@ namespace Silk.Data.SQL.ORM
 					foreach (var field in schema.SchemaFields.Where(q => q.FieldType != FieldType.JoinedField))
 					{
 						if (field.IsPrimaryKey)
-							queryBuilder.AndWhere(field, ComparisonOperator.AreEqual, entity);
+							queryBuilder.Where.AndAlso(field, ComparisonOperator.AreEqual, entity);
 						else
-							queryBuilder.Set(field, entity);
+							queryBuilder.Assignments.Set(field, entity);
 					}
 					yield return queryBuilder.BuildQuery();
 				}
