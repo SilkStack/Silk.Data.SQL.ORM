@@ -177,6 +177,11 @@ namespace Silk.Data.SQL.ORM
 			var entityTypeModel = TypeModel.GetModelOf<T>();
 			var queryServerGeneratedPK = schema.SchemaFields.Any(q => q.PrimaryKeyGenerator == PrimaryKeyGenerator.ServerGenerated);
 
+			if (!queryServerGeneratedPK)
+				return new QueryNoResult(
+					new CompositeQueryExpression(BuildExpressions())
+					);
+
 			return new QueryInjectResult<T>(
 				new CompositeQueryExpression(BuildExpressions()),
 				new ObjectResultMapper<T>(
