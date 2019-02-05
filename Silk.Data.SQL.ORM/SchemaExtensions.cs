@@ -175,6 +175,7 @@ namespace Silk.Data.SQL.ORM
 			SanityCheckArgs(schema, entities, primaryKeyRequired: false);
 
 			var entityTypeModel = TypeModel.GetModelOf<T>();
+			var queryServerGeneratedPK = schema.SchemaFields.Any(q => q.PrimaryKeyGenerator == PrimaryKeyGenerator.ServerGenerated);
 
 			return new QueryInjectResult<T>(
 				new CompositeQueryExpression(BuildExpressions()),
@@ -217,13 +218,17 @@ namespace Silk.Data.SQL.ORM
 					}
 
 					yield return queryBuilder.BuildQuery();
-					//  todo: support composite primary keys?
-					var selectPKQueryBuilder = new EntitySelectBuilder<T>(schema.Schema);
-					selectPKQueryBuilder.Projection.AddField<int>(QueryExpression.Alias(
-						QueryExpression.LastInsertIdFunction(),
-						schema.SchemaFields.First(q => q.PrimaryKeyGenerator == PrimaryKeyGenerator.ServerGenerated).AliasName
-						));
-					yield return selectPKQueryBuilder.BuildQuery();
+
+					if (queryServerGeneratedPK)
+					{
+						//  todo: support composite primary keys?
+						var selectPKQueryBuilder = new EntitySelectBuilder<T>(schema.Schema);
+						selectPKQueryBuilder.Projection.AddField<int>(QueryExpression.Alias(
+							QueryExpression.LastInsertIdFunction(),
+							schema.SchemaFields.First(q => q.PrimaryKeyGenerator == PrimaryKeyGenerator.ServerGenerated).AliasName
+							));
+						yield return selectPKQueryBuilder.BuildQuery();
+					}
 				}
 			}
 		}
