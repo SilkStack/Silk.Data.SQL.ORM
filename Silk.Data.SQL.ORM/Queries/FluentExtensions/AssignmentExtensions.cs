@@ -45,7 +45,7 @@ namespace Silk.Data.SQL.ORM
 			where TEntity : class
 			where TBuilder : IFieldAssignmentQueryBuilder<TEntity>
 		{
-			builder.Set(schemaField, subQuery);
+			builder.Assignments.Set(schemaField, subQuery);
 			return builder;
 		}
 
@@ -53,7 +53,7 @@ namespace Silk.Data.SQL.ORM
 			where TEntity : class
 			where TBuilder : IFieldAssignmentQueryBuilder<TEntity>
 		{
-			builder.Set(fieldSelector, value);
+			builder.Assignments.Set(fieldSelector, value);
 			return builder;
 		}
 
@@ -61,7 +61,7 @@ namespace Silk.Data.SQL.ORM
 			where TEntity : class
 			where TBuilder : IFieldAssignmentQueryBuilder<TEntity>
 		{
-			builder.Set(fieldSelector, valueExpression);
+			builder.Assignments.Set(fieldSelector, valueExpression);
 			return builder;
 		}
 
@@ -69,7 +69,7 @@ namespace Silk.Data.SQL.ORM
 			where TEntity : class
 			where TBuilder : IFieldAssignmentQueryBuilder<TEntity>
 		{
-			builder.Set(fieldSelector, valueExpression);
+			builder.Assignments.Set(fieldSelector, valueExpression);
 			return builder;
 		}
 
@@ -77,7 +77,7 @@ namespace Silk.Data.SQL.ORM
 			where TEntity : class
 			where TBuilder : IFieldAssignmentQueryBuilder<TEntity>
 		{
-			builder.Set(fieldSelector, subQuery);
+			builder.Assignments.Set(fieldSelector, subQuery);
 			return builder;
 		}
 
@@ -85,7 +85,7 @@ namespace Silk.Data.SQL.ORM
 			where TEntity : class
 			where TBuilder : IFieldAssignmentQueryBuilder<TEntity>
 		{
-			builder.Set(fieldSelector, valueExpression);
+			builder.Assignments.Set(fieldSelector, valueExpression);
 			return builder;
 		}
 
