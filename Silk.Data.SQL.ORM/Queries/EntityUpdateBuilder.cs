@@ -5,7 +5,7 @@ using Silk.Data.SQL.ORM.Schema;
 
 namespace Silk.Data.SQL.ORM.Queries
 {
-	public class EntityUpdateBuilder<T> : QueryBuilderBase<T>, IUpdateQueryBuilder<T>
+	public class EntityUpdateBuilder<T> : QueryBuilderBase<T>, IEntityUpdateQueryBuilder<T>
 		where T : class
 	{
 		private IEntityConditionBuilder<T> _where;

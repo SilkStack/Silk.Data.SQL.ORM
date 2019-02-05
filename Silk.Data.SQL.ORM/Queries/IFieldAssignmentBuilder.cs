@@ -19,7 +19,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		void Set(ISchemaField<T> schemaField, T entity);
 		void Set<TValue>(ISchemaField<T> schemaField, TValue value);
 		void Set<TValue>(ISchemaField<T> schemaField, Expression<Func<T, TValue>> valueExpression);
-		void Set<TValue>(ISchemaField<T> schemaField, IQueryBuilder subQuery);
+		void Set(ISchemaField<T> schemaField, IQueryBuilder subQuery);
 		void Set<TProperty>(Expression<Func<T, TProperty>> fieldSelector, TProperty value);
 		void Set<TProperty>(Expression<Func<T, TProperty>> fieldSelector, Expression<Func<T, TProperty>> valueExpression);
 		void Set<TProperty>(Expression<Func<T, TProperty>> fieldSelector, Expression valueExpression);

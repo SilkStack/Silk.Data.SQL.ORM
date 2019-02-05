@@ -139,7 +139,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			AddJoins(schemaField.Join);
 		}
 
-		public void AndAlso<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
+		public void AndAlso(ISchemaField<T> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
 		{
 			AndAlso(QueryExpression.Compare(
 				QueryExpression.Column(schemaField.Column.ColumnName),
@@ -183,7 +183,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			AddJoins(schemaField.Join);
 		}
 
-		public void OrElse<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
+		public void OrElse(ISchemaField<T> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
 		{
 			OrElse(QueryExpression.Compare(
 				QueryExpression.Column(schemaField.Column.ColumnName),

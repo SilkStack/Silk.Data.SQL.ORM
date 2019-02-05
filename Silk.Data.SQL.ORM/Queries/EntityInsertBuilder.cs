@@ -9,7 +9,7 @@ namespace Silk.Data.SQL.ORM.Queries
 	/// An INSERT statement builder for entities of type T.
 	/// </summary>
 	/// <typeparam name="T"></typeparam>
-	public class EntityInsertBuilder<T> : QueryBuilderBase<T>, IInsertQueryBuilder<T>
+	public class EntityInsertBuilder<T> : QueryBuilderBase<T>, IEntityInsertQueryBuilder<T>
 		where T : class
 	{
 		private IEntityFieldAssignmentBuilder<T> _assignments;

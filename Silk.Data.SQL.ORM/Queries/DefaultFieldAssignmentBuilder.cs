@@ -137,7 +137,7 @@ namespace Silk.Data.SQL.ORM.Queries
 				);
 		}
 
-		public void Set<TValue>(ISchemaField<T> schemaField, IQueryBuilder subQuery)
+		public void Set(ISchemaField<T> schemaField, IQueryBuilder subQuery)
 		{
 			AddFieldAssignment(
 				QueryExpression.Column(schemaField.Column.ColumnName),

@@ -213,7 +213,7 @@ namespace Silk.Data.SQL.ORM
 							}
 						}
 
-						queryBuilder.Assignments.Set(field, entity);
+						queryBuilder.Set(field, entity);
 					}
 
 					yield return queryBuilder.BuildQuery();
@@ -257,7 +257,7 @@ namespace Silk.Data.SQL.ORM
 					foreach (var field in schema.SchemaFields)
 					{
 						if (field.IsPrimaryKey)
-							queryBuilder.Where.AndAlso(field, ComparisonOperator.AreEqual, entity);
+							queryBuilder.AndWhere(field, ComparisonOperator.AreEqual, entity);
 					}
 					yield return queryBuilder.BuildQuery();
 				}
@@ -292,9 +292,9 @@ namespace Silk.Data.SQL.ORM
 					foreach (var field in schema.SchemaFields.Where(q => q.FieldType != FieldType.JoinedField))
 					{
 						if (field.IsPrimaryKey)
-							queryBuilder.Where.AndAlso(field, ComparisonOperator.AreEqual, entity);
+							queryBuilder.AndWhere(field, ComparisonOperator.AreEqual, entity);
 						else
-							queryBuilder.Assignments.Set(field, entity);
+							queryBuilder.Set(field, entity);
 					}
 					yield return queryBuilder.BuildQuery();
 				}

@@ -26,10 +26,10 @@ namespace Silk.Data.SQL.ORM.Queries
 		void AndAlso(ISchemaField<T> schemaField, ComparisonOperator @operator, T entity);
 		void AndAlso<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, TValue value);
 		void AndAlso(ISchemaField<T> schemaField, ComparisonOperator @operator, Expression<Func<T, bool>> valueExpression);
-		void AndAlso<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery);
+		void AndAlso(ISchemaField<T> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery);
 		void OrElse(ISchemaField<T> schemaField, ComparisonOperator @operator, T entity);
 		void OrElse<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, TValue value);
 		void OrElse(ISchemaField<T> schemaField, ComparisonOperator @operator, Expression<Func<T, bool>> valueExpression);
-		void OrElse<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery);
+		void OrElse(ISchemaField<T> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery);
 	}
 }

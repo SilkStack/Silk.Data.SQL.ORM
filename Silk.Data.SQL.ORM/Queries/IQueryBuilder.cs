@@ -26,7 +26,7 @@ namespace Silk.Data.SQL.ORM.Queries
 	{
 	}
 
-	public interface IUpdateQueryBuilder<T> : IUpdateQueryBuilder, IWhereQueryBuilder<T>, IFieldAssignmentQueryBuilder<T>
+	public interface IEntityUpdateQueryBuilder<T> : IUpdateQueryBuilder, IWhereQueryBuilder<T>, IFieldAssignmentQueryBuilder<T>
 		where T : class
 	{
 	}
@@ -35,7 +35,7 @@ namespace Silk.Data.SQL.ORM.Queries
 	{
 	}
 
-	public interface IInsertQueryBuilder<T> : IInsertQueryBuilder, IFieldAssignmentQueryBuilder<T>
+	public interface IEntityInsertQueryBuilder<T> : IInsertQueryBuilder, IFieldAssignmentQueryBuilder<T>
 		where T : class
 	{
 	}
