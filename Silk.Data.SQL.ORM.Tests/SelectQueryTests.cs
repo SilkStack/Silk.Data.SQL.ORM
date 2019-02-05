@@ -27,7 +27,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					);
 
 				var queryBuilder = new EntitySelectBuilder<FlatEntity>(schema);
-				queryBuilder.Project<FlatEntity>();
+				queryBuilder.Projection.AddClass<FlatEntity>();
 				var selectQuery = queryBuilder.BuildQuery();
 
 				using (var queryResult = await provider.ExecuteReaderAsync(selectQuery))
@@ -68,7 +68,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					);
 
 				var queryBuilder = new EntitySelectBuilder<RelationshipEntity>(schema);
-				queryBuilder.Project<RelationshipEntity>();
+				queryBuilder.Projection.AddClass<RelationshipEntity>();
 				var selectQuery = queryBuilder.BuildQuery();
 
 				using (var queryResult = await provider.ExecuteReaderAsync(selectQuery))
@@ -105,7 +105,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					);
 
 				var queryBuilder = new EntitySelectBuilder<RelationshipEntity>(schema);
-				queryBuilder.Project<RelationshipEntity>();
+				queryBuilder.Projection.AddClass<RelationshipEntity>();
 				var selectQuery = queryBuilder.BuildQuery();
 
 				using (var queryResult = await provider.ExecuteReaderAsync(selectQuery))
@@ -149,7 +149,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					);
 
 				var queryBuilder = new EntitySelectBuilder<DeepRelationshipEntity>(schema);
-				queryBuilder.Project<DeepRelationshipEntity>();
+				queryBuilder.Projection.AddClass<DeepRelationshipEntity>();
 				var selectQuery = queryBuilder.BuildQuery();
 
 				using (var queryResult = await provider.ExecuteReaderAsync(selectQuery))
@@ -193,7 +193,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					);
 
 				var queryBuilder = new EntitySelectBuilder<DeepRelationshipEntity>(schema);
-				queryBuilder.Project<DeepRelationshipEntity>();
+				queryBuilder.Projection.AddClass<DeepRelationshipEntity>();
 				var selectQuery = queryBuilder.BuildQuery();
 
 				using (var queryResult = await provider.ExecuteReaderAsync(selectQuery))
@@ -230,7 +230,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					);
 
 				var queryBuilder = new EntitySelectBuilder<FlatEntity>(schema);
-				queryBuilder.Project(q => Alias(Count(q.Id), "count"));
+				queryBuilder.Projection.AddField(q => Alias(Count(q.Id), "count"));
 				var selectQuery = queryBuilder.BuildQuery();
 
 				using (var queryResult = await provider.ExecuteReaderAsync(selectQuery))
@@ -259,7 +259,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					);
 
 				var queryBuilder = new EntitySelectBuilder<FlatEntity>(schema);
-				queryBuilder.Project(q => q.Data);
+				queryBuilder.Projection.AddField(q => q.Data);
 				var selectQuery = queryBuilder.BuildQuery();
 
 				using (var queryResult = await provider.ExecuteReaderAsync(selectQuery))
@@ -299,7 +299,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					);
 
 				var queryBuilder = new EntitySelectBuilder<FlatEntity>(schema);
-				queryBuilder.Project<FlatEntity>();
+				queryBuilder.Projection.AddClass<FlatEntity>();
 				var ids = new[] { 1, 2 };
 				queryBuilder.AndWhere(q => IsIn(q.Id, ids));
 				var selectQuery = queryBuilder.BuildQuery();

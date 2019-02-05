@@ -155,6 +155,7 @@ namespace Silk.Data.SQL.ORM.Tests
 		{
 			var expressionConverter = CreateConverter<int, int>();
 			var selectBuilder = new EntitySelectBuilder<TestTuple<int, int>>(expressionConverter.Schema);
+			selectBuilder.Projection.AddField(q => q.Id);
 			var condition = expressionConverter.Convert(q => selectBuilder);
 
 			var checkExpression = condition.QueryExpression as SelectExpression;

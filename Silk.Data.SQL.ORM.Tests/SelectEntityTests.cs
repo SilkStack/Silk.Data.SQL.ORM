@@ -141,7 +141,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					);
 
 				var selectAscending = schema.CreateSelect<PrimitivePoco>(q => q.OrderBy(obj => obj.Data));
-				var selectDescending = schema.CreateSelect<PrimitivePoco>(q => q.OrderBy(obj => obj.Data, OrderDirection.Descending));
+				var selectDescending = schema.CreateSelect<PrimitivePoco>(q => q.OrderByDescending(obj => obj.Data));
 				await provider.ExecuteAsync(selectAscending, selectDescending);
 
 				Assert.IsTrue(

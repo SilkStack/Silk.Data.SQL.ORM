@@ -94,7 +94,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		{
 			var projection = _projection?.Build();
 
-			if (projection?.ProjectionExpressions.Length == 0)
+			if (projection == null || projection.ProjectionExpressions.Length < 1)
 				throw new InvalidOperationException("At least 1 projected field must be specified.");
 
 			var where = _where?.Build();
