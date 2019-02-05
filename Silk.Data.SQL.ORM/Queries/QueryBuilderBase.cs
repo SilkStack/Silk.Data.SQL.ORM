@@ -64,7 +64,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			{
 				if (joinArray == null || joinArray.Length < 1)
 					continue;
-				result.Concat(joinArray);
+				result = result.Concat(joinArray);
 			}
 			return result
 				.GroupBy(join => join)
