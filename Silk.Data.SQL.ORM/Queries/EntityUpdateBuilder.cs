@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using Silk.Data.Modelling;
 using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Schema;

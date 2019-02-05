@@ -31,6 +31,15 @@ namespace Silk.Data.SQL.ORM.Queries
 	{
 	}
 
+	public interface IInsertQueryBuilder : IFieldAssignmentQueryBuilder
+	{
+	}
+
+	public interface IInsertQueryBuilder<T> : IInsertQueryBuilder, IFieldAssignmentQueryBuilder<T>
+		where T : class
+	{
+	}
+
 	public interface IQueryBuilder
 	{
 		QueryExpression BuildQuery();

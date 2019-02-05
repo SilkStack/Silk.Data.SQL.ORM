@@ -175,13 +175,6 @@ namespace Silk.Data.SQL.ORM
 			SanityCheckArgs(schema, entities, primaryKeyRequired: false);
 
 			var entityTypeModel = TypeModel.GetModelOf<T>();
-			var serverGeneratedPrimaryKeyField = schema.SchemaFields.FirstOrDefault(q => q.PrimaryKeyGenerator == PrimaryKeyGenerator.ServerGenerated);
-			var isBulkInsert = serverGeneratedPrimaryKeyField == null;
-
-			if (isBulkInsert)
-				return new QueryNoResult(
-					new CompositeQueryExpression(BuildExpressions())
-					);
 
 			return new QueryInjectResult<T>(
 				new CompositeQueryExpression(BuildExpressions()),
@@ -199,15 +192,10 @@ namespace Silk.Data.SQL.ORM
 			{
 				var entityReadWriter = new ObjectReadWriter(null, entityTypeModel, typeof(T));
 				var queryBuilder = default(EntityInsertBuilder<T>);
-				if (isBulkInsert)
-					queryBuilder = new EntityInsertBuilder<T>(schema, entityReadWriter);
 
 				foreach (var entity in entities)
 				{
-					if (!isBulkInsert)
-						queryBuilder = new EntityInsertBuilder<T>(schema, entityReadWriter);
-					else
-						queryBuilder.NewRow();
+					queryBuilder = new EntityInsertBuilder<T>(schema, entityReadWriter);
 
 					foreach (var field in schema.SchemaFields.Where(q => q.FieldType != FieldType.JoinedField))
 					{
@@ -225,24 +213,18 @@ namespace Silk.Data.SQL.ORM
 							}
 						}
 
-						queryBuilder.Set(field, entity);
+						queryBuilder.Assignments.Set(field, entity);
 					}
 
-					if (!isBulkInsert)
-					{
-						yield return queryBuilder.BuildQuery();
-						//  todo: support composite primary keys?
-						var selectPKQueryBuilder = new EntitySelectBuilder<T>(schema.Schema);
-						selectPKQueryBuilder.Projection.AddField<int>(QueryExpression.Alias(
-							QueryExpression.LastInsertIdFunction(),
-							schema.SchemaFields.First(q => q.PrimaryKeyGenerator == PrimaryKeyGenerator.ServerGenerated).AliasName
-							));
-						yield return selectPKQueryBuilder.BuildQuery();
-					}
-				}
-
-				if (isBulkInsert)
 					yield return queryBuilder.BuildQuery();
+					//  todo: support composite primary keys?
+					var selectPKQueryBuilder = new EntitySelectBuilder<T>(schema.Schema);
+					selectPKQueryBuilder.Projection.AddField<int>(QueryExpression.Alias(
+						QueryExpression.LastInsertIdFunction(),
+						schema.SchemaFields.First(q => q.PrimaryKeyGenerator == PrimaryKeyGenerator.ServerGenerated).AliasName
+						));
+					yield return selectPKQueryBuilder.BuildQuery();
+				}
 			}
 		}
 
