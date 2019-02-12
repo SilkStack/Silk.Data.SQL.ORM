@@ -1,31 +1,54 @@
-﻿using Silk.Data.Modelling;
-using Silk.Data.Modelling.Mapping.Binding;
-using Silk.Data.SQL.ORM.Schema.Binding;
+﻿using System;
+using Silk.Data.Modelling;
+using Silk.Data.Modelling.GenericDispatch;
 
 namespace Silk.Data.SQL.ORM.Schema
 {
-	public interface ISchemaField
+	public abstract class SchemaField : IField
 	{
-		string AliasName { get; }
-		string FieldName { get; }
-		Column Column { get; }
-		bool IsPrimaryKey { get; }
-		PrimaryKeyGenerator PrimaryKeyGenerator { get; }
-		ISchemaFieldReference SchemaFieldReference { get; }
-		FieldType FieldType { get; }
-		IFieldReference EntityFieldReference { get; }
-		EntityFieldJoin Join { get; }
-		System.Type DataType { get; }
-		string[] ModelPath { get; }
-		Modelling.Mapping.Binding.Binding[] Bindings { get; }
+		public string AliasName => throw new NotImplementedException();
+
+		public string FieldName => throw new NotImplementedException();
+
+		public Column Column => throw new NotImplementedException();
+
+		public bool IsPrimaryKey => throw new NotImplementedException();
+
+		public PrimaryKeyGenerator PrimaryKeyGenerator => throw new NotImplementedException();
+
+		public ISchemaFieldReference SchemaFieldReference => throw new NotImplementedException();
+
+		public FieldType FieldType => throw new NotImplementedException();
+
+		public EntityFieldJoin Join => throw new NotImplementedException();
+
+		public Type DataType => throw new NotImplementedException();
+
+		public string[] ModelPath => throw new NotImplementedException();
+
+		public bool CanRead => throw new NotImplementedException();
+
+		public bool CanWrite => throw new NotImplementedException();
+
+		public bool IsEnumerableType => throw new NotImplementedException();
+
+		public Type FieldDataType => throw new NotImplementedException();
+
+		public Type FieldElementType => throw new NotImplementedException();
+
+		public void Dispatch(IFieldGenericExecutor executor)
+		{
+			throw new NotImplementedException();
+		}
 	}
 
-	public interface ISchemaField<TEntity> : ISchemaField
+	public abstract class SchemaField<TEntity> : SchemaField
 		where TEntity : class
 	{
+
 	}
 
-	public class SqlPrimitiveSchemaField<TValue, TEntity> : ISchemaField<TEntity>
+	public class SqlPrimitiveSchemaField<TValue, TEntity> : SchemaField<TEntity>
 		where TEntity : class
 	{
 		public Column Column { get; }
@@ -37,8 +60,6 @@ namespace Silk.Data.SQL.ORM.Schema
 		public string FieldName { get; }
 
 		public ISchemaFieldReference SchemaFieldReference { get; }
-
-		public IFieldReference EntityFieldReference { get; }
 
 		public FieldType FieldType { get; }
 
@@ -50,30 +71,22 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public string[] ModelPath { get; }
 
-		public Modelling.Mapping.Binding.Binding[] Bindings { get; }
-
 		public SqlPrimitiveSchemaField(string fieldName, Column column, PrimaryKeyGenerator primaryKeyGenerator,
-			IFieldReference entityFieldReference, EntityFieldJoin join, string[] modelPath,
+			EntityFieldJoin join, string[] modelPath,
 			string aliasName)
 		{
 			FieldName = fieldName;
 			Column = column;
 			PrimaryKeyGenerator = primaryKeyGenerator;
-			EntityFieldReference = entityFieldReference;
 			FieldType = join != null ? FieldType.JoinedField : FieldType.StoredField;
 			Join = join;
 			ModelPath = modelPath;
 			AliasName = aliasName;
 			SchemaFieldReference = SchemaFieldReference<TValue>.Create(aliasName);
-
-			Bindings = new[]
-			{
-				new CopyBinding<TValue>(SchemaFieldReference, entityFieldReference)
-			};
 		}
 	}
 
-	public class ProjectedPrimitiveSchemaField<TEntity> : ISchemaField<TEntity>
+	public class ProjectedPrimitiveSchemaField<TEntity> : SchemaField<TEntity>
 		where TEntity : class
 	{
 		public Column Column { get; }
@@ -86,8 +99,6 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public ISchemaFieldReference SchemaFieldReference { get; }
 
-		public IFieldReference EntityFieldReference { get; }
-
 		public FieldType FieldType { get; }
 
 		public string AliasName { get; }
@@ -98,28 +109,23 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public string[] ModelPath { get; }
 
-		public Modelling.Mapping.Binding.Binding[] Bindings { get; }
-
 		public ProjectedPrimitiveSchemaField(string fieldName, Column column, PrimaryKeyGenerator primaryKeyGenerator,
-			IFieldReference entityFieldReference, EntityFieldJoin join, string[] modelPath,
-			string aliasName, System.Type dataType, ISchemaFieldReference schemaFieldReference,
-			Modelling.Mapping.Binding.Binding[] bindings)
+			EntityFieldJoin join, string[] modelPath,
+			string aliasName, System.Type dataType, ISchemaFieldReference schemaFieldReference)
 		{
 			FieldName = fieldName;
 			Column = column;
 			PrimaryKeyGenerator = primaryKeyGenerator;
-			EntityFieldReference = entityFieldReference;
 			FieldType = join != null ? FieldType.JoinedField : FieldType.StoredField;
 			Join = join;
 			ModelPath = modelPath;
 			AliasName = aliasName;
 			DataType = dataType;
 			SchemaFieldReference = schemaFieldReference;
-			Bindings = bindings;
 		}
 	}
 
-	public class EmbeddedObjectNullCheckSchemaField<TValue, TEntity> : ISchemaField<TEntity>
+	public class EmbeddedObjectNullCheckSchemaField<TValue, TEntity> : SchemaField<TEntity>
 		where TEntity : class
 	{
 		public Column Column { get; }
@@ -132,8 +138,6 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public ISchemaFieldReference SchemaFieldReference { get; }
 
-		public IFieldReference EntityFieldReference { get; }
-
 		public FieldType FieldType { get; }
 
 		public string AliasName { get; }
@@ -144,10 +148,8 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public string[] ModelPath { get; }
 
-		public Modelling.Mapping.Binding.Binding[] Bindings { get; }
-
 		public EmbeddedObjectNullCheckSchemaField(string fieldName, string columnName,
-			IFieldReference entityFieldReference, EntityFieldJoin join,
+			EntityFieldJoin join,
 			IEntitySchemaAssemblage<TEntity> entitySchemaAssemblage,
 			string[] modelPath, string aliasName)
 		{
@@ -163,22 +165,13 @@ namespace Silk.Data.SQL.ORM.Schema
 				FieldType = FieldType.StoredField;
 			}
 			FieldName = fieldName;
-			EntityFieldReference = entityFieldReference;
 			ModelPath = modelPath;
 			AliasName = aliasName;
 			SchemaFieldReference = SchemaFieldReference<bool>.Create(aliasName);
-			Bindings = new Modelling.Mapping.Binding.Binding[]
-			{
-				new CreateInstanceWithNullCheck<TValue, bool>(
-					SqlTypeHelper.GetConstructor(typeof(TValue)),
-					SchemaFieldReference<bool>.Create(aliasName),
-					entityFieldReference
-					)
-			};
 		}
 	}
 
-	public class JoinedObjectSchemaField<TValue, TEntity, TPrimaryKey> : ISchemaField<TEntity>
+	public class JoinedObjectSchemaField<TValue, TEntity, TPrimaryKey> : SchemaField<TEntity>
 		where TEntity : class
 		where TValue : class
 	{
@@ -192,8 +185,6 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public ISchemaFieldReference SchemaFieldReference { get; }
 
-		public IFieldReference EntityFieldReference { get; }
-
 		public FieldType FieldType { get; }
 
 		public string AliasName { get; }
@@ -204,12 +195,10 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public string[] ModelPath { get; }
 
-		public Modelling.Mapping.Binding.Binding[] Bindings { get; }
-
 		public JoinedObjectSchemaField(string fieldName, string columnName,
-			IFieldReference entityFieldReference, EntityFieldJoin join,
+			EntityFieldJoin join,
 			IEntitySchemaAssemblage<TEntity> entitySchemaAssemblage,
-			string[] modelPath, string aliasName, IFieldReference pkFieldReference)
+			string[] modelPath, string aliasName)
 		{
 			if (join == null)
 			{
@@ -223,19 +212,9 @@ namespace Silk.Data.SQL.ORM.Schema
 			}
 			Join = join;
 			FieldName = fieldName;
-			EntityFieldReference = entityFieldReference;
 			ModelPath = modelPath;
 			AliasName = aliasName;
 			SchemaFieldReference = SchemaFieldReference<TPrimaryKey>.Create(aliasName);
-			Bindings = new Modelling.Mapping.Binding.Binding[]
-			{
-				new CreateInstanceWithNullCheck<TValue, TPrimaryKey>(
-					SqlTypeHelper.GetConstructor(typeof(TValue)),
-					SchemaFieldReference,
-					entityFieldReference
-					),
-				new CopyBinding<TPrimaryKey>(SchemaFieldReference, pkFieldReference)
-			};
 		}
 	}
 }

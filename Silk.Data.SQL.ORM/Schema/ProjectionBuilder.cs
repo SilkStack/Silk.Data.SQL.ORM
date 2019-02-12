@@ -149,9 +149,9 @@ namespace Silk.Data.SQL.ORM.Schema
 				_entitySchema = entitySchema;
 			}
 
-			public ISchemaField<TEntity>[] Convert(Mapping mapping)
+			public SchemaField<TEntity>[] Convert(Mapping mapping)
 			{
-				var schemaFields = new List<ISchemaField<TEntity>>();
+				var schemaFields = new List<SchemaField<TEntity>>();
 
 				foreach (var binding in mapping.Bindings)
 				{
@@ -160,7 +160,7 @@ namespace Silk.Data.SQL.ORM.Schema
 				return schemaFields.ToArray();
 			}
 
-			private void Visit(Modelling.Mapping.Binding.Binding binding, List<ISchemaField<TEntity>> schemaFields)
+			private void Visit(Modelling.Mapping.Binding.Binding binding, List<SchemaField<TEntity>> schemaFields)
 			{
 				switch (binding)
 				{
@@ -173,7 +173,7 @@ namespace Silk.Data.SQL.ORM.Schema
 				}
 			}
 
-			private ISchemaField<TEntity> CreateMappingField(MappingBinding mappingBinding)
+			private SchemaField<TEntity> CreateMappingField(MappingBinding mappingBinding)
 			{
 				var sourceField = _entitySchema.SchemaFields.FirstOrDefault(q => ReferenceEquals(q.SchemaFieldReference, mappingBinding.From));
 

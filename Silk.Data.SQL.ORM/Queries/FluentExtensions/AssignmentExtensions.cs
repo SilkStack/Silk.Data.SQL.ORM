@@ -22,7 +22,7 @@ namespace Silk.Data.SQL.ORM
 			return builder;
 		}
 
-		private static TBuilder Set<TBuilder, TEntity, TValue>(this TBuilder builder, ISchemaField<TEntity> schemaField, TValue value)
+		private static TBuilder Set<TBuilder, TEntity, TValue>(this TBuilder builder, SchemaField<TEntity> schemaField, TValue value)
 			where TEntity : class
 			where TBuilder : IFieldAssignmentQueryBuilder<TEntity>
 		{
@@ -33,7 +33,7 @@ namespace Silk.Data.SQL.ORM
 			return builder;
 		}
 
-		private static TBuilder Set<TBuilder, TEntity, TValue>(this TBuilder builder, ISchemaField<TEntity> schemaField, Expression<Func<TEntity, TValue>> valueExpression)
+		private static TBuilder Set<TBuilder, TEntity, TValue>(this TBuilder builder, SchemaField<TEntity> schemaField, Expression<Func<TEntity, TValue>> valueExpression)
 			where TEntity : class
 			where TBuilder : IFieldAssignmentQueryBuilder<TEntity>
 		{
@@ -41,7 +41,7 @@ namespace Silk.Data.SQL.ORM
 			return builder;
 		}
 
-		private static TBuilder Set<TBuilder, TEntity>(this TBuilder builder, ISchemaField<TEntity> schemaField, IQueryBuilder subQuery)
+		private static TBuilder Set<TBuilder, TEntity>(this TBuilder builder, SchemaField<TEntity> schemaField, IQueryBuilder subQuery)
 			where TEntity : class
 			where TBuilder : IFieldAssignmentQueryBuilder<TEntity>
 		{
@@ -89,13 +89,13 @@ namespace Silk.Data.SQL.ORM
 			return builder;
 		}
 
-		public static IEntityInsertQueryBuilder<TEntity> Set<TEntity, TValue>(this IEntityInsertQueryBuilder<TEntity> builder, ISchemaField<TEntity> schemaField, TValue value)
+		public static IEntityInsertQueryBuilder<TEntity> Set<TEntity, TValue>(this IEntityInsertQueryBuilder<TEntity> builder, SchemaField<TEntity> schemaField, TValue value)
 			where TEntity : class => builder.Set<IEntityInsertQueryBuilder<TEntity>, TEntity, TValue>(schemaField, value);
 
-		public static IEntityInsertQueryBuilder<TEntity> Set<TEntity, TValue>(this IEntityInsertQueryBuilder<TEntity> builder, ISchemaField<TEntity> schemaField, Expression<Func<TEntity, TValue>> valueExpression)
+		public static IEntityInsertQueryBuilder<TEntity> Set<TEntity, TValue>(this IEntityInsertQueryBuilder<TEntity> builder, SchemaField<TEntity> schemaField, Expression<Func<TEntity, TValue>> valueExpression)
 			where TEntity : class => builder.Set<IEntityInsertQueryBuilder<TEntity>, TEntity, TValue>(schemaField, valueExpression);
 
-		public static IEntityInsertQueryBuilder<TEntity> Set<TEntity>(this IEntityInsertQueryBuilder<TEntity> builder, ISchemaField<TEntity> schemaField, IQueryBuilder subQuery)
+		public static IEntityInsertQueryBuilder<TEntity> Set<TEntity>(this IEntityInsertQueryBuilder<TEntity> builder, SchemaField<TEntity> schemaField, IQueryBuilder subQuery)
 			where TEntity : class => builder.Set<IEntityInsertQueryBuilder<TEntity>, TEntity>(schemaField, subQuery);
 
 		public static IEntityInsertQueryBuilder<TEntity> Set<TEntity, TProperty>(this IEntityInsertQueryBuilder<TEntity> builder, Expression<Func<TEntity, TProperty>> fieldSelector, TProperty value)
@@ -113,13 +113,13 @@ namespace Silk.Data.SQL.ORM
 		public static IEntityInsertQueryBuilder<TEntity> Set<TEntity, TProperty>(this IEntityInsertQueryBuilder<TEntity> builder, Expression<Func<TEntity, TProperty>> fieldSelector, QueryExpression valueExpression)
 			where TEntity : class => builder.Set<IEntityInsertQueryBuilder<TEntity>, TEntity, TProperty>(fieldSelector, valueExpression);
 
-		public static IEntityUpdateQueryBuilder<TEntity> Set<TEntity, TValue>(this IEntityUpdateQueryBuilder<TEntity> builder, ISchemaField<TEntity> schemaField, TValue value)
+		public static IEntityUpdateQueryBuilder<TEntity> Set<TEntity, TValue>(this IEntityUpdateQueryBuilder<TEntity> builder, SchemaField<TEntity> schemaField, TValue value)
 			where TEntity : class => builder.Set<IEntityUpdateQueryBuilder<TEntity>, TEntity, TValue>(schemaField, value);
 
-		public static IEntityUpdateQueryBuilder<TEntity> Set<TEntity, TValue>(this IEntityUpdateQueryBuilder<TEntity> builder, ISchemaField<TEntity> schemaField, Expression<Func<TEntity, TValue>> valueExpression)
+		public static IEntityUpdateQueryBuilder<TEntity> Set<TEntity, TValue>(this IEntityUpdateQueryBuilder<TEntity> builder, SchemaField<TEntity> schemaField, Expression<Func<TEntity, TValue>> valueExpression)
 			where TEntity : class => builder.Set<IEntityUpdateQueryBuilder<TEntity>, TEntity, TValue>(schemaField, valueExpression);
 
-		public static IEntityUpdateQueryBuilder<TEntity> Set<TEntity>(this IEntityUpdateQueryBuilder<TEntity> builder, ISchemaField<TEntity> schemaField, IQueryBuilder subQuery)
+		public static IEntityUpdateQueryBuilder<TEntity> Set<TEntity>(this IEntityUpdateQueryBuilder<TEntity> builder, SchemaField<TEntity> schemaField, IQueryBuilder subQuery)
 			where TEntity : class => builder.Set<IEntityUpdateQueryBuilder<TEntity>, TEntity>(schemaField, subQuery);
 
 		public static IEntityUpdateQueryBuilder<TEntity> Set<TEntity, TProperty>(this IEntityUpdateQueryBuilder<TEntity> builder, Expression<Func<TEntity, TProperty>> fieldSelector, TProperty value)

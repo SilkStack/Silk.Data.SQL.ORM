@@ -107,7 +107,7 @@ namespace Silk.Data.SQL.ORM.Queries
 				));
 		}
 
-		private ISchemaField<T> ResolveProjectionField<TProperty>(Expression<Func<T, TProperty>> property)
+		private SchemaField<T> ResolveProjectionField<TProperty>(Expression<Func<T, TProperty>> property)
 		{
 			if (property.Body is MemberExpression memberExpression)
 			{
@@ -119,7 +119,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			return null;
 		}
 
-		private ISchemaField<T> GetProjectionField(IEnumerable<string> path)
+		private SchemaField<T> GetProjectionField(IEnumerable<string> path)
 		{
 			return EntitySchema.SchemaFields.FirstOrDefault(
 				q => q.ModelPath.SequenceEqual(path)
@@ -137,7 +137,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			}
 		}
 
-		private void AddProjection<TProjection>(ISchemaField<TProjection> schemaField)
+		private void AddProjection<TProjection>(SchemaField<TProjection> schemaField)
 			where TProjection : class
 		{
 			if (_projectionExpressions.ContainsKey(schemaField.AliasName))

@@ -1,4 +1,5 @@
 ﻿using Silk.Data.Modelling;
+using Silk.Data.Modelling.GenericDispatch;
 using Silk.Data.Modelling.Mapping;
 using Silk.Data.Modelling.Mapping.Binding;
 using System;
@@ -10,20 +11,32 @@ namespace Silk.Data.SQL.ORM.Schema
 	/// <summary>
 	/// Schema for storing and querying an entity type.
 	/// </summary>
-	public abstract class EntitySchema
+	public abstract class EntitySchema : IModel<SchemaField>
 	{
 		public Schema Schema { get; internal set; }
 
 		public abstract Type EntityType { get; }
 		public abstract Table EntityTable { get; }
 		public abstract SchemaIndex[] Indexes { get; }
-		public Mapping Mapping { get; protected set; }
+		public IMapping<EntitySchema, SchemaField, TypeModel, PropertyInfoField> Mapping { get; protected set; }
 
-		public ISchemaField[] SchemaFields { get; }
+		public IReadOnlyList<SchemaField> Fields { get; }
 
-		public EntitySchema(ISchemaField[] schemaFields)
+		IReadOnlyList<IField> IModel.Fields => Fields;
+
+		public EntitySchema(SchemaField[] schemaFields)
 		{
-			SchemaFields = schemaFields;
+			Fields = schemaFields;
+		}
+
+		public IEnumerable<SchemaField> GetPathFields(IFieldPath<SchemaField> fieldPath)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void Dispatch(IModelGenericExecutor executor)
+		{
+			throw new NotImplementedException();
 		}
 	}
 
@@ -35,15 +48,15 @@ namespace Silk.Data.SQL.ORM.Schema
 		public override Type EntityType => typeof(TEntity);
 		public override SchemaIndex[] Indexes { get; }
 
-		public new ISchemaField<TEntity>[] SchemaFields { get; }
+		public new SchemaField<TEntity>[] Fields { get; }
 
-		public ProjectionSchema(Table entityTable, ISchemaField<TEntity>[] schemaFields,
-			SchemaIndex[] indexes, Mapping mapping)
+		public ProjectionSchema(Table entityTable, SchemaField<TEntity>[] schemaFields,
+			SchemaIndex[] indexes, IMapping<EntitySchema, SchemaField, TypeModel, PropertyInfoField> mapping)
 			: base(schemaFields)
 		{
 			EntityTable = entityTable;
 			Indexes = indexes;
-			SchemaFields = schemaFields;
+			Fields = schemaFields;
 			Mapping = mapping;
 		}
 	}
@@ -59,33 +72,33 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public SchemaModel SchemaModel { get; }
 
-		public EntitySchema(Table entityTable, ISchemaField<T>[] schemaFields, SchemaIndex[] indexes) :
+		public EntitySchema(Table entityTable, SchemaField<T>[] schemaFields, SchemaIndex[] indexes) :
 			base(entityTable, schemaFields, indexes, null)
 		{
 			SchemaModel = SchemaModel.Create(this);
-			AssignFieldAndModelPropertiesOnSchemaFieldReferences();
-			Mapping = new Mapping(
-				TypeModel.GetModelOf<T>(),
-				null,
-				new Modelling.Mapping.Binding.Binding[]
-				{
-					new CreateInstanceIfNull<T>(
-						SqlTypeHelper.GetConstructor(typeof(T)), TypeModel.GetModelOf<T>().Root
-						)
-				}.Concat(schemaFields
-					.Where(q => q.SchemaFieldReference.Field.CanWrite)
-					.SelectMany(q => q.Bindings)).ToArray());
+			//AssignFieldAndModelPropertiesOnSchemaFieldReferences();
+			//Mapping = new Mapping(
+			//	TypeModel.GetModelOf<T>(),
+			//	null,
+			//	new Modelling.Mapping.Binding.Binding[]
+			//	{
+			//		new CreateInstanceIfNull<T>(
+			//			SqlTypeHelper.GetConstructor(typeof(T)), TypeModel.GetModelOf<T>().Root
+			//			)
+			//	}.Concat(schemaFields
+			//		.Where(q => q.SchemaFieldReference.Field.CanWrite)
+			//		.SelectMany(q => q.Bindings)).ToArray());
 		}
 
-		private void AssignFieldAndModelPropertiesOnSchemaFieldReferences()
-		{
-			foreach (var schemaField in SchemaFields)
-			{
-				var schemaFieldReference = schemaField.SchemaFieldReference as FieldReferenceBase;
-				schemaFieldReference.Model = SchemaModel;
-				schemaFieldReference.Field = SchemaModel.GetField(schemaField.ModelPath);
-			}
-		}
+		//private void AssignFieldAndModelPropertiesOnSchemaFieldReferences()
+		//{
+		//	foreach (var schemaField in Fields)
+		//	{
+		//		var schemaFieldReference = schemaField.SchemaFieldReference as FieldReferenceBase;
+		//		schemaFieldReference.Model = SchemaModel;
+		//		schemaFieldReference.Field = SchemaModel.GetField(schemaField.ModelPath);
+		//	}
+		//}
 
 		public ProjectionSchema<TProjection, T> GetProjection<TProjection>()
 			where TProjection : class

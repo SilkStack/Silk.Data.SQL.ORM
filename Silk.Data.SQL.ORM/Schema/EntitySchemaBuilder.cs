@@ -26,7 +26,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		/// <returns></returns>
 		EntitySchema BuildSchema();
 
-		Dictionary<ISchemaField, FieldOperations> BuildFieldOperations();
+		Dictionary<SchemaField, FieldOperations> BuildFieldOperations();
 	}
 
 	/// <summary>
@@ -39,10 +39,10 @@ namespace Silk.Data.SQL.ORM.Schema
 		private readonly EntitySchemaDefinition<T> _entitySchemaDefinition;
 		private readonly IReadOnlyCollection<IEntitySchemaAssemblage> _entitySchemaAssemblages;
 		private EntitySchemaAssemblage<T> _entitySchemaAssemblage;
-		private (ISchemaField<T> Field, ISchemaFieldAssemblage<T> Assemblage, FieldOperations<T> Operations)[] _builtFields;
+		private (SchemaField<T> Field, ISchemaFieldAssemblage<T> Assemblage, FieldOperations<T> Operations)[] _builtFields;
 		private int _joinCount;
-		private readonly List<(ISchemaField<T>, FieldOperations<T>)> _fieldOperationsPairs
-			= new List<(ISchemaField<T>, FieldOperations<T>)>();
+		private readonly List<(SchemaField<T>, FieldOperations<T>)> _fieldOperationsPairs
+			= new List<(SchemaField<T>, FieldOperations<T>)>();
 
 		public EntitySchemaBuilder(
 			EntitySchemaDefinition<T> entitySchemaDefinition,
@@ -85,7 +85,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			return entitySchema;
 		}
 
-		public Dictionary<ISchemaField, FieldOperations> BuildFieldOperations()
+		public Dictionary<SchemaField, FieldOperations> BuildFieldOperations()
 		{
 			if (_builtFields == null)
 				throw new InvalidOperationException("Schema is not yet built, call BuildSchema() before calling BuildFieldOperations().");
@@ -93,7 +93,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			{
 				Field = q.Field,
 				Operations = q.Operations
-			}).ToDictionary(q => (ISchemaField)q.Field, q => (FieldOperations)q.Operations);
+			}).ToDictionary(q => (SchemaField)q.Field, q => (FieldOperations)q.Operations);
 		}
 
 		private void DefinedJoinedFields()
@@ -119,7 +119,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			}
 		}
 
-		private SchemaIndex[] GetSchemaIndexes(Table table, ISchemaField[] fields)
+		private SchemaIndex[] GetSchemaIndexes(Table table, SchemaField[] fields)
 		{
 			var indexes = new List<SchemaIndex>();
 			foreach (var indexBuilder in _entitySchemaDefinition.GetIndexBuilders())
@@ -145,10 +145,10 @@ namespace Silk.Data.SQL.ORM.Schema
 			}
 		}
 
-		private (ISchemaField<T> Field, ISchemaFieldAssemblage<T> Assemblage, FieldOperations<T> Operations)[] BuildSchemaFields()
+		private (SchemaField<T> Field, ISchemaFieldAssemblage<T> Assemblage, FieldOperations<T> Operations)[] BuildSchemaFields()
 		{
 			var builtFieldCount = 0;
-			var schemaFields = new List<(ISchemaField<T> Field, ISchemaFieldAssemblage<T> Assemblage, FieldOperations<T> Operations)>();
+			var schemaFields = new List<(SchemaField<T> Field, ISchemaFieldAssemblage<T> Assemblage, FieldOperations<T> Operations)>();
 			EntityTypeVisitor.Visit(_entityTypeModel, _entitySchemaDefinition, Callback);
 			return schemaFields.ToArray();
 

@@ -15,8 +15,8 @@ namespace Silk.Data.SQL.ORM.Schema
 	{
 		private readonly List<EntitySchema> _entitySchemas = new List<EntitySchema>();
 		private readonly Dictionary<MethodInfo, IMethodCallConverter> _methodCallConverters;
-		private readonly ConditionalWeakTable<ISchemaField, FieldOperations> _fieldOperations
-			= new ConditionalWeakTable<ISchemaField, FieldOperations>();
+		private readonly ConditionalWeakTable<SchemaField, FieldOperations> _fieldOperations
+			= new ConditionalWeakTable<SchemaField, FieldOperations>();
 		private readonly Dictionary<Guid, EntitySchema> _idIndexedSchemas;
 
 		public MappingOptions ProjectionMappingOptions { get; }
@@ -24,7 +24,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		public Schema(Dictionary<Guid, EntitySchema> entitySchemas,
 			Dictionary<MethodInfo, IMethodCallConverter> methodCallConverters,
 			MappingOptions projectionMappingOptions,
-			Dictionary<ISchemaField, FieldOperations> fieldOperations)
+			Dictionary<SchemaField, FieldOperations> fieldOperations)
 		{
 			if (projectionMappingOptions == null)
 				throw new ArgumentNullException(nameof(projectionMappingOptions));
@@ -71,13 +71,13 @@ namespace Silk.Data.SQL.ORM.Schema
 			return GetEntitySchema(typeof(T)) as EntitySchema<T>;
 		}
 
-		public FieldOperations GetFieldOperations(ISchemaField schemaField)
+		public FieldOperations GetFieldOperations(SchemaField schemaField)
 		{
 			_fieldOperations.TryGetValue(schemaField, out var operations);
 			return operations;
 		}
 
-		public FieldOperations<T> GetFieldOperations<T>(ISchemaField<T> schemaField)
+		public FieldOperations<T> GetFieldOperations<T>(SchemaField<T> schemaField)
 			where T : class
 		{
 			_fieldOperations.TryGetValue(schemaField, out var operations);

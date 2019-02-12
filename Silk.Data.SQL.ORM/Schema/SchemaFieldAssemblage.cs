@@ -20,7 +20,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		where TEntity : class
 	{
 		ISchemaFieldBuilder<TEntity> Builder { get; }
-		(ISchemaField<T> schemaField, FieldOperations<T> operations) CreateJoinedSchemaFieldAndOperationsPair<T>(
+		(SchemaField<T> schemaField, FieldOperations<T> operations) CreateJoinedSchemaFieldAndOperationsPair<T>(
 			string fieldName, string columnName, IFieldReference entityFieldReference,
 			string[] modelPath, EntityFieldJoin join, IEntitySchemaAssemblage<T> entitySchemaAssemblage,
 			string aliasName
@@ -68,7 +68,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			Join = join;
 		}
 
-		public (ISchemaField<T> schemaField, FieldOperations<T> operations) CreateJoinedSchemaFieldAndOperationsPair<T>(
+		public (SchemaField<T> schemaField, FieldOperations<T> operations) CreateJoinedSchemaFieldAndOperationsPair<T>(
 			string fieldName, string columnName, IFieldReference entityFieldReference,
 			string[] modelPath, EntityFieldJoin join, IEntitySchemaAssemblage<T> entitySchemaAssemblage,
 			string aliasName
@@ -116,7 +116,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			Join = join;
 		}
 
-		public (ISchemaField<T> schemaField, FieldOperations<T> operations) CreateJoinedSchemaFieldAndOperationsPair<T>(
+		public (SchemaField<T> schemaField, FieldOperations<T> operations) CreateJoinedSchemaFieldAndOperationsPair<T>(
 			string fieldName, string columnName, IFieldReference entityFieldReference,
 			string[] modelPath, EntityFieldJoin join, IEntitySchemaAssemblage<T> entitySchemaAssemblage,
 			string aliasName

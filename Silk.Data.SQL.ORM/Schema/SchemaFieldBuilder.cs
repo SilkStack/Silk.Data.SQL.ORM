@@ -14,7 +14,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		where TEntity : class
 	{
 		ISchemaFieldAssemblage<TEntity> CreateAssemblage(string[] modelPath, EntityJoinBuilder join);
-		IEnumerable<(ISchemaField<TEntity> Field, FieldOperations<TEntity> Operations)> Build(int currentFieldCount);
+		IEnumerable<(SchemaField<TEntity> Field, FieldOperations<TEntity> Operations)> Build(int currentFieldCount);
 	}
 
 	public class SchemaFieldBuilderBase<TValue, TEntity>
@@ -57,7 +57,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			return _assemblage;
 		}
 
-		public IEnumerable<(ISchemaField<TEntity> Field, FieldOperations<TEntity> Operations)> Build(int currentFieldCount)
+		public IEnumerable<(SchemaField<TEntity> Field, FieldOperations<TEntity> Operations)> Build(int currentFieldCount)
 		{
 			var field = new SqlPrimitiveSchemaField<TValue, TEntity>(
 				_entityFieldDefinition.ModelField.FieldName, _assemblage.Column,
@@ -67,7 +67,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			var operations = new FieldOperations<TEntity>(
 				new SqlPrimitiveFieldExpressionFactory<TValue, TEntity>(field)
 				);
-			return new (ISchemaField<TEntity>, FieldOperations<TEntity>)[]
+			return new (SchemaField<TEntity>, FieldOperations<TEntity>)[]
 			{
 				(field, operations)
 			};
@@ -115,14 +115,14 @@ namespace Silk.Data.SQL.ORM.Schema
 			_entityFieldDefinition = entityFieldDefinition;
 		}
 
-		public IEnumerable<(ISchemaField<TEntity> Field, FieldOperations<TEntity> Operations)> Build(int currentFieldCount)
+		public IEnumerable<(SchemaField<TEntity> Field, FieldOperations<TEntity> Operations)> Build(int currentFieldCount)
 		{
 			if (IsEmbeddedObject)
 				return BuildAsEmbeddedObject(currentFieldCount);
 			return BuildAsJoinedObject(currentFieldCount);
 		}
 
-		private IEnumerable<(ISchemaField<TEntity> Field, FieldOperations<TEntity> Operations)> BuildAsJoinedObject(int currentFieldCount)
+		private IEnumerable<(SchemaField<TEntity> Field, FieldOperations<TEntity> Operations)> BuildAsJoinedObject(int currentFieldCount)
 		{
 			var joinedSchemaAssemblage = _entitySchemaAssemblages.OfType<IEntitySchemaAssemblage<TValue>>().First();
 			var primaryKeyFieldAssemblages = joinedSchemaAssemblage.Fields.Where(q =>
@@ -154,7 +154,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			}
 		}
 
-		private IEnumerable<(ISchemaField<TEntity> Field, FieldOperations<TEntity> Operations)> BuildAsEmbeddedObject(int currentFieldCount)
+		private IEnumerable<(SchemaField<TEntity> Field, FieldOperations<TEntity> Operations)> BuildAsEmbeddedObject(int currentFieldCount)
 		{
 			IEnumerable<string> defaultColumnNameSource = _assemblage.ModelPath;
 			if (_assemblage.Join != null)
@@ -175,7 +175,7 @@ namespace Silk.Data.SQL.ORM.Schema
 				new EmbeddedObjectNullCheckExpressionFactory<TValue, TEntity>(field)
 				);
 
-			return new (ISchemaField<TEntity> Field, FieldOperations<TEntity> Operations)[]
+			return new (SchemaField<TEntity> Field, FieldOperations<TEntity> Operations)[]
 			{
 				(field, operations)
 			};

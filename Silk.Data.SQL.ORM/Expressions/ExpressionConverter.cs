@@ -123,7 +123,7 @@ namespace Silk.Data.SQL.ORM.Expressions
 					//  visiting a member of expression parameter, ie. a field on the entity table
 					var reflectionMemberInfo = node.Member;
 					var sourceExpression = ConvertToQueryExpression(allExpressions[0]);
-					var entityField = entitySchema.SchemaFields
+					var entityField = entitySchema.Fields
 						.FirstOrDefault(q => q.ModelPath.SequenceEqual(expressionPath.Skip(1)));
 					if (entityField != null && SqlTypeHelper.IsSqlPrimitiveType(entityField.DataType))
 					{

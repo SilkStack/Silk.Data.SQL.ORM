@@ -53,7 +53,7 @@ namespace Silk.Data.SQL.ORM
 			return builder;
 		}
 
-		private static TBuilder AndHaving<TBuilder, TEntity, TValue>(this TBuilder builder, ISchemaField<TEntity> schemaField, ComparisonOperator @operator, TValue value)
+		private static TBuilder AndHaving<TBuilder, TEntity, TValue>(this TBuilder builder, SchemaField<TEntity> schemaField, ComparisonOperator @operator, TValue value)
 			where TEntity : class
 			where TBuilder : IHavingQueryBuilder<TEntity>
 		{
@@ -64,7 +64,7 @@ namespace Silk.Data.SQL.ORM
 			return builder;
 		}
 
-		private static TBuilder AndHaving<TBuilder, TEntity>(this TBuilder builder, ISchemaField<TEntity> schemaField, ComparisonOperator @operator, Expression<Func<TEntity, bool>> valueExpression)
+		private static TBuilder AndHaving<TBuilder, TEntity>(this TBuilder builder, SchemaField<TEntity> schemaField, ComparisonOperator @operator, Expression<Func<TEntity, bool>> valueExpression)
 			where TEntity : class
 			where TBuilder : IHavingQueryBuilder<TEntity>
 		{
@@ -72,7 +72,7 @@ namespace Silk.Data.SQL.ORM
 			return builder;
 		}
 
-		private static TBuilder AndHaving<TBuilder, TEntity>(this TBuilder builder, ISchemaField<TEntity> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
+		private static TBuilder AndHaving<TBuilder, TEntity>(this TBuilder builder, SchemaField<TEntity> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
 			where TEntity : class
 			where TBuilder : IHavingQueryBuilder<TEntity>
 		{
@@ -80,7 +80,7 @@ namespace Silk.Data.SQL.ORM
 			return builder;
 		}
 
-		private static TBuilder OrHaving<TBuilder, TEntity, TValue>(this TBuilder builder, ISchemaField<TEntity> schemaField, ComparisonOperator @operator, TValue value)
+		private static TBuilder OrHaving<TBuilder, TEntity, TValue>(this TBuilder builder, SchemaField<TEntity> schemaField, ComparisonOperator @operator, TValue value)
 			where TEntity : class
 			where TBuilder : IHavingQueryBuilder<TEntity>
 		{
@@ -91,7 +91,7 @@ namespace Silk.Data.SQL.ORM
 			return builder;
 		}
 
-		private static TBuilder OrHaving<TBuilder, TEntity>(this TBuilder builder, ISchemaField<TEntity> schemaField, ComparisonOperator @operator, Expression<Func<TEntity, bool>> valueExpression)
+		private static TBuilder OrHaving<TBuilder, TEntity>(this TBuilder builder, SchemaField<TEntity> schemaField, ComparisonOperator @operator, Expression<Func<TEntity, bool>> valueExpression)
 			where TEntity : class
 			where TBuilder : IHavingQueryBuilder<TEntity>
 		{
@@ -99,7 +99,7 @@ namespace Silk.Data.SQL.ORM
 			return builder;
 		}
 
-		private static TBuilder OrHaving<TBuilder, TEntity>(this TBuilder builder, ISchemaField<TEntity> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
+		private static TBuilder OrHaving<TBuilder, TEntity>(this TBuilder builder, SchemaField<TEntity> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
 			where TEntity : class
 			where TBuilder : IHavingQueryBuilder<TEntity>
 		{
@@ -111,17 +111,17 @@ namespace Silk.Data.SQL.ORM
 			where TEntity : class => builder.AndHaving<IEntitySelectQueryBuilder<TEntity>, TEntity>(expression);
 		public static IEntitySelectQueryBuilder<TEntity> OrHaving<TEntity>(this IEntitySelectQueryBuilder<TEntity> builder, Expression<Func<TEntity, bool>> expression)
 			where TEntity : class => builder.OrHaving<IEntitySelectQueryBuilder<TEntity>, TEntity>(expression);
-		public static IEntitySelectQueryBuilder<TEntity> AndHaving<TEntity, TValue>(this IEntitySelectQueryBuilder<TEntity> builder, ISchemaField<TEntity> schemaField, ComparisonOperator @operator, TValue value)
+		public static IEntitySelectQueryBuilder<TEntity> AndHaving<TEntity, TValue>(this IEntitySelectQueryBuilder<TEntity> builder, SchemaField<TEntity> schemaField, ComparisonOperator @operator, TValue value)
 			where TEntity : class => builder.AndHaving<IEntitySelectQueryBuilder<TEntity>, TEntity, TValue>(schemaField, @operator, value);
-		public static IEntitySelectQueryBuilder<TEntity> AndHaving<TEntity>(this IEntitySelectQueryBuilder<TEntity> builder, ISchemaField<TEntity> schemaField, ComparisonOperator @operator, Expression<Func<TEntity, bool>> valueExpression)
+		public static IEntitySelectQueryBuilder<TEntity> AndHaving<TEntity>(this IEntitySelectQueryBuilder<TEntity> builder, SchemaField<TEntity> schemaField, ComparisonOperator @operator, Expression<Func<TEntity, bool>> valueExpression)
 			where TEntity : class => builder.AndHaving<IEntitySelectQueryBuilder<TEntity>, TEntity>(schemaField, @operator, valueExpression);
-		public static IEntitySelectQueryBuilder<TEntity> AndHaving<TEntity>(this IEntitySelectQueryBuilder<TEntity> builder, ISchemaField<TEntity> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
+		public static IEntitySelectQueryBuilder<TEntity> AndHaving<TEntity>(this IEntitySelectQueryBuilder<TEntity> builder, SchemaField<TEntity> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
 			where TEntity : class => builder.AndHaving<IEntitySelectQueryBuilder<TEntity>, TEntity>(schemaField, @operator, subQuery);
-		public static IEntitySelectQueryBuilder<TEntity> OrHaving<TEntity, TValue>(this IEntitySelectQueryBuilder<TEntity> builder, ISchemaField<TEntity> schemaField, ComparisonOperator @operator, TValue value)
+		public static IEntitySelectQueryBuilder<TEntity> OrHaving<TEntity, TValue>(this IEntitySelectQueryBuilder<TEntity> builder, SchemaField<TEntity> schemaField, ComparisonOperator @operator, TValue value)
 			where TEntity : class => builder.OrHaving<IEntitySelectQueryBuilder<TEntity>, TEntity, TValue>(schemaField, @operator, value);
-		public static IEntitySelectQueryBuilder<TEntity> OrHaving<TEntity>(this IEntitySelectQueryBuilder<TEntity> builder, ISchemaField<TEntity> schemaField, ComparisonOperator @operator, Expression<Func<TEntity, bool>> valueExpression)
+		public static IEntitySelectQueryBuilder<TEntity> OrHaving<TEntity>(this IEntitySelectQueryBuilder<TEntity> builder, SchemaField<TEntity> schemaField, ComparisonOperator @operator, Expression<Func<TEntity, bool>> valueExpression)
 			where TEntity : class => builder.OrHaving<IEntitySelectQueryBuilder<TEntity>, TEntity>(schemaField, @operator, valueExpression);
-		public static IEntitySelectQueryBuilder<TEntity> OrHaving<TEntity>(this IEntitySelectQueryBuilder<TEntity> builder, ISchemaField<TEntity> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
+		public static IEntitySelectQueryBuilder<TEntity> OrHaving<TEntity>(this IEntitySelectQueryBuilder<TEntity> builder, SchemaField<TEntity> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
 			where TEntity : class => builder.OrHaving<IEntitySelectQueryBuilder<TEntity>, TEntity>(schemaField, @operator, subQuery);
 	}
 }

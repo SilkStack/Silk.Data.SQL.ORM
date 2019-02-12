@@ -23,13 +23,13 @@ namespace Silk.Data.SQL.ORM.Queries
 		void AndAlso(Expression<Func<T, bool>> expression);
 		void OrElse(Expression<Func<T, bool>> expression);
 
-		void AndAlso(ISchemaField<T> schemaField, ComparisonOperator @operator, T entity);
-		void AndAlso<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, TValue value);
-		void AndAlso(ISchemaField<T> schemaField, ComparisonOperator @operator, Expression<Func<T, bool>> valueExpression);
-		void AndAlso(ISchemaField<T> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery);
-		void OrElse(ISchemaField<T> schemaField, ComparisonOperator @operator, T entity);
-		void OrElse<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, TValue value);
-		void OrElse(ISchemaField<T> schemaField, ComparisonOperator @operator, Expression<Func<T, bool>> valueExpression);
-		void OrElse(ISchemaField<T> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery);
+		void AndAlso(SchemaField<T> schemaField, ComparisonOperator @operator, T entity);
+		void AndAlso<TValue>(SchemaField<T> schemaField, ComparisonOperator @operator, TValue value);
+		void AndAlso(SchemaField<T> schemaField, ComparisonOperator @operator, Expression<Func<T, bool>> valueExpression);
+		void AndAlso(SchemaField<T> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery);
+		void OrElse(SchemaField<T> schemaField, ComparisonOperator @operator, T entity);
+		void OrElse<TValue>(SchemaField<T> schemaField, ComparisonOperator @operator, TValue value);
+		void OrElse(SchemaField<T> schemaField, ComparisonOperator @operator, Expression<Func<T, bool>> valueExpression);
+		void OrElse(SchemaField<T> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery);
 	}
 }

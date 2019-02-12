@@ -109,7 +109,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			_expressionConverter = expressionConverter;
 		}
 
-		public void Set(ISchemaField<T> schemaField, T entity)
+		public void Set(SchemaField<T> schemaField, T entity)
 		{
 			var fieldOperations = Schema.GetFieldOperations(schemaField);
 			var valueExpression = fieldOperations.Expressions.Value(entity, EntityReadWriter);
@@ -119,7 +119,7 @@ namespace Silk.Data.SQL.ORM.Queries
 				);
 		}
 
-		public void Set<TValue>(ISchemaField<T> schemaField, TValue value)
+		public void Set<TValue>(SchemaField<T> schemaField, TValue value)
 		{
 			var valueExpression = ORMQueryExpressions.Value(value);
 			AddFieldAssignment(
@@ -128,7 +128,7 @@ namespace Silk.Data.SQL.ORM.Queries
 				);
 		}
 
-		public void Set<TValue>(ISchemaField<T> schemaField, Expression<Func<T, TValue>> valueExpression)
+		public void Set<TValue>(SchemaField<T> schemaField, Expression<Func<T, TValue>> valueExpression)
 		{
 			var valueExpressionResult = ExpressionConverter.Convert(valueExpression);
 			AddFieldAssignment(
@@ -137,7 +137,7 @@ namespace Silk.Data.SQL.ORM.Queries
 				);
 		}
 
-		public void Set(ISchemaField<T> schemaField, IQueryBuilder subQuery)
+		public void Set(SchemaField<T> schemaField, IQueryBuilder subQuery)
 		{
 			AddFieldAssignment(
 				QueryExpression.Column(schemaField.Column.ColumnName),

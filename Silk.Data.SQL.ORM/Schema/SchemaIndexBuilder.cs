@@ -8,7 +8,7 @@ namespace Silk.Data.SQL.ORM.Schema
 {
 	public interface ISchemaIndexBuilder
 	{
-		SchemaIndex Build(Table table, ISchemaField[] entityFields);
+		SchemaIndex Build(Table table, SchemaField[] entityFields);
 	}
 
 	public class SchemaIndexBuilder<T> : ISchemaIndexBuilder
@@ -26,7 +26,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			IndexName = indexName;
 		}
 
-		public SchemaIndex Build(Table table, ISchemaField[] entityFields)
+		public SchemaIndex Build(Table table, SchemaField[] entityFields)
 		{
 			return new SchemaIndex(IndexName, HasUniqueConstraint,
 				entityFields.Where(q => _indexFields.Any(q2 => q2.SequenceEqual(q.ModelPath))).ToArray(),

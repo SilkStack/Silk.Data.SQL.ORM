@@ -105,7 +105,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		public void OrElse(Expression<Func<T, bool>> expression)
 			=> OrElse(ExpressionConverter.Convert(expression));
 
-		public void AndAlso(ISchemaField<T> schemaField, ComparisonOperator @operator, T entity)
+		public void AndAlso(SchemaField<T> schemaField, ComparisonOperator @operator, T entity)
 		{
 			var fieldOperations = Schema.GetFieldOperations(schemaField);
 			var valueExpression = fieldOperations.Expressions.Value(entity, EntityReadWriter);
@@ -117,7 +117,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			AddJoins(schemaField.Join);
 		}
 
-		public void AndAlso<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, TValue value)
+		public void AndAlso<TValue>(SchemaField<T> schemaField, ComparisonOperator @operator, TValue value)
 		{
 			var valueExpression = ORMQueryExpressions.Value(value);
 			AndAlso(QueryExpression.Compare(
@@ -128,7 +128,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			AddJoins(schemaField.Join);
 		}
 
-		public void AndAlso(ISchemaField<T> schemaField, ComparisonOperator @operator, Expression<Func<T, bool>> valueExpression)
+		public void AndAlso(SchemaField<T> schemaField, ComparisonOperator @operator, Expression<Func<T, bool>> valueExpression)
 		{
 			var valueExpressionResult = ExpressionConverter.Convert(valueExpression);
 			AndAlso(QueryExpression.Compare(
@@ -139,7 +139,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			AddJoins(schemaField.Join);
 		}
 
-		public void AndAlso(ISchemaField<T> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
+		public void AndAlso(SchemaField<T> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
 		{
 			AndAlso(QueryExpression.Compare(
 				QueryExpression.Column(schemaField.Column.ColumnName),
@@ -149,7 +149,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			AddJoins(schemaField.Join);
 		}
 
-		public void OrElse(ISchemaField<T> schemaField, ComparisonOperator @operator, T entity)
+		public void OrElse(SchemaField<T> schemaField, ComparisonOperator @operator, T entity)
 		{
 			var fieldOperations = Schema.GetFieldOperations(schemaField);
 			var valueExpression = fieldOperations.Expressions.Value(entity, EntityReadWriter);
@@ -161,7 +161,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			AddJoins(schemaField.Join);
 		}
 
-		public void OrElse<TValue>(ISchemaField<T> schemaField, ComparisonOperator @operator, TValue value)
+		public void OrElse<TValue>(SchemaField<T> schemaField, ComparisonOperator @operator, TValue value)
 		{
 			var valueExpression = ORMQueryExpressions.Value(value);
 			OrElse(QueryExpression.Compare(
@@ -172,7 +172,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			AddJoins(schemaField.Join);
 		}
 
-		public void OrElse(ISchemaField<T> schemaField, ComparisonOperator @operator, Expression<Func<T, bool>> valueExpression)
+		public void OrElse(SchemaField<T> schemaField, ComparisonOperator @operator, Expression<Func<T, bool>> valueExpression)
 		{
 			var valueExpressionResult = ExpressionConverter.Convert(valueExpression);
 			OrElse(QueryExpression.Compare(
@@ -183,7 +183,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			AddJoins(schemaField.Join);
 		}
 
-		public void OrElse(ISchemaField<T> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
+		public void OrElse(SchemaField<T> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
 		{
 			OrElse(QueryExpression.Compare(
 				QueryExpression.Column(schemaField.Column.ColumnName),
