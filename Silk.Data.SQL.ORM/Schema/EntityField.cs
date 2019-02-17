@@ -16,6 +16,8 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public bool IsPrimaryKey { get; }
 
+		public bool IsSeverGenerated { get; }
+
 		public bool IsEnumerableType => false;
 
 		public Type FieldDataType { get; }
@@ -40,6 +42,9 @@ namespace Silk.Data.SQL.ORM.Schema
 			IsPrimaryKey = FieldName == "Id"; //  todo: temporary until it's provided from the entity configuration
 			Columns = columns?.ToArray() ?? new Column[0];
 			SubFields = subFields?.ToArray() ?? new EntityField[0];
+
+			if (IsPrimaryKey && FieldDataType != typeof(Guid))
+				IsSeverGenerated = true;
 		}
 
 		public abstract void Dispatch(IFieldGenericExecutor executor);
