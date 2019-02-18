@@ -28,10 +28,13 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public IReadOnlyList<EntityField> SubFields { get; }
 
+		public Join Join { get; }
+
 		protected EntityField(
 			string fieldName, bool canRead, bool canWrite,
 			Type fieldDataType, IEnumerable<Column> columns,
-			IEnumerable<EntityField> subFields = null
+			IEnumerable<EntityField> subFields = null,
+			Join join = null
 			)
 		{
 			FieldName = fieldName;
@@ -45,6 +48,8 @@ namespace Silk.Data.SQL.ORM.Schema
 
 			if (IsPrimaryKey && FieldDataType != typeof(Guid))
 				IsSeverGenerated = true;
+
+			Join = join;
 		}
 
 		public abstract void Dispatch(IFieldGenericExecutor executor);

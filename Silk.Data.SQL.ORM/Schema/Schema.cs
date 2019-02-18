@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using Silk.Data.SQL.ORM.Expressions;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace Silk.Data.SQL.ORM.Schema
 {
@@ -24,5 +26,8 @@ namespace Silk.Data.SQL.ORM.Schema
 		public IEnumerable<EntityModel<T>> GetAll<T>()
 			where T : class
 			=> _entityModels.OfType<EntityModel<T>>();
+
+		public IMethodCallConverter GetMethodCallConverter(MethodInfo methodInfo)
+			=> null;
 	}
 }
