@@ -88,7 +88,7 @@ namespace Silk.Data.SQL.ORM.Expressions
 				if (_expressionParameters.TryGetValue(node, out var entityModel))
 				{
 					SetConversionResult(
-						QueryExpression.Table(entityModel.TableName) //  todo: somehow support the dev using in different table names?
+						QueryExpression.Table(entityModel.Table.TableName) //  todo: somehow support the dev using in different table names?
 						);
 				}
 				return node;

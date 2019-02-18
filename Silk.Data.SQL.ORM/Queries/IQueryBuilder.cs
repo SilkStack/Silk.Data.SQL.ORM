@@ -10,12 +10,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		QueryExpression BuildQuery();
 	}
 
-	public interface IEntityQueryBuilder : IQueryBuilder
-	{
-		QueryExpression BuildQuery(string tableName);
-	}
-
-	public interface IEntityQueryBuilder<T> : IEntityQueryBuilder
+	public interface IEntityQueryBuilder<T> : IQueryBuilder
 		where T : class
 	{
 

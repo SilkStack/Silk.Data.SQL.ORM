@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Queries
 {
-	public class CreateTableQueryBuilder<T> : IEntityQueryBuilder
+	public class CreateTableQueryBuilder<T> : IEntityQueryBuilder<T>
 		where T : class
 	{
 		private readonly EntityModel<T> _entityModel;
@@ -15,19 +15,16 @@ namespace Silk.Data.SQL.ORM.Queries
 		}
 
 		public QueryExpression BuildQuery()
-			=> BuildQuery(_entityModel.TableName);
-
-		public QueryExpression BuildQuery(string tableName)
 		{
 			var query = new CompositeQueryExpression();
-			query.Queries.Add(GetCreateTableExpression(tableName));
+			query.Queries.Add(GetCreateTableExpression());
 			return query;
 		}
 
-		private CreateTableExpression GetCreateTableExpression(string tableName)
+		private CreateTableExpression GetCreateTableExpression()
 		{
 			return QueryExpression.CreateTable(
-				tableName,
+				_entityModel.Table.TableName,
 				_entityModel.Fields
 					.SelectMany(field => field.Columns.Select(column => new { field, column }))
 					.Select(q =>

@@ -6,12 +6,15 @@ namespace Silk.Data.SQL.ORM.Schema
 	/// <summary>
 	/// Describes the structure of a table.
 	/// </summary>
-	public class TableSchema
+	public class Table
 	{
+		public string TableName { get; }
+
 		public IReadOnlyList<Column> Columns { get; }
 
-		public TableSchema(IEnumerable<Column> columns)
+		public Table(string tableName, IEnumerable<Column> columns)
 		{
+			TableName = tableName;
 			Columns = columns.ToArray();
 		}
 	}
