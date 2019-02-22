@@ -88,7 +88,7 @@ namespace Silk.Data.SQL.ORM.Expressions
 				if (_expressionParameters.TryGetValue(node, out var entityModel))
 				{
 					SetConversionResult(
-						QueryExpression.Table(entityModel.Table.TableName) //  todo: somehow support the dev using in different table names?
+						QueryExpression.Table(entityModel.Table.TableName)
 						);
 				}
 				return node;
@@ -109,6 +109,23 @@ namespace Silk.Data.SQL.ORM.Expressions
 				return node;
 			}
 
+			private EntityField ResolveEntityFieldFromPath(
+				EntityModel entityModel, IEnumerable<string> path
+				)
+			{
+				var fields = entityModel.Fields;
+				EntityField field = null;
+				foreach (var segment in path)
+				{
+					field = fields.FirstOrDefault(q => q.FieldName == segment);
+					if (field == null)
+						return null;
+
+					fields = field.SubFields;
+				}
+				return field;
+			}
+
 			protected override Expression VisitMember(MemberExpression node)
 			{
 				var (allExpressions, expressionPath) = FlattenExpressionTree(node);
@@ -122,17 +139,16 @@ namespace Silk.Data.SQL.ORM.Expressions
 					//  visiting a member of expression parameter, ie. a field on the entity table
 					var reflectionMemberInfo = node.Member;
 					var sourceExpression = ConvertToQueryExpression(allExpressions[0]);
-					//  todo: rewire this
-					//var entityField = entityModel.SchemaFields
-					//	.FirstOrDefault(q => q.ModelPath.SequenceEqual(expressionPath.Skip(1)));
-					var entityField = default(EntityField);
+					var entityField = ResolveEntityFieldFromPath(
+						entityModel, expressionPath.Skip(1)
+						);
 					if (entityField != null && SqlTypeHelper.GetDataType(entityField.FieldDataType) != null)
 					{
-						if (entityField.Join != null)
+						if (entityField.Source as Join != null)
 						{
-							sourceExpression = entityField.Join.AliasIdentifierExpression;
-							if (!RequiredJoins.Contains(entityField.Join))
-								RequiredJoins.Add(entityField.Join);
+							sourceExpression = entityField.Source.AliasIdentifierExpression;
+							if (!RequiredJoins.Contains(entityField.Source))
+								RequiredJoins.Add(entityField.Source as Join);
 						}
 						if (entityField.Columns.Count > 1)
 							//  todo: does this even occur?

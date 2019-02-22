@@ -1,5 +1,6 @@
 ﻿using Silk.Data.Modelling;
 using Silk.Data.Modelling.GenericDispatch;
+using Silk.Data.SQL.ORM.Queries;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -68,12 +69,17 @@ namespace Silk.Data.SQL.ORM.Schema
 			EntityDefinition entityDefinition,
 			TypeModel typeModel,
 			IEnumerable<IField> relativeParentFields = null,
-			IEnumerable<IField> fullParentFields = null
+			IEnumerable<IField> fullParentFields = null,
+			IQueryReference source = null
 			)
 		{
+			if (source == null)
+				source = new TableReference(entityDefinition.TableName);
+
 			var builder = new EntityFieldBuilder(entityDefinition, this,
 				relativeParentFields ?? new IField[0],
-				fullParentFields ?? new IField[0]);
+				fullParentFields ?? new IField[0],
+				source);
 			foreach (var field in typeModel.Fields)
 			{
 				if (field.IsEnumerableType)
@@ -86,40 +92,51 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		private class EntityFieldBuilder : IFieldGenericExecutor
 		{
+			private static int _joinCount = 1;
+
 			private readonly EntityDefinition _entityDefinition;
 			private readonly SchemaBuilder _schemaBuilder;
 			private readonly IEnumerable<IField> _relativeParentFields;
 			private readonly IEnumerable<IField> _fullParentFields;
+			private readonly IQueryReference _source;
 
 			public EntityField EntityField { get; private set; }
 
 			public EntityFieldBuilder(EntityDefinition entityDefinition, SchemaBuilder schemaBuilder,
-				IEnumerable<IField> relativeParentFields, IEnumerable<IField> fullParentFields)
+				IEnumerable<IField> relativeParentFields, IEnumerable<IField> fullParentFields,
+				IQueryReference source)
 			{
 				_entityDefinition = entityDefinition;
 				_schemaBuilder = schemaBuilder;
 				_relativeParentFields = relativeParentFields;
 				_fullParentFields = fullParentFields;
+				_source = source;
 			}
 
 			private EntityField BuildValueField<TData>(IField field)
-				=> ValueEntityField<TData>.Create(field, _relativeParentFields, _fullParentFields);
+				=> ValueEntityField<TData>.Create(field, _relativeParentFields, _fullParentFields, _source);
 
 			private EntityField BuildEmbeddedField<TData>(IField field)
 				=> EmbeddedEntityField<TData>.Create(field, _relativeParentFields, _fullParentFields,
 					_schemaBuilder.BuildEntityFields(
 						_entityDefinition, TypeModel.GetModelOf<TData>(),
 						_relativeParentFields.Concat(new[] { field }),
-						_fullParentFields.Concat(new[] { field })
-						));
+						_fullParentFields.Concat(new[] { field }),
+						_source
+						), _source);
 
 			private EntityField BuildReferencedField<TData>(IField field, EntityDefinition entityDefinition)
-				=> ReferencedEntityField<TData>.Create(field, _relativeParentFields, _fullParentFields,
+			{
+				var foreignTableName = entityDefinition.TableName;
+				var join = new EntityJoin(_source, new TableReference(foreignTableName), $"__join_{_joinCount++}");
+				return ReferencedEntityField<TData>.Create(field, _relativeParentFields, _fullParentFields,
 					_schemaBuilder.BuildEntityFields(
 						entityDefinition, TypeModel.GetModelOf<TData>(),
 						new IField[0],
-						_fullParentFields.Concat(new[] { field })
-						));
+						_fullParentFields.Concat(new[] { field }),
+						join
+						), _source);
+			}
 
 			void IFieldGenericExecutor.Execute<TField, TData>(IField field)
 			{

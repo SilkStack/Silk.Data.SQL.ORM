@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Silk.Data.Modelling;
 using Silk.Data.Modelling.GenericDispatch;
+using Silk.Data.SQL.ORM.Queries;
 
 namespace Silk.Data.SQL.ORM.Schema
 {
@@ -28,13 +29,13 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public IReadOnlyList<EntityField> SubFields { get; }
 
-		public Join Join { get; }
+		public IQueryReference Source { get; }
 
 		protected EntityField(
 			string fieldName, bool canRead, bool canWrite,
 			Type fieldDataType, IEnumerable<Column> columns,
 			IEnumerable<EntityField> subFields = null,
-			Join join = null
+			IQueryReference source = null
 			)
 		{
 			FieldName = fieldName;
@@ -49,7 +50,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			if (IsPrimaryKey && FieldDataType != typeof(Guid))
 				IsSeverGenerated = true;
 
-			Join = join;
+			Source = source;
 		}
 
 		public abstract void Dispatch(IFieldGenericExecutor executor);
@@ -58,8 +59,8 @@ namespace Silk.Data.SQL.ORM.Schema
 	public class ValueEntityField<T> : EntityField
 	{
 		public ValueEntityField(string fieldName, bool canRead, bool canWrite,
-			Column column) :
-			base(fieldName, canRead, canWrite, typeof(T), new[] { column })
+			Column column, IQueryReference source) :
+			base(fieldName, canRead, canWrite, typeof(T), new[] { column }, null, source)
 		{
 		}
 
@@ -67,7 +68,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			=> executor.Execute<EntityField, T>(this);
 
 		public static ValueEntityField<T> Create(IField modelField, IEnumerable<IField> relativeParentFields,
-			IEnumerable<IField> fullParentFields)
+			IEnumerable<IField> fullParentFields, IQueryReference source)
 		{
 			var columnNamePrefix = string.Join("_", relativeParentFields.Select(q => q.FieldName));
 			if (!string.IsNullOrEmpty(columnNamePrefix))
@@ -78,15 +79,16 @@ namespace Silk.Data.SQL.ORM.Schema
 				//  value storage column
 				new Column(
 					$"{columnNamePrefix}{modelField.FieldName}", SqlTypeHelper.GetDataType(typeof(T)),
-					SqlTypeHelper.TypeIsNullable(typeof(T))));
+					SqlTypeHelper.TypeIsNullable(typeof(T))),
+				source);
 		}
 	}
 
 	public class EmbeddedEntityField<T> : EntityField
 	{
 		public EmbeddedEntityField(string fieldName, bool canRead, bool canWrite,
-			Column column, IEnumerable<EntityField> subFields) :
-			base(fieldName, canRead, canWrite, typeof(T), new[] { column }, subFields)
+			Column column, IEnumerable<EntityField> subFields, IQueryReference source) :
+			base(fieldName, canRead, canWrite, typeof(T), new[] { column }, subFields, source)
 		{
 		}
 
@@ -94,7 +96,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			=> executor.Execute<EntityField, T>(this);
 
 		public static EmbeddedEntityField<T> Create(IField modelField, IEnumerable<IField> relativeParentFields,
-			IEnumerable<IField> fullParentFields, IEnumerable<EntityField> subFields)
+			IEnumerable<IField> fullParentFields, IEnumerable<EntityField> subFields, IQueryReference source)
 		{
 			var columnNamePrefix = string.Join("_", relativeParentFields.Select(q => q.FieldName));
 			if (!string.IsNullOrEmpty(columnNamePrefix))
@@ -106,7 +108,7 @@ namespace Silk.Data.SQL.ORM.Schema
 				new Column(
 					$"{columnNamePrefix}{modelField.FieldName}",
 					SqlDataType.Bit(), false
-					), subFields
+					), subFields, source
 				);
 		}
 	}
@@ -114,8 +116,8 @@ namespace Silk.Data.SQL.ORM.Schema
 	public class ReferencedEntityField<T> : EntityField
 	{
 		public ReferencedEntityField(string fieldName, bool canRead, bool canWrite,
-			IEnumerable<Column> columns, IEnumerable<EntityField> subFields) :
-			base(fieldName, canRead, canWrite, typeof(T), columns, subFields)
+			IEnumerable<Column> columns, IEnumerable<EntityField> subFields, IQueryReference source) :
+			base(fieldName, canRead, canWrite, typeof(T), columns, subFields, source)
 		{
 		}
 
@@ -123,7 +125,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			=> executor.Execute<EntityField, T>(this);
 
 		public static ReferencedEntityField<T> Create(IField modelField, IEnumerable<IField> relativeParentFields,
-			IEnumerable<IField> fullParentFields, IEnumerable<EntityField> subFields)
+			IEnumerable<IField> fullParentFields, IEnumerable<EntityField> subFields, IQueryReference source)
 		{
 			//  only create the sub fields once please
 			var subFieldsArray = subFields.ToArray();
@@ -144,7 +146,7 @@ namespace Silk.Data.SQL.ORM.Schema
 
 			return new ReferencedEntityField<T>(
 				modelField.FieldName, modelField.CanRead, modelField.CanWrite,
-				primaryKeyColumns, subFields
+				primaryKeyColumns, subFields, source
 				);
 		}
 	}

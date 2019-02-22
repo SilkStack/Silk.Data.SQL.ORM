@@ -5,7 +5,7 @@ namespace Silk.Data.SQL.ORM.Expressions
 {
 	public static class MethodHelper
 	{
-		public static IEnumerable<EntityFieldJoin> ConcatJoins(params ExpressionResult[] expressionResults)
+		public static IEnumerable<Join> ConcatJoins(params ExpressionResult[] expressionResults)
 		{
 			foreach (var result in expressionResults)
 			{

@@ -1,5 +1,5 @@
 ﻿using Silk.Data.SQL.Expressions;
-using Silk.Data.SQL.ORM.Queries.Expressions;
+using Silk.Data.SQL.ORM.Queries;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
