@@ -154,9 +154,13 @@ namespace Silk.Data.SQL.ORM.Expressions
 							if (!RequiredJoins.Contains(entityField.Source))
 								RequiredJoins.Add(entityField.Source as Join);
 						}
+
 						if (entityField.Columns.Count > 1)
-							//  todo: this is a problem with composite keys used in a relationship, I'm undecided what is useful to return here
+						{
+							//  todo: this is a composite key, resolve the column that is being addressed in `expressionPath`
 							throw new InvalidOperationException("Field has multiple columns.");
+						}
+
 						SetConversionResult(
 							QueryExpression.Column(entityField.Columns[0].Name, sourceExpression)
 						);
