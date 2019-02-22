@@ -74,5 +74,20 @@ namespace Silk.Data.SQL.ORM.Tests.Queries
 			Assert.AreEqual(true, createQuery.ColumnDefinitions[0].IsAutoIncrement);
 			Assert.AreEqual(true, createQuery.ColumnDefinitions[0].IsPrimaryKey);
 		}
+
+		[TestMethod]
+		public void Build_Query_Creates_Index()
+		{
+			var field = new ValueEntityField<int>("Field", true, true, new Column("Field", SqlDataType.Int(), false), null);
+			var index = new Index("TestIndex", false, new[] { field });
+			var entityModel = new EntityModel<object>(new[] { field }, indexes: new[] { index });
+			var createTableBuilder = new CreateTableQueryBuilder<object>(entityModel);
+			var query = createTableBuilder.BuildQuery() as CompositeQueryExpression;
+
+			var indexExpression = query.Queries[1] as CreateTableIndexExpression;
+			Assert.AreEqual("Object", indexExpression.Table.TableName);
+			Assert.AreEqual("Field", indexExpression.Columns[0].ColumnName);
+			Assert.IsFalse(indexExpression.UniqueConstraint);
+		}
 	}
 }

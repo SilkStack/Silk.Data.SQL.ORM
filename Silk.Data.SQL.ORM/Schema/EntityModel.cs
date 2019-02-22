@@ -17,11 +17,14 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public abstract TypeModel TypeModel { get; }
 
+		public IReadOnlyList<Index> Indexes { get; }
+
 		protected EntityModel(IEnumerable<EntityField> entityFields,
-			string tableName)
+			string tableName, IReadOnlyList<Index> indexes)
 		{
 			Fields = entityFields.ToArray();
 			Table = new Table(tableName, Fields.SelectMany(q => q.Columns));
+			Indexes = indexes ?? new Index[0];
 		}
 
 		public abstract void Dispatch(IModelGenericExecutor executor);
@@ -39,8 +42,9 @@ namespace Silk.Data.SQL.ORM.Schema
 	{
 		public override TypeModel TypeModel { get; } = TypeModel.GetModelOf<T>();
 
-		public EntityModel(IEnumerable<EntityField> entityFields, string tableName = null) :
-			base(entityFields, tableName ?? typeof(T).Name)
+		public EntityModel(IEnumerable<EntityField> entityFields, string tableName = null,
+			IReadOnlyList<Index> indexes = null) :
+			base(entityFields, tableName ?? typeof(T).Name, indexes)
 		{
 		}
 
