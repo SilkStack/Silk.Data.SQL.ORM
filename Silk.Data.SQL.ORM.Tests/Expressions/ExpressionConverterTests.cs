@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Expressions;
+using Silk.Data.SQL.ORM.Queries;
 using Silk.Data.SQL.ORM.Schema;
 using System;
 
@@ -137,6 +138,234 @@ namespace Silk.Data.SQL.ORM.Tests.Expressions
 			Assert.AreEqual("__join_1", condition.RequiredJoins[0].AliasIdentifierExpression.Identifier);
 		}
 
+		[TestMethod]
+		public void Convert_QueryExpression_Returns_Same_Reference()
+		{
+			var expressionConverter = CreateConverter<int, int>();
+			var queryExpression = QueryExpression.Select(QueryExpression.All(), QueryExpression.Table("TestTable"));
+			var condition = expressionConverter.Convert(q => queryExpression);
+
+			var checkExpression = condition.QueryExpression as SelectExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.ReferenceEquals(queryExpression, checkExpression);
+		}
+
+		[TestMethod]
+		public void Convert_QueryBuilder_Returns_Built_QueryExpression()
+		{
+			var expressionConverter = CreateConverter<int, int>();
+			var testBuilder = new TestQueryBuilder();
+			var condition = expressionConverter.Convert(q => testBuilder);
+
+			Assert.ReferenceEquals(testBuilder.QueryExpression, condition.QueryExpression);
+		}
+
+		[TestMethod]
+		public void Convert_AreEqual_Operator_Returns_ComparisonExpression()
+		{
+			var expressionConverter = CreateConverter<int, int>();
+			var condition = expressionConverter.Convert(q => q.A == q.B);
+
+			var checkExpression = condition.QueryExpression as ComparisonExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.AreEqual(ComparisonOperator.AreEqual, checkExpression.Operator);
+		}
+
+		[TestMethod]
+		public void Convert_AreNotEqual_Operator_Returns_ComparisonExpression()
+		{
+			var expressionConverter = CreateConverter<int, int>();
+			var condition = expressionConverter.Convert(q => q.A != q.B);
+
+			var checkExpression = condition.QueryExpression as ComparisonExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.AreEqual(ComparisonOperator.AreNotEqual, checkExpression.Operator);
+		}
+
+		[TestMethod]
+		public void Convert_GreaterThan_Operator_Returns_ComparisonExpression()
+		{
+			var expressionConverter = CreateConverter<int, int>();
+			var condition = expressionConverter.Convert(q => q.A > q.B);
+
+			var checkExpression = condition.QueryExpression as ComparisonExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.AreEqual(ComparisonOperator.GreaterThan, checkExpression.Operator);
+		}
+
+		[TestMethod]
+		public void Convert_GreaterThanOrEqualTo_Operator_Returns_ComparisonExpression()
+		{
+			var expressionConverter = CreateConverter<int, int>();
+			var condition = expressionConverter.Convert(q => q.A >= q.B);
+
+			var checkExpression = condition.QueryExpression as ComparisonExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.AreEqual(ComparisonOperator.GreaterThanOrEqualTo, checkExpression.Operator);
+		}
+
+		[TestMethod]
+		public void Convert_LessThan_Operator_Returns_ComparisonExpression()
+		{
+			var expressionConverter = CreateConverter<int, int>();
+			var condition = expressionConverter.Convert(q => q.A < q.B);
+
+			var checkExpression = condition.QueryExpression as ComparisonExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.AreEqual(ComparisonOperator.LessThan, checkExpression.Operator);
+		}
+
+		[TestMethod]
+		public void Convert_LessThanOrEqualTo_Operator_Returns_ComparisonExpression()
+		{
+			var expressionConverter = CreateConverter<int, int>();
+			var condition = expressionConverter.Convert(q => q.A <= q.B);
+
+			var checkExpression = condition.QueryExpression as ComparisonExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.AreEqual(ComparisonOperator.LessThanOrEqualTo, checkExpression.Operator);
+		}
+
+		[TestMethod]
+		public void Convert_Addition_Operator_Returns_ArithmaticExpression()
+		{
+			var expressionConverter = CreateConverter<int, int>();
+			var condition = expressionConverter.Convert(q => q.A + q.B);
+
+			var checkExpression = condition.QueryExpression as ArithmaticQueryExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.AreEqual(ArithmaticOperator.Addition, checkExpression.Operator);
+		}
+
+		[TestMethod]
+		public void Convert_Subtraction_Operator_Returns_ArithmaticExpression()
+		{
+			var expressionConverter = CreateConverter<int, int>();
+			var condition = expressionConverter.Convert(q => q.A - q.B);
+
+			var checkExpression = condition.QueryExpression as ArithmaticQueryExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.AreEqual(ArithmaticOperator.Subtraction, checkExpression.Operator);
+		}
+
+		[TestMethod]
+		public void Convert_Multiplication_Operator_Returns_ArithmaticExpression()
+		{
+			var expressionConverter = CreateConverter<int, int>();
+			var condition = expressionConverter.Convert(q => q.A * q.B);
+
+			var checkExpression = condition.QueryExpression as ArithmaticQueryExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.AreEqual(ArithmaticOperator.Multiplication, checkExpression.Operator);
+		}
+
+		[TestMethod]
+		public void Convert_Division_Operator_Returns_ArithmaticExpression()
+		{
+			var expressionConverter = CreateConverter<int, int>();
+			var condition = expressionConverter.Convert(q => q.A / q.B);
+
+			var checkExpression = condition.QueryExpression as ArithmaticQueryExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.AreEqual(ArithmaticOperator.Division, checkExpression.Operator);
+		}
+
+		[TestMethod]
+		public void Convert_BitwiseAnd_Operator_Returns_BitwiseOperationExpression()
+		{
+			var expressionConverter = CreateConverter<int, int>();
+			var condition = expressionConverter.Convert(q => q.A & q.B);
+
+			var checkExpression = condition.QueryExpression as BitwiseOperationQueryExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.AreEqual(BitwiseOperator.And, checkExpression.Operator);
+		}
+
+		[TestMethod]
+		public void Convert_BitwiseOr_Operator_Returns_BitwiseOperationExpression()
+		{
+			var expressionConverter = CreateConverter<int, int>();
+			var condition = expressionConverter.Convert(q => q.A | q.B);
+
+			var checkExpression = condition.QueryExpression as BitwiseOperationQueryExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.AreEqual(BitwiseOperator.Or, checkExpression.Operator);
+		}
+
+		[TestMethod]
+		public void Convert_BitwiseXor_Operator_Returns_BitwiseOperationExpression()
+		{
+			var expressionConverter = CreateConverter<int, int>();
+			var condition = expressionConverter.Convert(q => q.A ^ q.B);
+
+			var checkExpression = condition.QueryExpression as BitwiseOperationQueryExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.AreEqual(BitwiseOperator.ExclusiveOr, checkExpression.Operator);
+		}
+
+		[TestMethod]
+		public void Convert_And_Logical_Operator_Returns_ConditionExpression()
+		{
+			var expressionConverter = CreateConverter<int, int>();
+			var condition = expressionConverter.Convert(q => q.A == 1 && q.B == 1);
+
+			var checkExpression = condition.QueryExpression as ConditionExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.AreEqual(ConditionType.AndAlso, checkExpression.ConditionType);
+		}
+
+		[TestMethod]
+		public void Convert_Or_Logical_Operator_Returns_ConditionExpression()
+		{
+			var expressionConverter = CreateConverter<int, int>();
+			var condition = expressionConverter.Convert(q => q.A == 1 || q.B == 1);
+
+			var checkExpression = condition.QueryExpression as ConditionExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.AreEqual(ConditionType.OrElse, checkExpression.ConditionType);
+		}
+
+		[TestMethod]
+		public void Convert_Enum_Value_Returns_Integer_ValueExpression()
+		{
+			var expressionConverter = CreateConverter<TestEnum, TestEnum>();
+			var condition = expressionConverter.Convert(q => TestEnum.OptionC);
+
+			var checkExpression = condition.QueryExpression as ValueExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.IsInstanceOfType(checkExpression.Value, typeof(int));
+		}
+
+		[TestMethod]
+		public void Convert_Like_Function_Returns_Like_ComparisonExpression()
+		{
+			var expressionConverter = CreateConverter<string, string>();
+			var condition = expressionConverter.Convert(q => DatabaseFunctions.Like(q.A, "%search%"));
+
+			var checkExpression = condition.QueryExpression as ComparisonExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.AreEqual(ComparisonOperator.Like, checkExpression.Operator);
+		}
+
+		[TestMethod]
+		public void Convert_Foreign_PrimaryKey_Returns_Local_ForeignKey()
+		{
+			var expressionConverter = CreateParentConverter<int, int>(true);
+			var condition = expressionConverter.Convert(q => q.Child1.Id);
+
+			var checkExpression = condition.QueryExpression as ColumnExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.AreEqual("Child1_Id", checkExpression.ColumnName);
+			Assert.AreEqual(0, condition.RequiredJoins.Length);
+
+			condition = expressionConverter.Convert(q => q.Child2.Id);
+
+			checkExpression = condition.QueryExpression as ColumnExpression;
+			Assert.IsNotNull(checkExpression);
+			Assert.AreEqual("Child2_Id", checkExpression.ColumnName);
+			Assert.AreEqual(0, condition.RequiredJoins.Length);
+		}
+
 		private EntityExpressionConverter<TestTuple<T1, T2>> CreateConverter<T1, T2>()
 		{
 			return new EntityExpressionConverter<TestTuple<T1, T2>>(
@@ -185,6 +414,14 @@ namespace Silk.Data.SQL.ORM.Tests.Expressions
 			OptionC = 4,
 			OptionD = 8,
 			All = int.MaxValue
+		}
+
+		private class TestQueryBuilder : IQueryBuilder
+		{
+			public QueryExpression QueryExpression { get; } = QueryExpression.Value(1);
+
+			public QueryExpression BuildQuery()
+				=> QueryExpression;
 		}
 	}
 }

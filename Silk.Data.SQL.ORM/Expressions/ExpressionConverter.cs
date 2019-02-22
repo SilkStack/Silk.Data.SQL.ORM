@@ -114,15 +114,19 @@ namespace Silk.Data.SQL.ORM.Expressions
 				)
 			{
 				var fields = entityModel.Fields;
-				EntityField field = null;
+				var field = default(EntityField);
+				var previousField = default(EntityField);
 				foreach (var segment in path)
 				{
+					previousField = field;
 					field = fields.FirstOrDefault(q => q.FieldName == segment);
 					if (field == null)
 						return null;
 
 					fields = field.SubFields;
 				}
+				if (field.IsPrimaryKey && previousField != null)
+					return previousField;
 				return field;
 			}
 
@@ -142,7 +146,7 @@ namespace Silk.Data.SQL.ORM.Expressions
 					var entityField = ResolveEntityFieldFromPath(
 						entityModel, expressionPath.Skip(1)
 						);
-					if (entityField != null && SqlTypeHelper.GetDataType(entityField.FieldDataType) != null)
+					if (entityField != null)
 					{
 						if (entityField.Source as Join != null)
 						{
@@ -151,7 +155,7 @@ namespace Silk.Data.SQL.ORM.Expressions
 								RequiredJoins.Add(entityField.Source as Join);
 						}
 						if (entityField.Columns.Count > 1)
-							//  todo: does this even occur?
+							//  todo: this is a problem with composite keys used in a relationship, I'm undecided what is useful to return here
 							throw new InvalidOperationException("Field has multiple columns.");
 						SetConversionResult(
 							QueryExpression.Column(entityField.Columns[0].Name, sourceExpression)
