@@ -1,7 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Silk.Data.Modelling;
 using Silk.Data.SQL.ORM.Schema;
-using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Tests.Schema
 {
@@ -16,8 +15,24 @@ namespace Silk.Data.SQL.ORM.Tests.Schema
 				.Define<EntityType>()
 				.Build();
 			Assert.IsNotNull(schema);
-			Assert.AreEqual(1, schema.GetAll<EntityType>().Count());
-			Assert.IsNotNull(schema.GetAll<EntityType>().First());
+			Assert.IsNotNull(schema.GetEntityModel<EntityType>());
+		}
+
+		[TestMethod]
+		public void Build_Returns_Model_With_Index()
+		{
+			var schema = new SchemaBuilder()
+				.Define<EntityType>(definition =>
+				{
+					definition.Index("idx", uniqueConstraint: true, indexFields: entity => entity.Property);
+				})
+				.Build();
+			var entityModel = schema.GetEntityModel<EntityType>();
+
+			Assert.AreEqual(1, entityModel.Indexes.Count);
+			Assert.IsTrue(entityModel.Indexes[0].HasUniqueConstraint);
+			Assert.AreEqual(1, entityModel.Indexes[0].Fields.Count);
+			Assert.AreEqual("Property", entityModel.Indexes[0].Fields[0].FieldName);
 		}
 
 		//  todo: move this test to an analyzer test set
@@ -28,8 +43,7 @@ namespace Silk.Data.SQL.ORM.Tests.Schema
 				.Define<ReferencedType>()
 				.Define<EntityType>()
 				.Build()
-				.GetAll<EntityType>()
-				.First();
+				.GetEntityModel<EntityType>();
 			var viewModel = TypeModel.GetModelOf<ViewType>();
 
 			var analyzer = new EntityModelToTypeModelIntersectionAnalyzer();

@@ -1,4 +1,5 @@
 ﻿using Silk.Data.SQL.ORM.Expressions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -10,8 +11,8 @@ namespace Silk.Data.SQL.ORM.Schema
 	/// </summary>
 	public class Schema
 	{
-		private readonly List<EntityModel> _entityModels =
-			new List<EntityModel>();
+		private readonly Dictionary<Type, EntityModel> _entityModels =
+			new Dictionary<Type, EntityModel>();
 		private readonly Dictionary<MethodInfo, IMethodCallConverter> _methodCallConverters;
 
 		public Schema(
@@ -19,7 +20,10 @@ namespace Silk.Data.SQL.ORM.Schema
 			Dictionary<MethodInfo, IMethodCallConverter> methodCallConverters
 			)
 		{
-			_entityModels.AddRange(entityModels);
+			_entityModels = entityModels.ToDictionary(
+				q => q.EntityType,
+				q => q
+				);
 			_methodCallConverters = methodCallConverters;
 		}
 
@@ -28,9 +32,13 @@ namespace Silk.Data.SQL.ORM.Schema
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <returns></returns>
-		public IEnumerable<EntityModel<T>> GetAll<T>()
+		public EntityModel<T> GetEntityModel<T>()
 			where T : class
-			=> _entityModels.OfType<EntityModel<T>>();
+		{
+			if (_entityModels.TryGetValue(typeof(T), out var entityModel))
+				return entityModel as EntityModel<T>;
+			return null;
+		}
 
 		public IMethodCallConverter GetMethodCallConverter(MethodInfo methodInfo)
 		{

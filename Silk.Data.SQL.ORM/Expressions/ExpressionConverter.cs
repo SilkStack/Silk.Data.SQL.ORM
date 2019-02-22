@@ -331,7 +331,7 @@ namespace Silk.Data.SQL.ORM.Expressions
 		public EntityExpressionConverter(Schema.Schema schema)
 			: base(schema)
 		{
-			EntitySchema = schema.GetAll<T>().First(); //  todo: replace with something more specific if there's multiple entity schemas defined for the type, or throw exception?
+			EntitySchema = schema.GetEntityModel<T>();
 			if (EntitySchema == null)
 				throw new Exception("Entity isn't configured in schema.");
 		}

@@ -1,6 +1,7 @@
 ﻿using Silk.Data.Modelling;
 using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 
 namespace Silk.Data.SQL.ORM.Schema
 {
@@ -11,6 +12,7 @@ namespace Silk.Data.SQL.ORM.Schema
 	{
 		public abstract Type EntityType { get; }
 		public abstract TypeModel TypeModel { get; }
+		public abstract IEnumerable<IndexBuilder> IndexBuilders { get; }
 
 		public string TableName { get; set; }
 		public EntityDefinition SetTableName(string tableName)
@@ -19,7 +21,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			return this;
 		}
 
-		public abstract EntityModel BuildModel(IEnumerable<EntityField> entityFields);
+		public abstract EntityModel BuildModel(IEnumerable<EntityField> entityFields, IEnumerable<Index> indexes);
 	}
 
 	/// <summary>
@@ -28,13 +30,33 @@ namespace Silk.Data.SQL.ORM.Schema
 	public class EntityDefinition<T> : EntityDefinition
 		where T : class
 	{
+		private readonly Dictionary<string, IndexBuilder<T>> _indexBuilders = new Dictionary<string, IndexBuilder<T>>();
+
 		public override TypeModel TypeModel { get; } = TypeModel.GetModelOf<T>();
 
 		public override Type EntityType { get; } = typeof(T);
 
+		public override IEnumerable<IndexBuilder> IndexBuilders => _indexBuilders.Values;
+
 		public EntityDefinition()
 		{
 			TableName = typeof(T).Name;
+		}
+
+		public EntityDefinition<T> Index(string indexName, params Expression<Func<T, object>>[] indexFields)
+			=> Index(indexName, false, indexFields);
+
+		public EntityDefinition<T> Index(string indexName, bool uniqueConstraint, params Expression<Func<T, object>>[] indexFields)
+		{
+			if (!_indexBuilders.TryGetValue(indexName, out var indexBuilder))
+			{
+				indexBuilder = new IndexBuilder<T>(indexName);
+				_indexBuilders.Add(indexName, indexBuilder);
+			}
+
+			indexBuilder.HasUniqueConstraint = uniqueConstraint;
+			indexBuilder.AddFields(indexFields);
+			return this;
 		}
 
 		public new EntityDefinition<T> SetTableName(string tableName)
@@ -43,9 +65,9 @@ namespace Silk.Data.SQL.ORM.Schema
 			return this;
 		}
 
-		public override EntityModel BuildModel(IEnumerable<EntityField> entityFields)
+		public override EntityModel BuildModel(IEnumerable<EntityField> entityFields, IEnumerable<Index> indexes)
 		{
-			return new EntityModel<T>(entityFields, TableName);
+			return new EntityModel<T>(entityFields, TableName, indexes);
 		}
 	}
 }

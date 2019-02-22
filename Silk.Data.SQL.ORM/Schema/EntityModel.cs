@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Silk.Data.Modelling;
 using Silk.Data.Modelling.GenericDispatch;
@@ -17,14 +18,16 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public abstract TypeModel TypeModel { get; }
 
+		public abstract Type EntityType { get; }
+
 		public IReadOnlyList<Index> Indexes { get; }
 
 		protected EntityModel(IEnumerable<EntityField> entityFields,
-			string tableName, IReadOnlyList<Index> indexes)
+			string tableName, IEnumerable<Index> indexes)
 		{
 			Fields = entityFields.ToArray();
 			Table = new Table(tableName, Fields.SelectMany(q => q.Columns));
-			Indexes = indexes ?? new Index[0];
+			Indexes = indexes?.ToArray() ?? new Index[0];
 		}
 
 		public abstract void Dispatch(IModelGenericExecutor executor);
@@ -42,8 +45,10 @@ namespace Silk.Data.SQL.ORM.Schema
 	{
 		public override TypeModel TypeModel { get; } = TypeModel.GetModelOf<T>();
 
+		public override Type EntityType => typeof(T);
+
 		public EntityModel(IEnumerable<EntityField> entityFields, string tableName = null,
-			IReadOnlyList<Index> indexes = null) :
+			IEnumerable<Index> indexes = null) :
 			base(entityFields, tableName ?? typeof(T).Name, indexes)
 		{
 		}

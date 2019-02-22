@@ -76,8 +76,14 @@ namespace Silk.Data.SQL.ORM.Schema
 		public SchemaBuilder Define<T>(Action<EntityDefinition<T>> configure = null)
 			where T : class
 		{
-			var definition = new EntityDefinition<T>();
-			_entityDefinitions.Add(definition);
+			var definition = GetDefinition<T>();
+
+			if (definition == null)
+			{
+				definition = new EntityDefinition<T>();
+				_entityDefinitions.Add(definition);
+			}
+
 			configure?.Invoke(definition);
 			return this;
 		}
@@ -87,9 +93,10 @@ namespace Silk.Data.SQL.ORM.Schema
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <returns></returns>
-		public IEnumerable<EntityDefinition<T>> GetAll<T>()
+		public EntityDefinition<T> GetDefinition<T>()
 			where T : class
-			=> _entityDefinitions.OfType<EntityDefinition<T>>();
+			=> _entityDefinitions.OfType<EntityDefinition<T>>()
+				.FirstOrDefault();
 
 		/// <summary>
 		/// Build the schema.
@@ -114,8 +121,11 @@ namespace Silk.Data.SQL.ORM.Schema
 		protected virtual EntityModel BuildEntityModel(EntityDefinition entityDefinition)
 		{
 			EntityFieldBuilder.Reset();
+			var modelFields = BuildEntityFields(entityDefinition, entityDefinition.TypeModel)
+				.ToArray();
+			var indexes = entityDefinition.IndexBuilders.Select(q => q.Build(modelFields));
 			return entityDefinition.BuildModel(
-				BuildEntityFields(entityDefinition, entityDefinition.TypeModel)
+				modelFields, indexes
 				);
 		}
 
