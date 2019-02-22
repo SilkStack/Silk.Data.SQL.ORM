@@ -1,4 +1,5 @@
-﻿using Silk.Data.SQL.Expressions;
+﻿using Silk.Data.Modelling.Mapping;
+using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Expressions;
 using Silk.Data.SQL.ORM.Schema;
 using System;
@@ -95,12 +96,13 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public void Set(EntityField<T> schemaField, T entity)
 		{
-			//var fieldOperations = Schema.GetFieldOperations(schemaField);
-			//var valueExpression = fieldOperations.Expressions.Value(entity, EntityReadWriter);
-			//AddFieldAssignment(
-			//	QueryExpression.Column(schemaField.Column.ColumnName),
-			//	valueExpression
-			//	);
+			var transcriber = EntityModel.GetModelTranscriber<T>();
+			var fieldWriter = transcriber.FieldWriters.FirstOrDefault(
+				q => q.To == schemaField
+				);
+			if (fieldWriter == null)
+				throw new InvalidOperationException("Specified field has no binding to the entity model.");
+			fieldWriter.Write(entity, this);
 		}
 
 		public void Set<TValue>(EntityField<T> schemaField, TValue value)
@@ -185,25 +187,27 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public void SetAll(T entity)
 		{
+			var graphReader = new ObjectGraphReaderWriter<T>(entity);
 			var transcriber = EntityModel.GetModelTranscriber<T>();
 			foreach (var fieldWriter in transcriber.FieldWriters)
 			{
 				if (fieldWriter.To.IsPrimaryKey && fieldWriter.To.IsSeverGenerated)
 					continue;
 
-				fieldWriter.Write(entity, this);
+				fieldWriter.Write(graphReader, this);
 			}
 		}
 
 		public void SetAll<TView>(TView entityView) where TView : class
 		{
+			var graphReader = new ObjectGraphReaderWriter<TView>(entityView);
 			var transcriber = EntityModel.GetModelTranscriber<TView>();
 			foreach (var fieldWriter in transcriber.FieldWriters)
 			{
 				if (fieldWriter.To.IsPrimaryKey && fieldWriter.To.IsSeverGenerated)
 					continue;
 
-				fieldWriter.Write(entityView, this);
+				fieldWriter.Write(graphReader, this);
 			}
 		}
 	}
