@@ -31,6 +31,8 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public IQueryReference Source { get; }
 
+		public bool IsEntityLocalField { get; }
+
 		protected EntityField(
 			string fieldName, bool canRead, bool canWrite,
 			Type fieldDataType, IEnumerable<Column> columns,
@@ -51,6 +53,7 @@ namespace Silk.Data.SQL.ORM.Schema
 				IsSeverGenerated = true;
 
 			Source = source;
+			IsEntityLocalField = Source is TableReference;
 		}
 
 		public abstract void Dispatch(IFieldGenericExecutor executor);
@@ -143,24 +146,56 @@ namespace Silk.Data.SQL.ORM.Schema
 			//  only create the sub fields once please
 			var subFieldsArray = subFields.ToArray();
 
-			var columnNamePrefix = string.Join("_", relativeParentFields.Select(q => q.FieldName));
-			if (!string.IsNullOrEmpty(columnNamePrefix))
-				columnNamePrefix = $"{columnNamePrefix}_";
-
-			var primaryKeyColumns = new List<Column>();
+			var primaryKeyFields = new List<EntityField>();
+			var foreignKeyBuilder = new ForeignKeyEntityBuilder(
+				modelField, relativeParentFields, fullParentFields, source
+				);
 			foreach (var subField in subFieldsArray.Where(q => q.IsPrimaryKey))
 			{
-				primaryKeyColumns.Add(new Column(
-					$"{columnNamePrefix}{modelField.FieldName}_{subField.FieldName}",
-					SqlTypeHelper.GetDataType(subField.FieldDataType),
-					true
-					));
+				subField.Dispatch(foreignKeyBuilder);
+				primaryKeyFields.Add(foreignKeyBuilder.EntityField);
 			}
 
 			return new ReferencedEntityField<T, TEntity>(
 				modelField.FieldName, modelField.CanRead, modelField.CanWrite,
-				primaryKeyColumns, subFields, source
+				null, primaryKeyFields.Concat(subFields), source
 				);
+		}
+
+		private class ForeignKeyEntityBuilder : IFieldGenericExecutor
+		{
+			private readonly IField _modelField;
+			private readonly IEnumerable<IField> _relativeParentFields;
+			private readonly IEnumerable<IField> _fullParentFields;
+			private readonly IQueryReference _source;
+
+			public EntityField EntityField { get; private set; }
+
+			public ForeignKeyEntityBuilder(
+				IField modelField, IEnumerable<IField> relativeParentFields,
+				IEnumerable<IField> fullParentFields, IQueryReference source
+				)
+			{
+				_modelField = modelField;
+				_relativeParentFields = relativeParentFields;
+				_fullParentFields = fullParentFields;
+				_source = source;
+			}
+
+			void IFieldGenericExecutor.Execute<TField, TData>(IField field)
+			{
+				var columnNamePrefix = string.Join("_", _relativeParentFields.Select(q => q.FieldName));
+				if (!string.IsNullOrEmpty(columnNamePrefix))
+					columnNamePrefix = $"{columnNamePrefix}_";
+
+				EntityField = new ValueEntityField<TData, TEntity>(field.FieldName, field.CanRead,
+					field.CanWrite,
+					//  value storage column
+					new Column(
+						$"{columnNamePrefix}{_modelField.FieldName}_{field.FieldName}", SqlTypeHelper.GetDataType(typeof(T)),
+						SqlTypeHelper.TypeIsNullable(typeof(T))),
+						_source);
+			}
 		}
 	}
 }

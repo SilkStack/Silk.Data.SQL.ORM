@@ -105,20 +105,20 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public void Set<TValue>(EntityField<T> schemaField, TValue value)
 		{
-			//var valueExpression = ORMQueryExpressions.Value(value);
-			//AddFieldAssignment(
-			//	QueryExpression.Column(schemaField.Column.ColumnName),
-			//	valueExpression
-			//	);
+			var valueExpression = ORMQueryExpressions.Value(value);
+			AddFieldAssignment(
+				QueryExpression.Column(schemaField.Columns[0].Name),
+				valueExpression
+				);
 		}
 
 		public void Set<TValue>(EntityField<T> schemaField, Expression<Func<T, TValue>> valueExpression)
 		{
-			//var valueExpressionResult = ExpressionConverter.Convert(valueExpression);
-			//AddFieldAssignment(
-			//	QueryExpression.Column(schemaField.Column.ColumnName),
-			//	valueExpressionResult.QueryExpression
-			//	);
+			var valueExpressionResult = ExpressionConverter.Convert(valueExpression);
+			AddFieldAssignment(
+				QueryExpression.Column(schemaField.Columns[0].Name),
+				valueExpressionResult.QueryExpression
+				);
 		}
 
 		public void Set(EntityField<T> schemaField, IQueryBuilder subQuery)
