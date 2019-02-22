@@ -47,7 +47,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		{
 			var sourceValue = from.Read<TFromValue>(_fromPath);
 			if (_converter(sourceValue, out var destValue))
-				fieldAssignmentBuilder.Set(QueryExpression.Column(To.Columns[0].Name), ORMQueryExpressions.Value(destValue));
+				fieldAssignmentBuilder.Set(QueryExpression.Column(To.Column.Name), ORMQueryExpressions.Value(destValue));
 		}
 	}
 }

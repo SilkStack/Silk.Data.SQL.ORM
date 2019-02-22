@@ -33,7 +33,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			IntersectedFields<TypeModel, PropertyInfoField, EntityModel, EntityField> intersectedFields
 			)
 			where TView : class
-			=> fieldWriters.Any(writer => writer.To.Columns[0].Name == intersectedFields.RightField.Columns[0].Name);
+			=> fieldWriters.Any(writer => writer.To.Column.Name == intersectedFields.RightField.Column.Name);
 
 		private class FieldWriterBuilder<TView> : IIntersectedFieldsGenericExecutor
 			where TView : class

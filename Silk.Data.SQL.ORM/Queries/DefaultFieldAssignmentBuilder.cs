@@ -107,7 +107,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		{
 			var valueExpression = ORMQueryExpressions.Value(value);
 			AddFieldAssignment(
-				QueryExpression.Column(schemaField.Columns[0].Name),
+				QueryExpression.Column(schemaField.Column.Name),
 				valueExpression
 				);
 		}
@@ -116,7 +116,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		{
 			var valueExpressionResult = ExpressionConverter.Convert(valueExpression);
 			AddFieldAssignment(
-				QueryExpression.Column(schemaField.Columns[0].Name),
+				QueryExpression.Column(schemaField.Column.Name),
 				valueExpressionResult.QueryExpression
 				);
 		}
@@ -124,7 +124,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		public void Set(EntityField<T> schemaField, IQueryBuilder subQuery)
 		{
 			AddFieldAssignment(
-				QueryExpression.Column(schemaField.Columns[0].Name),
+				QueryExpression.Column(schemaField.Column.Name),
 				subQuery.BuildQuery()
 				);
 		}

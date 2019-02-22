@@ -27,7 +27,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			string tableName, IEnumerable<Index> indexes, TypeModel typeModel)
 		{
 			Fields = entityFields.ToArray();
-			Table = new Table(tableName, Fields.SelectMany(q => q.Columns));
+			Table = new Table(tableName, Fields.Where(q => q.Column != null).Select(q => q.Column));
 			Indexes = indexes?.ToArray() ?? new Index[0];
 		}
 

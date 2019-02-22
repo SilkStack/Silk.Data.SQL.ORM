@@ -28,11 +28,11 @@ namespace Silk.Data.SQL.ORM.Queries
 			return QueryExpression.CreateTable(
 				_entityModel.Table.TableName,
 				_entityModel.Fields
-					.SelectMany(field => field.Columns.Select(column => new { field, column }))
+					.Where(field => field.Column != null)
 					.Select(q =>
 						QueryExpression.DefineColumn(
-							q.column.Name, q.column.DataType, q.column.IsNullable,
-							q.field.IsPrimaryKey && q.field.IsSeverGenerated, q.field.IsPrimaryKey
+							q.Column.Name, q.Column.DataType, q.Column.IsNullable,
+							q.IsPrimaryKey && q.IsSeverGenerated, q.IsPrimaryKey
 							)
 				));
 		}
@@ -44,7 +44,7 @@ namespace Silk.Data.SQL.ORM.Queries
 				yield return QueryExpression.CreateIndex(
 					_entityModel.Table.TableName,
 					index.HasUniqueConstraint,
-					index.Fields.SelectMany(q => q.Columns).Select(q => q.Name).ToArray()
+					index.Fields.Where(q => q.Column != null).Select(q => q.Column.Name).ToArray()
 					);
 			}
 		}

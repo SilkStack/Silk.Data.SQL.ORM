@@ -115,18 +115,14 @@ namespace Silk.Data.SQL.ORM.Expressions
 			{
 				var fields = entityModel.Fields;
 				var field = default(EntityField);
-				var previousField = default(EntityField);
 				foreach (var segment in path)
 				{
-					previousField = field;
 					field = fields.FirstOrDefault(q => q.FieldName == segment);
 					if (field == null)
 						return null;
 
 					fields = field.SubFields;
 				}
-				if (field.IsPrimaryKey && previousField != null)
-					return previousField;
 				return field;
 			}
 
@@ -155,14 +151,8 @@ namespace Silk.Data.SQL.ORM.Expressions
 								RequiredJoins.Add(entityField.Source as Join);
 						}
 
-						if (entityField.Columns.Count > 1)
-						{
-							//  todo: this is a composite key, resolve the column that is being addressed in `expressionPath`
-							throw new InvalidOperationException("Field has multiple columns.");
-						}
-
 						SetConversionResult(
-							QueryExpression.Column(entityField.Columns[0].Name, sourceExpression)
+							QueryExpression.Column(entityField.Column.Name, sourceExpression)
 						);
 						return node;
 					}
