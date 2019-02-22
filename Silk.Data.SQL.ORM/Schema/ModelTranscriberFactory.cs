@@ -16,7 +16,8 @@ namespace Silk.Data.SQL.ORM.Schema
 		{
 			var fieldWriterBuilder = new FieldWriterBuilder<TView>();
 			var fieldWriters = new List<IntersectedFieldWriter<TView>>();
-			foreach (var intersectedFields in typeToModelIntersection.IntersectedFields)
+			foreach (var intersectedFields in typeToModelIntersection.IntersectedFields
+				.Where(q => q.RightField.IsEntityLocalField))
 			{
 				if (IsFieldBound(fieldWriters, intersectedFields))
 					continue;
