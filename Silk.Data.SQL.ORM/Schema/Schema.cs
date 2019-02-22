@@ -12,10 +12,15 @@ namespace Silk.Data.SQL.ORM.Schema
 	{
 		private readonly List<EntityModel> _entityModels =
 			new List<EntityModel>();
+		private readonly Dictionary<MethodInfo, IMethodCallConverter> _methodCallConverters;
 
-		public Schema(IEnumerable<EntityModel> entityModels)
+		public Schema(
+			IEnumerable<EntityModel> entityModels,
+			Dictionary<MethodInfo, IMethodCallConverter> methodCallConverters
+			)
 		{
 			_entityModels.AddRange(entityModels);
+			_methodCallConverters = methodCallConverters;
 		}
 
 		/// <summary>
@@ -28,6 +33,11 @@ namespace Silk.Data.SQL.ORM.Schema
 			=> _entityModels.OfType<EntityModel<T>>();
 
 		public IMethodCallConverter GetMethodCallConverter(MethodInfo methodInfo)
-			=> null;
+		{
+			if (methodInfo.IsGenericMethod)
+				methodInfo = methodInfo.GetGenericMethodDefinition();
+			_methodCallConverters.TryGetValue(methodInfo, out var converter);
+			return converter;
+		}
 	}
 }

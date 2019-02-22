@@ -1,9 +1,11 @@
 ﻿using Silk.Data.Modelling;
 using Silk.Data.Modelling.GenericDispatch;
+using Silk.Data.SQL.ORM.Expressions;
 using Silk.Data.SQL.ORM.Queries;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace Silk.Data.SQL.ORM.Schema
 {
@@ -14,6 +16,56 @@ namespace Silk.Data.SQL.ORM.Schema
 	{
 		private readonly List<EntityDefinition> _entityDefinitions
 			= new List<EntityDefinition>();
+
+		private readonly Dictionary<MethodInfo, IMethodCallConverter> _methodCallConverters
+			= new Dictionary<MethodInfo, IMethodCallConverter>();
+
+		public SchemaBuilder()
+		{
+			AddMethodConverter(
+				typeof(Enum).GetMethod(nameof(Enum.HasFlag)), new HasFlagCallConverter()
+				);
+			AddMethodConverter(
+				typeof(DatabaseFunctions).GetMethod(nameof(DatabaseFunctions.Like)), new StringLikeCallConverter()
+				);
+			AddMethodConverter(
+				typeof(DatabaseFunctions).GetMethod(nameof(DatabaseFunctions.Alias)), new AliasCallConverter()
+				);
+			AddMethodConverter(
+				typeof(DatabaseFunctions).GetMethod(nameof(DatabaseFunctions.Count)), new CountCallConverter()
+				);
+			AddMethodConverter(
+				typeof(DatabaseFunctions).GetMethod(nameof(DatabaseFunctions.Random)), new RandomCallConverter()
+				);
+			AddMethodConverter(
+				typeof(DatabaseFunctions).GetMethod(nameof(DatabaseFunctions.IsIn)), new IsInCallConverter()
+				);
+			AddMinMethods();
+			AddMaxMethods();
+		}
+
+		private void AddMinMethods()
+		{
+			foreach (var methodInfo in typeof(DatabaseFunctions).GetMethods()
+				.Where(q => q.Name == nameof(DatabaseFunctions.Min)))
+			{
+				AddMethodConverter(methodInfo, new MinCallConverter());
+			}
+		}
+
+		private void AddMaxMethods()
+		{
+			foreach (var methodInfo in typeof(DatabaseFunctions).GetMethods()
+				.Where(q => q.Name == nameof(DatabaseFunctions.Max)))
+			{
+				AddMethodConverter(methodInfo, new MaxCallConverter());
+			}
+		}
+
+		public void AddMethodConverter(MethodInfo methodInfo, IMethodCallConverter methodCallConverter)
+		{
+			_methodCallConverters.Add(methodInfo, methodCallConverter);
+		}
 
 		/// <summary>
 		/// Define an entity type.
@@ -46,7 +98,8 @@ namespace Silk.Data.SQL.ORM.Schema
 		public virtual Schema Build()
 		{
 			return new Schema(
-				BuildEntityModels()
+				BuildEntityModels(),
+				_methodCallConverters
 				);
 		}
 
@@ -60,6 +113,7 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		protected virtual EntityModel BuildEntityModel(EntityDefinition entityDefinition)
 		{
+			EntityFieldBuilder.Reset();
 			return entityDefinition.BuildModel(
 				BuildEntityFields(entityDefinition, entityDefinition.TypeModel)
 				);
@@ -93,6 +147,11 @@ namespace Silk.Data.SQL.ORM.Schema
 		private class EntityFieldBuilder : IFieldGenericExecutor
 		{
 			private static int _joinCount = 1;
+
+			public static void Reset()
+			{
+				_joinCount = 1;
+			}
 
 			private readonly EntityDefinition _entityDefinition;
 			private readonly SchemaBuilder _schemaBuilder;
