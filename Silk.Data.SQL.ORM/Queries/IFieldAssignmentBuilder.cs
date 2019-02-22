@@ -25,5 +25,8 @@ namespace Silk.Data.SQL.ORM.Queries
 		void Set<TProperty>(Expression<Func<T, TProperty>> fieldSelector, Expression valueExpression);
 		void Set<TProperty>(Expression<Func<T, TProperty>> fieldSelector, IQueryBuilder subQuery);
 		void Set<TProperty>(Expression<Func<T, TProperty>> fieldSelector, QueryExpression valueExpression);
+
+		void SetAll(T entity);
+		void SetAll<TView>(TView entityView) where TView : class;
 	}
 }
