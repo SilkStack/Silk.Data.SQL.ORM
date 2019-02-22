@@ -47,10 +47,13 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public override Type EntityType => typeof(T);
 
-		public EntityModel(IEnumerable<EntityField> entityFields, string tableName = null,
+		public new IReadOnlyList<EntityField<T>> Fields { get; }
+
+		public EntityModel(IEnumerable<EntityField<T>> entityFields, string tableName = null,
 			IEnumerable<Index> indexes = null) :
 			base(entityFields, tableName ?? typeof(T).Name, indexes)
 		{
+			Fields = entityFields.ToArray();
 		}
 
 		public override void Dispatch(IModelGenericExecutor executor)

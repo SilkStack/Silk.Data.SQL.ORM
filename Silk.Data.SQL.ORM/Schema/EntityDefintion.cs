@@ -1,6 +1,8 @@
 ﻿using Silk.Data.Modelling;
+using Silk.Data.SQL.ORM.Queries;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 
 namespace Silk.Data.SQL.ORM.Schema
@@ -21,6 +23,14 @@ namespace Silk.Data.SQL.ORM.Schema
 			return this;
 		}
 
+		public abstract IEnumerable<EntityField> BuildEntityFields(
+			IFieldBuilder fieldBuilder,
+			EntityDefinition entityDefinition,
+			TypeModel typeModel,
+			IEnumerable<IField> relativeParentFields = null,
+			IEnumerable<IField> fullParentFields = null,
+			IQueryReference source = null
+			);
 		public abstract EntityModel BuildModel(IEnumerable<EntityField> entityFields, IEnumerable<Index> indexes);
 	}
 
@@ -67,7 +77,15 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public override EntityModel BuildModel(IEnumerable<EntityField> entityFields, IEnumerable<Index> indexes)
 		{
-			return new EntityModel<T>(entityFields, TableName, indexes);
+			return new EntityModel<T>(entityFields.OfType<EntityField<T>>(), TableName, indexes);
 		}
+
+		public override IEnumerable<EntityField> BuildEntityFields(IFieldBuilder fieldBuilder,
+			EntityDefinition entityDefinition,
+			TypeModel typeModel, IEnumerable<IField> relativeParentFields = null,
+			IEnumerable<IField> fullParentFields = null, IQueryReference source = null)
+			=> fieldBuilder.BuildEntityFields<T>(this, entityDefinition, typeModel, relativeParentFields,
+				fullParentFields, source);
+		
 	}
 }

@@ -66,7 +66,8 @@ namespace Silk.Data.SQL.ORM.Schema
 		}
 	}
 
-	public class ValueEntityField<T> : EntityField
+	public class ValueEntityField<T, TEntity> : EntityField<TEntity>
+		where TEntity : class
 	{
 		public ValueEntityField(string fieldName, bool canRead, bool canWrite,
 			Column column, IQueryReference source) :
@@ -77,14 +78,14 @@ namespace Silk.Data.SQL.ORM.Schema
 		public override void Dispatch(IFieldGenericExecutor executor)
 			=> executor.Execute<EntityField, T>(this);
 
-		public static ValueEntityField<T> Create(IField modelField, IEnumerable<IField> relativeParentFields,
+		public static ValueEntityField<T, TEntity> Create(IField modelField, IEnumerable<IField> relativeParentFields,
 			IEnumerable<IField> fullParentFields, IQueryReference source)
 		{
 			var columnNamePrefix = string.Join("_", relativeParentFields.Select(q => q.FieldName));
 			if (!string.IsNullOrEmpty(columnNamePrefix))
 				columnNamePrefix = $"{columnNamePrefix}_";
 
-			return new ValueEntityField<T>(modelField.FieldName, modelField.CanRead,
+			return new ValueEntityField<T, TEntity>(modelField.FieldName, modelField.CanRead,
 				modelField.CanWrite,
 				//  value storage column
 				new Column(
@@ -94,7 +95,8 @@ namespace Silk.Data.SQL.ORM.Schema
 		}
 	}
 
-	public class EmbeddedEntityField<T> : EntityField
+	public class EmbeddedEntityField<T, TEntity> : EntityField<TEntity>
+		where TEntity : class
 	{
 		public EmbeddedEntityField(string fieldName, bool canRead, bool canWrite,
 			Column column, IEnumerable<EntityField> subFields, IQueryReference source) :
@@ -105,14 +107,14 @@ namespace Silk.Data.SQL.ORM.Schema
 		public override void Dispatch(IFieldGenericExecutor executor)
 			=> executor.Execute<EntityField, T>(this);
 
-		public static EmbeddedEntityField<T> Create(IField modelField, IEnumerable<IField> relativeParentFields,
+		public static EmbeddedEntityField<T, TEntity> Create(IField modelField, IEnumerable<IField> relativeParentFields,
 			IEnumerable<IField> fullParentFields, IEnumerable<EntityField> subFields, IQueryReference source)
 		{
 			var columnNamePrefix = string.Join("_", relativeParentFields.Select(q => q.FieldName));
 			if (!string.IsNullOrEmpty(columnNamePrefix))
 				columnNamePrefix = $"{columnNamePrefix}_";
 
-			return new EmbeddedEntityField<T>(
+			return new EmbeddedEntityField<T, TEntity>(
 				modelField.FieldName, modelField.CanRead, modelField.CanWrite,
 				//  null check column
 				new Column(
@@ -123,7 +125,8 @@ namespace Silk.Data.SQL.ORM.Schema
 		}
 	}
 
-	public class ReferencedEntityField<T> : EntityField
+	public class ReferencedEntityField<T, TEntity> : EntityField<TEntity>
+		where TEntity : class
 	{
 		public ReferencedEntityField(string fieldName, bool canRead, bool canWrite,
 			IEnumerable<Column> columns, IEnumerable<EntityField> subFields, IQueryReference source) :
@@ -134,7 +137,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		public override void Dispatch(IFieldGenericExecutor executor)
 			=> executor.Execute<EntityField, T>(this);
 
-		public static ReferencedEntityField<T> Create(IField modelField, IEnumerable<IField> relativeParentFields,
+		public static ReferencedEntityField<T, TEntity> Create(IField modelField, IEnumerable<IField> relativeParentFields,
 			IEnumerable<IField> fullParentFields, IEnumerable<EntityField> subFields, IQueryReference source)
 		{
 			//  only create the sub fields once please
@@ -154,7 +157,7 @@ namespace Silk.Data.SQL.ORM.Schema
 					));
 			}
 
-			return new ReferencedEntityField<T>(
+			return new ReferencedEntityField<T, TEntity>(
 				modelField.FieldName, modelField.CanRead, modelField.CanWrite,
 				primaryKeyColumns, subFields, source
 				);
