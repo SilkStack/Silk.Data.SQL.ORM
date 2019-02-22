@@ -56,6 +56,16 @@ namespace Silk.Data.SQL.ORM.Schema
 		public abstract void Dispatch(IFieldGenericExecutor executor);
 	}
 
+	public abstract class EntityField<TEntity> : EntityField
+		where TEntity : class
+	{
+		protected EntityField(string fieldName, bool canRead, bool canWrite, Type fieldDataType,
+			IEnumerable<Column> columns, IEnumerable<EntityField> subFields = null, IQueryReference source = null) :
+			base(fieldName, canRead, canWrite, fieldDataType, columns, subFields, source)
+		{
+		}
+	}
+
 	public class ValueEntityField<T> : EntityField
 	{
 		public ValueEntityField(string fieldName, bool canRead, bool canWrite,
