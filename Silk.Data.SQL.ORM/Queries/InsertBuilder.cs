@@ -47,8 +47,13 @@ namespace Silk.Data.SQL.ORM.Queries
 		{
 			var entityModel = schema.GetEntityModel<T>();
 			if (entityModel == null)
-				throw new InvalidOperationException($"Entity type `{typeof(T).FullName}` is not present in the schema.");
+				ExceptionHelper.ThrowNotPresentInSchema<T>();
 
+			return Create(schema, entityModel, entity);
+		}
+
+		public static InsertBuilder<T> Create(Schema.Schema schema, EntityModel<T> entityModel, T entity)
+		{
 			var builder = new InsertBuilder<T>(schema, entityModel);
 			builder.Assignments.SetAll(entity);
 			return builder;
@@ -59,8 +64,14 @@ namespace Silk.Data.SQL.ORM.Queries
 		{
 			var entityModel = schema.GetEntityModel<T>();
 			if (entityModel == null)
-				throw new InvalidOperationException($"Entity type `{typeof(T).FullName}` is not present in the schema.");
+				ExceptionHelper.ThrowNotPresentInSchema<T>();
 
+			return Create(schema, entityModel, entityView);
+		}
+
+		public static InsertBuilder<T> Create<TView>(Schema.Schema schema, EntityModel<T> entityModel, TView entityView)
+			where TView : class
+		{
 			var builder = new InsertBuilder<T>(schema, entityModel);
 			builder.Assignments.SetAll(entityView);
 			return builder;

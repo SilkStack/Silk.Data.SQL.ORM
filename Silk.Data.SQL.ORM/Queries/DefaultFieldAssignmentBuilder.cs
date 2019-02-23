@@ -15,6 +15,7 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		protected void AddFieldAssignment(ColumnExpression columnExpression, QueryExpression valueExpression)
 		{
+			_fieldAssignments.RemoveAll(q => q.Column.ColumnName == columnExpression.ColumnName);
 			_fieldAssignments.Add(new FieldAssignment(
 					columnExpression, valueExpression
 					));
@@ -97,12 +98,14 @@ namespace Silk.Data.SQL.ORM.Queries
 		public void Set(EntityField<T> schemaField, T entity)
 		{
 			var transcriber = EntityModel.GetModelTranscriber<T>();
-			var fieldWriter = transcriber.FieldWriters.FirstOrDefault(
+			var fieldWriter = transcriber.EntityModelHelpers.FirstOrDefault(
 				q => q.To == schemaField
 				);
 			if (fieldWriter == null)
 				throw new InvalidOperationException("Specified field has no binding to the entity model.");
-			fieldWriter.Write(entity, this);
+			var valueExpression = fieldWriter.WriteValueExpression(entity);
+			if (valueExpression != null)
+				Set(schemaField, valueExpression);
 		}
 
 		public void Set<TValue>(EntityField<T> schemaField, TValue value)
@@ -189,12 +192,14 @@ namespace Silk.Data.SQL.ORM.Queries
 		{
 			var graphReader = new ObjectGraphReaderWriter<T>(entity);
 			var transcriber = EntityModel.GetModelTranscriber<T>();
-			foreach (var fieldWriter in transcriber.FieldWriters)
+			foreach (var fieldWriter in transcriber.EntityModelHelpers)
 			{
 				if (fieldWriter.To.IsPrimaryKey && fieldWriter.To.IsSeverGenerated)
 					continue;
 
-				fieldWriter.Write(graphReader, this);
+				var valueExpression = fieldWriter.WriteValueExpression(graphReader);
+				if (valueExpression != null)
+					Set(QueryExpression.Column(fieldWriter.To.Column.Name), valueExpression);
 			}
 		}
 
@@ -202,12 +207,14 @@ namespace Silk.Data.SQL.ORM.Queries
 		{
 			var graphReader = new ObjectGraphReaderWriter<TView>(entityView);
 			var transcriber = EntityModel.GetModelTranscriber<TView>();
-			foreach (var fieldWriter in transcriber.FieldWriters)
+			foreach (var fieldWriter in transcriber.EntityModelHelpers)
 			{
 				if (fieldWriter.To.IsPrimaryKey && fieldWriter.To.IsSeverGenerated)
 					continue;
 
-				fieldWriter.Write(graphReader, this);
+				var valueExpression = fieldWriter.WriteValueExpression(graphReader);
+				if (valueExpression != null)
+					Set(QueryExpression.Column(fieldWriter.To.Column.Name), valueExpression);
 			}
 		}
 	}

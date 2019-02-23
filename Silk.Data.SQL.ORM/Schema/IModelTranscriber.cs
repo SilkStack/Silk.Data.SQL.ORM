@@ -17,6 +17,11 @@ namespace Silk.Data.SQL.ORM.Schema
 		IIntersection<TypeModel, PropertyInfoField, EntityModel, EntityField>
 			TypeModelToEntityModelIntersection { get; }
 
-		IReadOnlyList<IntersectedFieldWriter<TView>> FieldWriters { get; }
+		IIntersection<EntityModel, EntityField, TypeModel, PropertyInfoField>
+			EntityModelToTypeModelIntersection { get; }
+
+		IReadOnlyList<EntityModelHelper<TView>> EntityModelHelpers { get; }
+
+		IReadOnlyList<TypeModelHelper<TView>> TypeModelHelpers { get; }
 	}
 }
