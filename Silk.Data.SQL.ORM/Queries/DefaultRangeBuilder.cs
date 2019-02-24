@@ -19,7 +19,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			=> new ExpressionResult(_offsetExpression, _requiredJoins.ToArray());
 
 		public void Limit(int limit)
-			=> ORMQueryExpressions.Value(limit);
+			=> _limitExpression = ORMQueryExpressions.Value(limit);
 
 		public void Limit(QueryExpression queryExpression)
 			=> _limitExpression = queryExpression;
