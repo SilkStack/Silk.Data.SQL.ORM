@@ -1,20 +1,10 @@
 ﻿using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Expressions;
 using Silk.Data.SQL.ORM.Schema;
-using System;
+using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Queries
 {
-	public class InsertBuilder : IQueryBuilder, IInsertQueryBuilder
-	{
-		public virtual IFieldAssignmentBuilder Assignments { get; set; } = new DefaultFieldAssignmentBuilder();
-
-		public QueryExpression BuildQuery()
-		{
-			throw new System.NotImplementedException();
-		}
-	}
-
 	public class InsertBuilder<T> : IEntityQueryBuilder<T>, IEntityInsertQueryBuilder<T>
 		where T : class
 	{
@@ -40,7 +30,15 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public QueryExpression BuildQuery()
 		{
-			throw new NotImplementedException();
+			var row = Assignments.Build();
+			var columnNames = row?.Select(q => q.Column.ColumnName).ToArray() ?? new string[0];
+			var values = row?.Select(q => q.Expression).ToArray() ?? new QueryExpression[0];
+
+			return QueryExpression.Insert(
+				_entityModel.Table.TableName,
+				columnNames,
+				values
+				);
 		}
 
 		public static InsertBuilder<T> Create(Schema.Schema schema, T entity)
