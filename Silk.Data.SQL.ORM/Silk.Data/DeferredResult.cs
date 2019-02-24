@@ -2,7 +2,7 @@
 {
 	public abstract class DeferredResult
 	{
-		public bool TaskHasRun { get; }
+		public bool TaskHasRun { get; internal set; }
 	}
 
 	public class DeferredResult<T> : DeferredResult

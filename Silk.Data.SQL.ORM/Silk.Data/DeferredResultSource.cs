@@ -10,6 +10,7 @@
 
 		public void SetResult(T result)
 		{
+			DeferredResult.TaskHasRun = true;
 			DeferredResult.Result = result;
 		}
 	}
