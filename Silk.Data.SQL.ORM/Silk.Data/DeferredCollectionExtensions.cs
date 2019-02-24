@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Silk.Data.SQL.ORM.Silk.Data
+namespace Silk.Data
 {
 	public static class DeferredCollectionExtensions
 	{

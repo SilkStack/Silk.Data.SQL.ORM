@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Silk.Data.SQL.ORM.Silk.Data
+namespace Silk.Data
 {
 	public class DeferredExecutor
 	{
