@@ -44,8 +44,11 @@ namespace Silk.Data.SQL.ORM
 			helper.WriteValueToInstance(obj, data);
 		}
 
-		public IDeferred Insert(params T[] entities)
+		private DeferredQuery Insert<TView>(IModelTranscriber<TView> transcriber, TView[] entities)
+			where TView : class
 		{
+			var result = new DeferredQuery(_dataProvider);
+
 			var mapBackInsertId = _serverGeneratedPrimaryKey != null;
 			var generatePrimaryKey = _clientGeneratedPrimaryKey != null;
 			foreach (var entity in entities)
@@ -56,49 +59,45 @@ namespace Silk.Data.SQL.ORM
 				{
 					var newId = Guid.NewGuid();
 					insertBuilder.Assignments.Set(_clientGeneratedPrimaryKey, newId);
-					AttemptWriteToObject(entity, newId, _clientGeneratedPrimaryKey, _entityTranscriber);
+					AttemptWriteToObject(entity, newId, _clientGeneratedPrimaryKey, transcriber);
 				}
 
-				var insertQuery = insertBuilder.BuildQuery();
+				result.Add(insertBuilder.BuildQuery());
 
 				if (mapBackInsertId)
 				{
 
 				}
 			}
-			throw new NotImplementedException();
+
+			return result;
+		}
+
+		public IDeferred Insert(params T[] entities)
+		{
+			if (entities.Length < 1)
+				throw new ArgumentException("Must provide at least 1 entity.", nameof(entities));
+
+			return Insert(_entityTranscriber, entities);
 		}
 
 		public IDeferred Insert<TView>(params TView[] entityViews)
 			where TView : class
 		{
-			var transcriber = _entityModel.GetModelTranscriber<TView>();
-			var mapBackInsertId = _serverGeneratedPrimaryKey != null;
-			var generatePrimaryKey = _clientGeneratedPrimaryKey != null;
-			foreach (var entity in entityViews)
-			{
-				var insertBuilder = InsertBuilder<T>.Create<TView>(_schema, _entityModel, entity);
+			if (entityViews.Length < 1)
+				throw new ArgumentException("Must provide at least 1 entity.", nameof(entityViews));
 
-				if (generatePrimaryKey)
-				{
-					var newId = Guid.NewGuid();
-					insertBuilder.Assignments.Set(_clientGeneratedPrimaryKey, newId);
-					AttemptWriteToObject(entity, newId, _clientGeneratedPrimaryKey, transcriber);
-				}
-
-				var insertQuery = insertBuilder.BuildQuery();
-
-				if (mapBackInsertId)
-				{
-
-				}
-			}
-			throw new NotImplementedException();
+			return Insert(_entityModel.GetModelTranscriber<TView>(), entityViews);
 		}
 
 		public IDeferred Insert(Action<InsertBuilder<T>> queryConfigurer)
 		{
-			throw new NotImplementedException();
+			var insertBuilder = new InsertBuilder<T>(_schema, _entityModel);
+			queryConfigurer?.Invoke(insertBuilder);
+
+			var result = new DeferredQuery(_dataProvider);
+			result.Add(insertBuilder.BuildQuery());
+			return result;
 		}
 	}
 }
