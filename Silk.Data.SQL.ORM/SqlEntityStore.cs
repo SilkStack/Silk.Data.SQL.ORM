@@ -44,50 +44,47 @@ namespace Silk.Data.SQL.ORM
 			helper.WriteValueToInstance(obj, data);
 		}
 
-		private DeferredQuery Insert<TView>(IModelTranscriber<TView> transcriber, TView[] entities)
+		private DeferredQuery Insert<TView>(IModelTranscriber<TView> transcriber, TView entity)
 			where TView : class
 		{
 			var result = new DeferredQuery(_dataProvider);
 
 			var mapBackInsertId = _serverGeneratedPrimaryKey != null;
 			var generatePrimaryKey = _clientGeneratedPrimaryKey != null;
-			foreach (var entity in entities)
+			var insertBuilder = InsertBuilder<T>.Create(_schema, _entityModel, entity);
+
+			if (generatePrimaryKey)
 			{
-				var insertBuilder = InsertBuilder<T>.Create(_schema, _entityModel, entity);
+				var newId = Guid.NewGuid();
+				insertBuilder.Assignments.Set(_clientGeneratedPrimaryKey, newId);
+				AttemptWriteToObject(entity, newId, _clientGeneratedPrimaryKey, transcriber);
+			}
 
-				if (generatePrimaryKey)
-				{
-					var newId = Guid.NewGuid();
-					insertBuilder.Assignments.Set(_clientGeneratedPrimaryKey, newId);
-					AttemptWriteToObject(entity, newId, _clientGeneratedPrimaryKey, transcriber);
-				}
+			result.Add(insertBuilder.BuildQuery());
 
-				result.Add(insertBuilder.BuildQuery());
+			if (mapBackInsertId)
+			{
 
-				if (mapBackInsertId)
-				{
-
-				}
 			}
 
 			return result;
 		}
 
-		public IDeferred Insert(params T[] entities)
+		public IDeferred Insert(T entity)
 		{
-			if (entities.Length < 1)
-				throw new ArgumentException("Must provide at least 1 entity.", nameof(entities));
+			if (entity == null)
+				throw new ArgumentNullException(nameof(entity));
 
-			return Insert(_entityTranscriber, entities);
+			return Insert(_entityTranscriber, entity);
 		}
 
-		public IDeferred Insert<TView>(params TView[] entityViews)
+		public IDeferred Insert<TView>(TView entityView)
 			where TView : class
 		{
-			if (entityViews.Length < 1)
-				throw new ArgumentException("Must provide at least 1 entity.", nameof(entityViews));
+			if (entityView == null)
+				throw new ArgumentNullException(nameof(entityView));
 
-			return Insert(_entityModel.GetModelTranscriber<TView>(), entityViews);
+			return Insert(_entityModel.GetModelTranscriber<TView>(), entityView);
 		}
 
 		public IDeferred Insert(Action<InsertBuilder<T>> queryConfigurer)
@@ -100,27 +97,21 @@ namespace Silk.Data.SQL.ORM
 			return result;
 		}
 
-		public IDeferred Delete(params T[] entities)
+		public IDeferred Delete(T entity)
 		{
 			var result = new DeferredQuery(_dataProvider);
-			foreach (var entity in entities)
-			{
-				result.Add(
-					DeleteBuilder<T>.Create(_schema, _entityModel, entity).BuildQuery()
-					);
-			}
+			result.Add(
+				DeleteBuilder<T>.Create(_schema, _entityModel, entity).BuildQuery()
+				);
 			return result;
 		}
 
-		public IDeferred Delete(params IEntityReference<T>[] entities)
+		public IDeferred Delete(IEntityReference<T> entityReference)
 		{
 			var result = new DeferredQuery(_dataProvider);
-			foreach (var entity in entities)
-			{
-				result.Add(
-					DeleteBuilder<T>.Create(_schema, _entityModel, entity).BuildQuery()
-					);
-			}
+			result.Add(
+				DeleteBuilder<T>.Create(_schema, _entityModel, entityReference).BuildQuery()
+				);
 			return result;
 		}
 
