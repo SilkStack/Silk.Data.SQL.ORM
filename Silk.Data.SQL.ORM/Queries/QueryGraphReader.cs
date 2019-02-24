@@ -61,6 +61,9 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public T Read<T>(IFieldPath<EntityModel, EntityField> fieldPath)
 		{
+			if (typeof(T).IsEnum)
+				return (T)(object)Read<int>(fieldPath);
+
 			var ord = _queryResult.GetOrdinal(fieldPath.FinalField.ProjectionAlias);
 
 			if (_queryResult.IsDBNull(ord))

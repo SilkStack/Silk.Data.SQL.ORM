@@ -67,9 +67,16 @@ namespace Silk.Data.SQL.ORM.Tests
 			public string String { get; set; }
 			public DateTime DateTime { get; set; }
 			public Guid Guid { get; set; }
+			public PocoEnum Enum { get; set; }
 
 			public IEntityReference<FlatPoco> GetEntityReference()
 				=> new Reference(this);
+
+			public enum PocoEnum
+			{
+				ValueOne,
+				ValueTwo
+			}
 
 			private class Reference : IEntityReference<FlatPoco>
 			{
