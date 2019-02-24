@@ -33,7 +33,9 @@ namespace Silk.Data.SQL.ORM
 		IDeferred Delete(IEntityReference<T> entityReference);
 		IDeferred Delete(Action<DeleteBuilder<T>> queryConfigurer);
 
-		//IDeferred Update(T entity);
-		//IDeferred Update<TView>(IEntityReference<T> entityReference, TView view);
+		IDeferred Update(T entity);
+		IDeferred Update<TView>(IEntityReference<T> entityReference, TView view)
+			where TView : class;
+		IDeferred Update(Action<UpdateBuilder<T>> queryConfigurer);
 	}
 }

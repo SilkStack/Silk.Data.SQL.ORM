@@ -124,5 +124,34 @@ namespace Silk.Data.SQL.ORM
 			result.Add(deleteBuilder.BuildQuery());
 			return result;
 		}
+
+		public IDeferred Update(T entity)
+		{
+			var result = new DeferredQuery(_dataProvider);
+			result.Add(
+				UpdateBuilder<T>.Create(_schema, _entityModel, entity).BuildQuery()
+				);
+			return result;
+		}
+
+		public IDeferred Update<TView>(IEntityReference<T> entityReference, TView view)
+			where TView : class
+		{
+			var result = new DeferredQuery(_dataProvider);
+			result.Add(
+				UpdateBuilder<T>.Create(_schema, _entityModel, entityReference, view).BuildQuery()
+				);
+			return result;
+		}
+
+		public IDeferred Update(Action<UpdateBuilder<T>> queryConfigurer)
+		{
+			var updateBuilder = new UpdateBuilder<T>(_schema, _entityModel);
+			queryConfigurer?.Invoke(updateBuilder);
+
+			var result = new DeferredQuery(_dataProvider);
+			result.Add(updateBuilder.BuildQuery());
+			return result;
+		}
 	}
 }
