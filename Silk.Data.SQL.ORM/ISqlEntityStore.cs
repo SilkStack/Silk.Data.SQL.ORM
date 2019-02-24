@@ -28,5 +28,9 @@ namespace Silk.Data.SQL.ORM
 		/// <param name="queryConfigurer"></param>
 		/// <returns></returns>
 		IDeferred Insert(Action<InsertBuilder<T>> queryConfigurer);
+
+		IDeferred Delete(params T[] entities);
+		IDeferred Delete(params IEntityReference<T>[] entities);
+		IDeferred Delete(Action<DeleteBuilder<T>> queryConfigurer);
 	}
 }

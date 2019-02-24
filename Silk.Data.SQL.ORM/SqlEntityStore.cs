@@ -99,5 +99,39 @@ namespace Silk.Data.SQL.ORM
 			result.Add(insertBuilder.BuildQuery());
 			return result;
 		}
+
+		public IDeferred Delete(params T[] entities)
+		{
+			var result = new DeferredQuery(_dataProvider);
+			foreach (var entity in entities)
+			{
+				result.Add(
+					DeleteBuilder<T>.Create(_schema, _entityModel, entity).BuildQuery()
+					);
+			}
+			return result;
+		}
+
+		public IDeferred Delete(params IEntityReference<T>[] entities)
+		{
+			var result = new DeferredQuery(_dataProvider);
+			foreach (var entity in entities)
+			{
+				result.Add(
+					DeleteBuilder<T>.Create(_schema, _entityModel, entity).BuildQuery()
+					);
+			}
+			return result;
+		}
+
+		public IDeferred Delete(Action<DeleteBuilder<T>> queryConfigurer)
+		{
+			var deleteBuilder = new DeleteBuilder<T>(_schema, _entityModel);
+			queryConfigurer?.Invoke(deleteBuilder);
+
+			var result = new DeferredQuery(_dataProvider);
+			result.Add(deleteBuilder.BuildQuery());
+			return result;
+		}
 	}
 }
