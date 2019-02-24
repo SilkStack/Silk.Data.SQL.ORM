@@ -9,7 +9,11 @@ namespace Silk.Data.SQL.ORM.Schema
 {
 	public abstract class EntityField : IField
 	{
+		private static int _projectionAliasCounter;
+
 		public string FieldName { get; }
+
+		public string ProjectionAlias { get; }
 
 		public bool CanRead { get; }
 
@@ -54,6 +58,8 @@ namespace Silk.Data.SQL.ORM.Schema
 
 			Source = source;
 			IsEntityLocalField = Source is TableReference;
+
+			ProjectionAlias = $"__alias_{fieldName}_{_projectionAliasCounter++}";
 		}
 
 		public abstract void Dispatch(IFieldGenericExecutor executor);

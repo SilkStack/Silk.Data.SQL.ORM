@@ -36,32 +36,50 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public void Execute()
 		{
-			using (var queryResult = QueryProvider.ExecuteReader(ComposeQuery()))
+			try
 			{
-				foreach (var query in _queries)
+				using (var queryResult = QueryProvider.ExecuteReader(ComposeQuery()))
 				{
-					if (query.ProducesResultSet)
+					foreach (var query in _queries)
 					{
-						query.ResultSetProcessor?.ProcessResult(queryResult);
-						queryResult.NextResult();
+						if (query.ProducesResultSet)
+						{
+							query.ResultSetProcessor?.ProcessResult(queryResult);
+							queryResult.NextResult();
+						}
 					}
 				}
+			}
+			catch
+			{
+				foreach (var query in _queries)
+					query.ResultSetProcessor?.HandleFailure();
+				throw;
 			}
 		}
 
 		public async Task ExecuteAsync()
 		{
-			using (var queryResult = await QueryProvider.ExecuteReaderAsync(ComposeQuery()))
+			try
 			{
-				foreach (var query in _queries)
+				using (var queryResult = await QueryProvider.ExecuteReaderAsync(ComposeQuery()))
 				{
-					if (query.ProducesResultSet)
+					foreach (var query in _queries)
 					{
-						if (query.ResultSetProcessor != null)
-							await query.ResultSetProcessor.ProcessResultAsync(queryResult);
-						await queryResult.NextResultAsync();
+						if (query.ProducesResultSet)
+						{
+							if (query.ResultSetProcessor != null)
+								await query.ResultSetProcessor.ProcessResultAsync(queryResult);
+							await queryResult.NextResultAsync();
+						}
 					}
 				}
+			}
+			catch
+			{
+				foreach (var query in _queries)
+					query.ResultSetProcessor?.HandleFailure();
+				throw;
 			}
 		}
 

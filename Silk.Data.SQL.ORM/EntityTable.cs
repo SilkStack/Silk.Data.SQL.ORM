@@ -68,6 +68,13 @@ namespace Silk.Data.SQL.ORM
 				_deferredResultSource = deferredResultSource;
 			}
 
+			public void HandleFailure()
+			{
+				if (_deferredResultSource.DeferredResult.TaskHasRun)
+					return;
+				_deferredResultSource.SetFailed();
+			}
+
 			public void ProcessResult(QueryResult queryResult)
 			{
 				if (!queryResult.HasRows || !queryResult.Read())

@@ -1,6 +1,7 @@
 ﻿using Silk.Data.Modelling;
 using Silk.Data.Modelling.Analysis;
 using Silk.Data.Modelling.GenericDispatch;
+using Silk.Data.Modelling.Mapping;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -100,6 +101,8 @@ namespace Silk.Data.SQL.ORM.Schema
 
 			public IReadOnlyList<TypeModelHelper<TView>> SchemaToTypeHelpers { get; }
 
+			public IMapping<EntityModel, EntityField, TypeModel, PropertyInfoField> Mapping { get; }
+
 			public ModelTranscriber(
 				IIntersection<TypeModel, PropertyInfoField, EntityModel, EntityField> typeModelToEntityModelIntersection,
 				IReadOnlyList<EntityModelHelper<TView>> entityModelHelpers,
@@ -111,6 +114,9 @@ namespace Silk.Data.SQL.ORM.Schema
 				ObjectToSchemaHelpers = entityModelHelpers;
 				EntityModelToTypeModelIntersection = entityModelToTypeModelIntersection;
 				SchemaToTypeHelpers = typeModelHelpers;
+
+				var mappingFactory = new DefaultMappingFactory<EntityModel, EntityField, TypeModel, PropertyInfoField>();
+				Mapping = mappingFactory.CreateMapping(entityModelToTypeModelIntersection);
 			}
 		}
 	}

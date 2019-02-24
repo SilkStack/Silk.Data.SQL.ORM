@@ -7,16 +7,16 @@ namespace Silk.Data.SQL.ORM.Queries
 {
 	public interface IProjectionBuilder
 	{
-		//ValueResultMapper<TValue> AddField<TValue>(QueryExpression queryExpression);
-		//ObjectResultMapper<TView> AddClass<TView>()
-		//	where TView : class;
+		IResultReader<TValue> AddField<TValue>(QueryExpression queryExpression);
+		IResultReader<TView> AddView<TView>()
+			where TView : class;
 
 		Projection Build();
 	}
 
 	public interface IEntityProjectionBuilder<T> : IProjectionBuilder
 	{
-		//ValueResultMapper<TProperty> AddField<TProperty>(Expression<Func<T, TProperty>> projection);
+		IResultReader<TProperty> AddField<TProperty>(Expression<Func<T, TProperty>> projection);
 	}
 
 	public class Projection

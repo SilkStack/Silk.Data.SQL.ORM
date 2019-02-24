@@ -1,5 +1,6 @@
 ﻿using Silk.Data.Modelling;
 using Silk.Data.Modelling.Analysis;
+using Silk.Data.Modelling.Mapping;
 using System.Collections.Generic;
 
 namespace Silk.Data.SQL.ORM.Schema
@@ -31,5 +32,10 @@ namespace Silk.Data.SQL.ORM.Schema
 		/// Useful for reading entity/view data from result rows onto an instance.
 		/// </summary>
 		IReadOnlyList<TypeModelHelper<TView>> SchemaToTypeHelpers { get; }
+
+		/// <summary>
+		/// Gets a mapping that can convert a QueryResult row into an instance of TView.
+		/// </summary>
+		IMapping<EntityModel, EntityField, TypeModel, PropertyInfoField> Mapping { get; }
 	}
 }

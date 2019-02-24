@@ -3,12 +3,13 @@
 namespace Silk.Data.SQL.ORM.Queries
 {
 	public interface ISelectQueryBuilder : IWhereQueryBuilder, IHavingQueryBuilder, IGroupByQueryBuilder,
-		IOrderByQueryBuilder, IRangeQueryBuilder
+		IOrderByQueryBuilder, IRangeQueryBuilder, IProjectionQueryBuilder
 	{
 	}
 
 	public interface IEntitySelectQueryBuilder<T> : ISelectQueryBuilder, IWhereQueryBuilder<T>, IHavingQueryBuilder<T>,
-		IGroupByQueryBuilder<T>, IOrderByQueryBuilder<T>, IRangeQueryBuilder<T>, IEntityQueryBuilder<T>
+		IGroupByQueryBuilder<T>, IOrderByQueryBuilder<T>, IRangeQueryBuilder<T>, IEntityQueryBuilder<T>,
+		IProjectionQueryBuilder<T>
 		where T : class
 	{
 	}

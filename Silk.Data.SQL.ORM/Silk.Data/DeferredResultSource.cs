@@ -13,5 +13,11 @@
 			DeferredResult.TaskHasRun = true;
 			DeferredResult.Result = result;
 		}
+
+		public void SetFailed()
+		{
+			DeferredResult.TaskHasRun = true;
+			DeferredResult.TaskFailed = true;
+		}
 	}
 }

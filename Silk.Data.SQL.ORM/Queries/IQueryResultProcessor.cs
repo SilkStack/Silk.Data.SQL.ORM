@@ -7,5 +7,6 @@ namespace Silk.Data.SQL.ORM.Queries
 	{
 		void ProcessResult(QueryResult queryResult);
 		Task ProcessResultAsync(QueryResult queryResult);
+		void HandleFailure();
 	}
 }
