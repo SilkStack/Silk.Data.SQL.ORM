@@ -20,8 +20,16 @@ namespace Silk.Data.SQL.ORM.Schema
 		IIntersection<EntityModel, EntityField, TypeModel, PropertyInfoField>
 			EntityModelToTypeModelIntersection { get; }
 
-		IReadOnlyList<EntityModelHelper<TView>> EntityModelHelpers { get; }
+		/// <summary>
+		/// Models how an object type maps onto the storage model.
+		/// Useful for reading storage fields from entity and view types.
+		/// </summary>
+		IReadOnlyList<EntityModelHelper<TView>> ObjectToSchemaHelpers { get; }
 
-		IReadOnlyList<TypeModelHelper<TView>> TypeModelHelpers { get; }
+		/// <summary>
+		/// Models how the storage model maps onto an object type.
+		/// Useful for reading entity/view data from result rows onto an instance.
+		/// </summary>
+		IReadOnlyList<TypeModelHelper<TView>> SchemaToTypeHelpers { get; }
 	}
 }

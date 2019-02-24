@@ -6,5 +6,6 @@
 	/// <typeparam name="T"></typeparam>
 	public interface IEntityReference<T>
 	{
+		T AsEntity();
 	}
 }

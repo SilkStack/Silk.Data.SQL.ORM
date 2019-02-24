@@ -96,9 +96,9 @@ namespace Silk.Data.SQL.ORM.Schema
 
 			public IIntersection<EntityModel, EntityField, TypeModel, PropertyInfoField> EntityModelToTypeModelIntersection { get; }
 
-			public IReadOnlyList<EntityModelHelper<TView>> EntityModelHelpers { get; }
+			public IReadOnlyList<EntityModelHelper<TView>> ObjectToSchemaHelpers { get; }
 
-			public IReadOnlyList<TypeModelHelper<TView>> TypeModelHelpers { get; }
+			public IReadOnlyList<TypeModelHelper<TView>> SchemaToTypeHelpers { get; }
 
 			public ModelTranscriber(
 				IIntersection<TypeModel, PropertyInfoField, EntityModel, EntityField> typeModelToEntityModelIntersection,
@@ -108,9 +108,9 @@ namespace Silk.Data.SQL.ORM.Schema
 				)
 			{
 				TypeModelToEntityModelIntersection = typeModelToEntityModelIntersection;
-				EntityModelHelpers = entityModelHelpers;
+				ObjectToSchemaHelpers = entityModelHelpers;
 				EntityModelToTypeModelIntersection = entityModelToTypeModelIntersection;
-				TypeModelHelpers = typeModelHelpers;
+				SchemaToTypeHelpers = typeModelHelpers;
 			}
 		}
 	}

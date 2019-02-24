@@ -37,7 +37,7 @@ namespace Silk.Data.SQL.ORM
 			IModelTranscriber<TView> transcriber)
 			where TView : class
 		{
-			var helper = transcriber.TypeModelHelpers.FirstOrDefault(q => q.From == entityField);
+			var helper = transcriber.SchemaToTypeHelpers.FirstOrDefault(q => q.From == entityField);
 			if (helper == null)
 				return;
 

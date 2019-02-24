@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Queries
 {
-	public class InsertBuilder<T> : IEntityQueryBuilder<T>, IEntityInsertQueryBuilder<T>
+	public class InsertBuilder<T> : IEntityInsertQueryBuilder<T>
 		where T : class
 	{
 		private readonly Schema.Schema _schema;
@@ -26,6 +26,10 @@ namespace Silk.Data.SQL.ORM.Queries
 			_expressionConverter = new EntityExpressionConverter<T>(_schema);
 
 			Assignments = new DefaultEntityFieldAssignmentBuilder<T>(schema, _expressionConverter);
+		}
+
+		public InsertBuilder(Schema.Schema schema) : this(schema, schema.GetEntityModel<T>())
+		{
 		}
 
 		public QueryExpression BuildQuery()

@@ -98,11 +98,11 @@ namespace Silk.Data.SQL.ORM.Queries
 		public void Set(EntityField<T> schemaField, T entity)
 		{
 			var transcriber = EntityModel.GetModelTranscriber<T>();
-			var fieldWriter = transcriber.EntityModelHelpers.FirstOrDefault(
+			var fieldWriter = transcriber.ObjectToSchemaHelpers.FirstOrDefault(
 				q => q.To == schemaField
 				);
 			if (fieldWriter == null)
-				throw new InvalidOperationException("Specified field has no binding to the entity model.");
+				ExceptionHelper.ThrowEntityFieldNotFound();
 			var valueExpression = fieldWriter.WriteValueExpression(entity);
 			if (valueExpression != null)
 				Set(schemaField, valueExpression);
@@ -192,7 +192,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		{
 			var graphReader = new ObjectGraphReaderWriter<T>(entity);
 			var transcriber = EntityModel.GetModelTranscriber<T>();
-			foreach (var fieldWriter in transcriber.EntityModelHelpers)
+			foreach (var fieldWriter in transcriber.ObjectToSchemaHelpers)
 			{
 				if (fieldWriter.To.IsPrimaryKey && fieldWriter.To.IsSeverGenerated)
 					continue;
@@ -207,7 +207,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		{
 			var graphReader = new ObjectGraphReaderWriter<TView>(entityView);
 			var transcriber = EntityModel.GetModelTranscriber<TView>();
-			foreach (var fieldWriter in transcriber.EntityModelHelpers)
+			foreach (var fieldWriter in transcriber.ObjectToSchemaHelpers)
 			{
 				if (fieldWriter.To.IsPrimaryKey && fieldWriter.To.IsSeverGenerated)
 					continue;
