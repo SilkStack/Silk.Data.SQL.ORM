@@ -29,7 +29,9 @@ namespace Silk.Data.SQL.ORM.Tests
 				{
 					table.CreateTable(),
 					store.Insert(entity),
-					store.Select(entity.GetEntityReference(), out var entityResult)
+					store.Select(entity.GetEntityReference(), out var entityResult),
+					store.Update(entity.GetEntityReference(), new { String = "New String" }),
+					store.Select<StringView>(entity.GetEntityReference(), out var stringViewResult)
 				}.Execute();
 
 				Assert.IsTrue(entityResult.TaskHasRun);
@@ -38,7 +40,16 @@ namespace Silk.Data.SQL.ORM.Tests
 
 				Assert.AreNotSame(entity, returnedEntity);
 				Assert.AreEqual(entity.Id, returnedEntity.Id);
+
+				Assert.IsTrue(stringViewResult.TaskHasRun);
+				Assert.IsFalse(stringViewResult.TaskFailed);
+				Assert.AreEqual("New String", stringViewResult.Result.String);
 			}
+		}
+
+		private class StringView
+		{
+			public string String { get; private set; }
 		}
 
 		private class FlatPoco
