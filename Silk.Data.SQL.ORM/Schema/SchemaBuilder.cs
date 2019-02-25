@@ -218,7 +218,6 @@ namespace Silk.Data.SQL.ORM.Schema
 				else if (entityDefinitions.Length == 0)
 					EntityField = BuildEmbeddedField<TData>(field);
 				else
-					//  todo: handle cases where there's multiple definitions for TData
 					EntityField = BuildReferencedField<TData>(field, entityDefinitions.First());
 			}
 		}

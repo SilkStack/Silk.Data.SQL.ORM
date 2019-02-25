@@ -97,12 +97,8 @@ namespace Silk.Data.SQL.ORM.Schema
 				);
 			foreach (var segment in path)
 			{
-				//  todo: remove this null-check fix when the need for it is corrected upstream in Silk.Data.Modelling.
-				IEnumerable<PropertyInfoField> fields = _entityTypeModel.Fields;
-				if (fieldPath.FinalField != null)
-					fields = _entityTypeModel.GetPathFields(fieldPath);
-
-				var field = fields.FirstOrDefault(q => q.FieldName == segment);
+				var field = _entityTypeModel.GetPathFields(fieldPath)
+					.FirstOrDefault(q => q.FieldName == segment);
 				if (field == null)
 					return null;
 
