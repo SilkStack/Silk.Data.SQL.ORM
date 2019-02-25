@@ -41,7 +41,8 @@ namespace Silk.Data.SQL.ORM.Schema
 			string fieldName, bool canRead, bool canWrite,
 			Type fieldDataType, Column column,
 			IEnumerable<EntityField> subFields = null,
-			IQueryReference source = null
+			IQueryReference source = null,
+			bool isPrimaryKey = false
 			)
 		{
 			FieldName = fieldName;
@@ -49,7 +50,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			CanWrite = canWrite;
 			FieldDataType = fieldDataType;
 
-			IsPrimaryKey = FieldName == "Id"; //  todo: temporary until it's provided from the entity configuration
+			IsPrimaryKey = isPrimaryKey;
 			Column = column;
 			SubFields = subFields?.ToArray() ?? new EntityField[0];
 
@@ -69,8 +70,9 @@ namespace Silk.Data.SQL.ORM.Schema
 		where TEntity : class
 	{
 		protected EntityField(string fieldName, bool canRead, bool canWrite, Type fieldDataType,
-			Column column, IEnumerable<EntityField> subFields = null, IQueryReference source = null) :
-			base(fieldName, canRead, canWrite, fieldDataType, column, subFields, source)
+			Column column, IEnumerable<EntityField> subFields = null, IQueryReference source = null,
+			bool isPrimaryKey = false) :
+			base(fieldName, canRead, canWrite, fieldDataType, column, subFields, source, isPrimaryKey)
 		{
 		}
 	}
@@ -79,8 +81,8 @@ namespace Silk.Data.SQL.ORM.Schema
 		where TEntity : class
 	{
 		public ValueEntityField(string fieldName, bool canRead, bool canWrite,
-			Column column, IQueryReference source) :
-			base(fieldName, canRead, canWrite, typeof(T), column, null, source)
+			Column column, IQueryReference source, bool isPrimaryKey) :
+			base(fieldName, canRead, canWrite, typeof(T), column, null, source, isPrimaryKey)
 		{
 		}
 
@@ -100,7 +102,7 @@ namespace Silk.Data.SQL.ORM.Schema
 				new Column(
 					$"{columnNamePrefix}{modelField.FieldName}", SqlTypeHelper.GetDataType(typeof(T)),
 					SqlTypeHelper.TypeIsNullable(typeof(T))),
-				source);
+				source, modelField.FieldName == "Id" && relativeParentFields.Count() == 0);
 		}
 	}
 
@@ -108,8 +110,8 @@ namespace Silk.Data.SQL.ORM.Schema
 		where TEntity : class
 	{
 		public EmbeddedEntityField(string fieldName, bool canRead, bool canWrite,
-			Column column, IEnumerable<EntityField> subFields, IQueryReference source) :
-			base(fieldName, canRead, canWrite, typeof(T), column, subFields, source)
+			IEnumerable<EntityField> subFields, IQueryReference source) :
+			base(fieldName, canRead, canWrite, typeof(T), null, subFields, source)
 		{
 		}
 
@@ -125,11 +127,7 @@ namespace Silk.Data.SQL.ORM.Schema
 
 			return new EmbeddedEntityField<T, TEntity>(
 				modelField.FieldName, modelField.CanRead, modelField.CanWrite,
-				//  null check column
-				new Column(
-					$"{columnNamePrefix}{modelField.FieldName}",
-					SqlDataType.Bit(), false
-					), subFields, source
+				subFields, source
 				);
 		}
 	}
@@ -200,7 +198,7 @@ namespace Silk.Data.SQL.ORM.Schema
 					new Column(
 						$"{columnNamePrefix}{_modelField.FieldName}_{field.FieldName}", SqlTypeHelper.GetDataType(typeof(T)),
 						SqlTypeHelper.TypeIsNullable(typeof(T))),
-						_source);
+						_source, false);
 			}
 		}
 	}

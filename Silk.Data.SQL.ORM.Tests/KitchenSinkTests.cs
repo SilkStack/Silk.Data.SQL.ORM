@@ -80,6 +80,81 @@ namespace Silk.Data.SQL.ORM.Tests
 			}
 		}
 
+		[TestMethod]
+		public void Single_Embedded_POCO()
+		{
+			using (var dataProvider = new SQLite3DataProvider("Data Source=:memory:;Mode=Memory"))
+			{
+				var schema = new SchemaBuilder()
+					.Define<ParentPoco>()
+					.Build();
+
+				var table = new EntityTable<ParentPoco>(schema, dataProvider);
+				var store = new SqlEntityStore<ParentPoco>(schema, dataProvider);
+
+				var entity = new ParentPoco
+				{
+					Flat = new FlatPoco
+					{
+						String = "Some String"
+					}
+				};
+
+				new[]
+				{
+					table.CreateTable(),
+					store.Insert(entity),
+					store.Select(entity.GetEntityReference(), out var retreivedEntityResult),
+					store.Select<EmbeddedStringView>(entity.GetEntityReference(), out var stringViewResult)
+				}.Execute();
+			}
+		}
+
+		[TestMethod]
+		public void Single_Related_POCO()
+		{
+			using (var dataProvider = new SQLite3DataProvider("Data Source=:memory:;Mode=Memory"))
+			{
+				var schema = new SchemaBuilder()
+					.Define<FlatPoco>()
+					.Define<ParentPoco>()
+					.Build();
+			}
+		}
+
+		private class ParentPoco
+		{
+			public Guid Id { get; private set; }
+			public FlatPoco Flat { get; set; }
+
+			public IEntityReference<ParentPoco> GetEntityReference()
+				=> new Reference(this);
+
+			public enum PocoEnum
+			{
+				ValueOne,
+				ValueTwo
+			}
+
+			private class Reference : IEntityReference<ParentPoco>
+			{
+				private readonly ParentPoco _referenceEntity;
+
+				public Reference(ParentPoco referenceEntity)
+				{
+					_referenceEntity = referenceEntity;
+				}
+
+				public ParentPoco AsEntity()
+					=> _referenceEntity;
+			}
+		}
+
+		private class EmbeddedStringView
+		{
+			public string FlatString { get; set; }
+		}
+
 		private class StringView
 		{
 			public string String { get; private set; }

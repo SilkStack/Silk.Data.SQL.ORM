@@ -27,11 +27,35 @@ namespace Silk.Data.SQL.ORM.Schema
 			string tableName, IEnumerable<Index> indexes, TypeModel typeModel)
 		{
 			Fields = entityFields.ToArray();
-			Table = new Table(tableName, Fields.Where(q => q.Column != null).Select(q => q.Column));
+			Table = new Table(tableName, GetAllLocalColumns().Where(q => q != null));
 			Indexes = indexes?.ToArray() ?? new Index[0];
 		}
 
-		public abstract void Dispatch(IModelGenericExecutor executor);
+		private IEnumerable<Column> GetAllLocalColumns()
+		{
+			foreach (var field in Fields)
+			{
+				if (field.IsEntityLocalField)
+				{
+					yield return field.Column;
+					foreach (var column in GetSubColumns(field))
+						yield return column;
+				}
+			}
+
+			IEnumerable<Column> GetSubColumns(EntityField field)
+			{
+				foreach (var subField in field.SubFields)
+				{
+					if (!subField.IsEntityLocalField)
+						continue;
+
+					yield return subField.Column;
+					foreach (var column in GetSubColumns(subField))
+						yield return column;
+				}
+			}
+		}
 
 		public abstract IModelTranscriber<TView> GetModelTranscriber<TView>(
 			TypeModel<TView> typeModel = null
@@ -40,6 +64,8 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public IEnumerable<EntityField> GetPathFields(IFieldPath<EntityField> fieldPath)
 			=> fieldPath.FinalField.SubFields;
+
+		public abstract void Dispatch(IModelGenericExecutor executor);
 	}
 
 	/// <summary>
@@ -66,9 +92,6 @@ namespace Silk.Data.SQL.ORM.Schema
 		{
 			Fields = entityFields.ToArray();
 		}
-
-		public override void Dispatch(IModelGenericExecutor executor)
-			=> executor.Execute<EntityModel, EntityField, T>(this);
 
 		private IIntersection<TypeModel, PropertyInfoField, EntityModel, EntityField> GetTypeToModelIntersection<T1>(
 			TypeModel<T1> typeModel = null
@@ -115,5 +138,8 @@ namespace Silk.Data.SQL.ORM.Schema
 				return transcriber as IModelTranscriber<TView>;
 			}
 		}
+
+		public override void Dispatch(IModelGenericExecutor executor)
+			=> executor.Execute<EntityModel, EntityField>(this);
 	}
 }

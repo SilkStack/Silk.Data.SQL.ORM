@@ -1,8 +1,5 @@
 ﻿using Silk.Data.Modelling;
 using Silk.Data.Modelling.Analysis;
-using Silk.Data.Modelling.Analysis.CandidateSources;
-using Silk.Data.Modelling.Analysis.Rules;
-using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Schema
 {

@@ -27,14 +27,46 @@ namespace Silk.Data.SQL.ORM.Queries
 		{
 			return QueryExpression.CreateTable(
 				_entityModel.Table.TableName,
-				_entityModel.Fields
-					.Where(field => field.Column != null)
-					.Select(q =>
-						QueryExpression.DefineColumn(
-							q.Column.Name, q.Column.DataType, q.Column.IsNullable,
-							q.IsPrimaryKey && q.IsSeverGenerated, q.IsPrimaryKey
-							)
-				));
+				GetAllLocalColumns().ToArray()
+				);
+		}
+
+		private IEnumerable<ColumnDefinitionExpression> GetAllLocalColumns()
+		{
+			foreach (var field in _entityModel.Fields)
+			{
+				if (field.IsEntityLocalField)
+				{
+					if (field.Column != null)
+					{
+						yield return QueryExpression.DefineColumn(
+							field.Column.Name, field.Column.DataType, field.Column.IsNullable,
+							field.IsPrimaryKey && field.IsSeverGenerated, field.IsPrimaryKey
+							);
+					}
+					foreach (var column in GetSubColumns(field))
+						yield return column;
+				}
+			}
+
+			IEnumerable<ColumnDefinitionExpression> GetSubColumns(EntityField field)
+			{
+				foreach (var subField in field.SubFields)
+				{
+					if (!subField.IsEntityLocalField)
+						continue;
+
+					if (subField.Column != null)
+					{
+						yield return QueryExpression.DefineColumn(
+							subField.Column.Name, subField.Column.DataType, subField.Column.IsNullable,
+							subField.IsPrimaryKey && subField.IsSeverGenerated, subField.IsPrimaryKey
+							);
+					}
+					foreach (var column in GetSubColumns(subField))
+						yield return column;
+				}
+			}
 		}
 
 		private IEnumerable<QueryExpression> GetCreateIndexExpressions()
