@@ -73,83 +73,36 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public IResultReader<TProperty> AddField<TProperty>(Expression<Func<T, TProperty>> projection)
 		{
-			throw new NotImplementedException();
-			//if (!SqlTypeHelper.IsSqlPrimitiveType(typeof(TProperty)))
-			//	throw new Exception("Cannot project complex types, call AddClass<TView>() instead.");
+			if (SqlTypeHelper.GetDataType(typeof(TProperty)) == null)
+				throw new InvalidOperationException("Complex projection types aren't currently supported.");
 
-			//var projectionField = ResolveProjectionField(projection);
-			//if (projectionField != null)
-			//{
-			//	AddProjection(projectionField);
-			//	return new ValueResultMapper<TProperty>(1, SchemaFieldReference<TProperty>.Create(projectionField.AliasName));
-			//}
+			var expressionResult = ExpressionConverter.Convert(projection);
+			var alias = $"__AutoAlias_{_projectionExpressions.Count}";
+			_projectionExpressions.Add(
+				alias,
+				new AliasExpression(
+					expressionResult.QueryExpression,
+					alias)
+				);
+			_requiredJoins.AddJoins(expressionResult.RequiredJoins);
 
-			//var expressionResult = ExpressionConverter.Convert(projection);
-
-			//var mapper = AddField<TProperty>(expressionResult.QueryExpression);
-			//_requiredJoins.AddJoins(expressionResult.RequiredJoins);
-			//return mapper;
+			return new ValueReader<TProperty>(alias);
 		}
 
 		public IResultReader<TValue> AddField<TValue>(QueryExpression queryExpression)
 		{
-			throw new NotImplementedException();
-			//if (!SqlTypeHelper.IsSqlPrimitiveType(typeof(TValue)))
-			//	throw new Exception("Cannot project complex types.");
+			if (SqlTypeHelper.GetDataType(typeof(TValue)) == null)
+				throw new InvalidOperationException("Complex projection types aren't currently supported.");
 
-			//var aliasExpression = queryExpression as AliasExpression;
-			//if (aliasExpression == null)
-			//{
-			//	aliasExpression = QueryExpression.Alias(queryExpression, $"__AutoAlias_{_projectionExpressions.Count}");
-			//}
-			//_projectionExpressions.Add(aliasExpression.Identifier.Identifier, aliasExpression);
+			var alias = $"__AutoAlias_{_projectionExpressions.Count}";
+			_projectionExpressions.Add(
+				alias,
+				new AliasExpression(
+					queryExpression,
+					alias)
+				);
 
-			//return new ValueResultMapper<TValue>(1, SchemaFieldReference<TValue>.Create(
-			//	aliasExpression.Identifier.Identifier
-			//	));
+			return new ValueReader<TValue>(alias);
 		}
-
-		//private SchemaField<T> ResolveProjectionField<TProperty>(Expression<Func<T, TProperty>> property)
-		//{
-		//	if (property.Body is MemberExpression memberExpression)
-		//	{
-		//		var path = new List<string>();
-		//		PopulatePath(property.Body, path);
-
-		//		return GetProjectionField(path);
-		//	}
-		//	return null;
-		//}
-
-		//private SchemaField<T> GetProjectionField(IEnumerable<string> path)
-		//{
-		//	return EntitySchema.SchemaFields.FirstOrDefault(
-		//		q => q.ModelPath.SequenceEqual(path)
-		//		);
-		//}
-
-		//private void PopulatePath(Expression expression, List<string> path)
-		//{
-		//	if (expression is MemberExpression memberExpression)
-		//	{
-		//		var parentExpr = memberExpression.Expression;
-		//		PopulatePath(parentExpr, path);
-
-		//		path.Add(memberExpression.Member.Name);
-		//	}
-		//}
-
-		//private void AddProjection<TProjection>(SchemaField<TProjection> schemaField)
-		//	where TProjection : class
-		//{
-		//	if (_projectionExpressions.ContainsKey(schemaField.AliasName))
-		//		return;
-
-		//	var aliasExpression = QueryExpression.Alias(
-		//		QueryExpression.Column(schemaField.Column.ColumnName, new AliasIdentifierExpression(schemaField.Column.SourceName)),
-		//		schemaField.AliasName);
-		//	_projectionExpressions.Add(schemaField.AliasName, aliasExpression);
-		//	_requiredJoins.AddJoin(schemaField.Join);
-		//}
 	}
 }

@@ -237,17 +237,58 @@ namespace Silk.Data.SQL.ORM
 
 		public IDeferred Select(Action<IEntitySelectQueryBuilder<T>> query, out DeferredResult<List<T>> entitiesResult)
 		{
-			throw new NotImplementedException();
+			var builder = new SelectBuilder<T>(_schema, _entityModel);
+			query?.Invoke(builder);
+
+			var resultSource = new DeferredResultSource<List<T>>();
+			entitiesResult = resultSource.DeferredResult;
+
+			var result = new DeferredQuery(_dataProvider);
+			var resultReader = builder.Projection.AddView<T>();
+			result.Add(builder.BuildQuery(), new ManyMappedResultProcessor<T>(
+				resultReader,
+				resultSource
+				));
+
+			return result;
 		}
 
-		public IDeferred Select<TView>(Action<IEntitySelectQueryBuilder<T>> query, out DeferredResult<List<TView>> viewsResult) where TView : class
+		public IDeferred Select<TView>(Action<IEntitySelectQueryBuilder<T>> query, out DeferredResult<List<TView>> viewsResult)
+			where TView : class
 		{
-			throw new NotImplementedException();
+			var builder = new SelectBuilder<T>(_schema, _entityModel);
+			query?.Invoke(builder);
+
+			var resultSource = new DeferredResultSource<List<TView>>();
+			viewsResult = resultSource.DeferredResult;
+
+			var result = new DeferredQuery(_dataProvider);
+			var resultReader = builder.Projection.AddView<TView>();
+			result.Add(builder.BuildQuery(), new ManyMappedResultProcessor<TView>(
+				resultReader,
+				resultSource
+				));
+
+			return result;
 		}
 
-		public IDeferred Select<TExpr>(System.Linq.Expressions.Expression<Func<T, TExpr>> expression, Action<IEntitySelectQueryBuilder<T>> query, out DeferredResult<List<TExpr>> exprsResult)
+		public IDeferred Select<TExpr>(System.Linq.Expressions.Expression<Func<T, TExpr>> expression,
+			Action<IEntitySelectQueryBuilder<T>> query, out DeferredResult<List<TExpr>> exprsResult)
 		{
-			throw new NotImplementedException();
+			var builder = new SelectBuilder<T>(_schema, _entityModel);
+			query?.Invoke(builder);
+
+			var resultSource = new DeferredResultSource<List<TExpr>>();
+			exprsResult = resultSource.DeferredResult;
+
+			var result = new DeferredQuery(_dataProvider);
+			var resultReader = builder.Projection.AddField(expression);
+			result.Add(builder.BuildQuery(), new ManyMappedResultProcessor<TExpr>(
+				resultReader,
+				resultSource
+				));
+
+			return result;
 		}
 
 		private class SingleMappedResultProcessor<TResult> : IQueryResultProcessor

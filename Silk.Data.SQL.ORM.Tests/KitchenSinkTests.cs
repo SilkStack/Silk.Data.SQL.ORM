@@ -27,11 +27,24 @@ namespace Silk.Data.SQL.ORM.Tests
 
 				new[]
 				{
+					//  create table
 					table.CreateTable(),
+					//  insert a single entity
 					store.Insert(entity),
+					//  retrieve the entity previously inserted
 					store.Select(entity.GetEntityReference(), out var entityResult),
+					//  update the entities `String` value
 					store.Update(entity.GetEntityReference(), new { String = "New String" }),
-					store.Select<StringView>(entity.GetEntityReference(), out var stringViewResult)
+					//  select the entity again in the shape of `StringView`
+					store.Select<StringView>(entity.GetEntityReference(), out var stringViewResult),
+					//  select every ID from the table
+					store.Select(q => q.Id, query => { }, out var allIdsResult),
+					//  count the entities
+					store.Select(q => DatabaseFunctions.Count(q), query => { }, out var countResult),
+					//  load all entities
+					store.Select(query => { }, out var allEntitiesResult),
+					//  load all entities in the shape of `StringView`
+					store.Select<StringView>(query => { }, out var allStringViewsResult)
 				}.Execute();
 
 				Assert.IsTrue(entityResult.TaskHasRun);
@@ -44,6 +57,26 @@ namespace Silk.Data.SQL.ORM.Tests
 				Assert.IsTrue(stringViewResult.TaskHasRun);
 				Assert.IsFalse(stringViewResult.TaskFailed);
 				Assert.AreEqual("New String", stringViewResult.Result.String);
+
+				Assert.IsTrue(allIdsResult.TaskHasRun);
+				Assert.IsFalse(allIdsResult.TaskFailed);
+				Assert.AreEqual(1, allIdsResult.Result.Count);
+				Assert.AreEqual(entity.Id, allIdsResult.Result[0]);
+
+				Assert.IsTrue(countResult.TaskHasRun);
+				Assert.IsFalse(countResult.TaskFailed);
+				Assert.AreEqual(1, countResult.Result.Count);
+				Assert.AreEqual(1, countResult.Result[0]);
+
+				Assert.IsTrue(allEntitiesResult.TaskHasRun);
+				Assert.IsFalse(allEntitiesResult.TaskFailed);
+				Assert.AreEqual(1, allEntitiesResult.Result.Count);
+				Assert.AreEqual(entity.Id, allEntitiesResult.Result[0].Id);
+
+				Assert.IsTrue(allStringViewsResult.TaskHasRun);
+				Assert.IsFalse(allStringViewsResult.TaskFailed);
+				Assert.AreEqual(1, allStringViewsResult.Result.Count);
+				Assert.AreEqual("New String", allStringViewsResult.Result[0].String);
 			}
 		}
 
