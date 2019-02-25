@@ -1,6 +1,8 @@
 ﻿using Silk.Data.Modelling;
 using Silk.Data.Modelling.Analysis;
 using Silk.Data.Modelling.Mapping;
+using Silk.Data.SQL.ORM.Queries;
+using Silk.Data.SQL.Queries;
 
 namespace Silk.Data.SQL.ORM.Schema
 {
@@ -24,7 +26,15 @@ namespace Silk.Data.SQL.ORM.Schema
 			WriteValueToInstance(writer, value);
 		}
 
+		public void CopyResultToObject(QueryResult result, T to)
+		{
+			var writer = new ObjectGraphReaderWriter<T>(to);
+			var reader = new QueryGraphReader(result);
+			CopyResultToObject(reader, writer);
+		}
+
 		public abstract void WriteValueToInstance<TValue>(ObjectGraphReaderWriter<T> graphWriter, TValue value);
+		public abstract void CopyResultToObject(QueryGraphReader reader, ObjectGraphReaderWriter<T> writer);
 	}
 
 	public class TypeModelHelper<TEntity, TFromValue, TToValue> : TypeModelHelper<TEntity>
@@ -49,6 +59,15 @@ namespace Silk.Data.SQL.ORM.Schema
 		public override void WriteValueToInstance<TValue>(ObjectGraphReaderWriter<TEntity> graphWriter, TValue value)
 		{
 			graphWriter.Write<TValue>(_toPath, value);
+		}
+
+		public override void CopyResultToObject(QueryGraphReader reader, ObjectGraphReaderWriter<TEntity> writer)
+		{
+			if (!reader.CheckPath(_fromPath))
+				return;
+			var value = reader.Read<TFromValue>(_fromPath);
+			if (_converter(value, out var newValue))
+				writer.Write(_toPath, newValue);
 		}
 	}
 }

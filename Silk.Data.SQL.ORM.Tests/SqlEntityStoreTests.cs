@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Silk.Data.SQL.ORM.Schema;
+using Silk.Data.SQL.SQLite3;
 using System;
 
 namespace Silk.Data.SQL.ORM.Tests
@@ -23,12 +24,33 @@ namespace Silk.Data.SQL.ORM.Tests
 		[TestMethod]
 		public void Insert_Maps_Generated_Primary_Key()
 		{
-			throw new NotImplementedException();
+			var entity = new WithIntPK();
+
+			using (var dataProvider = new SQLite3DataProvider("Data Source=:memory:;Mode=Memory"))
+			{
+				var schema = new SchemaBuilder()
+					.Define<WithIntPK>()
+					.Build();
+
+				var table = new EntityTable<WithIntPK>(schema, dataProvider);
+				var sqlEntityStore = new SqlEntityStore<WithIntPK>(schema, dataProvider);
+
+				table.CreateTable().Execute();
+				sqlEntityStore.Insert(entity).Execute();
+			}
+
+			Assert.AreNotEqual(0, entity.Id);
 		}
 
 		private class WithGuidPK
 		{
 			public Guid Id { get; private set; }
+		}
+
+		private class WithIntPK
+		{
+			public int Id { get; private set; }
+			public int SomeData { get; set; }
 		}
 	}
 }

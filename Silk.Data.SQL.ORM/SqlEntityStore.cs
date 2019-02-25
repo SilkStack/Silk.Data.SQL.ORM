@@ -80,7 +80,18 @@ namespace Silk.Data.SQL.ORM
 
 			if (mapBackInsertId)
 			{
-
+				var idFieldHelper = transcriber.SchemaToTypeHelpers.FirstOrDefault(q => q.From == _serverGeneratedPrimaryKey);
+				if (idFieldHelper != null)
+				{
+					result.Add(
+						QueryExpression.Select(
+							QueryExpression.Alias(QueryExpression.LastInsertIdFunction(), _serverGeneratedPrimaryKey.ProjectionAlias),
+							from: QueryExpression.Table(_entityModel.Table.TableName)
+						),
+						new MapLastIdResultProcessor<TView>(
+							entity, idFieldHelper
+							));
+				}
 			}
 
 			return result;
@@ -289,6 +300,42 @@ namespace Silk.Data.SQL.ORM
 				));
 
 			return result;
+		}
+
+		private class MapLastIdResultProcessor<TView> : IQueryResultProcessor
+			where TView : class
+		{
+			private readonly TView _view;
+			private readonly TypeModelHelper<TView> _fieldHelper;
+
+			public MapLastIdResultProcessor(TView view, TypeModelHelper<TView> fieldHelper)
+			{
+				_view = view;
+				_fieldHelper = fieldHelper;
+			}
+
+			public void HandleFailure()
+			{
+			}
+
+			public void ProcessResult(QueryResult queryResult)
+			{
+				if (!queryResult.HasRows || !queryResult.Read())
+					return;
+				MapValue(queryResult);
+			}
+
+			public async Task ProcessResultAsync(QueryResult queryResult)
+			{
+				if (!queryResult.HasRows || !await queryResult.ReadAsync())
+					return;
+				MapValue(queryResult);
+			}
+
+			private void MapValue(QueryResult queryResult)
+			{
+				_fieldHelper.CopyResultToObject(queryResult, _view);
+			}
 		}
 
 		private class SingleMappedResultProcessor<TResult> : IQueryResultProcessor
