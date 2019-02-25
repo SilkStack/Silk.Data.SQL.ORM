@@ -13,7 +13,7 @@ namespace Silk.Data.SQL.ORM.Tests.Queries
 		public void Build_Query_Returns_Composite_Create_Query()
 		{
 			var entityModel = new EntityModel<object>(new[] {
-				new ValueEntityField<int, object>("Field", true, true, new Column("Field", SqlDataType.Int(), false), null, false)
+				new ValueEntityField<int, object>("Field", true, true, new Column("Field", SqlDataType.Int(), false), new TableReference(""), false)
 			});
 			var createTableBuilder = new CreateTableQueryBuilder<object>(entityModel);
 			var query = createTableBuilder.BuildQuery();
@@ -25,7 +25,7 @@ namespace Silk.Data.SQL.ORM.Tests.Queries
 		public void Build_Query_Creates_Valid_Create_Query()
 		{
 			var entityModel = new EntityModel<object>(new[] {
-				new ValueEntityField<int, object>("Field", true, true, new Column("Field", SqlDataType.Int(), false), null, false)
+				new ValueEntityField<int, object>("Field", true, true, new Column("Field", SqlDataType.Int(), false), new TableReference(""), false)
 			});
 			var createTableBuilder = new CreateTableQueryBuilder<object>(entityModel);
 			var query = createTableBuilder.BuildQuery() as CompositeQueryExpression;
@@ -45,7 +45,7 @@ namespace Silk.Data.SQL.ORM.Tests.Queries
 		public void Build_Query_Creates_Client_Generated_Primary_Key()
 		{
 			var entityModel = new EntityModel<object>(new[] {
-				new ValueEntityField<Guid, object>("Id", true, true, new Column("Id", SqlDataType.Guid(), false), null, true)
+				new ValueEntityField<Guid, object>("Id", true, true, new Column("Id", SqlDataType.Guid(), false), new TableReference(""), true)
 			});
 			var createTableBuilder = new CreateTableQueryBuilder<object>(entityModel);
 			var query = createTableBuilder.BuildQuery() as CompositeQueryExpression;
@@ -62,7 +62,7 @@ namespace Silk.Data.SQL.ORM.Tests.Queries
 		public void Build_Query_Creates_Server_Generated_Primary_Key()
 		{
 			var entityModel = new EntityModel<object>(new[] {
-				new ValueEntityField<int, object>("Id", true, true, new Column("Id", SqlDataType.Int(), false), null, true)
+				new ValueEntityField<int, object>("Id", true, true, new Column("Id", SqlDataType.Int(), false), new TableReference(""), true)
 			});
 			var createTableBuilder = new CreateTableQueryBuilder<object>(entityModel);
 			var query = createTableBuilder.BuildQuery() as CompositeQueryExpression;
@@ -78,7 +78,7 @@ namespace Silk.Data.SQL.ORM.Tests.Queries
 		[TestMethod]
 		public void Build_Query_Creates_Index()
 		{
-			var field = new ValueEntityField<int, object>("Field", true, true, new Column("Field", SqlDataType.Int(), false), null, false);
+			var field = new ValueEntityField<int, object>("Field", true, true, new Column("Field", SqlDataType.Int(), false), new TableReference(""), false);
 			var index = new Index("TestIndex", false, new[] { field });
 			var entityModel = new EntityModel<object>(new[] { field }, indexes: new[] { index });
 			var createTableBuilder = new CreateTableQueryBuilder<object>(entityModel);
