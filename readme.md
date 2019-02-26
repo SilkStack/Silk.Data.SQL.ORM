@@ -1,212 +1,190 @@
 # Silk.Data.SQL.ORM
 
-## Goals
+`Silk.Data.SQL.ORM` is a .NET library for working with database entities and querying datasets.
 
-* Strongly typed SQL queries
-* Extensibility
-* Obvious query generation - no guessing at what queries are being executed, or when (no lazy-loading)
-* Minimize round-trips to the database server
-* Run against any database provider
-* Capability for individual, property expression queries (`SET field = expression/value` instead of a full entity update)
-* Middle-ground between EF/nHibernate and micro-ORMs Dapper/massive
+It is intended to fill a gap between bigger, more complicated ORMs like EntityFramework/NHibernate and smaller libraries like Dapper - providing a rich query API surface that supports generating obvious SQL queries without the pains of change tracking APIs or lazy-loading from expired data contexts.
 
-## Getting it
+## Installing
 
-Currently this library is only published to my myget feed. You can get the package here: https://www.myget.org/feed/silkstack/package/nuget/Silk.Data.SQL.ORM
+`Silk.Data.SQL.ORM` is available as a NuGet package: https://www.nuget.org/packages/Silk.Data.SQL.ORM
 
-Data providers are available as stand-alone packages on the same feed or you can just drop in the provider bundle package which gives you providers for MySQL/MariaDB, Postgresql, SQL Server and SQLite3: https://www.myget.org/feed/silkstack/package/nuget/Silk.Data.SQL.ProvidersBundle
+You can install it from the NuGet package manager in Visual Studio or from command line with dotnet core:
 
-## Summary
+~~~~
+dotnet add package Silk.Data.SQL.ORM
+~~~~
 
-`Silk.Data.SQL.ORM` is a library intended for working with data in any SQL database. The API design is different from most other ORMs, most notably that developers create queries and execute them separately - one liners are more complicated than you might be used to _but_ offer more flexaility and capability.
+To run SQL queries against a database you'll also need a DataProvider library: for simplicity you can install [Silk.Data.SQL.ProvidersBundle](https://github.com/SilkStack/Silk.Data.SQL.ProvidersBundle)  which includes providers for [SQLite3](https://github.com/SilkStack/Silk.Data.SQL.SQLite3), [SqlServer](https://github.com/SilkStack/Silk.Data.SQL.SqlServer), [Postgresql](https://github.com/SilkStack/Silk.Data.SQL.Postgresql) and [MySQL/MariaDB](https://github.com/SilkStack/Silk.Data.SQL.MySQL).
 
-### What it does
+## Features
 
-* Avoids hand-written SQL statements
-* Inserts, updates, deletes and queries entities
-* SELECTs just the fields you request
-* Performs automatic type flattening and JOINing for known entity types
-* Transforms LINQ expressions into query expressions (ie. supports `Where(q => q.IsAwesome)`)
+- Type-safe query generation
+- Entity and View type mappings
+- Full async support
+- Minimized round-trips to database servers
+- Extensible query functions API
+- Embed non-entity types into your schema
+- Reference registered entity types with `JOIN` and support querying against referenced entities
 
-### What it doesn't do
+## Platform Requirements
 
-* No lazy-loading - projection of needs is preferred
-* No state change/modification monitoring
-* No production of proxy/entity types
-* Doesn't implement `IQueryable`
-* Doesn't hide that you're working with an SQL database
+`Silk.Data.SQL.ORM` is built for netstandard2.0.
+
+## License
+
+`Silk.Data.SQL.ORM` is licensed under the MIT license.
 
 ## Usage
 
-### Basic Use
+- Create a schema of entity types
+- Create a database provider
+- Create tables
+- Basic entity queries
+- Advanced querying
+- Custom database functions
 
-First, we need to define a `Schema`. This holds all the information about our entity types.
+### Create a schema of entity types
 
-	var schemaBuilder = new SchemaBuilder();
-	schemaBuilder.DefineEntityType<UserAccount>();
-	var schema = schemaBuilder.Build();
+To query a database first you have to tell `Silk.Data.SQL.ORM` the shape of your database. This is done by building a `Schema` instance (your application can have multiple schemas if needed) using the `SchemaBuilder` API to define your entity types:
 
-Next we're going to need a data provider. A data provider is our connection to the database we want to talk to and will be responsible for executing all of our queries.
+~~~
+var schema = new SchemaBuilder()
+  .Define<UserAccount>(entityType => {
+    entityType.Index("idx_loginNameEmailAddr", entity => entity.LoginName, entity => entity.EmailAddress)
+  })
+  .Build();
+~~~
 
-    var sqlProvider = new SQLite3Provider("friends.db");
-    
-Now we have defined our entity types and a connection to the database we can execute SQL queries.
+### Create a database provider
 
-	var joey = default(UserAccount);
-	var monica = default(UserAccount);
-	await sqlProvider.ExecuteAsync(
-	  schema
-    	  .CreateSelect<UserAccount>(query => query.AndWhere(user => user.FullName == "Monica Geller"))
-    	  .WithFirstResult(r => monica = r);
-	  schema
-    	  .CreateSelect<UserAccount>(query => query.AndWhere(user => user.FullName == "Joey Tribiani"))
-    	  .WithFirstResult(r => joey = r);
-	);
-	
-These queries are built using the extension APIs hanging off `Schema`. We can write our own extension methods that express intent and hide complexity.
+Creating a database provider isn't actually part of `Silk.Data.SQL.ORM` but is specific to which database you'd like to use. [Silk.Data.SQL.ProvidersBundle](https://github.com/SilkStack/Silk.Data.SQL.ProvidersBundle) provides 4 major providers:
 
-### Batching
+~~~
+var dataProvider =
+  //  SQLite3
+  new SQLite3DataProvider(new Uri(UriKind.Relative, "database.db"));
+  //  SqlServer
+  new MSSqlDataProvider(hostname, database, username, password);
+  //  Postgresql
+  new PostgresqlDataProvider(hostname, database, username, password);
+  //  MySQL/MariaDB
+  new MySQLDataProvider(hostname, database, username, password);
+~~~
 
-`Execute` and `ExecuteAsync` on `IDataProvider` are responsible for executing most of your SQL queries. They accept any number of `Query` objects to run a collection of queries in a single round-trip to the database.
+### Create tables
 
-The `CreateX` APIs hanging off `Schema` produce `Query` instances that contain all the required information for executing a query and processing the results.
+Now that you have a `Schema` and a `IDataProvider` we can start by creating tables. This is done using the `IEntityTable<T>` interface, the standard implementation of which is `EntityTable<T>`:
 
-**It's recommended that developers produce their own `Query` APIs and implementations using the QueryBuilder APIs available.**
+~~~
+var table = new EntityTable<T>(schema, dataProvider);
+await table.Create().ExecuteAsync();
+~~~
 
-### Query Builders
+### Basic entity queries
 
-For the major query types (SELECT, UPDATE, DELETE, INSERT) there are corresponding query builder types. These offer a strongly-typed API for crafting SQL queries, sub-queries and mapping results.
+Now we have a `Schema`, an `IDataProvider` and we've created tables in the database provider: we're ready to start working with some entities!
 
-Let's say we want to log a user into a system. We could use the `CreateSelect` API to first query the user's password hash, validate the user's entered password and then query again for the user fields we want. Or, we could reduce all that to a single query and request the password hash and the fields we want in a single query:
+The `ISqlEntityStore<T>` interface is what we'll work with for most entity operations. It allows us to work with single entities, query for entity sets and build custom queries as needed.
 
-    var queryBuilder = new SelectBuilder<UserAccount>(schema);
-    queryBuilder.AndWhere(account => account.EmailAddress == userId || account.Username == userId);
-    var passwordHashReader = queryBuilder.Project(account => account.PasswordHash);
-    var viewMapper = queryBuilder.Project<TView>();
-    
-    using (var queryResult = await dataProvider.ExecuteReaderAsync(queryBuilder.BuildQuery()))
-    {
-      while (await queryResult.ReadAsync())
-      {
-        var passwordHash = passwordHashReader.Read(queryResult);
-        var viewOfUserAccount = viewMapper.Map(queryResult);
-      }
-    }
+For now let's insert and query a simple entity set:
 
-### Expression Support
+~~~
+var store = new SqlEntityStore<T>(schema, dataProvider);
 
-A lot of the methods on the query builder APIs accept expressions as parameters. This allows developers to work with their entity types in queries and supports some extra features like sub-queries and translating method calls:
+await new[]
+{
+  store.Insert(new UserAccount { LoginName = "DevJohnC", EmailAddress = "devjohnc@github.com", CreatedAtUtc = DateTime.UtcNow }),
+  store.Select(query => query.OrderByDescending(account => account.CreatedAtUtc).Limit(1), out var queryResult)
+}.ExecuteAsync();
 
-    var subQueryBuilder = new SelectBuilder<UserAccount>(schema);
-    subQueryBuilder.Project(account => account.Id);
-    subQueryBuilder.AndWhere(account => account.IsActive);
-    
-    var selectBuilder = new SelectBuilder<UserAccount>(schema);
-    selectBuilder.Project<TView>();
-    selectBuilder.AndWhere(account => DatabaseFunctions.IsIn(account.Id, subQueryBuilder));
-    selectBuilder.OrderBy(account => account.DisplayName);
-    
-In this (admittedly convoluted) example we create a sub-query that selects the Id of all active users and passes that to an C# function that is translated to an IN SQL expression.
+Console.WriteLine($"The most recently created user is: {queryResult.Result.LoginName}");
+~~~
 
-### Projection
+This will perform an `INSERT` query for your entity, map any generated primary key (currently any integer/guid type `Id` property) onto your entity instance and perform a `SELECT` for the most recently created user in a single round-trip to the database server.
 
-Projection is a powerful tool that allows you to retrieve just the data you want from your data domain.
+### Advanced querying
 
-Using projection you can request a series of fields you're interested in, a flattened representation of a graph, or projected related entities.
+But wait, there's more! `Silk.Data.SQL.ORM` also boasts some more powerful features:
 
-Consider:
+**Transactions**
 
-	public class UserAccount
-	{
-		public Guid Id { get; private set; }
-		public string Username { get; set; }
-		public string EmailAddress { get; set; }
-		public UserProfile Profile { get; set; }
-	}
+Execute your queries in a transaction using the `ExecuteAsTransaction`/`ExecuteAsTransactionAsync` extension methods or by creating an instance of `Transaction` directly and using it to execute queries:
 
-	public class UserProfile
-	{
-		public string Bio { get; set; }
-		public Gender Gender { get; set; }
-		public DateTime DateOfBirth { get; set; }
-	}
+~~~
+var transaction = new Transaction();
+await transaction.ExecuteAsync(...);
+transaction.Commit();
+~~~
 
-What if we just need to get a users date of birth - we really don't want to query *everything* just to know a user's date of birth!
+**View Expressions**
 
-Create a projection view and query:
+The `SELECT` APIs on `ISqlEntityStore<T>` support providing an expression to be projected:
 
-	public class UserDobView
-	{
-		public DateTime ProfileDateOfBirth { get; set; }
-	}
+~~~
+store.Select(entity => entity.Id, query => { }, out var allIDs);
+~~~
 
-	var dateOfBirth = default(DateTime);
-	await provider.ExecuteAsync(
-	  schema.CreateSelect<UserAccount, UserDobView>()
-    	  .WithFirstResult(r => dateOfBirth = r.ProfileDateOfBirth)
-    );
+This API currently supports specifying just a single property or database function call. In the future it will support a full anonymous type expression.
 
-Here the property `ProfileDateOfBirth` is flattened from `UserAccount`.**`Profile`** and `UserProfile`.**`DateOfBirth`**.
+**View Type Projections**
 
-Using projection will also permit you to INSERT, UPDATE or DELETE incomplete entities so long as the primary key field(s) are present on the projected type.
+As well as working with full entity types you can `SELECT`, `INSERT` and `DELETE` with view types too. View types use mappings generated by [Silk.Data.Modelling](https://github.com/SilkStack/Silk.Data.Modelling):
 
-### Expression queries
+~~~
+public class UserAccount
+{
+  //  a server-generated, auto-increment primary key
+  public int Id { get; private set; }
+  public string DisplayName { get; set; }
+}
 
-`Silk.Data.SQL.ORM` provides API methods for executing queries against entity instances. For example:
+public class BlogPost
+{
+  public int Id { get; private set; }
+  public UserAccount Author { get; set; }
+}
 
-    public class MyEntity
-    {
-        public int Id { get; private set; }
-        public int Count { get; set; }
-    }
-    
-Let's say we want to update the `Count` property of the `MyEntity` instance with an `Id` value of `1`.
+public class BlogPostAuthorView
+{
+  //  mapped and queried from BlogPost.Author.DisplayName
+  public string AuthorDisplayName { get; set; }
+}
 
-    await provider.ExecuteAsync(
-      schema.CreateUpdate<MyEntity>(query => {
-        query.Set(entity => entity.Count, entity => entity.Count + 1);
-        query.AndWhere(entity => entity.Id == 1);
-      });
-    );
+blogPostStore
+  .Select<BlogPostAuthorView>(query => { }, out var blogPostAuthorsResult)
+  .Execute();
+~~~
 
-### SQL functions
+**Type Coercion**
 
-`Silk.Data.SQL.ORM` contains support for converting a C# method call expression into SQL in your queries - you can add your own converters to the `SchemaBuilder` when constructing you `Schema`.
+When providing projections `Silk.Data.SQL.ORM` can attempt to transform your data from the datatype it's stored as to the datatype declared on your view.
 
-By default the `DatabaseFunctions` static class methods are supported:
+Type coercions supported:
 
-  * IsIn
-  * Like
-  * Count
-  * Random
-  * Alias
+- Conversion between numeric types
+- Conversion to `string` using `ToString()`
+- Conversion from `string` using any resolved `TryParse` method
+- Conversion using a declared explicit operator
 
-Example:
+**Database Functions**
 
-    var idArray = new[] { 1, 2, 4, 5 };
-    schema.CreateSelect<MyEntity>(
-      query => query.AndWhere(
-        entity => DatabaseFunctions.IsIn(entity.Id, idArray)
-      )
-    );
+Any API in `Silk.Data.SQL.ORM` that accepts an `Expression<>` type can include method calls that will be converted in SQL query expressions. By default the methods declared on `DatabaseFunctions` and `Enum.HasFlag` are supported.
 
-### SchemaBuilder customization
+~~~
+store.Select(
+  entity => DatabaseFunctions.Count(entity),
+  query => query.AndWhere(entity => entity.Status.HasFlag(Status.IsPublished)),
+  out var countResults);
+~~~
 
-Developers can customize storage of entity properties/fields. The `DefineEntity<T>` API accepts a callback method to customize how a type is modelled in the database:
+_Attempting to invoke CLR methods within your `Expression` will always be translated to SQL expressions, no runtime method invocations are supported in expressions currently._
 
-    schemaBuilder.DefineEntity<UserAccount>(entityBuilder => {
-      entityBuilder.For(type => type.Id).ColumnName = "AccountId";
-    });
-    
-### Relationships and embedded objects
+### Custom database functions
 
-When your entity type declares a property that is a complex type, that is, a nullable type that isn't `string` (ie. a class), `Silk.Data.SQL.ORM` will do one of two things:
+You can provide your own database functions to help with writing complex or repetative SQL expressions for you.
 
-* If the declared property type is defined as an entity type in the schema a relationship is created and accessing members of the property type will be expressed with a JOIN clause in your queries.
-* If the declared property type is not defined as an entity type in the schema all properties of the property type will be embedded into the same table as the parent entity type.
+- Write a static method signature on a helper class
+- Implement `IMethodCallConverter`
+- When building a schema call `Schema.AddMethodConverter` with a `MethodInfo` instance for your method and the `IMethodCallConverter` implementation
 
-`Silk.Data.SQL.ORM` also supports many-to-many relationships but these are declared on the `Schema` rather than modelled on your entity types.
-
-    schemaBuilder.DefineRelationship<UserAccount, Role>("UserRoles");
- 
- There are similar extension methods and query builders for theses relationships; the result types of queries are tuples of TLeft and TRight.
+Examples of `IMethodCallConverter` can be found here: https://github.com/SilkStack/Silk.Data.SQL.ORM/tree/master/Silk.Data.SQL.ORM/Expressions.
