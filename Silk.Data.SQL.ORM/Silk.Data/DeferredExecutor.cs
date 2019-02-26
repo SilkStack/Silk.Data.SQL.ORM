@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace Silk.Data
 {
-	public class DeferredExecutor
+	public class DeferredExecutor : IEnumerable<IDeferred>
 	{
 		private readonly List<IDeferred> _tasks = new List<IDeferred>();
 
@@ -31,5 +32,11 @@ namespace Silk.Data
 			foreach (var task in _tasks)
 				await task.ExecuteAsync();
 		}
+
+		public IEnumerator<IDeferred> GetEnumerator()
+			=> _tasks.GetEnumerator();
+
+		IEnumerator IEnumerable.GetEnumerator()
+			=> GetEnumerator();
 	}
 }

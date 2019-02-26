@@ -8,12 +8,13 @@ namespace Silk.Data.SQL.ORM.Queries
 	public class DeferredQuery : IDeferredBatch
 	{
 		private readonly List<QueryInfo> _queries = new List<QueryInfo>();
+		private QueryTransactionController _transactionController;
 
-		public IQueryProvider QueryProvider { get; }
+		public IDataProvider DataProvider { get; }
 
-		public DeferredQuery(IQueryProvider queryProvider)
+		public DeferredQuery(IDataProvider dataProvider)
 		{
-			QueryProvider = queryProvider;
+			DataProvider = dataProvider;
 		}
 
 		public void Add(QueryExpression query, bool producesResultSet = false)
@@ -38,7 +39,10 @@ namespace Silk.Data.SQL.ORM.Queries
 		{
 			try
 			{
-				using (var queryResult = QueryProvider.ExecuteReader(ComposeQuery()))
+				IQueryProvider queryProvider = _transactionController?.Transaction;
+				if (queryProvider == null)
+					queryProvider = DataProvider;
+				using (var queryResult = queryProvider.ExecuteReader(ComposeQuery()))
 				{
 					foreach (var query in _queries)
 					{
@@ -62,7 +66,10 @@ namespace Silk.Data.SQL.ORM.Queries
 		{
 			try
 			{
-				using (var queryResult = await QueryProvider.ExecuteReaderAsync(ComposeQuery()))
+				IQueryProvider queryProvider = _transactionController?.Transaction;
+				if (queryProvider == null)
+					queryProvider = DataProvider;
+				using (var queryResult = await queryProvider.ExecuteReaderAsync(ComposeQuery()))
 				{
 					foreach (var query in _queries)
 					{
@@ -86,12 +93,20 @@ namespace Silk.Data.SQL.ORM.Queries
 		public bool TryMerge(IDeferredBatch batch)
 		{
 			var deferredQuery = batch as DeferredQuery;
-			if (batch == null || !ReferenceEquals(deferredQuery.QueryProvider, QueryProvider))
+			if (batch == null || !ReferenceEquals(deferredQuery.DataProvider, DataProvider))
 				return false;
 
 			_queries.AddRange(deferredQuery._queries);
 
 			return true;
+		}
+
+		public ITransactionController GetTransactionControllerImplementation()
+			=> new QueryTransactionController(DataProvider);
+
+		public void SetSharedTransactionController(ITransactionController transactionController)
+		{
+			_transactionController = transactionController as QueryTransactionController;
 		}
 
 		private class QueryInfo

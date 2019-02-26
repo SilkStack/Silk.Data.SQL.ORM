@@ -133,17 +133,23 @@ namespace Silk.Data.SQL.ORM.Tests
 					}
 				};
 
-				new[]
-				{
-					parentTable.CreateTable(),
-					childTable.CreateTable(),
+				var transaction = new Transaction();
+				transaction.Execute(
+					new[]
+					{
+						parentTable.CreateTable(),
+						childTable.CreateTable(),
 
-					childStore.Insert(entity.Flat),
-					parentStore.Insert(entity),
+						childStore.Insert(entity.Flat),
+						parentStore.Insert(entity),
 
-					parentStore.Select(entity.GetEntityReference(), out var retreivedEntityResult),
-					parentStore.Select<EmbeddedStringView>(entity.GetEntityReference(), out var stringViewResult)
-				}.Execute();
+						parentStore.Select(entity.GetEntityReference(), out var retreivedEntityResult),
+						parentStore.Select<EmbeddedStringView>(entity.GetEntityReference(), out var stringViewResult)
+					});
+				transaction.Execute(new[]{
+					parentStore.Select<EmbeddedStringView>(query => query.AndWhere(q => q.Flat.Id == entity.Flat.Id).Limit(1), out var customQueryResult)
+				});
+				transaction.Rollback();
 			}
 		}
 

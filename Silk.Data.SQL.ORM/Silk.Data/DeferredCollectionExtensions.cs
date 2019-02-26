@@ -11,7 +11,37 @@ namespace Silk.Data
 		public static Task ExecuteAsync(this IEnumerable<IDeferred> deferredTasks)
 			=> deferredTasks.ToExecutor().ExecuteAsync();
 
-		private static DeferredExecutor ToExecutor(this IEnumerable<IDeferred> deferredTasks)
+		public static void ExecuteInTransaction(this IEnumerable<IDeferred> deferredTasks)
+		{
+			var transaction = new Transaction();
+			try
+			{
+				transaction.Execute(deferredTasks);
+				transaction.Commit();
+			}
+			catch
+			{
+				transaction.Rollback();
+				throw;
+			}
+		}
+
+		public static async Task ExecuteInTransactionAsync(this IEnumerable<IDeferred> deferredTasks)
+		{
+			var transaction = new Transaction();
+			try
+			{
+				await transaction.ExecuteAsync(deferredTasks);
+				transaction.Commit();
+			}
+			catch
+			{
+				transaction.Rollback();
+				throw;
+			}
+		}
+
+		public static DeferredExecutor ToExecutor(this IEnumerable<IDeferred> deferredTasks)
 		{
 			var executor = new DeferredExecutor();
 
