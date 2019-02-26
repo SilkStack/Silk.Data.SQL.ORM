@@ -183,6 +183,7 @@ namespace Silk.Data.SQL.ORM.Tests
 		private class StringView
 		{
 			public string String { get; private set; }
+			public string ComputedValue { get; private set; }
 		}
 
 		private class FlatPoco
@@ -201,6 +202,8 @@ namespace Silk.Data.SQL.ORM.Tests
 			public DateTime DateTime { get; set; }
 			public Guid Guid { get; set; }
 			public PocoEnum Enum { get; set; }
+
+			public string ComputedValue => "Hello World";
 
 			public IEntityReference<FlatPoco> GetEntityReference()
 				=> new Reference(this);

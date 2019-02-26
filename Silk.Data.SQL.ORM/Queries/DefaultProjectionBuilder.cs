@@ -55,8 +55,13 @@ namespace Silk.Data.SQL.ORM.Queries
 			var modelTranscriber = EntitySchema.GetModelTranscriber<TView>();
 			var mapping = modelTranscriber.Mapping;
 
-			foreach (var entityField in modelTranscriber.SchemaToTypeHelpers.Select(q => q.From))
+			foreach (var helper in modelTranscriber.SchemaToTypeHelpers)
 			{
+				if (!helper.To.CanWrite)
+					continue;
+
+				var entityField = helper.From;
+
 				_projectionExpressions.Add(
 					entityField.ProjectionAlias,
 					new AliasExpression(
