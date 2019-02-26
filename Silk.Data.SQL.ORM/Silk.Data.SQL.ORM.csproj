@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Version>0.4.0.0-dev1</Version>
+    <Version>0.4.0.0</Version>
     <Authors>John Carruthers</Authors>
     <Company />
     <Product>SilkStack</Product>
@@ -10,21 +10,16 @@
 
 Part of the SilkStack project.</Description>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Copyright>John Carruthers 2018</Copyright>
+    <PackageLicenseUrl>https://github.com/SilkStack/Silk.Data.SQL.ORM/blob/master/license.txt</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/SilkStack/Silk.Data.SQL.ORM/</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/SilkStack/Silk.Data.SQL.ORM/</RepositoryUrl>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Compile Remove="vold\**" />
-    <EmbeddedResource Remove="vold\**" />
-    <None Remove="vold\**" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Silk.Data.Modelling" Version="0.4.0.2" />
     <PackageReference Include="Silk.Data.SQL.Base" Version="0.1.2.2" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Expressions\" />
   </ItemGroup>
 
 </Project>
