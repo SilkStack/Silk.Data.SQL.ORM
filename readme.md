@@ -97,7 +97,7 @@ await new[]
   store.Select(query => query.OrderByDescending(account => account.CreatedAtUtc).Limit(1), out var queryResult)
 }.ExecuteAsync();
 
-Console.WriteLine($"The most recently created user is: {queryResult.Result.LoginName}");
+Console.WriteLine($"The most recently created user is: {queryResult.Result[0].LoginName}");
 ~~~
 
 This will perform an `INSERT` query for your entity, map any generated primary key (currently any integer/guid type `Id` property) onto your entity instance and perform a `SELECT` for the most recently created user in a single round-trip to the database server.
