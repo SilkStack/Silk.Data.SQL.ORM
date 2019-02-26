@@ -199,13 +199,28 @@ namespace Silk.Data.SQL.ORM.Schema
 			{
 				var foreignTableName = entityDefinition.TableName;
 				var join = new EntityJoin(_source, new TableReference(foreignTableName), $"__join_{_joinCount++}");
-				return ReferencedEntityField<TData, TEntity>.Create(field, _relativeParentFields, _fullParentFields,
-					_rootEntityDefinition.BuildEntityFields(_schemaBuilder,
-						entityDefinition, TypeModel.GetModelOf<TData>(),
-						new IField[0],
-						_fullParentFields.Concat(new[] { field }),
-						join
-						), _source);
+				var subFields = _rootEntityDefinition.BuildEntityFields(_schemaBuilder,
+					entityDefinition, TypeModel.GetModelOf<TData>(),
+					new IField[0],
+					_fullParentFields.Concat(new[] { field }),
+					join
+					).ToArray();
+				var referencedEntityField = ReferencedEntityField<TData, TEntity>.Create(field, _relativeParentFields, _fullParentFields,
+					subFields, _source);
+
+				var joinPairs = new List<JoinColumnPair>();
+				foreach (var pkField in subFields.Where(q => !q.IsEntityLocalField && q.IsPrimaryKey))
+				{
+					var pairedField = referencedEntityField.SubFields.First(
+						q => q.FieldName == pkField.FieldName && !ReferenceEquals(q, pkField)
+						);
+					joinPairs.Add(
+						new JoinColumnPair(pairedField.Column.Name, pkField.Column.Name)
+						);
+				}
+				join.SetJoinColumns(joinPairs);
+
+				return referencedEntityField;
 			}
 
 			void IFieldGenericExecutor.Execute<TField, TData>(IField field)

@@ -119,6 +119,31 @@ namespace Silk.Data.SQL.ORM.Tests
 					.Define<FlatPoco>()
 					.Define<ParentPoco>()
 					.Build();
+
+				var parentTable = new EntityTable<ParentPoco>(schema, dataProvider);
+				var parentStore = new SqlEntityStore<ParentPoco>(schema, dataProvider);
+				var childTable = new EntityTable<FlatPoco>(schema, dataProvider);
+				var childStore = new SqlEntityStore<FlatPoco>(schema, dataProvider);
+
+				var entity = new ParentPoco
+				{
+					Flat = new FlatPoco
+					{
+						String = "Some String"
+					}
+				};
+
+				new[]
+				{
+					parentTable.CreateTable(),
+					childTable.CreateTable(),
+
+					childStore.Insert(entity.Flat),
+					parentStore.Insert(entity),
+
+					parentStore.Select(entity.GetEntityReference(), out var retreivedEntityResult),
+					parentStore.Select<EmbeddedStringView>(entity.GetEntityReference(), out var stringViewResult)
+				}.Execute();
 			}
 		}
 

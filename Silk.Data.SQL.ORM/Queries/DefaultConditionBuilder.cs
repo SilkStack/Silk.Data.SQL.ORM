@@ -108,7 +108,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		public void AndAlso(EntityField<T> schemaField, ComparisonOperator @operator, T entity)
 		{
 			AndAlso(QueryExpression.Compare(
-				QueryExpression.Column(schemaField.Column.Name),
+				QueryExpression.Column(schemaField.Column.Name, schemaField.Source.AliasIdentifierExpression),
 				@operator,
 				GetValueExpression(schemaField, entity)
 				));
@@ -119,7 +119,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		{
 			var valueExpression = ORMQueryExpressions.Value(value);
 			AndAlso(QueryExpression.Compare(
-				QueryExpression.Column(schemaField.Column.Name),
+				QueryExpression.Column(schemaField.Column.Name, schemaField.Source.AliasIdentifierExpression),
 				@operator,
 				valueExpression
 				));
@@ -130,7 +130,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		{
 			var valueExpressionResult = ExpressionConverter.Convert(valueExpression);
 			AndAlso(QueryExpression.Compare(
-				QueryExpression.Column(schemaField.Column.Name),
+				QueryExpression.Column(schemaField.Column.Name, schemaField.Source.AliasIdentifierExpression),
 				@operator,
 				valueExpressionResult.QueryExpression
 				));
@@ -140,7 +140,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		public void AndAlso(EntityField<T> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
 		{
 			AndAlso(QueryExpression.Compare(
-				QueryExpression.Column(schemaField.Column.Name),
+				QueryExpression.Column(schemaField.Column.Name, schemaField.Source.AliasIdentifierExpression),
 				@operator,
 				subQuery.BuildQuery()
 				));
@@ -150,7 +150,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		public void OrElse(EntityField<T> schemaField, ComparisonOperator @operator, T entity)
 		{
 			OrElse(QueryExpression.Compare(
-				QueryExpression.Column(schemaField.Column.Name),
+				QueryExpression.Column(schemaField.Column.Name, schemaField.Source.AliasIdentifierExpression),
 				@operator,
 				GetValueExpression(schemaField, entity)
 				));
@@ -161,7 +161,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		{
 			var valueExpression = ORMQueryExpressions.Value(value);
 			OrElse(QueryExpression.Compare(
-				QueryExpression.Column(schemaField.Column.Name),
+				QueryExpression.Column(schemaField.Column.Name, schemaField.Source.AliasIdentifierExpression),
 				@operator,
 				valueExpression
 				));
@@ -172,7 +172,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		{
 			var valueExpressionResult = ExpressionConverter.Convert(valueExpression);
 			OrElse(QueryExpression.Compare(
-				QueryExpression.Column(schemaField.Column.Name),
+				QueryExpression.Column(schemaField.Column.Name, schemaField.Source.AliasIdentifierExpression),
 				@operator,
 				valueExpressionResult.QueryExpression
 				));
@@ -182,7 +182,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		public void OrElse(EntityField<T> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
 		{
 			OrElse(QueryExpression.Compare(
-				QueryExpression.Column(schemaField.Column.Name),
+				QueryExpression.Column(schemaField.Column.Name, schemaField.Source.AliasIdentifierExpression),
 				@operator,
 				subQuery.BuildQuery()
 				));

@@ -1,5 +1,7 @@
 ﻿using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Queries;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Silk.Data.SQL.ORM.Schema
 {
@@ -25,14 +27,53 @@ namespace Silk.Data.SQL.ORM.Schema
 
 	public class EntityJoin : Join
 	{
+		private JoinColumnPair[] _joinColumnPairs;
+
 		public EntityJoin(IQueryReference left, IQueryReference right, string alias) :
 			base(left, right, alias)
 		{
 		}
 
+		public void SetJoinColumns(IEnumerable<JoinColumnPair> joinColumnPairs)
+		{
+			_joinColumnPairs = joinColumnPairs.ToArray();
+		}
+
 		public override JoinExpression GetJoinExpression()
 		{
-			throw new System.NotImplementedException();
+			var rightIdentifier = AliasIdentifierExpression;
+			var leftIdentifier = Left.AliasIdentifierExpression;
+
+			var onCondition = default(QueryExpression);
+			foreach (var columnPair in _joinColumnPairs)
+			{
+				var newCondition = QueryExpression.Compare(
+						QueryExpression.Column(columnPair.LeftColumnName, leftIdentifier),
+						ComparisonOperator.AreEqual,
+						QueryExpression.Column(columnPair.RightColumnName, rightIdentifier)
+						);
+				onCondition = QueryExpression.CombineConditions(onCondition, ConditionType.AndAlso, newCondition);
+			}
+
+			return QueryExpression.Join(
+				QueryExpression.Alias(
+					Right.AliasIdentifierExpression, rightIdentifier.Identifier
+					),
+				onCondition,
+				JoinDirection.Left
+				);
+		}
+	}
+
+	public class JoinColumnPair
+	{
+		public string LeftColumnName { get; }
+		public string RightColumnName { get; }
+
+		public JoinColumnPair(string leftColumnName, string rightColumnName)
+		{
+			LeftColumnName = leftColumnName;
+			RightColumnName = rightColumnName;
 		}
 	}
 }
