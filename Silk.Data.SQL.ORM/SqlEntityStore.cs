@@ -256,6 +256,7 @@ namespace Silk.Data.SQL.ORM
 
 			var result = new DeferredQuery(_dataProvider);
 			var resultReader = builder.Projection.AddView<T>();
+			AttachCustomFactories(resultReader);
 			result.Add(builder.BuildQuery(), new ManyMappedResultProcessor<T>(
 				resultReader,
 				resultSource
@@ -275,6 +276,7 @@ namespace Silk.Data.SQL.ORM
 
 			var result = new DeferredQuery(_dataProvider);
 			var resultReader = builder.Projection.AddView<TView>();
+			AttachCustomFactories(resultReader);
 			result.Add(builder.BuildQuery(), new ManyMappedResultProcessor<TView>(
 				resultReader,
 				resultSource
