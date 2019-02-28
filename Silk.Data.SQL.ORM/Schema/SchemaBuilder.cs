@@ -16,10 +16,10 @@ namespace Silk.Data.SQL.ORM.Schema
 	{
 		private static int _joinCount = 1;
 
-		private readonly List<EntityDefinition> _entityDefinitions
+		protected List<EntityDefinition> EntityDefinitions
 			= new List<EntityDefinition>();
 
-		private readonly Dictionary<MethodInfo, IMethodCallConverter> _methodCallConverters
+		protected Dictionary<MethodInfo, IMethodCallConverter> MethodCallConverters
 			= new Dictionary<MethodInfo, IMethodCallConverter>();
 
 		public SchemaBuilder()
@@ -66,7 +66,7 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public void AddMethodConverter(MethodInfo methodInfo, IMethodCallConverter methodCallConverter)
 		{
-			_methodCallConverters.Add(methodInfo, methodCallConverter);
+			MethodCallConverters.Add(methodInfo, methodCallConverter);
 		}
 
 		/// <summary>
@@ -83,7 +83,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			if (definition == null)
 			{
 				definition = new EntityDefinition<T>();
-				_entityDefinitions.Add(definition);
+				EntityDefinitions.Add(definition);
 			}
 
 			configure?.Invoke(definition);
@@ -97,7 +97,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		/// <returns></returns>
 		public EntityDefinition<T> GetDefinition<T>()
 			where T : class
-			=> _entityDefinitions.OfType<EntityDefinition<T>>()
+			=> EntityDefinitions.OfType<EntityDefinition<T>>()
 				.FirstOrDefault();
 
 		/// <summary>
@@ -108,13 +108,13 @@ namespace Silk.Data.SQL.ORM.Schema
 		{
 			return new Schema(
 				BuildEntityModels(),
-				_methodCallConverters
+				MethodCallConverters
 				);
 		}
 
 		protected virtual IEnumerable<EntityModel> BuildEntityModels()
 		{
-			foreach (var entityDefinition in _entityDefinitions)
+			foreach (var entityDefinition in EntityDefinitions)
 			{
 				yield return BuildEntityModel(entityDefinition);
 			}
@@ -226,7 +226,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			void IFieldGenericExecutor.Execute<TField, TData>(IField field)
 			{
 				var storageSqlType = SqlTypeHelper.GetDataType(field.FieldDataType);
-				var entityDefinitions = _schemaBuilder._entityDefinitions.Where(q => q.EntityType == field.FieldDataType)
+				var entityDefinitions = _schemaBuilder.EntityDefinitions.Where(q => q.EntityType == field.FieldDataType)
 						.ToArray();
 				if (storageSqlType != null)
 					EntityField = BuildValueField<TData>(field);
