@@ -36,9 +36,9 @@ namespace Silk.Data.SQL.ORM
 		/// <returns></returns>
 		DeferableInsert<T> Insert();
 
-		IDeferred Delete(T entity);
-		IDeferred Delete(IEntityReference<T> entityReference);
-		IDeferred Delete(Action<IEntityDeleteQueryBuilder<T>> queryConfigurer);
+		DeferableDelete<T> Delete(T entity);
+		DeferableDelete<T> Delete(IEntityReference<T> entityReference);
+		DeferableDelete<T> Delete();
 
 		IDeferred Update(T entity);
 		IDeferred Update<TView>(IEntityReference<T> entityReference, TView view)

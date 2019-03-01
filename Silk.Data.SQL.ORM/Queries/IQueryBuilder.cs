@@ -51,12 +51,12 @@ namespace Silk.Data.SQL.ORM.Queries
 	{
 	}
 
-	public interface IWhereQueryBuilder : IQueryBuilder
+	public interface IWhereQueryBuilder
 	{
 		IConditionBuilder Where { get; set; }
 	}
 
-	public interface IWhereQueryBuilder<T> : IWhereQueryBuilder, IEntityQueryBuilder<T>
+	public interface IWhereQueryBuilder<T> : IWhereQueryBuilder
 		where T : class
 	{
 		new IEntityConditionBuilder<T> Where { get; set; }

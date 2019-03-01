@@ -125,32 +125,14 @@ namespace Silk.Data.SQL.ORM
 		public DeferableInsert<T> Insert()
 			=> new DeferableInsert<T>(QueryBuilder.Insert(), _dataProvider);
 
-		public IDeferred Delete(T entity)
-		{
-			var result = new DeferredQuery(_dataProvider);
-			result.Add(
-				QueryBuilder.Delete(entity).BuildQuery()
-				);
-			return result;
-		}
+		public DeferableDelete<T> Delete(T entity)
+			=> new DeferableDelete<T>(QueryBuilder.Delete(entity), _dataProvider);
 
-		public IDeferred Delete(IEntityReference<T> entityReference)
-		{
-			var result = new DeferredQuery(_dataProvider);
-			result.Add(
-				QueryBuilder.Delete(entityReference).BuildQuery()
-				);
-			return result;
-		}
+		public DeferableDelete<T> Delete(IEntityReference<T> entityReference)
+			=> new DeferableDelete<T>(QueryBuilder.Delete(entityReference), _dataProvider);
 
-		public IDeferred Delete(Action<IEntityDeleteQueryBuilder<T>> queryConfigurer)
-		{
-			var result = new DeferredQuery(_dataProvider);
-			var query = QueryBuilder.Delete();
-			queryConfigurer?.Invoke(query);
-			result.Add(query.BuildQuery());
-			return result;
-		}
+		public DeferableDelete<T> Delete()
+			=> new DeferableDelete<T>(QueryBuilder.Delete(), _dataProvider);
 
 		public IDeferred Update(T entity)
 		{

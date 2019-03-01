@@ -157,5 +157,22 @@ namespace Silk.Data.SQL.ORM
 			where TEntity : class => builder.OrWhere<IEntityDeleteQueryBuilder<TEntity>, TEntity>(schemaField, @operator, valueExpression);
 		public static IEntityDeleteQueryBuilder<TEntity> OrWhere<TEntity>(this IEntityDeleteQueryBuilder<TEntity> builder, EntityField<TEntity> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
 			where TEntity : class => builder.OrWhere<IEntityDeleteQueryBuilder<TEntity>, TEntity>(schemaField, @operator, subQuery);
+
+		public static DeferableDelete<TEntity> AndWhere<TEntity>(this DeferableDelete<TEntity> builder, Expression<Func<TEntity, bool>> expression)
+			where TEntity : class => builder.AndWhere<DeferableDelete<TEntity>, TEntity>(expression);
+		public static DeferableDelete<TEntity> OrWhere<TEntity>(this DeferableDelete<TEntity> builder, Expression<Func<TEntity, bool>> expression)
+			where TEntity : class => builder.OrWhere<DeferableDelete<TEntity>, TEntity>(expression);
+		public static DeferableDelete<TEntity> AndWhere<TEntity, TValue>(this DeferableDelete<TEntity> builder, EntityField<TEntity> schemaField, ComparisonOperator @operator, TValue value)
+			where TEntity : class => builder.AndWhere<DeferableDelete<TEntity>, TEntity, TValue>(schemaField, @operator, value);
+		public static DeferableDelete<TEntity> AndWhere<TEntity>(this DeferableDelete<TEntity> builder, EntityField<TEntity> schemaField, ComparisonOperator @operator, Expression<Func<TEntity, bool>> valueExpression)
+			where TEntity : class => builder.AndWhere<DeferableDelete<TEntity>, TEntity>(schemaField, @operator, valueExpression);
+		public static DeferableDelete<TEntity> AndWhere<TEntity>(this DeferableDelete<TEntity> builder, EntityField<TEntity> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
+			where TEntity : class => builder.AndWhere<DeferableDelete<TEntity>, TEntity>(schemaField, @operator, subQuery);
+		public static DeferableDelete<TEntity> OrWhere<TEntity, TValue>(this DeferableDelete<TEntity> builder, EntityField<TEntity> schemaField, ComparisonOperator @operator, TValue value)
+			where TEntity : class => builder.OrWhere<DeferableDelete<TEntity>, TEntity, TValue>(schemaField, @operator, value);
+		public static DeferableDelete<TEntity> OrWhere<TEntity>(this DeferableDelete<TEntity> builder, EntityField<TEntity> schemaField, ComparisonOperator @operator, Expression<Func<TEntity, bool>> valueExpression)
+			where TEntity : class => builder.OrWhere<DeferableDelete<TEntity>, TEntity>(schemaField, @operator, valueExpression);
+		public static DeferableDelete<TEntity> OrWhere<TEntity>(this DeferableDelete<TEntity> builder, EntityField<TEntity> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
+			where TEntity : class => builder.OrWhere<DeferableDelete<TEntity>, TEntity>(schemaField, @operator, subQuery);
 	}
 }
