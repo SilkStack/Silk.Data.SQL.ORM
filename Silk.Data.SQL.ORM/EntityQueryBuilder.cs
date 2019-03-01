@@ -3,7 +3,6 @@ using System.Linq;
 using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Queries;
 using Silk.Data.SQL.ORM.Schema;
-using Silk.Data.SQL.Providers;
 
 namespace Silk.Data.SQL.ORM
 {
@@ -12,13 +11,11 @@ namespace Silk.Data.SQL.ORM
 	{
 		private readonly Schema.Schema _schema;
 		private readonly EntityModel<T> _entityModel;
-		private readonly IDataProvider _dataProvider;
 		private readonly EntityField<T>[] _primaryKeys;
 
-		public EntityQueryBuilder(Schema.Schema schema, IDataProvider dataProvider)
+		public EntityQueryBuilder(Schema.Schema schema)
 		{
 			_schema = schema;
-			_dataProvider = dataProvider;
 			_entityModel = schema.GetEntityModel<T>();
 			if (_entityModel == null)
 				ExceptionHelper.ThrowNotPresentInSchema<T>();
@@ -31,12 +28,8 @@ namespace Silk.Data.SQL.ORM
 		public IEntityDeleteQueryBuilder<T> Delete(IEntityReference<T> entityReference)
 			=> DeleteBuilder<T>.Create(_schema, _entityModel, entityReference);
 
-		public IEntityDeleteQueryBuilder<T> Delete(Action<IEntityDeleteQueryBuilder<T>> queryConfigurer)
-		{
-			var deleteBuilder = new DeleteBuilder<T>(_schema, _entityModel);
-			queryConfigurer?.Invoke(deleteBuilder);
-			return deleteBuilder;
-		}
+		public IEntityDeleteQueryBuilder<T> Delete()
+			=> new DeleteBuilder<T>(_schema, _entityModel);
 
 		public IEntityInsertQueryBuilder<T> Insert(T entity)
 			=> InsertBuilder<T>.Create(_schema, _entityModel, entity);
@@ -44,12 +37,8 @@ namespace Silk.Data.SQL.ORM
 		public IEntityInsertQueryBuilder<T> Insert<TView>(TView entityView) where TView : class
 			=> InsertBuilder<T>.Create(_schema, _entityModel, entityView);
 
-		public IEntityInsertQueryBuilder<T> Insert(Action<IEntityInsertQueryBuilder<T>> queryConfigurer)
-		{
-			var insertBuilder = new InsertBuilder<T>(_schema, _entityModel);
-			queryConfigurer?.Invoke(insertBuilder);
-			return insertBuilder;
-		}
+		public IEntityInsertQueryBuilder<T> Insert()
+			=> new InsertBuilder<T>(_schema, _entityModel);
 
 		public IEntitySelectQueryBuilder<T> Select(IEntityReference<T> entityReference)
 			=> Select(entityReference, out var _);
@@ -83,35 +72,32 @@ namespace Silk.Data.SQL.ORM
 			return builder;
 		}
 
-		public IEntitySelectQueryBuilder<T> Select(Action<IEntitySelectQueryBuilder<T>> query)
-			=> Select(query, out var _);
+		public IEntitySelectQueryBuilder<T> Select()
+			=> Select(out var _);
 
-		public IEntitySelectQueryBuilder<T> Select(Action<IEntitySelectQueryBuilder<T>> query, out IResultReader<T> resultReader)
+		public IEntitySelectQueryBuilder<T> Select(out IResultReader<T> resultReader)
 		{
 			var builder = new SelectBuilder<T>(_schema, _entityModel);
-			query?.Invoke(builder);
 			resultReader = builder.Projection.AddView<T>();
 			return builder;
 		}
 
-		public IEntitySelectQueryBuilder<T> Select<TView>(Action<IEntitySelectQueryBuilder<T>> query) where TView : class
-			=> Select<TView>(query, out var _);
+		public IEntitySelectQueryBuilder<T> Select<TView>() where TView : class
+			=> Select<TView>(out var _);
 
-		public IEntitySelectQueryBuilder<T> Select<TView>(Action<IEntitySelectQueryBuilder<T>> query, out IResultReader<TView> resultReader) where TView : class
+		public IEntitySelectQueryBuilder<T> Select<TView>(out IResultReader<TView> resultReader) where TView : class
 		{
 			var builder = new SelectBuilder<T>(_schema, _entityModel);
-			query?.Invoke(builder);
 			resultReader = builder.Projection.AddView<TView>();
 			return builder;
 		}
 
-		public IEntitySelectQueryBuilder<T> Select<TExpr>(System.Linq.Expressions.Expression<Func<T, TExpr>> expression, Action<IEntitySelectQueryBuilder<T>> query)
-			=> Select(expression, query, out var _);
+		public IEntitySelectQueryBuilder<T> Select<TExpr>(System.Linq.Expressions.Expression<Func<T, TExpr>> expression)
+			=> Select(expression, out var _);
 
-		public IEntitySelectQueryBuilder<T> Select<TExpr>(System.Linq.Expressions.Expression<Func<T, TExpr>> expression, Action<IEntitySelectQueryBuilder<T>> query, out IResultReader<TExpr> resultReader)
+		public IEntitySelectQueryBuilder<T> Select<TExpr>(System.Linq.Expressions.Expression<Func<T, TExpr>> expression, out IResultReader<TExpr> resultReader)
 		{
 			var builder = new SelectBuilder<T>(_schema, _entityModel);
-			query?.Invoke(builder);
 			resultReader = builder.Projection.AddField(expression);
 			return builder;
 		}
@@ -122,11 +108,7 @@ namespace Silk.Data.SQL.ORM
 		public IEntityUpdateQueryBuilder<T> Update<TView>(IEntityReference<T> entityReference, TView view) where TView : class
 			=> UpdateBuilder<T>.Create(_schema, _entityModel, entityReference, view);
 
-		public IEntityUpdateQueryBuilder<T> Update(Action<IEntityUpdateQueryBuilder<T>> queryConfigurer)
-		{
-			var updateBuilder = new UpdateBuilder<T>(_schema, _entityModel);
-			queryConfigurer?.Invoke(updateBuilder);
-			return updateBuilder;
-		}
+		public IEntityUpdateQueryBuilder<T> Update()
+			=> new UpdateBuilder<T>(_schema, _entityModel);
 	}
 }

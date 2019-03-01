@@ -36,7 +36,7 @@ namespace Silk.Data.SQL.ORM
 			if (_entityModel == null)
 				ExceptionHelper.ThrowNotPresentInSchema<T>();
 
-			QueryBuilder = new EntityQueryBuilder<T>(schema, dataProvider);
+			QueryBuilder = new EntityQueryBuilder<T>(schema);
 
 			_clientGeneratedPrimaryKey = _entityModel.Fields.FirstOrDefault(q => q.IsPrimaryKey && !q.IsSeverGenerated);
 			_serverGeneratedPrimaryKey = _entityModel.Fields.FirstOrDefault(q => q.IsPrimaryKey && q.IsSeverGenerated);
@@ -121,7 +121,9 @@ namespace Silk.Data.SQL.ORM
 		public IDeferred Insert(Action<IEntityInsertQueryBuilder<T>> queryConfigurer)
 		{
 			var result = new DeferredQuery(_dataProvider);
-			result.Add(QueryBuilder.Insert(queryConfigurer).BuildQuery());
+			var query = QueryBuilder.Insert();
+			queryConfigurer?.Invoke(query);
+			result.Add(query.BuildQuery());
 			return result;
 		}
 
@@ -146,7 +148,9 @@ namespace Silk.Data.SQL.ORM
 		public IDeferred Delete(Action<IEntityDeleteQueryBuilder<T>> queryConfigurer)
 		{
 			var result = new DeferredQuery(_dataProvider);
-			result.Add(QueryBuilder.Delete(queryConfigurer).BuildQuery());
+			var query = QueryBuilder.Delete();
+			queryConfigurer?.Invoke(query);
+			result.Add(query.BuildQuery());
 			return result;
 		}
 
@@ -172,7 +176,9 @@ namespace Silk.Data.SQL.ORM
 		public IDeferred Update(Action<IEntityUpdateQueryBuilder<T>> queryConfigurer)
 		{
 			var result = new DeferredQuery(_dataProvider);
-			result.Add(QueryBuilder.Update(queryConfigurer).BuildQuery());
+			var query = QueryBuilder.Update();
+			queryConfigurer?.Invoke(query);
+			result.Add(query.BuildQuery());
 			return result;
 		}
 
@@ -227,7 +233,8 @@ namespace Silk.Data.SQL.ORM
 
 		public IDeferred Select(Action<IEntitySelectQueryBuilder<T>> query, out DeferredResult<List<T>> entitiesResult)
 		{
-			var builder = QueryBuilder.Select(query, out var resultReader);
+			var builder = QueryBuilder.Select(out var resultReader);
+			query?.Invoke(builder);
 			AttachCustomFactories(resultReader);
 
 			var resultSource = new DeferredResultSource<List<T>>();
@@ -245,7 +252,8 @@ namespace Silk.Data.SQL.ORM
 		public IDeferred Select<TView>(Action<IEntitySelectQueryBuilder<T>> query, out DeferredResult<List<TView>> viewsResult)
 			where TView : class
 		{
-			var builder = QueryBuilder.Select<TView>(query, out var resultReader);
+			var builder = QueryBuilder.Select<TView>(out var resultReader);
+			query?.Invoke(builder);
 			AttachCustomFactories(resultReader);
 
 			var resultSource = new DeferredResultSource<List<TView>>();
@@ -263,7 +271,8 @@ namespace Silk.Data.SQL.ORM
 		public IDeferred Select<TExpr>(System.Linq.Expressions.Expression<Func<T, TExpr>> expression,
 			Action<IEntitySelectQueryBuilder<T>> query, out DeferredResult<List<TExpr>> exprsResult)
 		{
-			var builder = QueryBuilder.Select(expression, query, out var resultReader);
+			var builder = QueryBuilder.Select(expression, out var resultReader);
+			query?.Invoke(builder);
 
 			var resultSource = new DeferredResultSource<List<TExpr>>();
 			exprsResult = resultSource.DeferredResult;

@@ -26,18 +26,17 @@ namespace Silk.Data.SQL.ORM
 		/// <summary>
 		/// Parent to insert a custom entity record.
 		/// </summary>
-		/// <param name="queryConfigurer"></param>
 		/// <returns></returns>
-		IEntityInsertQueryBuilder<T> Insert(Action<IEntityInsertQueryBuilder<T>> queryConfigurer);
+		IEntityInsertQueryBuilder<T> Insert();
 
 		IEntityDeleteQueryBuilder<T> Delete(T entity);
 		IEntityDeleteQueryBuilder<T> Delete(IEntityReference<T> entityReference);
-		IEntityDeleteQueryBuilder<T> Delete(Action<IEntityDeleteQueryBuilder<T>> queryConfigurer);
+		IEntityDeleteQueryBuilder<T> Delete();
 
 		IEntityUpdateQueryBuilder<T> Update(T entity);
 		IEntityUpdateQueryBuilder<T> Update<TView>(IEntityReference<T> entityReference, TView view)
 			where TView : class;
-		IEntityUpdateQueryBuilder<T> Update(Action<IEntityUpdateQueryBuilder<T>> queryConfigurer);
+		IEntityUpdateQueryBuilder<T> Update();
 
 		IEntitySelectQueryBuilder<T> Select(IEntityReference<T> entityReference);
 		IEntitySelectQueryBuilder<T> Select(IEntityReference<T> entityReference, out IResultReader<T> resultReader);
@@ -47,15 +46,15 @@ namespace Silk.Data.SQL.ORM
 		IEntitySelectQueryBuilder<T> Select<TView>(IEntityReference<T> entityReference, out IResultReader<TView> resultReader)
 			where TView : class;
 
-		IEntitySelectQueryBuilder<T> Select(Action<IEntitySelectQueryBuilder<T>> query);
-		IEntitySelectQueryBuilder<T> Select(Action<IEntitySelectQueryBuilder<T>> query, out IResultReader<T> resultReader);
+		IEntitySelectQueryBuilder<T> Select();
+		IEntitySelectQueryBuilder<T> Select(out IResultReader<T> resultReader);
 
-		IEntitySelectQueryBuilder<T> Select<TView>(Action<IEntitySelectQueryBuilder<T>> query)
+		IEntitySelectQueryBuilder<T> Select<TView>()
 			where TView : class;
-		IEntitySelectQueryBuilder<T> Select<TView>(Action<IEntitySelectQueryBuilder<T>> query, out IResultReader<TView> resultReader)
+		IEntitySelectQueryBuilder<T> Select<TView>(out IResultReader<TView> resultReader)
 			where TView : class;
 
-		IEntitySelectQueryBuilder<T> Select<TExpr>(Expression<Func<T, TExpr>> expression, Action<IEntitySelectQueryBuilder<T>> query);
-		IEntitySelectQueryBuilder<T> Select<TExpr>(Expression<Func<T, TExpr>> expression, Action<IEntitySelectQueryBuilder<T>> query, out IResultReader<TExpr> resultReader);
+		IEntitySelectQueryBuilder<T> Select<TExpr>(Expression<Func<T, TExpr>> expression);
+		IEntitySelectQueryBuilder<T> Select<TExpr>(Expression<Func<T, TExpr>> expression, out IResultReader<TExpr> resultReader);
 	}
 }
