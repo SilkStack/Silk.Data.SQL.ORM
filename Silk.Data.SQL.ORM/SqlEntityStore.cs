@@ -25,6 +25,8 @@ namespace Silk.Data.SQL.ORM
 		private readonly ITypeInstanceFactory _typeInstanceFactory;
 		private readonly IReaderWriterFactory<TypeModel, PropertyInfoField> _typeReaderWriterFactory;
 
+		public IEntityQueryBuilder<T> QueryBuilder { get; set; }
+
 		public SqlEntityStore(Schema.Schema schema, IDataProvider dataProvider)
 		{
 			_schema = schema;
@@ -33,6 +35,8 @@ namespace Silk.Data.SQL.ORM
 
 			if (_entityModel == null)
 				ExceptionHelper.ThrowNotPresentInSchema<T>();
+
+			QueryBuilder = new EntityQueryBuilder<T>(schema, dataProvider);
 
 			_clientGeneratedPrimaryKey = _entityModel.Fields.FirstOrDefault(q => q.IsPrimaryKey && !q.IsSeverGenerated);
 			_serverGeneratedPrimaryKey = _entityModel.Fields.FirstOrDefault(q => q.IsPrimaryKey && q.IsSeverGenerated);
@@ -67,7 +71,7 @@ namespace Silk.Data.SQL.ORM
 
 			var mapBackInsertId = _serverGeneratedPrimaryKey != null;
 			var generatePrimaryKey = _clientGeneratedPrimaryKey != null;
-			var insertBuilder = InsertBuilder<T>.Create(_schema, _entityModel, entity);
+			var insertBuilder = QueryBuilder.Insert(entity);
 
 			if (generatePrimaryKey)
 			{
@@ -116,11 +120,8 @@ namespace Silk.Data.SQL.ORM
 
 		public IDeferred Insert(Action<IEntityInsertQueryBuilder<T>> queryConfigurer)
 		{
-			var insertBuilder = new InsertBuilder<T>(_schema, _entityModel);
-			queryConfigurer?.Invoke(insertBuilder);
-
 			var result = new DeferredQuery(_dataProvider);
-			result.Add(insertBuilder.BuildQuery());
+			result.Add(QueryBuilder.Insert(queryConfigurer).BuildQuery());
 			return result;
 		}
 
@@ -128,7 +129,7 @@ namespace Silk.Data.SQL.ORM
 		{
 			var result = new DeferredQuery(_dataProvider);
 			result.Add(
-				DeleteBuilder<T>.Create(_schema, _entityModel, entity).BuildQuery()
+				QueryBuilder.Delete(entity).BuildQuery()
 				);
 			return result;
 		}
@@ -137,18 +138,15 @@ namespace Silk.Data.SQL.ORM
 		{
 			var result = new DeferredQuery(_dataProvider);
 			result.Add(
-				DeleteBuilder<T>.Create(_schema, _entityModel, entityReference).BuildQuery()
+				QueryBuilder.Delete(entityReference).BuildQuery()
 				);
 			return result;
 		}
 
 		public IDeferred Delete(Action<IEntityDeleteQueryBuilder<T>> queryConfigurer)
 		{
-			var deleteBuilder = new DeleteBuilder<T>(_schema, _entityModel);
-			queryConfigurer?.Invoke(deleteBuilder);
-
 			var result = new DeferredQuery(_dataProvider);
-			result.Add(deleteBuilder.BuildQuery());
+			result.Add(QueryBuilder.Delete(queryConfigurer).BuildQuery());
 			return result;
 		}
 
@@ -156,7 +154,7 @@ namespace Silk.Data.SQL.ORM
 		{
 			var result = new DeferredQuery(_dataProvider);
 			result.Add(
-				UpdateBuilder<T>.Create(_schema, _entityModel, entity).BuildQuery()
+				QueryBuilder.Update(entity).BuildQuery()
 				);
 			return result;
 		}
@@ -166,18 +164,15 @@ namespace Silk.Data.SQL.ORM
 		{
 			var result = new DeferredQuery(_dataProvider);
 			result.Add(
-				UpdateBuilder<T>.Create(_schema, _entityModel, entityReference, view).BuildQuery()
+				QueryBuilder.Update(entityReference, view).BuildQuery()
 				);
 			return result;
 		}
 
 		public IDeferred Update(Action<IEntityUpdateQueryBuilder<T>> queryConfigurer)
 		{
-			var updateBuilder = new UpdateBuilder<T>(_schema, _entityModel);
-			queryConfigurer?.Invoke(updateBuilder);
-
 			var result = new DeferredQuery(_dataProvider);
-			result.Add(updateBuilder.BuildQuery());
+			result.Add(QueryBuilder.Update(queryConfigurer).BuildQuery());
 			return result;
 		}
 
@@ -197,20 +192,12 @@ namespace Silk.Data.SQL.ORM
 
 		public IDeferred Select(IEntityReference<T> entityReference, out DeferredResult<T> entityResult)
 		{
-			if (_primaryKeys.Length == 0)
-				ExceptionHelper.ThrowNoPrimaryKey<T>();
-
-			var entity = entityReference.AsEntity();
-			var builder = new SelectBuilder<T>(_schema, _entityModel);
-			foreach (var field in _primaryKeys)
-				builder.Where.AndAlso(field, ComparisonOperator.AreEqual, entity);
-			builder.Range.Limit(1);
+			var builder = QueryBuilder.Select(entityReference, out var resultReader);
+			AttachCustomFactories(resultReader);
 
 			var resultSource = new DeferredResultSource<T>();
 			entityResult = resultSource.DeferredResult;
 
-			var resultReader = builder.Projection.AddView<T>();
-			AttachCustomFactories(resultReader);
 			var result = new DeferredQuery(_dataProvider);
 			result.Add(builder.BuildQuery(), new SingleMappedResultProcessor<T>(
 				resultReader,
@@ -223,21 +210,13 @@ namespace Silk.Data.SQL.ORM
 		public IDeferred Select<TView>(IEntityReference<T> entityReference, out DeferredResult<TView> viewResult)
 			where TView : class
 		{
-			if (_primaryKeys.Length == 0)
-				ExceptionHelper.ThrowNoPrimaryKey<T>();
-
-			var entity = entityReference.AsEntity();
-			var builder = new SelectBuilder<T>(_schema, _entityModel);
-			foreach (var field in _primaryKeys)
-				builder.Where.AndAlso(field, ComparisonOperator.AreEqual, entity);
-			builder.Range.Limit(1);
+			var builder = QueryBuilder.Select<TView>(entityReference, out var resultReader);
+			AttachCustomFactories(resultReader);
 
 			var resultSource = new DeferredResultSource<TView>();
 			viewResult = resultSource.DeferredResult;
 
 			var result = new DeferredQuery(_dataProvider);
-			var resultReader = builder.Projection.AddView<TView>();
-			AttachCustomFactories(resultReader);
 			result.Add(builder.BuildQuery(), new SingleMappedResultProcessor<TView>(
 				resultReader,
 				resultSource
@@ -248,15 +227,13 @@ namespace Silk.Data.SQL.ORM
 
 		public IDeferred Select(Action<IEntitySelectQueryBuilder<T>> query, out DeferredResult<List<T>> entitiesResult)
 		{
-			var builder = new SelectBuilder<T>(_schema, _entityModel);
-			query?.Invoke(builder);
+			var builder = QueryBuilder.Select(query, out var resultReader);
+			AttachCustomFactories(resultReader);
 
 			var resultSource = new DeferredResultSource<List<T>>();
 			entitiesResult = resultSource.DeferredResult;
 
 			var result = new DeferredQuery(_dataProvider);
-			var resultReader = builder.Projection.AddView<T>();
-			AttachCustomFactories(resultReader);
 			result.Add(builder.BuildQuery(), new ManyMappedResultProcessor<T>(
 				resultReader,
 				resultSource
@@ -268,15 +245,13 @@ namespace Silk.Data.SQL.ORM
 		public IDeferred Select<TView>(Action<IEntitySelectQueryBuilder<T>> query, out DeferredResult<List<TView>> viewsResult)
 			where TView : class
 		{
-			var builder = new SelectBuilder<T>(_schema, _entityModel);
-			query?.Invoke(builder);
+			var builder = QueryBuilder.Select<TView>(query, out var resultReader);
+			AttachCustomFactories(resultReader);
 
 			var resultSource = new DeferredResultSource<List<TView>>();
 			viewsResult = resultSource.DeferredResult;
 
 			var result = new DeferredQuery(_dataProvider);
-			var resultReader = builder.Projection.AddView<TView>();
-			AttachCustomFactories(resultReader);
 			result.Add(builder.BuildQuery(), new ManyMappedResultProcessor<TView>(
 				resultReader,
 				resultSource
@@ -288,14 +263,12 @@ namespace Silk.Data.SQL.ORM
 		public IDeferred Select<TExpr>(System.Linq.Expressions.Expression<Func<T, TExpr>> expression,
 			Action<IEntitySelectQueryBuilder<T>> query, out DeferredResult<List<TExpr>> exprsResult)
 		{
-			var builder = new SelectBuilder<T>(_schema, _entityModel);
-			query?.Invoke(builder);
+			var builder = QueryBuilder.Select(expression, query, out var resultReader);
 
 			var resultSource = new DeferredResultSource<List<TExpr>>();
 			exprsResult = resultSource.DeferredResult;
 
 			var result = new DeferredQuery(_dataProvider);
-			var resultReader = builder.Projection.AddField(expression);
 			result.Add(builder.BuildQuery(), new ManyMappedResultProcessor<TExpr>(
 				resultReader,
 				resultSource

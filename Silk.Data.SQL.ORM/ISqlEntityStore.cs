@@ -9,6 +9,11 @@ namespace Silk.Data.SQL.ORM
 		where T : class
 	{
 		/// <summary>
+		/// Gets or sets the query builder being used to construct queries.
+		/// </summary>
+		IEntityQueryBuilder<T> QueryBuilder { get; set; }
+
+		/// <summary>
 		/// Insert an entity.
 		/// </summary>
 		/// <param name="entities"></param>
