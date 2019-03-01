@@ -30,7 +30,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					//  create table
 					table.CreateTable(),
 					//  insert a single entity
-					store.Insert(entity),
+					store.Insert(entity).Defer(),
 					//  retrieve the entity previously inserted
 					store.Select(entity.GetEntityReference(), out var entityResult),
 					//  update the entities `String` value
@@ -103,7 +103,7 @@ namespace Silk.Data.SQL.ORM.Tests
 				new[]
 				{
 					table.CreateTable(),
-					store.Insert(entity),
+					store.Insert(entity).Defer(),
 					store.Select(entity.GetEntityReference(), out var retreivedEntityResult),
 					store.Select<EmbeddedStringView>(entity.GetEntityReference(), out var stringViewResult)
 				}.Execute();
@@ -140,8 +140,8 @@ namespace Silk.Data.SQL.ORM.Tests
 						parentTable.CreateTable(),
 						childTable.CreateTable(),
 
-						childStore.Insert(entity.Flat),
-						parentStore.Insert(entity),
+						childStore.Insert(entity.Flat).Defer(),
+						parentStore.Insert(entity).Defer(),
 
 						parentStore.Select(entity.GetEntityReference(), out var retreivedEntityResult),
 						parentStore.Select<EmbeddedStringView>(entity.GetEntityReference(), out var stringViewResult)

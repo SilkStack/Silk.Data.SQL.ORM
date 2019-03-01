@@ -117,12 +117,12 @@ namespace Silk.Data.SQL.ORM.Queries
 		new IEntityRangeBuilder<T> Range { get; set; }
 	}
 
-	public interface IFieldAssignmentQueryBuilder : IQueryBuilder
+	public interface IFieldAssignmentQueryBuilder
 	{
 		IFieldAssignmentBuilder Assignments { get; set; }
 	}
 
-	public interface IFieldAssignmentQueryBuilder<T> : IFieldAssignmentQueryBuilder, IEntityQueryBuilder<T>
+	public interface IFieldAssignmentQueryBuilder<T> : IFieldAssignmentQueryBuilder
 		where T : class
 	{
 		new IEntityFieldAssignmentBuilder<T> Assignments { get; set; }

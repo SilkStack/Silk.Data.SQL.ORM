@@ -64,11 +64,9 @@ namespace Silk.Data.SQL.ORM
 			helper.WriteValueToInstance(obj, data);
 		}
 
-		private DeferredQuery Insert<TView>(IModelTranscriber<TView> transcriber, TView entity)
+		private DeferableInsert<T> Insert<TView>(IModelTranscriber<TView> transcriber, TView entity)
 			where TView : class
 		{
-			var result = new DeferredQuery(_dataProvider);
-
 			var mapBackInsertId = _serverGeneratedPrimaryKey != null;
 			var generatePrimaryKey = _clientGeneratedPrimaryKey != null;
 			var insertBuilder = QueryBuilder.Insert(entity);
@@ -80,28 +78,34 @@ namespace Silk.Data.SQL.ORM
 				AttemptWriteToObject(entity, newId, _clientGeneratedPrimaryKey, transcriber);
 			}
 
-			result.Add(insertBuilder.BuildQuery());
-
-			if (mapBackInsertId)
+			if (!mapBackInsertId)
 			{
-				var idFieldHelper = transcriber.SchemaToTypeHelpers.FirstOrDefault(q => q.From == _serverGeneratedPrimaryKey);
-				if (idFieldHelper != null)
-				{
-					result.Add(
-						QueryExpression.Select(
-							QueryExpression.Alias(QueryExpression.LastInsertIdFunction(), _serverGeneratedPrimaryKey.ProjectionAlias),
-							from: QueryExpression.Table(_entityModel.Table.TableName)
-						),
-						new MapLastIdResultProcessor<TView>(
-							entity, idFieldHelper
-							));
-				}
+				return new DeferableInsert<T>(
+					insertBuilder, _dataProvider
+				);
 			}
 
-			return result;
+			var idFieldHelper = transcriber.SchemaToTypeHelpers.FirstOrDefault(q => q.From == _serverGeneratedPrimaryKey);
+			if (idFieldHelper == null)
+			{
+				return new DeferableInsert<T>(
+					insertBuilder, _dataProvider
+				);
+			}
+
+			return new DeferableInsert<T>(
+				insertBuilder, _dataProvider,
+				QueryExpression.Select(
+					QueryExpression.Alias(QueryExpression.LastInsertIdFunction(), _serverGeneratedPrimaryKey.ProjectionAlias),
+					from: QueryExpression.Table(_entityModel.Table.TableName)
+				),
+				new MapLastIdResultProcessor<TView>(
+					entity, idFieldHelper
+					)
+				);
 		}
 
-		public IDeferred Insert(T entity)
+		public DeferableInsert<T> Insert(T entity)
 		{
 			if (entity == null)
 				throw new ArgumentNullException(nameof(entity));
@@ -109,7 +113,7 @@ namespace Silk.Data.SQL.ORM
 			return Insert(_entityTranscriber, entity);
 		}
 
-		public IDeferred Insert<TView>(TView entityView)
+		public DeferableInsert<T> Insert<TView>(TView entityView)
 			where TView : class
 		{
 			if (entityView == null)
@@ -118,14 +122,8 @@ namespace Silk.Data.SQL.ORM
 			return Insert(_entityModel.GetModelTranscriber<TView>(), entityView);
 		}
 
-		public IDeferred Insert(Action<IEntityInsertQueryBuilder<T>> queryConfigurer)
-		{
-			var result = new DeferredQuery(_dataProvider);
-			var query = QueryBuilder.Insert();
-			queryConfigurer?.Invoke(query);
-			result.Add(query.BuildQuery());
-			return result;
-		}
+		public DeferableInsert<T> Insert()
+			=> new DeferableInsert<T>(QueryBuilder.Insert(), _dataProvider);
 
 		public IDeferred Delete(T entity)
 		{

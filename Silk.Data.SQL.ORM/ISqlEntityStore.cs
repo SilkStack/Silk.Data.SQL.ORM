@@ -18,7 +18,7 @@ namespace Silk.Data.SQL.ORM
 		/// </summary>
 		/// <param name="entities"></param>
 		/// <returns></returns>
-		IDeferred Insert(T entity);
+		DeferableInsert<T> Insert(T entity);
 
 		/// <summary>
 		/// Insert an entities using a view type.
@@ -26,7 +26,7 @@ namespace Silk.Data.SQL.ORM
 		/// <typeparam name="TView"></typeparam>
 		/// <param name="entityViews"></param>
 		/// <returns></returns>
-		IDeferred Insert<TView>(TView entityView)
+		DeferableInsert<T> Insert<TView>(TView entityView)
 			where TView : class;
 
 		/// <summary>
@@ -34,7 +34,7 @@ namespace Silk.Data.SQL.ORM
 		/// </summary>
 		/// <param name="queryConfigurer"></param>
 		/// <returns></returns>
-		IDeferred Insert(Action<IEntityInsertQueryBuilder<T>> queryConfigurer);
+		DeferableInsert<T> Insert();
 
 		IDeferred Delete(T entity);
 		IDeferred Delete(IEntityReference<T> entityReference);
