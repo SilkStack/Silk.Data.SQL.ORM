@@ -134,33 +134,15 @@ namespace Silk.Data.SQL.ORM
 		public DeferableDelete<T> Delete()
 			=> new DeferableDelete<T>(QueryBuilder.Delete(), _dataProvider);
 
-		public IDeferred Update(T entity)
-		{
-			var result = new DeferredQuery(_dataProvider);
-			result.Add(
-				QueryBuilder.Update(entity).BuildQuery()
-				);
-			return result;
-		}
+		public DeferableUpdate<T> Update(T entity)
+			=> new DeferableUpdate<T>(QueryBuilder.Update(entity), _dataProvider);
 
-		public IDeferred Update<TView>(IEntityReference<T> entityReference, TView view)
+		public DeferableUpdate<T> Update<TView>(IEntityReference<T> entityReference, TView view)
 			where TView : class
-		{
-			var result = new DeferredQuery(_dataProvider);
-			result.Add(
-				QueryBuilder.Update(entityReference, view).BuildQuery()
-				);
-			return result;
-		}
+			=> new DeferableUpdate<T>(QueryBuilder.Update(entityReference, view), _dataProvider);
 
-		public IDeferred Update(Action<IEntityUpdateQueryBuilder<T>> queryConfigurer)
-		{
-			var result = new DeferredQuery(_dataProvider);
-			var query = QueryBuilder.Update();
-			queryConfigurer?.Invoke(query);
-			result.Add(query.BuildQuery());
-			return result;
-		}
+		public DeferableUpdate<T> Update()
+			=> new DeferableUpdate<T>(QueryBuilder.Update(), _dataProvider);
 
 		private void AttachCustomFactories<TView>(IResultReader<TView> resultReader)
 			where TView : class

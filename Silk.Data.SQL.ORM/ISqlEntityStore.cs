@@ -40,10 +40,10 @@ namespace Silk.Data.SQL.ORM
 		DeferableDelete<T> Delete(IEntityReference<T> entityReference);
 		DeferableDelete<T> Delete();
 
-		IDeferred Update(T entity);
-		IDeferred Update<TView>(IEntityReference<T> entityReference, TView view)
+		DeferableUpdate<T> Update(T entity);
+		DeferableUpdate<T> Update<TView>(IEntityReference<T> entityReference, TView view)
 			where TView : class;
-		IDeferred Update(Action<IEntityUpdateQueryBuilder<T>> queryConfigurer);
+		DeferableUpdate<T> Update();
 
 		/// <summary>
 		/// Selects a single entity.

@@ -174,5 +174,22 @@ namespace Silk.Data.SQL.ORM
 			where TEntity : class => builder.OrWhere<DeferableDelete<TEntity>, TEntity>(schemaField, @operator, valueExpression);
 		public static DeferableDelete<TEntity> OrWhere<TEntity>(this DeferableDelete<TEntity> builder, EntityField<TEntity> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
 			where TEntity : class => builder.OrWhere<DeferableDelete<TEntity>, TEntity>(schemaField, @operator, subQuery);
+
+		public static DeferableUpdate<TEntity> AndWhere<TEntity>(this DeferableUpdate<TEntity> builder, Expression<Func<TEntity, bool>> expression)
+			where TEntity : class => builder.AndWhere<DeferableUpdate<TEntity>, TEntity>(expression);
+		public static DeferableUpdate<TEntity> OrWhere<TEntity>(this DeferableUpdate<TEntity> builder, Expression<Func<TEntity, bool>> expression)
+			where TEntity : class => builder.OrWhere<DeferableUpdate<TEntity>, TEntity>(expression);
+		public static DeferableUpdate<TEntity> AndWhere<TEntity, TValue>(this DeferableUpdate<TEntity> builder, EntityField<TEntity> schemaField, ComparisonOperator @operator, TValue value)
+			where TEntity : class => builder.AndWhere<DeferableUpdate<TEntity>, TEntity, TValue>(schemaField, @operator, value);
+		public static DeferableUpdate<TEntity> AndWhere<TEntity>(this DeferableUpdate<TEntity> builder, EntityField<TEntity> schemaField, ComparisonOperator @operator, Expression<Func<TEntity, bool>> valueExpression)
+			where TEntity : class => builder.AndWhere<DeferableUpdate<TEntity>, TEntity>(schemaField, @operator, valueExpression);
+		public static DeferableUpdate<TEntity> AndWhere<TEntity>(this DeferableUpdate<TEntity> builder, EntityField<TEntity> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
+			where TEntity : class => builder.AndWhere<DeferableUpdate<TEntity>, TEntity>(schemaField, @operator, subQuery);
+		public static DeferableUpdate<TEntity> OrWhere<TEntity, TValue>(this DeferableUpdate<TEntity> builder, EntityField<TEntity> schemaField, ComparisonOperator @operator, TValue value)
+			where TEntity : class => builder.OrWhere<DeferableUpdate<TEntity>, TEntity, TValue>(schemaField, @operator, value);
+		public static DeferableUpdate<TEntity> OrWhere<TEntity>(this DeferableUpdate<TEntity> builder, EntityField<TEntity> schemaField, ComparisonOperator @operator, Expression<Func<TEntity, bool>> valueExpression)
+			where TEntity : class => builder.OrWhere<DeferableUpdate<TEntity>, TEntity>(schemaField, @operator, valueExpression);
+		public static DeferableUpdate<TEntity> OrWhere<TEntity>(this DeferableUpdate<TEntity> builder, EntityField<TEntity> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
+			where TEntity : class => builder.OrWhere<DeferableUpdate<TEntity>, TEntity>(schemaField, @operator, subQuery);
 	}
 }

@@ -34,7 +34,7 @@ namespace Silk.Data.SQL.ORM.Tests
 					//  retrieve the entity previously inserted
 					store.Select(entity.GetEntityReference(), out var entityResult),
 					//  update the entities `String` value
-					store.Update(entity.GetEntityReference(), new { String = "New String" }),
+					store.Update(entity.GetEntityReference(), new { String = "New String" }).Defer(),
 					//  select the entity again in the shape of `StringView`
 					store.Select<StringView>(entity.GetEntityReference(), out var stringViewResult),
 					//  select every ID from the table

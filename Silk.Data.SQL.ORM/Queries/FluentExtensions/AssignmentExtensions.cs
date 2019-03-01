@@ -160,5 +160,29 @@ namespace Silk.Data.SQL.ORM
 
 		public static DeferableInsert<TEntity> Set<TEntity, TProperty>(this DeferableInsert<TEntity> builder, Expression<Func<TEntity, TProperty>> fieldSelector, QueryExpression valueExpression)
 			where TEntity : class => builder.Set<DeferableInsert<TEntity>, TEntity, TProperty>(fieldSelector, valueExpression);
+
+		public static DeferableUpdate<TEntity> Set<TEntity, TValue>(this DeferableUpdate<TEntity> builder, EntityField<TEntity> schemaField, TValue value)
+			where TEntity : class => builder.Set<DeferableUpdate<TEntity>, TEntity, TValue>(schemaField, value);
+
+		public static DeferableUpdate<TEntity> Set<TEntity, TValue>(this DeferableUpdate<TEntity> builder, EntityField<TEntity> schemaField, Expression<Func<TEntity, TValue>> valueExpression)
+			where TEntity : class => builder.Set<DeferableUpdate<TEntity>, TEntity, TValue>(schemaField, valueExpression);
+
+		public static DeferableUpdate<TEntity> Set<TEntity>(this DeferableUpdate<TEntity> builder, EntityField<TEntity> schemaField, IQueryBuilder subQuery)
+			where TEntity : class => builder.Set<DeferableUpdate<TEntity>, TEntity>(schemaField, subQuery);
+
+		public static DeferableUpdate<TEntity> Set<TEntity, TProperty>(this DeferableUpdate<TEntity> builder, Expression<Func<TEntity, TProperty>> fieldSelector, TProperty value)
+			where TEntity : class => builder.Set<DeferableUpdate<TEntity>, TEntity, TProperty>(fieldSelector, value);
+
+		public static DeferableUpdate<TEntity> Set<TEntity, TProperty>(this DeferableUpdate<TEntity> builder, Expression<Func<TEntity, TProperty>> fieldSelector, Expression<Func<TEntity, TProperty>> valueExpression)
+			where TEntity : class => builder.Set<DeferableUpdate<TEntity>, TEntity, TProperty>(fieldSelector, valueExpression);
+
+		public static DeferableUpdate<TEntity> Set<TEntity, TProperty>(this DeferableUpdate<TEntity> builder, Expression<Func<TEntity, TProperty>> fieldSelector, Expression valueExpression)
+			where TEntity : class => builder.Set<DeferableUpdate<TEntity>, TEntity, TProperty>(fieldSelector, valueExpression);
+
+		public static DeferableUpdate<TEntity> Set<TEntity, TProperty>(this DeferableUpdate<TEntity> builder, Expression<Func<TEntity, TProperty>> fieldSelector, IQueryBuilder subQuery)
+			where TEntity : class => builder.Set<DeferableUpdate<TEntity>, TEntity, TProperty>(fieldSelector, subQuery);
+
+		public static DeferableUpdate<TEntity> Set<TEntity, TProperty>(this DeferableUpdate<TEntity> builder, Expression<Func<TEntity, TProperty>> fieldSelector, QueryExpression valueExpression)
+			where TEntity : class => builder.Set<DeferableUpdate<TEntity>, TEntity, TProperty>(fieldSelector, valueExpression);
 	}
 }
