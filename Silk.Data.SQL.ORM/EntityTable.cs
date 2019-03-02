@@ -78,7 +78,10 @@ namespace Silk.Data.SQL.ORM
 			public void ProcessResult(QueryResult queryResult)
 			{
 				if (!queryResult.HasRows || !queryResult.Read())
+				{
 					_deferredResultSource.SetResult(false);
+					return;
+				}
 
 				_deferredResultSource.SetResult(queryResult.GetInt32(0) > 0);
 			}
@@ -86,7 +89,10 @@ namespace Silk.Data.SQL.ORM
 			public async Task ProcessResultAsync(QueryResult queryResult)
 			{
 				if (!queryResult.HasRows || !await queryResult.ReadAsync())
+				{
 					_deferredResultSource.SetResult(false);
+					return;
+				}
 
 				_deferredResultSource.SetResult(queryResult.GetInt32(0) > 0);
 			}
