@@ -62,15 +62,18 @@ namespace Silk.Data.SQL.ORM.Queries
 
 				var entityField = helper.From;
 
-				_projectionExpressions.Add(
-					entityField.ProjectionAlias,
-					new AliasExpression(
-						QueryExpression.Column(entityField.Column.Name, entityField.Source.AliasIdentifierExpression),
-						entityField.ProjectionAlias)
-					);
-				var requiredJoin = entityField.Source as Join;
-				if (requiredJoin != null)
-					_requiredJoins.AddJoin(requiredJoin);
+				if (!_projectionExpressions.ContainsKey(entityField.ProjectionAlias))
+				{
+					_projectionExpressions.Add(
+						entityField.ProjectionAlias,
+						new AliasExpression(
+							QueryExpression.Column(entityField.Column.Name, entityField.Source.AliasIdentifierExpression),
+							entityField.ProjectionAlias)
+						);
+					var requiredJoin = entityField.Source as Join;
+					if (requiredJoin != null)
+						_requiredJoins.AddJoin(requiredJoin);
+				}
 			}
 
 			return new MappingReader<TView>(mapping);

@@ -1,6 +1,8 @@
 ﻿using Silk.Data.SQL.Providers;
 using Silk.Data.SQL.Queries;
+using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 
 namespace Silk.Data.SQL.ORM.Queries
@@ -34,6 +36,23 @@ namespace Silk.Data.SQL.ORM.Queries
 		IGroupByBuilder IGroupByQueryBuilder.GroupBy { get => _nonGenericBuilder.GroupBy; set => _nonGenericBuilder.GroupBy = value; }
 		IOrderByBuilder IOrderByQueryBuilder.OrderBy { get => _nonGenericBuilder.OrderBy; set => _nonGenericBuilder.OrderBy = value; }
 		IRangeBuilder IRangeQueryBuilder.Range { get => _nonGenericBuilder.Range; set => _nonGenericBuilder.Range = value; }
+
+		public SingleDeferableSelect<TEntity, (TResult, TView)> Select<TView>()
+			where TView : class
+		{
+			var viewReader = _queryBuilder.Projection.AddView<TView>();
+			return _queryBuilder.CreateSingleResultQuery(
+				_resultReader.Combine(viewReader), _dataProvider
+				);
+		}
+
+		public SingleDeferableSelect<TEntity, (TResult, TExpr)> Select<TExpr>(Expression<Func<TEntity,TExpr>> expression)
+		{
+			var viewReader = _queryBuilder.Projection.AddField(expression);
+			return _queryBuilder.CreateSingleResultQuery(
+				_resultReader.Combine(viewReader), _dataProvider
+				);
+		}
 
 		public IDeferred Defer(out DeferredResult<TResult> deferredResult)
 		{
@@ -134,6 +153,23 @@ namespace Silk.Data.SQL.ORM.Queries
 			_nonGenericBuilder = queryBuilder;
 			_resultReader = resultReader;
 			_dataProvider = dataProvider;
+		}
+
+		public MultipleDeferableSelect<TEntity, (TResult, TView)> Select<TView>()
+			where TView : class
+		{
+			var viewReader = _queryBuilder.Projection.AddView<TView>();
+			return _queryBuilder.CreateMultipleResultQuery(
+				_resultReader.Combine(viewReader), _dataProvider
+				);
+		}
+
+		public MultipleDeferableSelect<TEntity, (TResult, TExpr)> Select<TExpr>(Expression<Func<TEntity, TExpr>> expression)
+		{
+			var viewReader = _queryBuilder.Projection.AddField(expression);
+			return _queryBuilder.CreateMultipleResultQuery(
+				_resultReader.Combine(viewReader), _dataProvider
+				);
 		}
 
 		public IDeferred Defer(out DeferredResult<List<TResult>> deferredResult)
