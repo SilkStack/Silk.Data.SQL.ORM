@@ -39,6 +39,24 @@ namespace Silk.Data
 			return result;
 		}
 
+		public void Execute(IDeferable deferable)
+			=> Execute(new[] { deferable.Defer() });
+
+		public Task ExecuteAsync(IDeferable deferable)
+			=> ExecuteAsync(new[] { deferable.Defer() });
+
+		public T Execute<T>(IDeferable<T> deferable)
+		{
+			Execute(new[] { deferable.Defer(out var result) });
+			return result.Result;
+		}
+
+		public async Task<T> ExecuteAsync<T>(IDeferable<T> deferable)
+		{
+			await ExecuteAsync(new[] { deferable.Defer(out var result) });
+			return result.Result;
+		}
+
 		public void Execute(IEnumerable<IDeferred> deferredTasks)
 		{
 			var executor = deferredTasks.ToExecutor();
