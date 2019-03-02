@@ -62,7 +62,7 @@ Creating a database provider isn't actually part of `Silk.Data.SQL.ORM` but is s
 ~~~
 var dataProvider =
   //  SQLite3
-  new SQLite3DataProvider(new Uri(UriKind.Relative, "database.db"));
+  new SQLite3DataProvider(new Uri("database.db", UriKind.Relative));
   //  SqlServer
   new MSSqlDataProvider(hostname, database, username, password);
   //  Postgresql
@@ -93,8 +93,14 @@ var store = new SqlEntityStore<T>(schema, dataProvider);
 
 await new[]
 {
-  store.Insert(new UserAccount { LoginName = "DevJohnC", EmailAddress = "devjohnc@github.com", CreatedAtUtc = DateTime.UtcNow }),
-  store.Select(query => query.OrderByDescending(account => account.CreatedAtUtc).Limit(1), out var queryResult)
+  store
+    .Insert(new UserAccount { LoginName = "DevJohnC", EmailAddress = "devjohnc@github.com", CreatedAtUtc = DateTime.UtcNow }),
+    
+  store
+    .Select()
+    .OrderByDescending(account => account.CreatedAtUtc)
+    .Limit(1)
+    .Defer(out var queryResult)
 }.ExecuteAsync();
 
 Console.WriteLine($"The most recently created user is: {queryResult.Result[0].LoginName}");
@@ -121,7 +127,7 @@ transaction.Commit();
 The `SELECT` APIs on `ISqlEntityStore<T>` support providing an expression to be projected:
 
 ~~~
-store.Select(entity => entity.Id, query => { }, out var allIDs);
+var allIDs = store.Select(entity => entity.Id).Execute();
 ~~~
 
 This API currently supports specifying just a single property or database function call. In the future it will support a full anonymous type expression.
@@ -150,8 +156,8 @@ public class BlogPostAuthorView
   public string AuthorDisplayName { get; set; }
 }
 
-blogPostStore
-  .Select<BlogPostAuthorView>(query => { }, out var blogPostAuthorsResult)
+var blogPostAuthorsResult = blogPostStore
+  .Select<BlogPostAuthorView>()
   .Execute();
 ~~~
 
@@ -171,10 +177,14 @@ Type coercions supported:
 Any API in `Silk.Data.SQL.ORM` that accepts an `Expression<>` type can include method calls that will be converted in SQL query expressions. By default the methods declared on `DatabaseFunctions` and `Enum.HasFlag` are supported.
 
 ~~~
-store.Select(
-  entity => DatabaseFunctions.Count(entity),
-  query => query.AndWhere(entity => entity.Status.HasFlag(Status.IsPublished)),
-  out var countResults);
+var count = store.Select(
+    entity => DatabaseFunctions.Count(entity)
+  )
+  .AndWhere(
+    entity => entity.Status.HasFlag(Status.IsPublished)
+  )
+  .Single()
+  .Execute();
 ~~~
 
 _Attempting to invoke CLR methods within your `Expression` will always be translated to SQL expressions, no runtime method invocations are supported in expressions currently._
