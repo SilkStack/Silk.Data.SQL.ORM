@@ -68,8 +68,17 @@ namespace Silk.Data.SQL.ORM
 
 		public static IEntitySelectQueryBuilder<TEntity> Offset<TEntity, TProperty>(this IEntitySelectQueryBuilder<TEntity> builder, Expression<Func<TEntity, int>> expression)
 			where TEntity : class => builder.Offset<IEntitySelectQueryBuilder<TEntity>, TEntity>(expression);
-
 		public static IEntitySelectQueryBuilder<TEntity> Limit<TEntity, TProperty>(this IEntitySelectQueryBuilder<TEntity> builder, Expression<Func<TEntity, int>> expression)
 			where TEntity : class => builder.Limit<IEntitySelectQueryBuilder<TEntity>, TEntity>(expression);
+
+		public static SingleDeferableSelect<TEntity, TView> Offset<TEntity, TView, TProperty>(this SingleDeferableSelect<TEntity, TView> builder, Expression<Func<TEntity, int>> expression)
+			where TEntity : class => builder.Offset<SingleDeferableSelect<TEntity, TView>, TEntity>(expression);
+		public static SingleDeferableSelect<TEntity, TView> Limit<TEntity, TView, TProperty>(this SingleDeferableSelect<TEntity, TView> builder, Expression<Func<TEntity, int>> expression)
+			where TEntity : class => builder.Limit<SingleDeferableSelect<TEntity, TView>, TEntity>(expression);
+
+		public static MultipleDeferableSelect<TEntity, TView> Offset<TEntity, TView, TProperty>(this MultipleDeferableSelect<TEntity, TView> builder, Expression<Func<TEntity, int>> expression)
+			where TEntity : class => builder.Offset<MultipleDeferableSelect<TEntity, TView>, TEntity>(expression);
+		public static MultipleDeferableSelect<TEntity, TView> Limit<TEntity, TView, TProperty>(this MultipleDeferableSelect<TEntity, TView> builder, Expression<Func<TEntity, int>> expression)
+			where TEntity : class => builder.Limit<MultipleDeferableSelect<TEntity, TView>, TEntity>(expression);
 	}
 }

@@ -62,56 +62,56 @@ namespace Silk.Data.SQL.ORM.Queries
 		new IEntityConditionBuilder<T> Where { get; set; }
 	}
 
-	public interface IHavingQueryBuilder : IQueryBuilder
+	public interface IHavingQueryBuilder
 	{
 		IConditionBuilder Having { get; set; }
 	}
 
-	public interface IHavingQueryBuilder<T> : IHavingQueryBuilder, IEntityQueryBuilder<T>
+	public interface IHavingQueryBuilder<T> : IHavingQueryBuilder
 		where T : class
 	{
 		new IEntityConditionBuilder<T> Having { get; set; }
 	}
 
-	public interface IGroupByQueryBuilder : IQueryBuilder
+	public interface IGroupByQueryBuilder
 	{
 		IGroupByBuilder GroupBy { get; set; }
 	}
 
-	public interface IGroupByQueryBuilder<T> : IGroupByQueryBuilder, IEntityQueryBuilder<T>
+	public interface IGroupByQueryBuilder<T> : IGroupByQueryBuilder
 		where T : class
 	{
 		new IEntityGroupByBuilder<T> GroupBy { get; set; }
 	}
 
-	public interface IOrderByQueryBuilder : IQueryBuilder
+	public interface IOrderByQueryBuilder
 	{
 		IOrderByBuilder OrderBy { get; set; }
 	}
 
-	public interface IOrderByQueryBuilder<T> : IOrderByQueryBuilder, IEntityQueryBuilder<T>
+	public interface IOrderByQueryBuilder<T> : IOrderByQueryBuilder
 		where T : class
 	{
 		new IEntityOrderByBuilder<T> OrderBy { get; set; }
 	}
 
-	public interface IProjectionQueryBuilder : IQueryBuilder
+	public interface IProjectionQueryBuilder
 	{
 		IProjectionBuilder Projection { get; set; }
 	}
 
-	public interface IProjectionQueryBuilder<T> : IProjectionQueryBuilder, IEntityQueryBuilder<T>
+	public interface IProjectionQueryBuilder<T> : IProjectionQueryBuilder
 		where T : class
 	{
 		new IEntityProjectionBuilder<T> Projection { get; set; }
 	}
 
-	public interface IRangeQueryBuilder : IQueryBuilder
+	public interface IRangeQueryBuilder
 	{
 		IRangeBuilder Range { get; set; }
 	}
 
-	public interface IRangeQueryBuilder<T> : IRangeQueryBuilder, IEntityQueryBuilder<T>
+	public interface IRangeQueryBuilder<T> : IRangeQueryBuilder
 		where T : class
 	{
 		new IEntityRangeBuilder<T> Range { get; set; }

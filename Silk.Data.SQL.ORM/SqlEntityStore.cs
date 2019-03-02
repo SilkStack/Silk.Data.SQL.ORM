@@ -158,94 +158,112 @@ namespace Silk.Data.SQL.ORM
 				mappingReader.TypeReaderWriterFactory = _typeReaderWriterFactory;
 		}
 
-		public IDeferred Select(IEntityReference<T> entityReference, out DeferredResult<T> entityResult)
+		public SingleDeferableSelect<T, T> Select(IEntityReference<T> entityReference)
 		{
 			var builder = QueryBuilder.Select(entityReference, out var resultReader);
 			AttachCustomFactories(resultReader);
 
-			var resultSource = new DeferredResultSource<T>();
-			entityResult = resultSource.DeferredResult;
+			return new SingleDeferableSelect<T, T>(
+				builder, _dataProvider, resultReader
+				);
 
-			var result = new DeferredQuery(_dataProvider);
-			result.Add(builder.BuildQuery(), new SingleMappedResultProcessor<T>(
-				resultReader,
-				resultSource
-				));
+			//var resultSource = new DeferredResultSource<T>();
+			//entityResult = resultSource.DeferredResult;
 
-			return result;
+			//var result = new DeferredQuery(_dataProvider);
+			//result.Add(builder.BuildQuery(), new SingleMappedResultProcessor<T>(
+			//	resultReader,
+			//	resultSource
+			//	));
+
+			//return result;
 		}
 
-		public IDeferred Select<TView>(IEntityReference<T> entityReference, out DeferredResult<TView> viewResult)
+		public SingleDeferableSelect<T, TView> Select<TView>(IEntityReference<T> entityReference)
 			where TView : class
 		{
 			var builder = QueryBuilder.Select<TView>(entityReference, out var resultReader);
 			AttachCustomFactories(resultReader);
 
-			var resultSource = new DeferredResultSource<TView>();
-			viewResult = resultSource.DeferredResult;
+			return new SingleDeferableSelect<T, TView>(
+				builder, _dataProvider, resultReader
+				);
 
-			var result = new DeferredQuery(_dataProvider);
-			result.Add(builder.BuildQuery(), new SingleMappedResultProcessor<TView>(
-				resultReader,
-				resultSource
-				));
+			//var resultSource = new DeferredResultSource<TView>();
+			//viewResult = resultSource.DeferredResult;
 
-			return result;
+			//var result = new DeferredQuery(_dataProvider);
+			//result.Add(builder.BuildQuery(), new SingleMappedResultProcessor<TView>(
+			//	resultReader,
+			//	resultSource
+			//	));
+
+			//return result;
 		}
 
-		public IDeferred Select(Action<IEntitySelectQueryBuilder<T>> query, out DeferredResult<List<T>> entitiesResult)
+		public MultipleDeferableSelect<T, T> Select()
 		{
 			var builder = QueryBuilder.Select(out var resultReader);
-			query?.Invoke(builder);
 			AttachCustomFactories(resultReader);
 
-			var resultSource = new DeferredResultSource<List<T>>();
-			entitiesResult = resultSource.DeferredResult;
+			return new MultipleDeferableSelect<T, T>(
+				builder, _dataProvider, resultReader
+				);
 
-			var result = new DeferredQuery(_dataProvider);
-			result.Add(builder.BuildQuery(), new ManyMappedResultProcessor<T>(
-				resultReader,
-				resultSource
-				));
+			//var resultSource = new DeferredResultSource<List<T>>();
+			//entitiesResult = resultSource.DeferredResult;
 
-			return result;
+			//var result = new DeferredQuery(_dataProvider);
+			//result.Add(builder.BuildQuery(), new ManyMappedResultProcessor<T>(
+			//	resultReader,
+			//	resultSource
+			//	));
+
+			//return result;
 		}
 
-		public IDeferred Select<TView>(Action<IEntitySelectQueryBuilder<T>> query, out DeferredResult<List<TView>> viewsResult)
+		public MultipleDeferableSelect<T, TView> Select<TView>()
 			where TView : class
 		{
 			var builder = QueryBuilder.Select<TView>(out var resultReader);
-			query?.Invoke(builder);
 			AttachCustomFactories(resultReader);
 
-			var resultSource = new DeferredResultSource<List<TView>>();
-			viewsResult = resultSource.DeferredResult;
+			return new MultipleDeferableSelect<T, TView>(
+				builder, _dataProvider, resultReader
+				);
 
-			var result = new DeferredQuery(_dataProvider);
-			result.Add(builder.BuildQuery(), new ManyMappedResultProcessor<TView>(
-				resultReader,
-				resultSource
-				));
+			//var resultSource = new DeferredResultSource<List<TView>>();
+			//viewsResult = resultSource.DeferredResult;
 
-			return result;
+			//var result = new DeferredQuery(_dataProvider);
+			//result.Add(builder.BuildQuery(), new ManyMappedResultProcessor<TView>(
+			//	resultReader,
+			//	resultSource
+			//	));
+
+			//return result;
 		}
 
-		public IDeferred Select<TExpr>(System.Linq.Expressions.Expression<Func<T, TExpr>> expression,
-			Action<IEntitySelectQueryBuilder<T>> query, out DeferredResult<List<TExpr>> exprsResult)
+		public MultipleDeferableSelect<T, TExpr> Select<TExpr>(System.Linq.Expressions.Expression<Func<T, TExpr>> expression)
 		{
 			var builder = QueryBuilder.Select(expression, out var resultReader);
-			query?.Invoke(builder);
 
-			var resultSource = new DeferredResultSource<List<TExpr>>();
-			exprsResult = resultSource.DeferredResult;
+			return new MultipleDeferableSelect<T, TExpr>(
+				builder, _dataProvider, resultReader
+				);
 
-			var result = new DeferredQuery(_dataProvider);
-			result.Add(builder.BuildQuery(), new ManyMappedResultProcessor<TExpr>(
-				resultReader,
-				resultSource
-				));
+			//query?.Invoke(builder);
 
-			return result;
+			//var resultSource = new DeferredResultSource<List<TExpr>>();
+			//exprsResult = resultSource.DeferredResult;
+
+			//var result = new DeferredQuery(_dataProvider);
+			//result.Add(builder.BuildQuery(), new ManyMappedResultProcessor<TExpr>(
+			//	resultReader,
+			//	resultSource
+			//	));
+
+			//return result;
 		}
 
 		private class MapLastIdResultProcessor<TView> : IQueryResultProcessor
@@ -281,88 +299,6 @@ namespace Silk.Data.SQL.ORM
 			private void MapValue(QueryResult queryResult)
 			{
 				_fieldHelper.CopyResultToObject(queryResult, _view);
-			}
-		}
-
-		private class SingleMappedResultProcessor<TResult> : IQueryResultProcessor
-		{
-			private readonly IResultReader<TResult> _resultReader;
-			private readonly DeferredResultSource<TResult> _resultSource;
-
-			public SingleMappedResultProcessor(
-				IResultReader<TResult> resultReader,
-				DeferredResultSource<TResult> deferredResultSource
-				)
-			{
-				_resultReader = resultReader;
-				_resultSource = deferredResultSource;
-			}
-
-			public void HandleFailure()
-			{
-				if (_resultSource.DeferredResult.TaskHasRun)
-					return;
-				_resultSource.SetFailed();
-			}
-
-			public void ProcessResult(QueryResult queryResult)
-			{
-				if (!queryResult.HasRows || !queryResult.Read())
-				{
-					_resultSource.SetResult(default(TResult));
-					return;
-				}
-
-				_resultSource.SetResult(_resultReader.Read(queryResult));
-			}
-
-			public async Task ProcessResultAsync(QueryResult queryResult)
-			{
-				if (!queryResult.HasRows || !await queryResult.ReadAsync())
-				{
-					_resultSource.SetResult(default(TResult));
-					return;
-				}
-
-				_resultSource.SetResult(_resultReader.Read(queryResult));
-			}
-		}
-
-		private class ManyMappedResultProcessor<TResult> : IQueryResultProcessor
-		{
-			private readonly IResultReader<TResult> _resultReader;
-			private readonly DeferredResultSource<List<TResult>> _resultSource;
-
-			public ManyMappedResultProcessor(
-				IResultReader<TResult> resultReader,
-				DeferredResultSource<List<TResult>> deferredResultSource
-				)
-			{
-				_resultReader = resultReader;
-				_resultSource = deferredResultSource;
-			}
-
-			public void HandleFailure()
-			{
-				if (_resultSource.DeferredResult.TaskHasRun)
-					return;
-				_resultSource.SetFailed();
-			}
-
-			public void ProcessResult(QueryResult queryResult)
-			{
-				var result = new List<TResult>();
-				while (queryResult.Read())
-					result.Add(_resultReader.Read(queryResult));
-				_resultSource.SetResult(result);
-			}
-
-			public async Task ProcessResultAsync(QueryResult queryResult)
-			{
-				var result = new List<TResult>();
-				while (await queryResult.ReadAsync())
-					result.Add(_resultReader.Read(queryResult));
-				_resultSource.SetResult(result);
 			}
 		}
 	}

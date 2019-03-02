@@ -54,8 +54,17 @@ namespace Silk.Data.SQL.ORM
 
 		public static IEntitySelectQueryBuilder<TEntity> OrderBy<TEntity, TProperty>(this IEntitySelectQueryBuilder<TEntity> builder, Expression<Func<TEntity, TProperty>> expression)
 			where TEntity : class => builder.OrderBy<IEntitySelectQueryBuilder<TEntity>, TEntity, TProperty>(expression);
-
 		public static IEntitySelectQueryBuilder<TEntity> OrderByDescending<TEntity, TProperty>(this IEntitySelectQueryBuilder<TEntity> builder, Expression<Func<TEntity, TProperty>> expression)
 			where TEntity : class => builder.OrderByDescending<IEntitySelectQueryBuilder<TEntity>, TEntity, TProperty>(expression);
+
+		public static SingleDeferableSelect<TEntity, TView> OrderBy<TEntity, TView, TProperty>(this SingleDeferableSelect<TEntity, TView> builder, Expression<Func<TEntity, TProperty>> expression)
+			where TEntity : class => builder.OrderBy<SingleDeferableSelect<TEntity, TView>, TEntity, TProperty>(expression);
+		public static SingleDeferableSelect<TEntity, TView> OrderByDescending<TEntity, TView, TProperty>(this SingleDeferableSelect<TEntity, TView> builder, Expression<Func<TEntity, TProperty>> expression)
+			where TEntity : class => builder.OrderByDescending<SingleDeferableSelect<TEntity, TView>, TEntity, TProperty>(expression);
+
+		public static MultipleDeferableSelect<TEntity, TView> OrderBy<TEntity, TView, TProperty>(this MultipleDeferableSelect<TEntity, TView> builder, Expression<Func<TEntity, TProperty>> expression)
+			where TEntity : class => builder.OrderBy<MultipleDeferableSelect<TEntity, TView>, TEntity, TProperty>(expression);
+		public static MultipleDeferableSelect<TEntity, TView> OrderByDescending<TEntity, TView, TProperty>(this MultipleDeferableSelect<TEntity, TView> builder, Expression<Func<TEntity, TProperty>> expression)
+			where TEntity : class => builder.OrderByDescending<MultipleDeferableSelect<TEntity, TView>, TEntity, TProperty>(expression);
 	}
 }

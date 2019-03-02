@@ -51,7 +51,7 @@ namespace Silk.Data.SQL.ORM
 		/// <param name="entityReference"></param>
 		/// <param name="entityResult"></param>
 		/// <returns></returns>
-		IDeferred Select(IEntityReference<T> entityReference, out DeferredResult<T> entityResult);
+		SingleDeferableSelect<T, T> Select(IEntityReference<T> entityReference);
 		/// <summary>
 		/// Selects a single entity.
 		/// </summary>
@@ -59,7 +59,7 @@ namespace Silk.Data.SQL.ORM
 		/// <param name="entityReference"></param>
 		/// <param name="viewResult"></param>
 		/// <returns></returns>
-		IDeferred Select<TView>(IEntityReference<T> entityReference, out DeferredResult<TView> viewResult)
+		SingleDeferableSelect<T, TView> Select<TView>(IEntityReference<T> entityReference)
 			where TView : class;
 
 		/// <summary>
@@ -68,7 +68,7 @@ namespace Silk.Data.SQL.ORM
 		/// <param name="query"></param>
 		/// <param name="entitiesResult"></param>
 		/// <returns></returns>
-		IDeferred Select(Action<IEntitySelectQueryBuilder<T>> query, out DeferredResult<List<T>> entitiesResult);
+		MultipleDeferableSelect<T, T> Select();
 
 		/// <summary>
 		/// Selects multiple entities.
@@ -77,7 +77,7 @@ namespace Silk.Data.SQL.ORM
 		/// <param name="query"></param>
 		/// <param name="viewsResult"></param>
 		/// <returns></returns>
-		IDeferred Select<TView>(Action<IEntitySelectQueryBuilder<T>> query, out DeferredResult<List<TView>> viewsResult)
+		MultipleDeferableSelect<T, TView> Select<TView>()
 			where TView : class;
 
 		/// <summary>
@@ -88,7 +88,6 @@ namespace Silk.Data.SQL.ORM
 		/// <param name="query"></param>
 		/// <param name="exprsResult"></param>
 		/// <returns></returns>
-		IDeferred Select<TExpr>(Expression<Func<T, TExpr>> expression, Action<IEntitySelectQueryBuilder<T>> query,
-			out DeferredResult<List<TExpr>> exprsResult);
+		MultipleDeferableSelect<T, TExpr> Select<TExpr>(Expression<Func<T, TExpr>> expression);
 	}
 }

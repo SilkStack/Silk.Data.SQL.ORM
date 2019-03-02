@@ -191,5 +191,39 @@ namespace Silk.Data.SQL.ORM
 			where TEntity : class => builder.OrWhere<DeferableUpdate<TEntity>, TEntity>(schemaField, @operator, valueExpression);
 		public static DeferableUpdate<TEntity> OrWhere<TEntity>(this DeferableUpdate<TEntity> builder, EntityField<TEntity> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
 			where TEntity : class => builder.OrWhere<DeferableUpdate<TEntity>, TEntity>(schemaField, @operator, subQuery);
+
+		public static SingleDeferableSelect<TEntity, TView> AndWhere<TEntity, TView>(this SingleDeferableSelect<TEntity, TView> builder, Expression<Func<TEntity, bool>> expression)
+			where TEntity : class => builder.AndWhere<SingleDeferableSelect<TEntity, TView>, TEntity>(expression);
+		public static SingleDeferableSelect<TEntity, TView> OrWhere<TEntity, TView>(this SingleDeferableSelect<TEntity, TView> builder, Expression<Func<TEntity, bool>> expression)
+			where TEntity : class => builder.OrWhere<SingleDeferableSelect<TEntity, TView>, TEntity>(expression);
+		public static SingleDeferableSelect<TEntity, TView> AndWhere<TEntity, TView, TValue>(this SingleDeferableSelect<TEntity, TView> builder, EntityField<TEntity> schemaField, ComparisonOperator @operator, TValue value)
+			where TEntity : class => builder.AndWhere<SingleDeferableSelect<TEntity, TView>, TEntity, TValue>(schemaField, @operator, value);
+		public static SingleDeferableSelect<TEntity, TView> AndWhere<TEntity, TView>(this SingleDeferableSelect<TEntity, TView> builder, EntityField<TEntity> schemaField, ComparisonOperator @operator, Expression<Func<TEntity, bool>> valueExpression)
+			where TEntity : class => builder.AndWhere<SingleDeferableSelect<TEntity, TView>, TEntity>(schemaField, @operator, valueExpression);
+		public static SingleDeferableSelect<TEntity, TView> AndWhere<TEntity, TView>(this SingleDeferableSelect<TEntity, TView> builder, EntityField<TEntity> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
+			where TEntity : class => builder.AndWhere<SingleDeferableSelect<TEntity, TView>, TEntity>(schemaField, @operator, subQuery);
+		public static SingleDeferableSelect<TEntity, TView> OrWhere<TEntity, TView, TValue>(this SingleDeferableSelect<TEntity, TView> builder, EntityField<TEntity> schemaField, ComparisonOperator @operator, TValue value)
+			where TEntity : class => builder.OrWhere<SingleDeferableSelect<TEntity, TView>, TEntity, TValue>(schemaField, @operator, value);
+		public static SingleDeferableSelect<TEntity, TView> OrWhere<TEntity, TView>(this SingleDeferableSelect<TEntity, TView> builder, EntityField<TEntity> schemaField, ComparisonOperator @operator, Expression<Func<TEntity, bool>> valueExpression)
+			where TEntity : class => builder.OrWhere<SingleDeferableSelect<TEntity, TView>, TEntity>(schemaField, @operator, valueExpression);
+		public static SingleDeferableSelect<TEntity, TView> OrWhere<TEntity, TView>(this SingleDeferableSelect<TEntity, TView> builder, EntityField<TEntity> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
+			where TEntity : class => builder.OrWhere<SingleDeferableSelect<TEntity, TView>, TEntity>(schemaField, @operator, subQuery);
+
+		public static MultipleDeferableSelect<TEntity, TView> AndWhere<TEntity, TView>(this MultipleDeferableSelect<TEntity, TView> builder, Expression<Func<TEntity, bool>> expression)
+			where TEntity : class => builder.AndWhere<MultipleDeferableSelect<TEntity, TView>, TEntity>(expression);
+		public static MultipleDeferableSelect<TEntity, TView> OrWhere<TEntity, TView>(this MultipleDeferableSelect<TEntity, TView> builder, Expression<Func<TEntity, bool>> expression)
+			where TEntity : class => builder.OrWhere<MultipleDeferableSelect<TEntity, TView>, TEntity>(expression);
+		public static MultipleDeferableSelect<TEntity, TView> AndWhere<TEntity, TView, TValue>(this MultipleDeferableSelect<TEntity, TView> builder, EntityField<TEntity> schemaField, ComparisonOperator @operator, TValue value)
+			where TEntity : class => builder.AndWhere<MultipleDeferableSelect<TEntity, TView>, TEntity, TValue>(schemaField, @operator, value);
+		public static MultipleDeferableSelect<TEntity, TView> AndWhere<TEntity, TView>(this MultipleDeferableSelect<TEntity, TView> builder, EntityField<TEntity> schemaField, ComparisonOperator @operator, Expression<Func<TEntity, bool>> valueExpression)
+			where TEntity : class => builder.AndWhere<MultipleDeferableSelect<TEntity, TView>, TEntity>(schemaField, @operator, valueExpression);
+		public static MultipleDeferableSelect<TEntity, TView> AndWhere<TEntity, TView>(this MultipleDeferableSelect<TEntity, TView> builder, EntityField<TEntity> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
+			where TEntity : class => builder.AndWhere<MultipleDeferableSelect<TEntity, TView>, TEntity>(schemaField, @operator, subQuery);
+		public static MultipleDeferableSelect<TEntity, TView> OrWhere<TEntity, TView, TValue>(this MultipleDeferableSelect<TEntity, TView> builder, EntityField<TEntity> schemaField, ComparisonOperator @operator, TValue value)
+			where TEntity : class => builder.OrWhere<MultipleDeferableSelect<TEntity, TView>, TEntity, TValue>(schemaField, @operator, value);
+		public static MultipleDeferableSelect<TEntity, TView> OrWhere<TEntity, TView>(this MultipleDeferableSelect<TEntity, TView> builder, EntityField<TEntity> schemaField, ComparisonOperator @operator, Expression<Func<TEntity, bool>> valueExpression)
+			where TEntity : class => builder.OrWhere<MultipleDeferableSelect<TEntity, TView>, TEntity>(schemaField, @operator, valueExpression);
+		public static MultipleDeferableSelect<TEntity, TView> OrWhere<TEntity, TView>(this MultipleDeferableSelect<TEntity, TView> builder, EntityField<TEntity> schemaField, ComparisonOperator @operator, IQueryBuilder subQuery)
+			where TEntity : class => builder.OrWhere<MultipleDeferableSelect<TEntity, TView>, TEntity>(schemaField, @operator, subQuery);
 	}
 }

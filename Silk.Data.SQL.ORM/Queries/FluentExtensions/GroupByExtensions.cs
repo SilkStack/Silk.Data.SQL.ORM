@@ -32,5 +32,11 @@ namespace Silk.Data.SQL.ORM
 
 		public static IEntitySelectQueryBuilder<TEntity> GroupBy<TEntity, TProperty>(this IEntitySelectQueryBuilder<TEntity> builder, Expression<Func<TEntity, TProperty>> expression)
 			where TEntity : class => builder.GroupBy<IEntitySelectQueryBuilder<TEntity>, TEntity, TProperty>(expression);
+
+		public static SingleDeferableSelect<TEntity, TView> GroupBy<TEntity, TView, TProperty>(this SingleDeferableSelect<TEntity, TView> builder, Expression<Func<TEntity, TProperty>> expression)
+			where TEntity : class => builder.GroupBy<SingleDeferableSelect<TEntity, TView>, TEntity, TProperty>(expression);
+
+		public static MultipleDeferableSelect<TEntity, TView> GroupBy<TEntity, TView, TProperty>(this MultipleDeferableSelect<TEntity, TView> builder, Expression<Func<TEntity, TProperty>> expression)
+			where TEntity : class => builder.GroupBy<MultipleDeferableSelect<TEntity, TView>, TEntity, TProperty>(expression);
 	}
 }

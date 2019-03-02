@@ -32,19 +32,19 @@ namespace Silk.Data.SQL.ORM.Tests
 					//  insert a single entity
 					store.Insert(entity).Defer(),
 					//  retrieve the entity previously inserted
-					store.Select(entity.GetEntityReference(), out var entityResult),
+					store.Select(entity.GetEntityReference()).Defer(out var entityResult),
 					//  update the entities `String` value
 					store.Update(entity.GetEntityReference(), new { String = "New String" }).Defer(),
 					//  select the entity again in the shape of `StringView`
-					store.Select<StringView>(entity.GetEntityReference(), out var stringViewResult),
+					store.Select<StringView>(entity.GetEntityReference()).Defer(out var stringViewResult),
 					//  select every ID from the table
-					store.Select(q => q.Id, query => { }, out var allIdsResult),
+					store.Select(q => q.Id).Defer(out var allIdsResult),
 					//  count the entities
-					store.Select(q => DatabaseFunctions.Count(q), query => { }, out var countResult),
+					store.Select(q => DatabaseFunctions.Count(q)).Defer(out var countResult),
 					//  load all entities
-					store.Select(query => { }, out var allEntitiesResult),
+					store.Select().Defer(out var allEntitiesResult),
 					//  load all entities in the shape of `StringView`
-					store.Select<StringView>(query => { }, out var allStringViewsResult)
+					store.Select<StringView>().Defer(out var allStringViewsResult)
 				}.Execute();
 
 				Assert.IsTrue(entityResult.TaskHasRun);
@@ -104,8 +104,8 @@ namespace Silk.Data.SQL.ORM.Tests
 				{
 					table.CreateTable(),
 					store.Insert(entity).Defer(),
-					store.Select(entity.GetEntityReference(), out var retreivedEntityResult),
-					store.Select<EmbeddedStringView>(entity.GetEntityReference(), out var stringViewResult)
+					store.Select(entity.GetEntityReference()).Defer(out var retreivedEntityResult),
+					store.Select<EmbeddedStringView>(entity.GetEntityReference()).Defer(out var stringViewResult)
 				}.Execute();
 			}
 		}
@@ -143,11 +143,14 @@ namespace Silk.Data.SQL.ORM.Tests
 						childStore.Insert(entity.Flat).Defer(),
 						parentStore.Insert(entity).Defer(),
 
-						parentStore.Select(entity.GetEntityReference(), out var retreivedEntityResult),
-						parentStore.Select<EmbeddedStringView>(entity.GetEntityReference(), out var stringViewResult)
+						parentStore.Select(entity.GetEntityReference()).Defer(out var retreivedEntityResult),
+						parentStore.Select<EmbeddedStringView>(entity.GetEntityReference()).Defer(out var stringViewResult)
 					});
 				transaction.Execute(new[]{
-					parentStore.Select<EmbeddedStringView>(query => query.AndWhere(q => q.Flat.Id == entity.Flat.Id).Limit(1), out var customQueryResult)
+					parentStore.Select<EmbeddedStringView>()
+						.AndWhere(q => q.Flat.Id == entity.Flat.Id)
+						.Limit(1)
+						.Defer(out var customQueryResult)
 				});
 				transaction.Rollback();
 			}
