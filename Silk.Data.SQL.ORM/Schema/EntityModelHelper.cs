@@ -45,6 +45,9 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public override ValueExpression WriteValueExpression(ObjectGraphReaderWriter<TEntity> from)
 		{
+			if (!from.CheckPath(_fromPath))
+				return null;
+
 			var sourceValue = from.Read<TFromValue>(_fromPath);
 			if (_converter(sourceValue, out var destValue))
 				return ORMQueryExpressions.Value(destValue);
