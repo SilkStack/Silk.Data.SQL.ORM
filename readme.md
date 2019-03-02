@@ -94,7 +94,8 @@ var store = new SqlEntityStore<T>(schema, dataProvider);
 await new[]
 {
   store
-    .Insert(new UserAccount { LoginName = "DevJohnC", EmailAddress = "devjohnc@github.com", CreatedAtUtc = DateTime.UtcNow }),
+    .Insert(new UserAccount { LoginName = "DevJohnC", EmailAddress = "devjohnc@github.com", CreatedAtUtc = DateTime.UtcNow })
+    .Defer(),
     
   store
     .Select()
