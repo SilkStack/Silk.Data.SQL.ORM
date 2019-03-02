@@ -172,6 +172,13 @@ namespace Silk.Data.SQL.ORM.Queries
 				);
 		}
 
+		public SingleDeferableSelect<TEntity, TResult> Single()
+		{
+			return new SingleDeferableSelect<TEntity, TResult>(
+				_queryBuilder.Limit(1), _dataProvider, _resultReader
+				);
+		}
+
 		public IDeferred Defer(out DeferredResult<List<TResult>> deferredResult)
 		{
 			var resultSource = new DeferredResultSource<List<TResult>>();
