@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Silk.Data.Modelling;
@@ -14,13 +13,11 @@ namespace Silk.Data.SQL.ORM
 	public class SqlEntityStore<T> : ISqlEntityStore<T>
 		where T : class
 	{
-		private readonly Schema.Schema _schema;
 		private readonly EntityModel<T> _entityModel;
 		private readonly IDataProvider _dataProvider;
 
 		private readonly EntityField<T> _clientGeneratedPrimaryKey;
 		private readonly EntityField<T> _serverGeneratedPrimaryKey;
-		private readonly EntityField<T>[] _primaryKeys;
 		private readonly IModelTranscriber<T> _entityTranscriber;
 		private readonly ITypeInstanceFactory _typeInstanceFactory;
 		private readonly IReaderWriterFactory<TypeModel, PropertyInfoField> _typeReaderWriterFactory;
@@ -29,7 +26,6 @@ namespace Silk.Data.SQL.ORM
 
 		public SqlEntityStore(Schema.Schema schema, IDataProvider dataProvider)
 		{
-			_schema = schema;
 			_entityModel = schema.GetEntityModel<T>();
 			_dataProvider = dataProvider;
 
@@ -40,7 +36,6 @@ namespace Silk.Data.SQL.ORM
 
 			_clientGeneratedPrimaryKey = _entityModel.Fields.FirstOrDefault(q => q.IsPrimaryKey && !q.IsSeverGenerated);
 			_serverGeneratedPrimaryKey = _entityModel.Fields.FirstOrDefault(q => q.IsPrimaryKey && q.IsSeverGenerated);
-			_primaryKeys = _entityModel.Fields.Where(q => q.IsPrimaryKey).ToArray();
 
 			_entityTranscriber = _entityModel.GetModelTranscriber(_entityModel.TypeModel);
 		}
@@ -166,17 +161,6 @@ namespace Silk.Data.SQL.ORM
 			return new SingleDeferableSelect<T, T>(
 				builder, _dataProvider, resultReader
 				);
-
-			//var resultSource = new DeferredResultSource<T>();
-			//entityResult = resultSource.DeferredResult;
-
-			//var result = new DeferredQuery(_dataProvider);
-			//result.Add(builder.BuildQuery(), new SingleMappedResultProcessor<T>(
-			//	resultReader,
-			//	resultSource
-			//	));
-
-			//return result;
 		}
 
 		public SingleDeferableSelect<T, TView> Select<TView>(IEntityReference<T> entityReference)
@@ -188,17 +172,6 @@ namespace Silk.Data.SQL.ORM
 			return new SingleDeferableSelect<T, TView>(
 				builder, _dataProvider, resultReader
 				);
-
-			//var resultSource = new DeferredResultSource<TView>();
-			//viewResult = resultSource.DeferredResult;
-
-			//var result = new DeferredQuery(_dataProvider);
-			//result.Add(builder.BuildQuery(), new SingleMappedResultProcessor<TView>(
-			//	resultReader,
-			//	resultSource
-			//	));
-
-			//return result;
 		}
 
 		public MultipleDeferableSelect<T, T> Select()
@@ -209,17 +182,6 @@ namespace Silk.Data.SQL.ORM
 			return new MultipleDeferableSelect<T, T>(
 				builder, _dataProvider, resultReader
 				);
-
-			//var resultSource = new DeferredResultSource<List<T>>();
-			//entitiesResult = resultSource.DeferredResult;
-
-			//var result = new DeferredQuery(_dataProvider);
-			//result.Add(builder.BuildQuery(), new ManyMappedResultProcessor<T>(
-			//	resultReader,
-			//	resultSource
-			//	));
-
-			//return result;
 		}
 
 		public MultipleDeferableSelect<T, TView> Select<TView>()
@@ -231,17 +193,6 @@ namespace Silk.Data.SQL.ORM
 			return new MultipleDeferableSelect<T, TView>(
 				builder, _dataProvider, resultReader
 				);
-
-			//var resultSource = new DeferredResultSource<List<TView>>();
-			//viewsResult = resultSource.DeferredResult;
-
-			//var result = new DeferredQuery(_dataProvider);
-			//result.Add(builder.BuildQuery(), new ManyMappedResultProcessor<TView>(
-			//	resultReader,
-			//	resultSource
-			//	));
-
-			//return result;
 		}
 
 		public MultipleDeferableSelect<T, TExpr> Select<TExpr>(System.Linq.Expressions.Expression<Func<T, TExpr>> expression)
@@ -251,19 +202,6 @@ namespace Silk.Data.SQL.ORM
 			return new MultipleDeferableSelect<T, TExpr>(
 				builder, _dataProvider, resultReader
 				);
-
-			//query?.Invoke(builder);
-
-			//var resultSource = new DeferredResultSource<List<TExpr>>();
-			//exprsResult = resultSource.DeferredResult;
-
-			//var result = new DeferredQuery(_dataProvider);
-			//result.Add(builder.BuildQuery(), new ManyMappedResultProcessor<TExpr>(
-			//	resultReader,
-			//	resultSource
-			//	));
-
-			//return result;
 		}
 
 		private class MapLastIdResultProcessor<TView> : IQueryResultProcessor
