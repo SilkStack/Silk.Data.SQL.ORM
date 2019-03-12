@@ -83,14 +83,22 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public new IReadOnlyList<EntityField<T>> Fields { get; }
 
+		private readonly DefaultIntersectionAnalyzer<TypeModel, PropertyInfoField, EntityModel, EntityField> _typeToModelAnalyzer;
+		private readonly DefaultIntersectionAnalyzer<EntityModel, EntityField, TypeModel, PropertyInfoField> _modelToTypeAnalyzer;
 		private readonly Dictionary<Type, IModelTranscriber> _transcriberCache
 			= new Dictionary<Type, IModelTranscriber>();
 
-		public EntityModel(IEnumerable<EntityField<T>> entityFields, string tableName = null,
-			IEnumerable<Index> indexes = null) :
+		public EntityModel(
+			DefaultIntersectionAnalyzer<TypeModel, PropertyInfoField, EntityModel, EntityField> typeToModelAnalyzer,
+			DefaultIntersectionAnalyzer<EntityModel, EntityField, TypeModel, PropertyInfoField> modelToTypeAnalyzer,
+			IEnumerable<EntityField<T>> entityFields, string tableName = null,
+			IEnumerable<Index> indexes = null
+			) :
 			base(entityFields, tableName ?? typeof(T).Name, indexes, _typeModel)
 		{
 			Fields = entityFields.ToArray();
+			_typeToModelAnalyzer = typeToModelAnalyzer;
+			_modelToTypeAnalyzer = modelToTypeAnalyzer;
 		}
 
 		private IIntersection<TypeModel, PropertyInfoField, EntityModel, EntityField> GetTypeToModelIntersection<T1>(
@@ -100,8 +108,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			if (typeModel == null)
 				typeModel = Modelling.TypeModel.GetModelOf<T1>();
 
-			var analyzer = new TypeModelToEntityModelIntersectionAnalyzer();
-			return analyzer.CreateIntersection(typeModel, this);
+			return _typeToModelAnalyzer.CreateIntersection(typeModel, this);
 		}
 
 		private IIntersection<EntityModel, EntityField, TypeModel, PropertyInfoField> GetEntityToTypeModelIntersection<T1>(
@@ -111,8 +118,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			if (typeModel == null)
 				typeModel = Modelling.TypeModel.GetModelOf<T1>();
 
-			var analyzer = new EntityModelToTypeModelIntersectionAnalyzer();
-			return analyzer.CreateIntersection(this, typeModel);
+			return _modelToTypeAnalyzer.CreateIntersection(this, typeModel);
 		}
 
 		public override IModelTranscriber<TView> GetModelTranscriber<TView>(

@@ -1,4 +1,5 @@
 ﻿using Silk.Data.Modelling;
+using Silk.Data.Modelling.Analysis;
 using Silk.Data.Modelling.GenericDispatch;
 using Silk.Data.SQL.ORM.Expressions;
 using Silk.Data.SQL.ORM.Queries;
@@ -114,19 +115,25 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		protected virtual IEnumerable<EntityModel> BuildEntityModels()
 		{
+			var typeToModelAnalyzer = new TypeModelToEntityModelIntersectionAnalyzer();
+			var modelToTypeAnalyzer = new EntityModelToTypeModelIntersectionAnalyzer();
 			foreach (var entityDefinition in EntityDefinitions)
 			{
-				yield return BuildEntityModel(entityDefinition);
+				yield return BuildEntityModel(typeToModelAnalyzer, modelToTypeAnalyzer, entityDefinition);
 			}
 		}
 
-		protected virtual EntityModel BuildEntityModel(EntityDefinition entityDefinition)
+		protected virtual EntityModel BuildEntityModel(
+			DefaultIntersectionAnalyzer<TypeModel, PropertyInfoField, EntityModel, EntityField> typeToModelAnalyzer,
+			DefaultIntersectionAnalyzer<EntityModel, EntityField, TypeModel, PropertyInfoField> modelToTypeAnalyzer,
+			EntityDefinition entityDefinition)
 		{
 			_joinCount = 1;
 			var modelFields = entityDefinition.BuildEntityFields(this, entityDefinition, entityDefinition.TypeModel)
 				.ToArray();
 			var indexes = entityDefinition.IndexBuilders.Select(q => q.Build(modelFields));
 			return entityDefinition.BuildModel(
+				typeToModelAnalyzer, modelToTypeAnalyzer,
 				modelFields, indexes
 				);
 		}
