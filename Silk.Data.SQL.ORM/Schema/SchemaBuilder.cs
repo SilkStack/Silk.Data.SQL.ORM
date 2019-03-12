@@ -65,9 +65,10 @@ namespace Silk.Data.SQL.ORM.Schema
 			}
 		}
 
-		public void AddMethodConverter(MethodInfo methodInfo, IMethodCallConverter methodCallConverter)
+		public SchemaBuilder AddMethodConverter(MethodInfo methodInfo, IMethodCallConverter methodCallConverter)
 		{
 			MethodCallConverters.Add(methodInfo, methodCallConverter);
+			return this;
 		}
 
 		/// <summary>
