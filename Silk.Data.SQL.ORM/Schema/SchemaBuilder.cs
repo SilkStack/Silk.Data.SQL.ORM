@@ -1,5 +1,7 @@
 ﻿using Silk.Data.Modelling;
 using Silk.Data.Modelling.Analysis;
+using Silk.Data.Modelling.Analysis.CandidateSources;
+using Silk.Data.Modelling.Analysis.Rules;
 using Silk.Data.Modelling.GenericDispatch;
 using Silk.Data.SQL.ORM.Expressions;
 using Silk.Data.SQL.ORM.Queries;
@@ -16,6 +18,18 @@ namespace Silk.Data.SQL.ORM.Schema
 	public class SchemaBuilder : IFieldBuilder
 	{
 		private static int _joinCount = 1;
+
+		public List<IIntersectCandidateSource<TypeModel, PropertyInfoField, EntityModel, EntityField>>
+			TypeToEntityCandidateSources { get; } = new List<IIntersectCandidateSource<TypeModel, PropertyInfoField, EntityModel, EntityField>>();
+
+		public List<IIntersectCandidateSource<EntityModel, EntityField, TypeModel, PropertyInfoField>>
+			EntityToTypeCandidateSources { get; } = new List<IIntersectCandidateSource<EntityModel, EntityField, TypeModel, PropertyInfoField>>();
+
+		public List<IIntersectionRule<TypeModel, PropertyInfoField, EntityModel, EntityField>>
+			TypeToEntityRules { get; } = new List<IIntersectionRule<TypeModel, PropertyInfoField, EntityModel, EntityField>>();
+
+		public List<IIntersectionRule<EntityModel, EntityField, TypeModel, PropertyInfoField>>
+			EntityToTypeRules { get; } = new List<IIntersectionRule<EntityModel, EntityField, TypeModel, PropertyInfoField>>();
 
 		protected List<EntityDefinition> EntityDefinitions
 			= new List<EntityDefinition>();
@@ -45,6 +59,20 @@ namespace Silk.Data.SQL.ORM.Schema
 				);
 			AddMinMethods();
 			AddMaxMethods();
+
+			EntityToTypeCandidateSources.AddRange(
+				GetDefaultCandidateSources<EntityModel, EntityField, TypeModel, PropertyInfoField>()
+				);
+			TypeToEntityCandidateSources.AddRange(
+				GetDefaultCandidateSources<TypeModel, PropertyInfoField, EntityModel, EntityField>()
+				);
+
+			EntityToTypeRules.AddRange(
+				GetDefaultRules<EntityModel, EntityField, TypeModel, PropertyInfoField>()
+				);
+			TypeToEntityRules.AddRange(
+				GetDefaultRules<TypeModel, PropertyInfoField, EntityModel, EntityField>()
+				);
 		}
 
 		private void AddMinMethods()
@@ -65,9 +93,45 @@ namespace Silk.Data.SQL.ORM.Schema
 			}
 		}
 
+		protected virtual IEnumerable<IIntersectionRule<TLeftModel, TLeftField, TRightModel, TRightField>>
+			GetDefaultRules<TLeftModel, TLeftField, TRightModel, TRightField>()
+			where TLeftField : class, IField
+			where TRightField : class, IField
+			where TLeftModel : IModel<TLeftField>
+			where TRightModel : IModel<TRightField>
+		{
+			yield return new SameDataTypeRule<TLeftModel, TLeftField, TRightModel, TRightField>();
+			yield return new BothNumericTypesRule<TLeftModel, TLeftField, TRightModel, TRightField>();
+			yield return new ConvertableWithToStringRule<TLeftModel, TLeftField, TRightModel, TRightField>();
+			yield return new ExplicitCastRule<TLeftModel, TLeftField, TRightModel, TRightField>();
+			yield return new ConvertableWithTryParse<TLeftModel, TLeftField, TRightModel, TRightField>();
+		}
+
+		protected virtual IEnumerable<IIntersectCandidateSource<TLeftModel, TLeftField, TRightModel, TRightField>>
+			GetDefaultCandidateSources<TLeftModel, TLeftField, TRightModel, TRightField>()
+			where TLeftField : class, IField
+			where TRightField : class, IField
+			where TLeftModel : IModel<TLeftField>
+			where TRightModel : IModel<TRightField>
+		{
+			yield return new ExactPathMatchCandidateSource<TLeftModel, TLeftField, TRightModel, TRightField>();
+			yield return new FlattenedNameMatchCandidateSource<TLeftModel, TLeftField, TRightModel, TRightField>();
+		}
+
 		public SchemaBuilder AddMethodConverter(MethodInfo methodInfo, IMethodCallConverter methodCallConverter)
 		{
 			MethodCallConverters.Add(methodInfo, methodCallConverter);
+			return this;
+		}
+
+		public SchemaBuilder AddTypeConverters(IEnumerable<ITypeConverter> typeConverters)
+		{
+			TypeToEntityRules.Add(
+				new TypeConverterRule<TypeModel, PropertyInfoField, EntityModel, EntityField>(typeConverters)
+				);
+			EntityToTypeRules.Add(
+				new TypeConverterRule<EntityModel, EntityField, TypeModel, PropertyInfoField>(typeConverters)
+				);
 			return this;
 		}
 
@@ -116,8 +180,14 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		protected virtual IEnumerable<EntityModel> BuildEntityModels()
 		{
-			var typeToModelAnalyzer = new TypeModelToEntityModelIntersectionAnalyzer();
-			var modelToTypeAnalyzer = new EntityModelToTypeModelIntersectionAnalyzer();
+			var typeToModelAnalyzer = new DefaultIntersectionAnalyzer<TypeModel, PropertyInfoField, EntityModel, EntityField>(
+				TypeToEntityCandidateSources,
+				TypeToEntityRules
+				);
+			var modelToTypeAnalyzer = new DefaultIntersectionAnalyzer<EntityModel, EntityField, TypeModel, PropertyInfoField>(
+				EntityToTypeCandidateSources,
+				EntityToTypeRules
+				);
 			foreach (var entityDefinition in EntityDefinitions)
 			{
 				yield return BuildEntityModel(typeToModelAnalyzer, modelToTypeAnalyzer, entityDefinition);
