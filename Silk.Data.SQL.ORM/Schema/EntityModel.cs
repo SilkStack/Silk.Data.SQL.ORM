@@ -101,26 +101,6 @@ namespace Silk.Data.SQL.ORM.Schema
 			_modelToTypeAnalyzer = modelToTypeAnalyzer;
 		}
 
-		private IIntersection<TypeModel, PropertyInfoField, EntityModel, EntityField> GetTypeToModelIntersection<T1>(
-			TypeModel<T1> typeModel = null
-			)
-		{
-			if (typeModel == null)
-				typeModel = Modelling.TypeModel.GetModelOf<T1>();
-
-			return _typeToModelAnalyzer.CreateIntersection(typeModel, this);
-		}
-
-		private IIntersection<EntityModel, EntityField, TypeModel, PropertyInfoField> GetEntityToTypeModelIntersection<T1>(
-			TypeModel<T1> typeModel = null
-			)
-		{
-			if (typeModel == null)
-				typeModel = Modelling.TypeModel.GetModelOf<T1>();
-
-			return _modelToTypeAnalyzer.CreateIntersection(this, typeModel);
-		}
-
 		public override IModelTranscriber<TView> GetModelTranscriber<TView>(
 			TypeModel<TView> typeModel = default(TypeModel<TView>)
 			)
@@ -136,9 +116,9 @@ namespace Silk.Data.SQL.ORM.Schema
 
 				if (typeModel == null)
 					typeModel = Modelling.TypeModel.GetModelOf<TView>();
-				var typeToModelIntersection = GetTypeToModelIntersection(typeModel);
-				var entityToTypeIntersection = GetEntityToTypeModelIntersection(typeModel);
-				transcriber = ModelTranscriberFactory.Create<T, TView>(typeToModelIntersection, entityToTypeIntersection);
+				transcriber = ModelTranscriberFactory.Create<T, TView>(
+					_typeToModelAnalyzer, _modelToTypeAnalyzer, this
+					);
 				_transcriberCache.Add(type, transcriber);
 
 				return transcriber as IModelTranscriber<TView>;

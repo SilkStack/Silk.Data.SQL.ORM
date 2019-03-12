@@ -1,4 +1,5 @@
-﻿using Silk.Data.Modelling.Mapping;
+﻿using Silk.Data.Modelling;
+using Silk.Data.Modelling.Mapping;
 using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Expressions;
 using Silk.Data.SQL.ORM.Schema;
@@ -207,12 +208,27 @@ namespace Silk.Data.SQL.ORM.Queries
 		{
 			var graphReader = new ObjectGraphReaderWriter<TView>(entityView);
 			var transcriber = EntityModel.GetModelTranscriber<TView>();
+			var transformedObjects = new Dictionary<string, IGraphReader<TypeModel, PropertyInfoField>>();
+
+			foreach (var transformer in transcriber.EntityFieldTransformers)
+			{
+				var transformedReader = transformer.ReadTransformed(graphReader);
+				transformedObjects.Add(
+					transformer.SourcePath,
+					transformedReader
+					);
+			}
+
 			foreach (var fieldWriter in transcriber.ObjectToSchemaHelpers)
 			{
 				if (fieldWriter.To.IsPrimaryKey && fieldWriter.To.IsSeverGenerated)
 					continue;
 
-				var valueExpression = fieldWriter.WriteValueExpression(graphReader);
+				IGraphReader<TypeModel, PropertyInfoField> reader = graphReader;
+				if (transformedObjects.TryGetValue(fieldWriter.ObjectPath, out var transformedReader))
+					reader = transformedReader;
+
+				var valueExpression = fieldWriter.WriteValueExpression(reader);
 				if (valueExpression != null)
 					Set(QueryExpression.Column(fieldWriter.To.Column.Name), valueExpression);
 			}

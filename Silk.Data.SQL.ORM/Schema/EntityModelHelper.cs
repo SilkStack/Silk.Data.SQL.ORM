@@ -11,11 +11,16 @@ namespace Silk.Data.SQL.ORM.Schema
 	{
 		public PropertyInfoField From { get; }
 		public EntityField To { get; }
+		public IFieldPath<EntityModel, EntityField> ToPath { get; }
+		public string ObjectPath { get; }
 
-		public EntityModelHelper(PropertyInfoField from, EntityField to)
+		public EntityModelHelper(PropertyInfoField from, EntityField to,
+			IFieldPath<EntityModel, EntityField> toPath, string objectPath)
 		{
 			From = from;
 			To = to;
+			ToPath = toPath;
+			ObjectPath = objectPath;
 		}
 
 		public ValueExpression WriteValueExpression(T from)
@@ -24,7 +29,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			return WriteValueExpression(reader);
 		}
 
-		public abstract ValueExpression WriteValueExpression(ObjectGraphReaderWriter<T> from);
+		public abstract ValueExpression WriteValueExpression(IGraphReader<TypeModel, PropertyInfoField> from);
 	}
 
 	public class EntityModelHelper<TEntity, TFromValue, TToValue>
@@ -35,15 +40,16 @@ namespace Silk.Data.SQL.ORM.Schema
 		private readonly IFieldPath<TypeModel, PropertyInfoField> _fromPath;
 
 		public EntityModelHelper(
-			IntersectedFields<TypeModel, PropertyInfoField, EntityModel, EntityField, TFromValue, TToValue> intersectedFields
+			IntersectedFields<TypeModel, PropertyInfoField, EntityModel, EntityField, TFromValue, TToValue> intersectedFields,
+			string objectPath
 			)
-			: base(intersectedFields.LeftField, intersectedFields.RightField)
+			: base(intersectedFields.LeftField, intersectedFields.RightField, intersectedFields.RightPath, objectPath)
 		{
 			_converter = intersectedFields.GetConvertDelegate();
 			_fromPath = intersectedFields.LeftPath;
 		}
 
-		public override ValueExpression WriteValueExpression(ObjectGraphReaderWriter<TEntity> from)
+		public override ValueExpression WriteValueExpression(IGraphReader<TypeModel, PropertyInfoField> from)
 		{
 			if (!from.CheckPath(_fromPath))
 				return null;

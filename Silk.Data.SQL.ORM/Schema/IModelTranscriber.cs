@@ -37,5 +37,7 @@ namespace Silk.Data.SQL.ORM.Schema
 		/// Gets a mapping that can convert a QueryResult row into an instance of TView.
 		/// </summary>
 		IMapping<EntityModel, EntityField, TypeModel, PropertyInfoField> Mapping { get; }
+
+		IReadOnlyList<EntityModelFieldTransformer<TView>> EntityFieldTransformers { get; }
 	}
 }

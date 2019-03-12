@@ -37,6 +37,8 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public bool IsEntityLocalField { get; }
 
+		public TypeModel FieldDataTypeModel { get; }
+
 		protected EntityField(
 			string fieldName, bool canRead, bool canWrite,
 			Type fieldDataType, Column column,
@@ -61,6 +63,8 @@ namespace Silk.Data.SQL.ORM.Schema
 			IsEntityLocalField = Source is TableReference;
 
 			ProjectionAlias = $"__alias_{fieldName}_{_projectionAliasCounter++}";
+
+			FieldDataTypeModel = TypeModel.GetModelOf(FieldDataType);
 		}
 
 		public abstract void Dispatch(IFieldGenericExecutor executor);
@@ -77,7 +81,16 @@ namespace Silk.Data.SQL.ORM.Schema
 		}
 	}
 
-	public class ValueEntityField<T, TEntity> : EntityField<TEntity>
+	public abstract class ValueEntityField<TEntity> : EntityField<TEntity>
+		where TEntity : class
+	{
+		public ValueEntityField(string fieldName, bool canRead, bool canWrite, Type fieldDataType, Column column, IEnumerable<EntityField> subFields = null, IQueryReference source = null, bool isPrimaryKey = false) :
+			base(fieldName, canRead, canWrite, fieldDataType, column, subFields, source, isPrimaryKey)
+		{
+		}
+	}
+
+	public class ValueEntityField<T, TEntity> : ValueEntityField<TEntity>
 		where TEntity : class
 	{
 		public ValueEntityField(string fieldName, bool canRead, bool canWrite,
@@ -106,7 +119,25 @@ namespace Silk.Data.SQL.ORM.Schema
 		}
 	}
 
-	public class EmbeddedEntityField<T, TEntity> : EntityField<TEntity>
+	public abstract class ObjectEntityField<TEntity> : EntityField<TEntity>
+		where TEntity : class
+	{
+		protected ObjectEntityField(string fieldName, bool canRead, bool canWrite, Type fieldDataType, Column column, IEnumerable<EntityField> subFields = null, IQueryReference source = null, bool isPrimaryKey = false) :
+			base(fieldName, canRead, canWrite, fieldDataType, column, subFields, source, isPrimaryKey)
+		{
+		}
+	}
+
+	public abstract class EmbeddedEntityField<TEntity> : ObjectEntityField<TEntity>
+		where TEntity : class
+	{
+		protected EmbeddedEntityField(string fieldName, bool canRead, bool canWrite, Type fieldDataType, Column column, IEnumerable<EntityField> subFields = null, IQueryReference source = null, bool isPrimaryKey = false) :
+			base(fieldName, canRead, canWrite, fieldDataType, column, subFields, source, isPrimaryKey)
+		{
+		}
+	}
+
+	public class EmbeddedEntityField<T, TEntity> : EmbeddedEntityField<TEntity>
 		where TEntity : class
 	{
 		public EmbeddedEntityField(string fieldName, bool canRead, bool canWrite,
