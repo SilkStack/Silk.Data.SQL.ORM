@@ -228,7 +228,7 @@ namespace Silk.Data.SQL.ORM.Schema
 					//  value storage column
 					new Column(
 						$"{columnNamePrefix}{_modelField.FieldName}_{field.FieldName}", SqlTypeHelper.GetDataType(typeof(TData)),
-						SqlTypeHelper.TypeIsNullable(typeof(TData))),
+						true),
 						_source, false);
 			}
 		}
