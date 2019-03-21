@@ -46,7 +46,7 @@ namespace Silk.Data.SQL.ORM.Tests.Schema
 				.GetEntityModel<EntityType>();
 			var viewModel = TypeModel.GetModelOf<ViewType>();
 
-			var analyzer = new EntityModelToTypeModelIntersectionAnalyzer();
+			var analyzer = new Modelling.Analysis.DefaultIntersectionAnalyzer<EntityModel, EntityField, TypeModel, PropertyInfoField>();
 
 			var intersection = analyzer.CreateIntersection(
 				entityModel, viewModel
