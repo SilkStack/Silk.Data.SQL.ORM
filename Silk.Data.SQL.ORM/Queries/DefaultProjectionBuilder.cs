@@ -52,15 +52,12 @@ namespace Silk.Data.SQL.ORM.Queries
 		public IResultReader<TView> AddView<TView>()
 			where TView : class
 		{
-			var modelTranscriber = EntitySchema.GetModelTranscriber<TView>();
-			var mapping = modelTranscriber.Mapping;
-
-			foreach (var helper in modelTranscriber.SchemaToTypeHelpers)
+			var entityView = EntitySchema.GetEntityView<TView>();
+			foreach (var intersectedFields in entityView.EntityToClassIntersection.IntersectedFields)
 			{
-				if (!helper.To.CanWrite)
+				if (!intersectedFields.RightField.CanWrite)
 					continue;
-
-				var entityField = helper.From;
+				var entityField = intersectedFields.LeftField;
 
 				if (!_projectionExpressions.ContainsKey(entityField.ProjectionAlias))
 				{
@@ -68,15 +65,15 @@ namespace Silk.Data.SQL.ORM.Queries
 						entityField.ProjectionAlias,
 						new AliasExpression(
 							QueryExpression.Column(entityField.Column.Name, entityField.Source.AliasIdentifierExpression),
-							entityField.ProjectionAlias)
+							entityField.ProjectionAlias
+							)
 						);
 					var requiredJoin = entityField.Source as Join;
 					if (requiredJoin != null)
 						_requiredJoins.AddJoin(requiredJoin);
 				}
 			}
-
-			return new MappingReader<TView>(mapping);
+			return new MappingReader<TView>(entityView.Mapping);
 		}
 
 		public IResultReader<TProperty> AddField<TProperty>(Expression<Func<T, TProperty>> projection)

@@ -4,6 +4,7 @@ using System.Linq;
 using Silk.Data.Modelling;
 using Silk.Data.Modelling.Analysis;
 using Silk.Data.Modelling.GenericDispatch;
+using Silk.Data.SQL.ORM.Modelling;
 
 namespace Silk.Data.SQL.ORM.Schema
 {
@@ -57,7 +58,7 @@ namespace Silk.Data.SQL.ORM.Schema
 			}
 		}
 
-		public abstract IModelTranscriber<TView> GetModelTranscriber<TView>(
+		public abstract IEntityView<TView> GetEntityView<TView>(
 			TypeModel<TView> typeModel = null
 			)
 			where TView : class;
@@ -75,7 +76,7 @@ namespace Silk.Data.SQL.ORM.Schema
 	public class EntityModel<T> : EntityModel
 		where T : class
 	{
-		private static readonly TypeModel<T> _typeModel = Modelling.TypeModel.GetModelOf<T>();
+		private static readonly TypeModel<T> _typeModel = Silk.Data.Modelling.TypeModel.GetModelOf<T>();
 
 		public new TypeModel<T> TypeModel => _typeModel;
 
@@ -83,45 +84,45 @@ namespace Silk.Data.SQL.ORM.Schema
 
 		public new IReadOnlyList<EntityField<T>> Fields { get; }
 
-		private readonly DefaultIntersectionAnalyzer<TypeModel, PropertyInfoField, EntityModel, EntityField> _typeToModelAnalyzer;
-		private readonly DefaultIntersectionAnalyzer<EntityModel, EntityField, TypeModel, PropertyInfoField> _modelToTypeAnalyzer;
-		private readonly Dictionary<Type, IModelTranscriber> _transcriberCache
-			= new Dictionary<Type, IModelTranscriber>();
+		private readonly ClassToEntityIntersectionAnalyzer _classToEntityAnalyzer;
+		private readonly IIntersectionAnalyzer<EntityModel, EntityField, TypeModel, PropertyInfoField> _modelToTypeAnalyzer;
+		private readonly Dictionary<Type, IEntityView> _viewCache
+			= new Dictionary<Type, IEntityView>();
 
 		public EntityModel(
-			DefaultIntersectionAnalyzer<TypeModel, PropertyInfoField, EntityModel, EntityField> typeToModelAnalyzer,
-			DefaultIntersectionAnalyzer<EntityModel, EntityField, TypeModel, PropertyInfoField> modelToTypeAnalyzer,
+			ClassToEntityIntersectionAnalyzer classToEntityIntersectionAnalyzer,
+			IIntersectionAnalyzer<EntityModel, EntityField, TypeModel, PropertyInfoField> modelToTypeAnalyzer,
 			IEnumerable<EntityField<T>> entityFields, string tableName = null,
 			IEnumerable<Index> indexes = null
 			) :
 			base(entityFields, tableName ?? typeof(T).Name, indexes, _typeModel)
 		{
 			Fields = entityFields.ToArray();
-			_typeToModelAnalyzer = typeToModelAnalyzer;
+			_classToEntityAnalyzer = classToEntityIntersectionAnalyzer;
 			_modelToTypeAnalyzer = modelToTypeAnalyzer;
 		}
 
-		public override IModelTranscriber<TView> GetModelTranscriber<TView>(
+		public override IEntityView<TView> GetEntityView<TView>(
 			TypeModel<TView> typeModel = default(TypeModel<TView>)
 			)
 		{
 			var type = typeof(TView);
-			if (_transcriberCache.TryGetValue(type, out var transcriber))
-				return transcriber as IModelTranscriber<TView>;
+			if (_viewCache.TryGetValue(type, out var view))
+				return view as IEntityView<TView>;
 
-			lock (_transcriberCache)
+			lock (_viewCache)
 			{
-				if (_transcriberCache.TryGetValue(type, out transcriber))
-					return transcriber as IModelTranscriber<TView>;
+				if (_viewCache.TryGetValue(type, out view))
+					return view as IEntityView<TView>;
 
 				if (typeModel == null)
-					typeModel = Modelling.TypeModel.GetModelOf<TView>();
-				transcriber = ModelTranscriberFactory.Create<T, TView>(
-					_typeToModelAnalyzer, _modelToTypeAnalyzer, this
+					typeModel = Data.Modelling.TypeModel.GetModelOf<TView>();
+				view = EntityViewFactory.Create<T, TView>(
+					_classToEntityAnalyzer, _modelToTypeAnalyzer, this
 					);
-				_transcriberCache.Add(type, transcriber);
+				_viewCache.Add(type, view);
 
-				return transcriber as IModelTranscriber<TView>;
+				return view as IEntityView<TView>;
 			}
 		}
 

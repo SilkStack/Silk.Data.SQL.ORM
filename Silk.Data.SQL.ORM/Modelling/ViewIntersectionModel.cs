@@ -4,6 +4,8 @@ using System.Linq;
 using Silk.Data.Modelling;
 using Silk.Data.Modelling.Analysis;
 using Silk.Data.Modelling.GenericDispatch;
+using Silk.Data.Modelling.Mapping;
+using Silk.Data.SQL.ORM.Schema;
 
 namespace Silk.Data.SQL.ORM.Modelling
 {
@@ -52,6 +54,8 @@ namespace Silk.Data.SQL.ORM.Modelling
 		{
 			if (fieldPath.FinalField == null)
 				return Fields;
+			if (fieldPath.FinalField.SelfModel == null)
+				return new ViewIntersectionField[0];
 			return fieldPath.FinalField.SelfModel.Fields;
 		}
 
@@ -105,9 +109,12 @@ namespace Silk.Data.SQL.ORM.Modelling
 			DeclaringTypeModel = declaringTypeModel;
 			OriginPropertyField = originPropertyField;
 
-			SelfModel = ViewIntersectionModel.FromTypeModel(
-				TypeModel.GetModelOf(fieldDataType)
-				);
+			if (SqlTypeHelper.GetDataType(fieldDataType) == null)
+			{
+				SelfModel = ViewIntersectionModel.FromTypeModel(
+					TypeModel.GetModelOf(fieldDataType)
+					);
+			}
 		}
 
 		public string FieldName { get; }
@@ -130,12 +137,12 @@ namespace Silk.Data.SQL.ORM.Modelling
 
 		public ViewIntersectionModel SelfModel { get; }
 
+		public abstract void Dispatch(IFieldGenericExecutor executor);
+
 		internal void Replace(ViewIntersectionField newField)
 		{
 			Parent.Replace(this, newField);
 		}
-
-		public abstract void Dispatch(IFieldGenericExecutor executor);
 	}
 
 	public class ViewIntersectionField<TData> : ViewIntersectionField
@@ -148,7 +155,15 @@ namespace Silk.Data.SQL.ORM.Modelling
 			=> executor.Execute<ViewIntersectionField, TData>(this);
 	}
 
-	public class ConvertedViewIntersectionField<TSourceData, TDestinationData> : ViewIntersectionField
+	public interface IConvertedViewField
+	{
+		IGraphReader<ViewIntersectionModel, ViewIntersectionField> ConvertToReader(
+			IGraphReader<ViewIntersectionModel, ViewIntersectionField> parentReader,
+			int offset
+			);
+	}
+
+	public class ConvertedViewIntersectionField<TSourceData, TDestinationData> : ViewIntersectionField, IConvertedViewField
 	{
 		private readonly IFieldPath<ViewIntersectionModel, ViewIntersectionField> _path;
 		private readonly TryConvertDelegate<TSourceData, TDestinationData> _tryConvertDelegate;
@@ -164,6 +179,19 @@ namespace Silk.Data.SQL.ORM.Modelling
 		{
 			_path = path;
 			_tryConvertDelegate = tryConvertDelegate;
+		}
+
+		public IGraphReader<ViewIntersectionModel, ViewIntersectionField> ConvertToReader(
+			IGraphReader<ViewIntersectionModel, ViewIntersectionField> parentReader,
+			int offset
+			)
+		{
+			var source = parentReader.Read<TSourceData>(_path);
+			if (!_tryConvertDelegate(source, out var converted))
+				return null;
+			var ret = new NodeReader<TDestinationData>(converted);
+			ret.Offset = offset;
+			return ret;
 		}
 
 		public override void Dispatch(IFieldGenericExecutor executor)

@@ -1,7 +1,6 @@
-﻿using Silk.Data.Modelling;
-using Silk.Data.Modelling.Mapping;
-using Silk.Data.SQL.Expressions;
+﻿using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Expressions;
+using Silk.Data.SQL.ORM.Modelling;
 using Silk.Data.SQL.ORM.Schema;
 using System;
 using System.Collections.Generic;
@@ -98,15 +97,18 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public void Set(EntityField<T> schemaField, T entity)
 		{
-			var transcriber = EntityModel.GetModelTranscriber<T>();
-			var fieldWriter = transcriber.ObjectToSchemaHelpers.FirstOrDefault(
-				q => q.To == schemaField
-				);
-			if (fieldWriter == null)
+			var graphReader = new ViewReader<T>(entity);
+			var entityView = EntityModel.GetEntityView<T>();
+			var intersectedFields = entityView
+				.ClassToEntityIntersection.IntersectedFields
+				.FirstOrDefault(q => q.RightField == schemaField);
+			if (intersectedFields == null)
 				ExceptionHelper.ThrowEntityFieldNotFound();
-			var valueExpression = fieldWriter.WriteValueExpression(entity);
-			if (valueExpression != null)
-				Set(schemaField, valueExpression);
+
+			Set(
+				QueryExpression.Column(intersectedFields.RightField.Column.Name),
+				graphReader.Read<object>(intersectedFields.LeftPath)
+				);
 		}
 
 		public void Set<TValue>(EntityField<T> schemaField, TValue value)
@@ -191,46 +193,41 @@ namespace Silk.Data.SQL.ORM.Queries
 
 		public void SetAll(T entity)
 		{
-			var graphReader = new ObjectGraphReaderWriter<T>(entity);
-			var transcriber = EntityModel.GetModelTranscriber<T>();
-			foreach (var fieldWriter in transcriber.ObjectToSchemaHelpers)
+			var reader = new ViewReader<T>(entity);
+			var entityView = EntityModel.GetEntityView<T>();
+
+			foreach (var intersectedFields in entityView.ClassToEntityIntersection.IntersectedFields)
 			{
-				if (fieldWriter.To.IsPrimaryKey && fieldWriter.To.IsSeverGenerated)
+				if (!intersectedFields.RightField.IsEntityLocalField)
+					continue;
+				if (intersectedFields.RightField.IsPrimaryKey && intersectedFields.RightField.IsSeverGenerated)
 					continue;
 
-				var valueExpression = fieldWriter.WriteValueExpression(graphReader);
-				if (valueExpression != null)
-					Set(QueryExpression.Column(fieldWriter.To.Column.Name), valueExpression);
+				var value = reader.Read<object>(intersectedFields.LeftPath);
+				Set(
+					QueryExpression.Column(intersectedFields.RightField.Column.Name),
+					value
+					);
 			}
 		}
 
-		public void SetAll<TView>(TView entityView) where TView : class
+		public void SetAll<TView>(TView view) where TView : class
 		{
-			var graphReader = new ObjectGraphReaderWriter<TView>(entityView);
-			var transcriber = EntityModel.GetModelTranscriber<TView>();
-			var transformedObjects = new Dictionary<string, IGraphReader<TypeModel, PropertyInfoField>>();
+			var reader = new ViewReader<TView>(view);
+			var entityView = EntityModel.GetEntityView<TView>();
 
-			foreach (var transformer in transcriber.EntityFieldTransformers)
+			foreach (var intersectedFields in entityView.ClassToEntityIntersection.IntersectedFields)
 			{
-				var transformedReader = transformer.ReadTransformed(graphReader);
-				transformedObjects.Add(
-					transformer.SourcePath,
-					transformedReader
-					);
-			}
-
-			foreach (var fieldWriter in transcriber.ObjectToSchemaHelpers)
-			{
-				if (fieldWriter.To.IsPrimaryKey && fieldWriter.To.IsSeverGenerated)
+				if (!intersectedFields.RightField.IsEntityLocalField)
+					continue;
+				if (intersectedFields.RightField.IsPrimaryKey && intersectedFields.RightField.IsSeverGenerated)
 					continue;
 
-				IGraphReader<TypeModel, PropertyInfoField> reader = graphReader;
-				if (transformedObjects.TryGetValue(fieldWriter.ObjectPath, out var transformedReader))
-					reader = transformedReader;
-
-				var valueExpression = fieldWriter.WriteValueExpression(reader);
-				if (valueExpression != null)
-					Set(QueryExpression.Column(fieldWriter.To.Column.Name), valueExpression);
+				var value = reader.Read<object>(intersectedFields.LeftPath);
+				Set(
+					QueryExpression.Column(intersectedFields.RightField.Column.Name),
+					value
+					);
 			}
 		}
 	}

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Expressions;
+using Silk.Data.SQL.ORM.Modelling;
 using Silk.Data.SQL.ORM.Schema;
 
 namespace Silk.Data.SQL.ORM.Queries
@@ -59,7 +60,7 @@ namespace Silk.Data.SQL.ORM.Queries
 		where T : class
 	{
 		private EntityExpressionConverter<T> _expressionConverter;
-		private readonly IModelTranscriber<T> _modelTranscriber;
+		private readonly IEntityView<T> _entityView;
 
 		public EntityExpressionConverter<T> ExpressionConverter
 		{
@@ -77,26 +78,30 @@ namespace Silk.Data.SQL.ORM.Queries
 		public DefaultEntityConditionBuilder(
 			Schema.Schema schema, EntityModel<T> entitySchema,
 			EntityExpressionConverter<T> expressionConverter = null,
-			IModelTranscriber<T> modelTranscriber = null)
+			IEntityView<T> modelTranscriber = null)
 		{
 			Schema = schema;
 			EntityModel = entitySchema;
 			_expressionConverter = expressionConverter;
-			_modelTranscriber = modelTranscriber ?? entitySchema.GetModelTranscriber<T>();
+			_entityView = modelTranscriber ?? entitySchema.GetEntityView<T>();
 		}
 
 		public DefaultEntityConditionBuilder(Schema.Schema schema, EntityExpressionConverter<T> expressionConverter = null,
-			IModelTranscriber<T> modelTranscriber = null) :
+			IEntityView<T> modelTranscriber = null) :
 			this(schema, schema.GetEntityModel<T>(), expressionConverter, modelTranscriber)
 		{
 		}
 
 		private ValueExpression GetValueExpression(EntityField<T> entityField, T entity)
 		{
-			var helper = _modelTranscriber.ObjectToSchemaHelpers.FirstOrDefault(q => q.To == entityField);
-			if (helper == null)
+			var interesectedFields = _entityView.ClassToEntityIntersection
+				.IntersectedFields.FirstOrDefault(q => q.RightField == entityField);
+			if (interesectedFields == null)
 				ExceptionHelper.ThrowEntityFieldNotFound();
-			return helper.WriteValueExpression(entity);
+
+			var reader = new ViewReader<T>(entity);
+			var value = reader.Read<object>(interesectedFields.LeftPath);
+			return ORMQueryExpressions.Value(value);
 		}
 
 		public void AndAlso(Expression<Func<T, bool>> expression)

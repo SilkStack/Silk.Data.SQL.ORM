@@ -1,5 +1,6 @@
 ﻿using Silk.Data.Modelling;
 using Silk.Data.Modelling.Analysis;
+using Silk.Data.SQL.ORM.Modelling;
 using Silk.Data.SQL.ORM.Queries;
 using System;
 using System.Collections.Generic;
@@ -33,8 +34,8 @@ namespace Silk.Data.SQL.ORM.Schema
 			IQueryReference source = null
 			);
 		public abstract EntityModel BuildModel(
-			DefaultIntersectionAnalyzer<TypeModel, PropertyInfoField, EntityModel, EntityField> typeToModelAnalyzer,
-			DefaultIntersectionAnalyzer<EntityModel, EntityField, TypeModel, PropertyInfoField> modelToTypeAnalyzer, 
+			ClassToEntityIntersectionAnalyzer classToEntityAnalyzer,
+			IIntersectionAnalyzer<EntityModel, EntityField, TypeModel, PropertyInfoField> modelToTypeAnalyzer, 
 			IEnumerable<EntityField> entityFields, IEnumerable<Index> indexes);
 	}
 
@@ -80,12 +81,12 @@ namespace Silk.Data.SQL.ORM.Schema
 		}
 
 		public override EntityModel BuildModel(
-			DefaultIntersectionAnalyzer<TypeModel, PropertyInfoField, EntityModel, EntityField> typeToModelAnalyzer,
-			DefaultIntersectionAnalyzer<EntityModel, EntityField, TypeModel, PropertyInfoField> modelToTypeAnalyzer,
+			ClassToEntityIntersectionAnalyzer classToEntityAnalyzer,
+			IIntersectionAnalyzer<EntityModel, EntityField, TypeModel, PropertyInfoField> modelToTypeAnalyzer,
 			IEnumerable<EntityField> entityFields, IEnumerable<Index> indexes)
 		{
 			return new EntityModel<T>(
-				typeToModelAnalyzer, modelToTypeAnalyzer,
+				classToEntityAnalyzer, modelToTypeAnalyzer,
 				entityFields.OfType<EntityField<T>>(), TableName, indexes
 				);
 		}

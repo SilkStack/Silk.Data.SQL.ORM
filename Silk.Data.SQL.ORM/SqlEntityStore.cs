@@ -2,6 +2,8 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Silk.Data.Modelling;
+using Silk.Data.Modelling.Analysis;
+using Silk.Data.Modelling.Mapping;
 using Silk.Data.SQL.Expressions;
 using Silk.Data.SQL.ORM.Queries;
 using Silk.Data.SQL.ORM.Schema;
@@ -18,7 +20,7 @@ namespace Silk.Data.SQL.ORM
 
 		private readonly EntityField<T> _clientGeneratedPrimaryKey;
 		private readonly EntityField<T> _serverGeneratedPrimaryKey;
-		private readonly IModelTranscriber<T> _entityTranscriber;
+		private readonly IEntityView<T> _entityTranscriber;
 		private readonly ITypeInstanceFactory _typeInstanceFactory;
 		private readonly IReaderWriterFactory<TypeModel, PropertyInfoField> _typeReaderWriterFactory;
 
@@ -37,7 +39,7 @@ namespace Silk.Data.SQL.ORM
 			_clientGeneratedPrimaryKey = _entityModel.Fields.FirstOrDefault(q => q.IsPrimaryKey && !q.IsSeverGenerated);
 			_serverGeneratedPrimaryKey = _entityModel.Fields.FirstOrDefault(q => q.IsPrimaryKey && q.IsSeverGenerated);
 
-			_entityTranscriber = _entityModel.GetModelTranscriber(_entityModel.TypeModel);
+			_entityTranscriber = _entityModel.GetEntityView(_entityModel.TypeModel);
 		}
 
 		public SqlEntityStore(Schema.Schema schema, IDataProvider dataProvider, ITypeInstanceFactory typeInstanceFactory,
@@ -48,18 +50,20 @@ namespace Silk.Data.SQL.ORM
 			_typeReaderWriterFactory = typeReaderWriterFactory;
 		}
 
-		private void AttemptWriteToObject<TView, TData>(TView obj, TData data, EntityField<T> entityField,
-			IModelTranscriber<TView> transcriber)
+		private static void AttemptWriteToObject<TView, TData>(TView obj, TData data, EntityField<T> entityField,
+			IEntityView<TView> entityView)
 			where TView : class
 		{
-			var helper = transcriber.SchemaToTypeHelpers.FirstOrDefault(q => q.From == entityField);
-			if (helper == null)
+			var intersectedFields = entityView.EntityToClassIntersection
+				.IntersectedFields.FirstOrDefault(q => q.LeftField == entityField);
+			if (intersectedFields == null)
 				return;
 
-			helper.WriteValueToInstance(obj, data);
+			var writer = new ObjectGraphReaderWriter<TView>(obj);
+			writer.Write(intersectedFields.RightPath, data);
 		}
 
-		private DeferableInsert<T> Insert<TView>(IModelTranscriber<TView> transcriber, TView entity)
+		private DeferableInsert<T> Insert<TView>(IEntityView<TView> transcriber, TView entity)
 			where TView : class
 		{
 			var mapBackInsertId = _serverGeneratedPrimaryKey != null;
@@ -80,8 +84,9 @@ namespace Silk.Data.SQL.ORM
 				);
 			}
 
-			var idFieldHelper = transcriber.SchemaToTypeHelpers.FirstOrDefault(q => q.From == _serverGeneratedPrimaryKey);
-			if (idFieldHelper == null)
+			var primaryKeyIntersectedFields = transcriber.EntityToClassIntersection.IntersectedFields
+				.FirstOrDefault(q => q.LeftField == _serverGeneratedPrimaryKey);
+			if (primaryKeyIntersectedFields == null)
 			{
 				return new DeferableInsert<T>(
 					insertBuilder, _dataProvider
@@ -95,7 +100,7 @@ namespace Silk.Data.SQL.ORM
 					from: QueryExpression.Table(_entityModel.Table.TableName)
 				),
 				new MapLastIdResultProcessor<TView>(
-					entity, idFieldHelper
+					entity, primaryKeyIntersectedFields
 					)
 				);
 		}
@@ -114,7 +119,7 @@ namespace Silk.Data.SQL.ORM
 			if (entityView == null)
 				throw new ArgumentNullException(nameof(entityView));
 
-			return Insert(_entityModel.GetModelTranscriber<TView>(), entityView);
+			return Insert(_entityModel.GetEntityView<TView>(), entityView);
 		}
 
 		public DeferableInsert<T> Insert()
@@ -208,12 +213,13 @@ namespace Silk.Data.SQL.ORM
 			where TView : class
 		{
 			private readonly TView _view;
-			private readonly TypeModelHelper<TView> _fieldHelper;
+			private readonly IntersectedFields<EntityModel, EntityField, TypeModel, PropertyInfoField> _primaryKeyIntersectedFields;
 
-			public MapLastIdResultProcessor(TView view, TypeModelHelper<TView> fieldHelper)
+			public MapLastIdResultProcessor(TView view,
+				IntersectedFields<EntityModel,EntityField,TypeModel,PropertyInfoField> primaryKeyIntersectedFields)
 			{
 				_view = view;
-				_fieldHelper = fieldHelper;
+				_primaryKeyIntersectedFields = primaryKeyIntersectedFields;
 			}
 
 			public void HandleFailure()
@@ -236,7 +242,9 @@ namespace Silk.Data.SQL.ORM
 
 			private void MapValue(QueryResult queryResult)
 			{
-				_fieldHelper.CopyResultToObject(queryResult, _view);
+				var writer = new ObjectGraphReaderWriter<TView>(_view);
+				var value = (object)queryResult.GetInt32(0);
+				writer.Write(_primaryKeyIntersectedFields.RightPath, value);
 			}
 		}
 	}
