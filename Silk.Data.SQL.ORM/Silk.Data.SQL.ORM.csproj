@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Version>0.4.1.0</Version>
+    <Version>0.4.1.1</Version>
     <Authors>John Carruthers</Authors>
     <Company />
     <Product>SilkStack</Product>
@@ -11,15 +11,23 @@
 Part of the SilkStack project.</Description>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Copyright>John Carruthers 2018</Copyright>
-    <PackageLicenseUrl>https://github.com/SilkStack/Silk.Data.SQL.ORM/blob/master/license.txt</PackageLicenseUrl>
+    <PackageLicenseUrl></PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/SilkStack/Silk.Data.SQL.ORM/</PackageProjectUrl>
     <RepositoryUrl>https://github.com/SilkStack/Silk.Data.SQL.ORM/</RepositoryUrl>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <PackageLicenseFile>license.txt</PackageLicenseFile>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Silk.Data.Modelling" Version="0.4.0.4" />
     <PackageReference Include="Silk.Data.SQL.Base" Version="0.1.2.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\license.txt">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>
