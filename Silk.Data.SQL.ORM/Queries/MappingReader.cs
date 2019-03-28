@@ -43,8 +43,7 @@ namespace Silk.Data.SQL.ORM.Queries
 			= new DefaultReaderWriterFactory();
 
 		public IGraphReader<TypeModel, PropertyInfoField> CreateGraphReader<T>(T graph)
-			where T : class
-			=> new ObjectGraphReaderWriter<T>(graph);
+			=> new ObjectGraphReader<T>(graph);
 
 		public IGraphWriter<TypeModel, PropertyInfoField> CreateGraphWriter<T>(T graph)
 			where T : class
