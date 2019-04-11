@@ -203,11 +203,14 @@ namespace Silk.Data.SQL.ORM.Queries
 				if (intersectedFields.RightField.IsPrimaryKey && intersectedFields.RightField.IsSeverGenerated)
 					continue;
 
-				var value = reader.Read<object>(intersectedFields.LeftPath);
-				Set(
-					QueryExpression.Column(intersectedFields.RightField.Column.Name),
-					value
-					);
+				if (reader.CheckPath(intersectedFields.LeftPath))
+				{
+					var value = reader.Read<object>(intersectedFields.LeftPath);
+					Set(
+						QueryExpression.Column(intersectedFields.RightField.Column.Name),
+						value
+						);
+				}
 			}
 		}
 
@@ -223,11 +226,14 @@ namespace Silk.Data.SQL.ORM.Queries
 				if (intersectedFields.RightField.IsPrimaryKey && intersectedFields.RightField.IsSeverGenerated)
 					continue;
 
-				var value = reader.Read<object>(intersectedFields.LeftPath);
-				Set(
-					QueryExpression.Column(intersectedFields.RightField.Column.Name),
-					value
-					);
+				if (reader.CheckPath(intersectedFields.LeftPath))
+				{
+					var value = reader.Read<object>(intersectedFields.LeftPath);
+					Set(
+						QueryExpression.Column(intersectedFields.RightField.Column.Name),
+						value
+						);
+				}
 			}
 		}
 	}
