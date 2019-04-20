@@ -203,7 +203,7 @@ namespace Silk.Data.SQL.ORM.Queries
 				if (intersectedFields.RightField.IsPrimaryKey && intersectedFields.RightField.IsSeverGenerated)
 					continue;
 
-				if (reader.CheckPath(intersectedFields.LeftPath))
+				if (reader.CheckContainer(intersectedFields.LeftPath))
 				{
 					var value = reader.Read<object>(intersectedFields.LeftPath);
 					Set(
@@ -226,7 +226,7 @@ namespace Silk.Data.SQL.ORM.Queries
 				if (intersectedFields.RightField.IsPrimaryKey && intersectedFields.RightField.IsSeverGenerated)
 					continue;
 
-				if (reader.CheckPath(intersectedFields.LeftPath))
+				if (reader.CheckContainer(intersectedFields.LeftPath))
 				{
 					var value = reader.Read<object>(intersectedFields.LeftPath);
 					Set(
