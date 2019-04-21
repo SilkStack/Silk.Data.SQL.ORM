@@ -1,8 +1,9 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 
 namespace Silk.Data
 {
-	public interface ITransactionController
+	public interface ITransactionController : IDisposable
 	{
 		bool AreEquivalentSharedControllers(ITransactionController transactionController);
 

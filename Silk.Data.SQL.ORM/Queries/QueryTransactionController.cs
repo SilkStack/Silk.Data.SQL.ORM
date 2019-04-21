@@ -43,5 +43,10 @@ namespace Silk.Data.SQL.ORM.Queries
 
 			return ReferenceEquals(_dataProvider, queryTransactionController._dataProvider);
 		}
+
+		public void Dispose()
+		{
+			_transaction.Dispose();
+		}
 	}
 }

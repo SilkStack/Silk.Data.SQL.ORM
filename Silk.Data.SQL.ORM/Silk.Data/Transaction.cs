@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Silk.Data
 {
-	public class Transaction
+	public class Transaction : IDisposable
 	{
 		private readonly List<ITransactionController> _transactionControllers
 			= new List<ITransactionController>();
@@ -102,6 +102,21 @@ namespace Silk.Data
 
 			if (exceptionCollection.Count > 0)
 				throw new AggregateException("One or more exceptions occurred while rolling back.", exceptionCollection);
+		}
+
+		public void Dispose()
+		{
+			foreach (var controller in _transactionControllers)
+			{
+				try
+				{
+					controller?.Dispose();
+				}
+				catch
+				{
+					//  todo: consider throwing an aggregate exception
+				}
+			}
 		}
 	}
 }
